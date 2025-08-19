@@ -41,9 +41,20 @@ editor_options:
 ---
 
 ```{r}
+#| label: first-run-setup
+#| eval: false
 
-# install.packages("devtools") 
+# install the apaquarto extension
+quarto::quarto_add_extension("wjschne/apaquarto", no_prompt = TRUE)
+
+# install the dev version of papercheck
+# install.packages("devtools")
 devtools::install_github("scienceverse/papercheck")
+```
+
+
+```{r}
+#| label: setup
 
 library(papercheck)
 library(knitr)
@@ -71,7 +82,7 @@ options(openalexR.mailto = "D.Lakens@tue.nl")
 library(progress)
 
 # Read in raw xml files into papercheck opbjects. This takes a lot of time, and therefore we save the object. 
-# xml <- read("C:\\Users\\DLakens\\OneDrive - TU Eindhoven\\R\\download_articles_code_and_data\\psych_science_xml")
+# xml <- read("psych_science_xml")
 # save(xml, file = "psychscience_2004_2024_xml.RData")
 
 
@@ -124,7 +135,7 @@ psych_science <- psych_science %>%
 
 ## Abstract
 
-Metascientific research has revealed that researchers often fall short in implementing best research practices when designing studies, reporting findings, citing the literature, or sharing data and code. Researchers time constraints that limit the extent to which they can master all aspects of the research process, and cognitive constraints that limit which practices they remember to implement in their work. By capturing expert knowledge within an automated tool we aim to elevate the quality of scientific research and disseminate best practices more widely. We illustrate how the absence of best practices can be automatically detected by analyzing papers published in Psychological Science in the last decade. Researchers can use the tool before submitting or when reviewing scientific articles. Our module based software tool can easily be extended by experts in the scientific community to automatically check best practices, educate scientists, and increase the quality of scientific reporting.
+Metascientific research has revealed that researchers often fall short in implementing best research practices when designing studies, reporting findings, citing the literature, or sharing data and code. Researchers have time constraints that limit the extent to which they can master all aspects of the research process, and cognitive constraints that limit which practices they remember to implement in their work. By capturing expert knowledge within an automated tool we aim to elevate the quality of scientific research and disseminate best practices more widely. We illustrate how the absence of best practices can be automatically detected by analyzing papers published in Psychological Science in the last decade. Researchers can use the tool before submitting or when reviewing scientific articles. Our module based software tool can easily be extended by experts in the scientific community to automatically check best practices, educate scientists, and increase the quality of scientific reporting.
 
 ## Introduction
 
@@ -358,7 +369,7 @@ If valid, the link is processed, and the OSF Application Programming Interface (
 # osf_delay(delay = 2)
 # info <- osf_retrieve(links, recursive = TRUE, find_project = TRUE)
 # saveRDS(info, file = "all_osf_file_info_psych_science.rds")
-all_osf_file_info_psych_science <- readRDS("C:/Users/DLakens/OneDrive - TU Eindhoven/git_repos/papercheck_for_psychological_science/all_osf_file_info_psych_science.rds")
+all_osf_file_info_psych_science <- readRDS("all_osf_file_info_psych_science.rds")
 ```
 
 We can then use this information to determine if, for each file, the information about the files contains text that makes it easy to determine what is being shared. A simple regular expression text search for 'README', 'codebook', 'script', and 'data' (in a number of possible ways that these words can be written) is used to automatically detect what is shared.
@@ -383,7 +394,7 @@ files_only <- subset(unique_files, osf_type == "files")
 
 hist(files_only$downloads)
 
-sggplot(files_only, aes(x = downloads)) +
+ggplot(files_only, aes(x = downloads)) +
   geom_histogram(binwidth = 50, fill = "skyblue", color = "black") +
   scale_x_continuous(name = "Number of downloads") +
   labs(title = "File downlaods", y = "Frequency") +
@@ -686,7 +697,7 @@ filename <- paste0("power_lmm_expanded_", format(Sys.time(), "%Y-%m-%d_%H-%M-%S"
 save(text_found_power, file = filename)
 
 # Load lmm data.
-load("C:/Users/DLakens/OneDrive - TU Eindhoven/R/papercheck_for_metascience/power_lmm_complete2025-05-24_08-23-08.RData")
+load("power_lmm_complete2025-05-24_08-23-08.RData")
 
 # Fix missing } at end of JSON and some missing ". The LLM is not perfect. For app, needs a check if valid json was generated.  
 
