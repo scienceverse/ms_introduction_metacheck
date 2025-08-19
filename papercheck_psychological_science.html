@@ -113,7 +113,33 @@ window.Quarto = {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li>References</li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#use-cases" id="toc-use-cases" class="nav-link" data-scroll-target="#use-cases">Use Cases</a></li>
+  </ul></li>
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a>
+  <ul class="collapse">
+  <li><a href="#modules" id="toc-modules" class="nav-link" data-scroll-target="#modules">Modules</a>
+  <ul class="collapse">
+  <li><a href="#automatically-checking-journal-article-reporting-standards" id="toc-automatically-checking-journal-article-reporting-standards" class="nav-link" data-scroll-target="#automatically-checking-journal-article-reporting-standards">Automatically Checking Journal Article Reporting Standards</a></li>
+  <li><a href="#reporting-effect-sizes" id="toc-reporting-effect-sizes" class="nav-link" data-scroll-target="#reporting-effect-sizes">Reporting effect sizes</a></li>
+  <li><a href="#checking-data-and-code-in-repositories" id="toc-checking-data-and-code-in-repositories" class="nav-link" data-scroll-target="#checking-data-and-code-in-repositories">Checking Data and Code in Repositories</a></li>
+  <li><a href="#checking-preregistrations" id="toc-checking-preregistrations" class="nav-link" data-scroll-target="#checking-preregistrations">Checking Preregistrations</a></li>
+  <li><a href="#checking-power-analyses" id="toc-checking-power-analyses" class="nav-link" data-scroll-target="#checking-power-analyses">Checking Power Analyses</a></li>
+  <li><a href="#text-search" id="toc-text-search" class="nav-link" data-scroll-target="#text-search">Text search</a></li>
+  <li><a href="#hyperlinks" id="toc-hyperlinks" class="nav-link" data-scroll-target="#hyperlinks">Hyperlinks</a></li>
+  <li><a href="#osf-links" id="toc-osf-links" class="nav-link" data-scroll-target="#osf-links">OSF Links</a></li>
+  <li><a href="#content-of-preregistration" id="toc-content-of-preregistration" class="nav-link" data-scroll-target="#content-of-preregistration">Content of preregistration</a></li>
+  <li><a href="#list-files" id="toc-list-files" class="nav-link" data-scroll-target="#list-files">List files</a></li>
+  </ul></li>
+  <li><a href="#menial-tasks" id="toc-menial-tasks" class="nav-link" data-scroll-target="#menial-tasks">Menial tasks</a>
+  <ul class="collapse">
+  <li><a href="#check-pubpeer-comments-for-references." id="toc-check-pubpeer-comments-for-references." class="nav-link" data-scroll-target="#check-pubpeer-comments-for-references.">Check pubpeer comments for references.</a></li>
+  <li><a href="#work-with-references" id="toc-work-with-references" class="nav-link" data-scroll-target="#work-with-references">Work with references</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="papercheck_psychological_science.pdf"><i class="bi bi-file-pdf"></i>Typst (apaquarto)</a></li></ul></div></nav>
 </div>
@@ -161,21 +187,27 @@ window.Quarto = {
 </section>
 <section id="firstheader" class="level1 title unnumbered unlisted">
 <h1 class="title unnumbered unlisted">Papercheck for Psychological Science</h1>
-<section id="introduction" class="level2">
-<h2 data-anchor-id="introduction">Introduction</h2>
+<!-- 
+you're not supposed to have a level-1 Intro header in APA style, but otherwise the ToC doesn't show the intro subheadings
+-->
+</section>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
 <p>Metascientific research demonstrates significant room for improvement in how scientists design studies, report findings, and implement open science practices when sharing their work. The uptake of best practices is slow <span class="citation" data-cites="sharpe2013resistance">(<a href="#ref-sharpe2013resistance" role="doc-biblioref">Sharpe, 2013</a>)</span>, and often suboptimal. For example, researchers often use invalid and unreliable measures <span class="citation" data-cites="goos2024assessing">(<a href="#ref-goos2024assessing" role="doc-biblioref">Goos et al., 2024</a>)</span>, misinterpret non-significant results <span class="citation" data-cites="aczel2018quantifying">(<a href="#ref-aczel2018quantifying" role="doc-biblioref">Aczel et al., 2018</a>)</span>, write insufficiently specific preregistrations <span class="citation" data-cites="van2024potential">(<a href="#ref-van2024potential" role="doc-biblioref">Akker et al., 2024</a>)</span>, make mistakes in power analyses <span class="citation" data-cites="thibault2024evaluation">(<a href="#ref-thibault2024evaluation" role="doc-biblioref">Thibault et al., 2024</a>)</span>, and misuse Bayes factors <span class="citation" data-cites="tendeiro2024diagnosing">(<a href="#ref-tendeiro2024diagnosing" role="doc-biblioref">Tendeiro et al., 2024</a>)</span>. Although it is the responsibility of scientists to keep up to date on best practices, time constraints and the rapid pace of new developments make this challenging. Peer reviewers, similarly pressed for time, may not identify the absence of best practices. Checklists could potentially increase the adoption of best practices, but in practice they have limited impact, as researchers might not be aware of the existence of checklists, and they still need sufficient expertise to evaluate whether they have adhered to items on the checklist <span class="citation" data-cites="dexter2017narrative">(<a href="#ref-dexter2017narrative" role="doc-biblioref">Dexter &amp; Shafer, 2017</a>)</span>.</p>
 <p>Human factors research suggests that automation (where researchers are kept in the loop) can offer a partial solution. Two recent developments have increased the possibility that best practices can be automatically detected. First, metascientific research has identified where the adoption of best practices is lagging, and offered concrete suggestions for improvement. This work often includes data that can be used as ground truth to validate automated checks. Second, advances in machine learning and artificial intelligence have made it easier to deal with written text, both when turning scientific articles into structured data files (e.g., the GROBID machine learning library), as when extracting or classifying information in written text. This has made it possible to develop algorithms that automatically emulate what experts do when they examine if best practices are present or absent. For example, a reviewer might search for the section in the paper that describes an a-priori power analysis, and then check if people follow best practices, and report the alpha level, desired power, the effect size metric, and a justification for the effect size, for each hypothesis tested <span class="citation" data-cites="lakens_justification_2022">(<a href="#ref-lakens_justification_2022" role="doc-biblioref">Lakens, 2022</a>)</span>. If any of this information is missing, authors should be made aware that they are not following best practices, so that they can improve their paper. While many automated checks for best practices will require only simple text matching based on regular expression, more complex text extraction is possible by using large language models (LLMs).</p>
 <p>In this article we introduce a new tool, Papercheck, which uses text search, code, and large language models to extract information from scientific text (which could be a draft of a manuscript, submitted or published articles, or preregistration documents) and provide automated suggestions for improvement. Papercheck is inspired by quality control processes in software development. For example, R package developers run a set of automated checks before they submit their package to the Comprehensive R Archive Network (CRAN). The automated checks aim to identify any remaining issues, and inform developers about how to fix them. The goal of papercheck is to screen scientific manuscripts, identify areas for improvement based on algorithms that emulate what experts would do while checking a research paper, and educate researchers on how to incorporate best practices. The tool is module based, with a dedicated module for any practice that the community wants to improve, and where automation offers a solution. This means the tool can be extended by the scientific community to fit their needs, and specialised modules can be created for different scientific fields based on what is considered a best practice in that research area. The tool can reduce the burden on peer reviewers by resolving common problems before submission, allowing peer reviewers to focus on those issues that can not be automatically detected.</p>
 <p>Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., is the desired level of power reported in an a-priori power analysis), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is there a good justification for the effect size entered in an a-priori power analysis). Papercheck focuses on the first task, and leaves the evaluation to the user. We will illustrate the potential of automated checks to improve best practices in 4 areas, namely 1) experimental design, 2) open science practices, 3) statistical inferences, and 4) reporting guidelines. Finally, we will demonstrate the usefulness of a tool that can efficiently process text in scientific articles to perform menial tasks (e.g., check if if hyperlinks are working), more easily code information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., statcheck, checking if retracted articles are cited) in a single module-based workflow that can be expanded by the scientific community.</p>
-<section id="use-cases" class="level3">
-<h3 data-anchor-id="use-cases">Use Cases</h3>
+<section id="use-cases" class="level2">
+<h2 data-anchor-id="use-cases">Use Cases</h2>
 <p>The current version of Papercheck has two contexts of use. The first use-case is by scientists – either authors or reviewers – who have the goal to improve a scientific manuscript by checking for the presence or absence of specific practices. Papercheck can provide recommendations that improve the manuscript in situations where 1) a practice is not sufficiently salient to the scientist to be noticed without assistance, 2) the scientist is not yet able to identify the absence of a practice manually due to a lack of knowledge or training, or 3) scientists do not have time to identify the practice manually. Scientists using Papercheck are aware that all modules make recommendations that can be Type 1 and Type 2 errors. This means that it is possible that many possibly problematic practices are automatically identified, while none are actually problematic upon closer inspection. It is also possible that no problematic practices are found, but many are present.</p>
 <p>As developers, our priority is to develop modules with error rates that are low enough to not impact the usability of Papercheck for individual authors, which - following the ISO 9241-11 definition - means “the extent to which a product can be used by specified users to achieve specified goals with effectiveness, efficiency, and satisfaction in a specified context of use”. Our working assumption is that preparing a scientific manuscript takes a considerable amount of time, and that scientists care about the quality of their work. Under this assumption, we believe that a tool with high error rates - say up to 50% - will be considered sufficiently useful to be adopted as long as it accurately identified some bad practices that researchers would not have identified themselves. For example, a spelling checker that marks ‘Papercheck’ and ‘manuscirpt’ as words with spelling errors, and does not mark ‘extend’ as a spelling error where the correct word would have been ‘extent’ remains useful as long as it takes relatively little time to evaluate the suggestions, even though the error rate is 2 out of 3.</p>
 <p>The second use-case of Papercheck is as a tool to examine a large number of scientific articles. For example, a university or science funder might be interested in how many manuscripts by researchers that they employ or fund share data and code if this is in line with their policies. A meta-scientist might be interested in how many articles report effect sizes in a specific literature, and test whether there is an improvement in best practices. A scientific journal might want to evaluate how a change in editorial practices has impacted the diversity in populations that are examined in the studies they publish. Papercheck modules can easily be run on large numbers of papers, facilitating text searches and the automatic extraction and classification of information. In this use-case the usability of an automated tool requires low error rates if users want to use the output of the tool. Here, Type 2 errors are problematic, and difficult to identify, as it requires users to manually screen all papers for instances that were missed by the algorithms, and if manual screening was possible, there was no need for an automated tool. Type 1 errors might be easier to identify, but still require manually checking all instances flagged by a module. Therefore, low error rates are important for the usability of Papercheck as a meta-scientific tool. Validation procedures that quantify error rates are essential to safeguard the accuracy of results, and allow users to evaluate whether modules are accurate enough for their purposes, and communicate the error rates when presenting results. It is possible that a module has low-enough error rates for the individual use-case, while error rates are too high for meta-scientific use-cases.</p>
 </section>
 </section>
-<section id="examples" class="level2">
-<h2 data-anchor-id="examples">Examples</h2>
+<section id="examples" class="level1">
+<h1>Examples</h1>
+<section id="modules" class="level2">
+<h2 data-anchor-id="modules">Modules</h2>
 <section id="automatically-checking-journal-article-reporting-standards" class="level3">
 <h3 data-anchor-id="automatically-checking-journal-article-reporting-standards">Automatically Checking Journal Article Reporting Standards</h3>
 <p>The journal article reporting standards (JARS) developed by the American Psychological Association (APA) offer guidance on the information that should be reported in scientific articles to enhance their scientific rigour (Appelbaum et al.&nbsp;2018). Almost every published article would improve if researchers diligently followed JARS. However, the guidelines are not widely known, rarely implemented by authors, and almost never checked by editors or reviewers. Manually checking whether all reporting standards are implemented would be effortful. Automation can help by automatically checking if recommendations are followed.</p>
@@ -265,12 +297,12 @@ window.Quarto = {
 <h3 data-anchor-id="work-with-references">Work with references</h3>
 </section>
 </section>
-<section id="discussion" class="level2">
-<h2 data-anchor-id="discussion">Discussion</h2>
+</section>
+<section id="discussion" class="level1">
+<h1>Discussion</h1>
 <p>To prevent widespread misuse of an automated tool such as Papercheck, it is important to realize the limits of the tool. Although it might seem desirable to develop modules with high accuracy, a cost-benefit analysis might indicate that at this phase it is more important to invest time to develop 10 modules that assist researchers to check their papers with a relatively high error rate, then to spend the same time on two modules that can be used meta-scientifically with very low error rates. The flexibility of human language combined with the lack of standardization in how researchers report information in scientific manuscripts are such that reducing error rates from 50% to 20% is much easier than reducing error rates from 20% to 5%. Our current approach is to follow the Pareto principle and focus on the 20% of the ways in which researchers get something wrong, that when when identified, would prevent 80% of the times researchers get something wrong.</p>
 </section>
-</section>
-<section class="level1">
+<section id="references" class="level1">
 <h1>References</h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" data-line-spacing="2" role="list">
 <div id="ref-aczel2018quantifying" class="csl-entry" role="listitem">

@@ -33,7 +33,8 @@ author-note:
 bibliography: references_doi.bib  
 floatsintext: true
 format:
-  apaquarto-html: default
+  apaquarto-html: 
+    embed-resources: false
   apaquarto-typst:
     a4paper: true
 editor_options: 
@@ -136,8 +137,10 @@ psych_science <- psych_science %>%
 
 ```
 
-
-## Introduction
+<!-- 
+you're not supposed to have a level-1 Intro header in APA style, but otherwise the ToC doesn't show the intro subheadings
+-->
+# Introduction
 
 Metascientific research demonstrates significant room for improvement in how scientists design studies, report findings, and implement open science practices when sharing their work. The uptake of best practices is slow [@sharpe2013resistance], and often suboptimal. For example, researchers often use invalid and unreliable measures [@goos2024assessing], misinterpret non-significant results [@aczel2018quantifying], write insufficiently specific preregistrations [@van2024potential], make mistakes in power analyses [@thibault2024evaluation], and misuse Bayes factors [@tendeiro2024diagnosing]. Although it is the responsibility of scientists to keep up to date on best practices, time constraints and the rapid pace of new developments make this challenging. Peer reviewers, similarly pressed for time, may not identify the absence of best practices. Checklists could potentially increase the adoption of best practices, but in practice they have limited impact, as researchers might not be aware of the existence of checklists, and they still need sufficient expertise to evaluate whether they have adhered to items on the checklist [@dexter2017narrative].
 
@@ -147,7 +150,8 @@ In this article we introduce a new tool, Papercheck, which uses text search, cod
 
 Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., is the desired level of power reported in an a-priori power analysis), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is there a good justification for the effect size entered in an a-priori power analysis). Papercheck focuses on the first task, and leaves the evaluation to the user. We will illustrate the potential of automated checks to improve best practices in 4 areas, namely 1) experimental design, 2) open science practices, 3) statistical inferences, and 4) reporting guidelines. Finally, we will demonstrate the usefulness of a tool that can efficiently process text in scientific articles to perform menial tasks (e.g., check if if hyperlinks are working), more easily code information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., statcheck, checking if retracted articles are cited) in a single module-based workflow that can be expanded by the scientific community.
 
-### Use Cases
+
+## Use Cases
 
 The current version of Papercheck has two contexts of use. The first use-case is by scientists -- either authors or reviewers -- who have the goal to improve a scientific manuscript by checking for the presence or absence of specific practices. Papercheck can provide recommendations that improve the manuscript in situations where 1) a practice is not sufficiently salient to the scientist to be noticed without assistance, 2) the scientist is not yet able to identify the absence of a practice manually due to a lack of knowledge or training, or 3) scientists do not have time to identify the practice manually. Scientists using Papercheck are aware that all modules make recommendations that can be Type 1 and Type 2 errors. This means that it is possible that many possibly problematic practices are automatically identified, while none are actually problematic upon closer inspection. It is also possible that no problematic practices are found, but many are present.
 
@@ -155,7 +159,9 @@ As developers, our priority is to develop modules with error rates that are low 
 
 The second use-case of Papercheck is as a tool to examine a large number of scientific articles. For example, a university or science funder might be interested in how many manuscripts by researchers that they employ or fund share data and code if this is in line with their policies. A meta-scientist might be interested in how many articles report effect sizes in a specific literature, and test whether there is an improvement in best practices. A scientific journal might want to evaluate how a change in editorial practices has impacted the diversity in populations that are examined in the studies they publish. Papercheck modules can easily be run on large numbers of papers, facilitating text searches and the automatic extraction and classification of information. In this use-case the usability of an automated tool requires low error rates if users want to use the output of the tool. Here, Type 2 errors are problematic, and difficult to identify, as it requires users to manually screen all papers for instances that were missed by the algorithms, and if manual screening was possible, there was no need for an automated tool. Type 1 errors might be easier to identify, but still require manually checking all instances flagged by a module. Therefore, low error rates are important for the usability of Papercheck as a meta-scientific tool. Validation procedures that quantify error rates are essential to safeguard the accuracy of results, and allow users to evaluate whether modules are accurate enough for their purposes, and communicate the error rates when presenting results. It is possible that a module has low-enough error rates for the individual use-case, while error rates are too high for meta-scientific use-cases.
 
-## Examples
+# Examples
+
+## Modules
 
 ### Automatically Checking Journal Article Reporting Standards
 
@@ -2641,6 +2647,8 @@ save(pubpeer_results, file = "pubpeerresults_first_447.Rdata")
 
 ```
 
-## Discussion
+# Discussion
 
 To prevent widespread misuse of an automated tool such as Papercheck, it is important to realize the limits of the tool. Although it might seem desirable to develop modules with high accuracy, a cost-benefit analysis might indicate that at this phase it is more important to invest time to develop 10 modules that assist researchers to check their papers with a relatively high error rate, then to spend the same time on two modules that can be used meta-scientifically with very low error rates. The flexibility of human language combined with the lack of standardization in how researchers report information in scientific manuscripts are such that reducing error rates from 50% to 20% is much easier than reducing error rates from 20% to 5%. Our current approach is to follow the Pareto principle and focus on the 20% of the ways in which researchers get something wrong, that when when identified, would prevent 80% of the times researchers get something wrong.
+
+# References
