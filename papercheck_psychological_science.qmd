@@ -25,19 +25,22 @@ author:
         department: Industrial Engineering and Innovation Sciences
         address: Den Dolech 2, 5600 MB, Eindhoven
         city: Eindhoven
-abstract: "Papercheck is cool."
 keywords: [Peer Review, Quality Control, Automation, Open Data]
 author-note:
   disclosures:
     conflict-of-interest: "The authors have no conflict of interest to declare."
     data-sharing: "A reproducible version of this manuscript is available at XXX."
-bibliography: references.bib  
+bibliography: references_doi.bib  
 floatsintext: true
 format:
+  apaquarto-html: default
   apaquarto-typst:
     a4paper: true
 editor_options: 
   chunk_output_type: console
+execute: 
+  eval: false
+abstract: "Metascientific research has revealed that researchers often fall short in implementing best research practices when designing studies, reporting findings, citing the literature, or sharing data and code. Researchers have time constraints that limit the extent to which they can master all aspects of the research process, and cognitive constraints that limit which practices they remember to implement in their work. By capturing expert knowledge within an automated tool, we aim to elevate the quality of scientific research and disseminate best practices more widely. We illustrate how best practices can be automatically detected by analyzing papers published in Psychological Science in the last decade. Researchers can use the tool before submitting or when reviewing scientific articles. Our module based software tool can easily be extended by experts in the scientific community to automatically check best practices, educate scientists, and increase the quality of scientific reporting."
 ---
 
 ```{r}
@@ -133,29 +136,28 @@ psych_science <- psych_science %>%
 
 ```
 
-## Abstract
-
-Metascientific research has revealed that researchers often fall short in implementing best research practices when designing studies, reporting findings, citing the literature, or sharing data and code. Researchers have time constraints that limit the extent to which they can master all aspects of the research process, and cognitive constraints that limit which practices they remember to implement in their work. By capturing expert knowledge within an automated tool we aim to elevate the quality of scientific research and disseminate best practices more widely. We illustrate how the absence of best practices can be automatically detected by analyzing papers published in Psychological Science in the last decade. Researchers can use the tool before submitting or when reviewing scientific articles. Our module based software tool can easily be extended by experts in the scientific community to automatically check best practices, educate scientists, and increase the quality of scientific reporting.
 
 ## Introduction
 
-Metascientific research demonstrates significant room for improvement in how scientists design studies, report findings, and implement open science practices when sharing their work. The uptake of best practices is slow (Sharpe, 2013), and often suboptimal. For example, researchers often use invalid and unreliable measures (Goos et al. 2024), misinterpret non-significant results (Aczel et al. 2018), write insufficiently specific preregistrations (Akker et al. 2024), make mistakes in power analyses (Thibault et al. 2024), and misuse Bayes factors (Tendeiro et al. 2024). Although it is the responsibility of scientists to keep up to date on best practices, time constraints and the rapid pace of new developments make this challenging. Peer reviewers, similarly pressed for time, may not identify the absence of best practices. Checklists could potentially increase the adoption of best practices, but in practice they have limited impact, as researchers might not be aware of the existence of checklists, and they still need sufficient expertise to evaluate whether they have adhered to items on the checklist (Dexter and Shafer 2017).
+Metascientific research demonstrates significant room for improvement in how scientists design studies, report findings, and implement open science practices when sharing their work. The uptake of best practices is slow [@sharpe2013resistance], and often suboptimal. For example, researchers often use invalid and unreliable measures [@goos2024assessing], misinterpret non-significant results [@aczel2018quantifying], write insufficiently specific preregistrations [@van2024potential], make mistakes in power analyses [@thibault2024evaluation], and misuse Bayes factors [@tendeiro2024diagnosing]. Although it is the responsibility of scientists to keep up to date on best practices, time constraints and the rapid pace of new developments make this challenging. Peer reviewers, similarly pressed for time, may not identify the absence of best practices. Checklists could potentially increase the adoption of best practices, but in practice they have limited impact, as researchers might not be aware of the existence of checklists, and they still need sufficient expertise to evaluate whether they have adhered to items on the checklist [@dexter2017narrative].
 
-Human factors research suggests that automation (where researchers are kept in the loop) can offer a partial solution. Two recent developments have increased the possibility that best practices can be automatically detected. First, metascientific research has identified where the adoption of best practices is lagging, and offered concrete suggestions for improvement. This work often includes data that can be used as ground truth to validate automated checks. Second, advances in machine learning and artificial intelligence have made it easier to deal with written text, both when turning scientific articles into structured data files (e.g., the GROBID machine learning library), as when extracting or classifying information in written text. This has made it possible to develop algorithms that automatically emulate what experts do when they examine if best practices are present or absent. For example, a reviewer might search for the section in the paper that describes an a-priori power analysis, and then check if people follow best practices, and report the alpha level, desired power, the effect size metric, and a justification for the effect size, for each hypothesis tested (Lakens, 2022). If any of this information is missing, authors should be made aware that they are not following best practices, so that they can improve their paper. While many automated checks for best practices will require only simple text matching based on regular expression, more complex text extraction is possible by using large language models (LLMs).
+Human factors research suggests that automation (where researchers are kept in the loop) can offer a partial solution. Two recent developments have increased the possibility that best practices can be automatically detected. First, metascientific research has identified where the adoption of best practices is lagging, and offered concrete suggestions for improvement. This work often includes data that can be used as ground truth to validate automated checks. Second, advances in machine learning and artificial intelligence have made it easier to deal with written text, both when turning scientific articles into structured data files (e.g., the GROBID machine learning library), as when extracting or classifying information in written text. This has made it possible to develop algorithms that automatically emulate what experts do when they examine if best practices are present or absent. For example, a reviewer might search for the section in the paper that describes an a-priori power analysis, and then check if people follow best practices, and report the alpha level, desired power, the effect size metric, and a justification for the effect size, for each hypothesis tested [@lakens_justification_2022]. If any of this information is missing, authors should be made aware that they are not following best practices, so that they can improve their paper. While many automated checks for best practices will require only simple text matching based on regular expression, more complex text extraction is possible by using large language models (LLMs).
 
 In this article we introduce a new tool, Papercheck, which uses text search, code, and large language models to extract information from scientific text (which could be a draft of a manuscript, submitted or published articles, or preregistration documents) and provide automated suggestions for improvement. Papercheck is inspired by quality control processes in software development. For example, R package developers run a set of automated checks before they submit their package to the Comprehensive R Archive Network (CRAN). The automated checks aim to identify any remaining issues, and inform developers about how to fix them. The goal of papercheck is to screen scientific manuscripts, identify areas for improvement based on algorithms that emulate what experts would do while checking a research paper, and educate researchers on how to incorporate best practices. The tool is module based, with a dedicated module for any practice that the community wants to improve, and where automation offers a solution. This means the tool can be extended by the scientific community to fit their needs, and specialised modules can be created for different scientific fields based on what is considered a best practice in that research area. The tool can reduce the burden on peer reviewers by resolving common problems before submission, allowing peer reviewers to focus on those issues that can not be automatically detected.
 
 Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., is the desired level of power reported in an a-priori power analysis), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is there a good justification for the effect size entered in an a-priori power analysis). Papercheck focuses on the first task, and leaves the evaluation to the user. We will illustrate the potential of automated checks to improve best practices in 4 areas, namely 1) experimental design, 2) open science practices, 3) statistical inferences, and 4) reporting guidelines. Finally, we will demonstrate the usefulness of a tool that can efficiently process text in scientific articles to perform menial tasks (e.g., check if if hyperlinks are working), more easily code information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., statcheck, checking if retracted articles are cited) in a single module-based workflow that can be expanded by the scientific community.
 
-#The two intended use-cases of Papercheck
+### Use Cases
 
-The current version of Papercheck has two contexts of use. The first use-case is by scientists - either authors or reviewers - who have the goal to improve a scientific manuscript by automatically checking the presence or absence of specific best practices. These users perform this automated check because the tool is able to provide recommendations that improve the manuscript in situations where 1) a best practice is not sufficiently salient to the scientist to be noticed without assistance, 2) the scientist is not yet able to identify the absence of best practices manually due to a lack of knowledge or training, and 3) scientists do not have time to identify the absence of best practices manually. Scientists using Papercheck are aware that all modules make recommendations that can be Type 1 and Type 2 errors. This means that it is possible that many possibly problematic practices are automatically identified, while none are actually problematic upon closer inspection. It is also possible that no problematic practices are found, but many are present.
+The current version of Papercheck has two contexts of use. The first use-case is by scientists -- either authors or reviewers -- who have the goal to improve a scientific manuscript by checking for the presence or absence of specific practices. Papercheck can provide recommendations that improve the manuscript in situations where 1) a practice is not sufficiently salient to the scientist to be noticed without assistance, 2) the scientist is not yet able to identify the absence of a practice manually due to a lack of knowledge or training, or 3) scientists do not have time to identify the practice manually. Scientists using Papercheck are aware that all modules make recommendations that can be Type 1 and Type 2 errors. This means that it is possible that many possibly problematic practices are automatically identified, while none are actually problematic upon closer inspection. It is also possible that no problematic practices are found, but many are present.
 
 As developers, our priority is to develop modules with error rates that are low enough to not impact the usability of Papercheck for individual authors, which - following the ISO 9241-11 definition - means "the extent to which a product can be used by specified users to achieve specified goals with effectiveness, efficiency, and satisfaction in a specified context of use". Our working assumption is that preparing a scientific manuscript takes a considerable amount of time, and that scientists care about the quality of their work. Under this assumption, we believe that a tool with high error rates - say up to 50% - will be considered sufficiently useful to be adopted as long as it accurately identified some bad practices that researchers would not have identified themselves. For example, a spelling checker that marks 'Papercheck' and 'manuscirpt' as words with spelling errors, and does not mark 'extend' as a spelling error where the correct word would have been 'extent' remains useful as long as it takes relatively little time to evaluate the suggestions, even though the error rate is 2 out of 3.
 
 The second use-case of Papercheck is as a tool to examine a large number of scientific articles. For example, a university or science funder might be interested in how many manuscripts by researchers that they employ or fund share data and code if this is in line with their policies. A meta-scientist might be interested in how many articles report effect sizes in a specific literature, and test whether there is an improvement in best practices. A scientific journal might want to evaluate how a change in editorial practices has impacted the diversity in populations that are examined in the studies they publish. Papercheck modules can easily be run on large numbers of papers, facilitating text searches and the automatic extraction and classification of information. In this use-case the usability of an automated tool requires low error rates if users want to use the output of the tool. Here, Type 2 errors are problematic, and difficult to identify, as it requires users to manually screen all papers for instances that were missed by the algorithms, and if manual screening was possible, there was no need for an automated tool. Type 1 errors might be easier to identify, but still require manually checking all instances flagged by a module. Therefore, low error rates are important for the usability of Papercheck as a meta-scientific tool. Validation procedures that quantify error rates are essential to safeguard the accuracy of results, and allow users to evaluate whether modules are accurate enough for their purposes, and communicate the error rates when presenting results. It is possible that a module has low-enough error rates for the individual use-case, while error rates are too high for meta-scientific use-cases.
 
-# Automatically Checking Journal Article Reporting Standards
+## Examples
+
+### Automatically Checking Journal Article Reporting Standards
 
 The journal article reporting standards (JARS) developed by the American Psychological Association (APA) offer guidance on the information that should be reported in scientific articles to enhance their scientific rigour (Appelbaum et al. 2018). Almost every published article would improve if researchers diligently followed JARS. However, the guidelines are not widely known, rarely implemented by authors, and almost never checked by editors or reviewers. Manually checking whether all reporting standards are implemented would be effortful. Automation can help by automatically checking if recommendations are followed.
 
@@ -300,9 +302,9 @@ ggplot(imprecise_df, aes(x = value)) +
 
 ```
 
-The peak at 0.25 is due to the tendency of authors to treat *p* values \> 0.25 as an indication of an absence of an effect. It is unclear where this criterion comes from. A possible origin might be the proposed alpha of 0.25 $\le$ $\alpha$ $\le$ 0.35 for stopping rules in forward stepwise selection procedures [@bendel_comparison_1977], later popularized as $\alpha$ $\le$ .025 in a widely used textbook on logistic regression [@hosmer_applied_2013], but we are unsure about this. The correct approach to conclude meaningful effects are absent is by performing an equivalence test against a smallest effect size of interest [@lakens_equivalence_2018].
+The peak at 0.25 is due to the tendency of authors to treat *p* values \> 0.25 as an indication of an absence of an effect. It is unclear where this criterion comes from. A possible origin might be the proposed alpha of 0.25 $\le$ $\alpha$ $\le$ 0.35 for stopping rules in forward stepwise selection procedures [@bendel1977comparison], later popularized as $\alpha$ $\le$ .025 in a widely used textbook on logistic regression [@hosmer2013applied], but we are unsure about this. The correct approach to conclude meaningful effects are absent is by performing an equivalence test against a smallest effect size of interest [@lakens_equivalence_2018].
 
-## Reporting effect sizes
+### Reporting effect sizes
 
 A second JARS guideline that can be automatically checked is whether people report effect sizes alongside their test result. Each test (e.g., a *t*-test, *F*-test, etc.) should include the corresponding effect size (e.g., a Cohen's *d*, or partial eta-squared). Based on a text search that uses regular expressions (regex), we can identify *t*-tests and *F*-tests that are not followed by an effect size, and warn researchers accordingly.
 
@@ -350,9 +352,9 @@ ggplot(combined_summary, aes(x = factor(year), y = percentage, fill = test_type)
 
 ```
 
-# Checking Data and Code in Repositories
+### Checking Data and Code in Repositories
 
-There is widespread support among scientists for open science practices, such as data and code sharing [@ferguson_survey_2023]. There is increasing awareness of the importance of making data and code available alongside publication, and sometimes this is even a requirement by funders or journals. As data and code sharing is a relatively new practice, and many scientists lack training in open science, it is common to see badly documented data repositories. Best practices exist, such as the [TIER protocol](https://www.projecttier.org/tier-protocol/protocol-4-0/), but not all researchers might be aware of best practices. By automatically checking data repositories, Papercheck can increase awareness of best practices, and make specific suggestions for improvements.
+There is widespread support among scientists for open science practices, such as data and code sharing [@ferguson2023survey]. There is increasing awareness of the importance of making data and code available alongside publication, and sometimes this is even a requirement by funders or journals. As data and code sharing is a relatively new practice, and many scientists lack training in open science, it is common to see badly documented data repositories. Best practices exist, such as the [TIER protocol](https://www.projecttier.org/tier-protocol/protocol-4-0/), but not all researchers might be aware of best practices. By automatically checking data repositories, Papercheck can increase awareness of best practices, and make specific suggestions for improvements.
 
 At a minimum a data repository should contain a Read Me file with instructions for how to reproduce the results. If data is shared, it should be stored in a 'data' folder, or at least have the word 'data' in the filename. Code or scripts should similarly be shared in a folder with that name, or at least with the word in the filename. Finally, if data is shared, there should be a codebook or data dictionary that explains which variables are in the dataset in order to allow others to re-use the data. Ideally peer reviewers or editors would check the contents of a data repository. In practice, time constraints mean that data repository are often not checked by any human. Automation can perform some of the checks that peers might otherwise perform manually.
 
@@ -407,17 +409,17 @@ Finally, we print a report that communicates to the user - for example, a resear
 
 So far we have used Papercheck to automatically check whether certain types of files exist. But it is also possible to automatically download files, examine their contents, and provide feedback to users. This can be useful to examine datasets (e.g., do files contain IP addresses or other personal information), or code files. Papercheck also contains a function `osf_file_download` to download all files from a project on the OSF while maintaining the folder structure. This should make it easier for reviewers to check all the content shared on the OSF.
 
-# Checking Preregistrations
+### Checking Preregistrations
 
-It is increasingly common for researchers to preregister their studies [@spitzer_registered_2023; @imai_preregistration_2025]. As preregistration is a new practice, it is not surprising that it is not always implemented well. One challenge is that researchers do not always indicate where they deviated from their preregistration when reporting results from preregistered studies [@vandenakker_potential_2024]. Reviewers could check whether researchers adhere to the preregistration, but this requires some effort. Automation can provide a partial solution be making information more easily available, and perhaps even performing automated checks of some parts of the preregistration.
+It is increasingly common for researchers to preregister their studies [@spitzer2023registered; @imai2025pre]. As preregistration is a new practice, it is not surprising that it is not always implemented well. One challenge is that researchers do not always indicate where they deviated from their preregistration when reporting results from preregistered studies [@van2024potential]. Reviewers could check whether researchers adhere to the preregistration, but this requires some effort. Automation can provide a partial solution be making information more easily available, and perhaps even performing automated checks of some parts of the preregistration.
 
 Here we demonstrate how Papercheck can automatically retrieve the content of a preregistration. The preregistration can then be presented alongside the relevant information in the manuscript. This makes it easier for peer reviewers to compare the information.
 
 We focus on AsPredicted preregistrations as their structured format makes it especially easy to retrieve information
 
-# Checking Power Analyses
+### Checking Power Analyses
 
-Researchers should provide a sample size justification when they design a study to provide an argument why the study has sufficient informational value with respect to its inferential goal (Lakens, 2022). One approach to a sample size justification is a power analysis. Peers need to be able to evaluate the power analysis to examine with the arguments for the informational value of the study design are valid. This requires that all parameters of the power analysis are reported: The type of power analysis (e.g., a-priori, comprimise, sensitivity), the statistical test that the power analysis is performed for (e.g., an independent t-test, a within-between interaction effect in a 2x2 ANOVA), the effect size metric (e.g., d, r, odds ratio), the effect size (a numerical value, e.g., 0.3), the desired power (e.g., 95%), and the alpha level (commonly 0.05, but it is possible that this value needs to be adjusted for multiple comparisons). Many power analyses do not report all the required information. Moreover, some researchers perform post-hoc power analyses where they compute the power for the observed effect size, given the collected sample size. This flawed practice is performed in an attempt to answer the question whether a non-significant result is a Type 2 error, which post-hoc power can not answer.
+Researchers should provide a sample size justification when they design a study to provide an argument why the study has sufficient informational value with respect to its inferential goal [@lakens_justification_2022]. One approach to a sample size justification is a power analysis. Peers need to be able to evaluate the power analysis to examine with the arguments for the informational value of the study design are valid. This requires that all parameters of the power analysis are reported: The type of power analysis (e.g., a-priori, comprimise, sensitivity), the statistical test that the power analysis is performed for (e.g., an independent t-test, a within-between interaction effect in a 2x2 ANOVA), the effect size metric (e.g., d, r, odds ratio), the effect size (a numerical value, e.g., 0.3), the desired power (e.g., 95%), and the alpha level (commonly 0.05, but it is possible that this value needs to be adjusted for multiple comparisons). Many power analyses do not report all the required information. Moreover, some researchers perform post-hoc power analyses where they compute the power for the observed effect size, given the collected sample size. This flawed practice is performed in an attempt to answer the question whether a non-significant result is a Type 2 error, which post-hoc power can not answer.
 
 The powercheck module aims to assist researchers in fully reporting power analysis, and dissuade them from performing a post-hoc power analysis. It first searches for the word "power\[ed\]", and based on a pre-trained local logistic regression model classifies sentences as a statistical power analysis, or not. Sentences classified as probable power analysis statements are then expanded by including the previous and two subsequent sentences, and sent to Groq, a service for artificial intelligence inference. Groq can run a range of different language models, such as Llama 3.3 70B, an open source language model. Based on a prompt the Groq API returns a JSON structured dataset with either the content of the parameters that should be reported in a power analysis, or missing information if the language model can not retrieve the values for certain parameters.
 
@@ -1277,9 +1279,9 @@ print(final_apriori)
 
 ```
 
-# Text search
+### Text search
 
-# Hyperlinks
+### Hyperlinks
 
 Many scientific articles link to additional information that is not included in the article, such as open data, materials, and code, a preregistration, or supplementary information. Although it is useful to have access to this information, it can also be cumbersome to retrieve it. Journals lack a systematic way of providing access to information outside of the article, and the additional information that is provided is often not structured well. Although this is expected as science transitions to more transparency, the fact that supplementary information is often not easily findable or accessible limits its use. Automation can assists researchers by making information more readily available.
 
@@ -1318,7 +1320,7 @@ text_found_as_predicted_blind <- text_found_as_predicted_blind %>% distinct(text
 
 ```
 
-OSF Links
+### OSF Links
 
 ```{r}
 # Define the regular expression pattern for detecting OSF URLs 
@@ -1456,13 +1458,14 @@ for (i in 1:nrow(text_found)) {
 }
 sum(text_found$osf_type == "CLOSED")
 # save(text_found, file = "psychscience_view_only.RData")
-load(file = "psychscience_view_only.RData")
+load(file = "data/psychscience_view_only.RData")
 
 ```
 
-To summarize, in `r length(psych_science$doi)` articles published in psychological science we observed `r length(text_found$text)` unique view-only links to the OSF. Of these, `r sum(text_found$osf_type == "CLOSED")` are not made public. Similarly, we found `r length(text_found_as_predicted_blind$text)` unique blind links to AsPredicted, which should have linked to their public counterparts.
 
-# Content of preregistration
+To summarize, in `length(psych_science$doi)` articles published in psychological science we observed `length(text_found$text)` unique view-only links to the OSF. Of these, `sum(text_found$osf_type == "CLOSED")` are not made public. Similarly, we found `length(text_found_as_predicted_blind$text)` unique blind links to AsPredicted, which should have linked to their public counterparts.
+
+### Content of preregistration
 
 First run our code on all OSF links:
 
@@ -2226,7 +2229,7 @@ test <- dplyr::left_join(psych_science, grouped_df, by = c("id" = "id"))
 
 ```
 
-# List files
+### List files
 
 ```{r}
 # Initialize empty data frame to store results
@@ -2482,7 +2485,7 @@ for (i in 1:nrow(osf_ids_vector)) {
 
 ```
 
-# Menial tasks
+## Menial tasks
 
 There is a range of common mistakes that can easily be automatically checked. We will illustrates the usefulness of Papercheck to perform such menial tasks in X examples.
 
@@ -2518,7 +2521,7 @@ text_found <- text_found %>% distinct(text, .keep_all = TRUE)
 
 We find 5 papers which have been published with blind AsPredicted links, and 32 with view only OSF links.
 
-## Check pubpeer comments for references.
+### Check pubpeer comments for references.
 
 We can check pubpeer for comments:
 
@@ -2563,7 +2566,7 @@ get_pubpeer_comment("10.1037/0022-3514.81.4.657")
 
 ```
 
-# Work with references
+### Work with references
 
 ```{r}
 get_doi <- function(reference) {
@@ -2638,6 +2641,6 @@ save(pubpeer_results, file = "pubpeerresults_first_447.Rdata")
 
 ```
 
-# Discussion
+## Discussion
 
 To prevent widespread misuse of an automated tool such as Papercheck, it is important to realize the limits of the tool. Although it might seem desirable to develop modules with high accuracy, a cost-benefit analysis might indicate that at this phase it is more important to invest time to develop 10 modules that assist researchers to check their papers with a relatively high error rate, then to spend the same time on two modules that can be used meta-scientifically with very low error rates. The flexibility of human language combined with the lack of standardization in how researchers report information in scientific manuscripts are such that reducing error rates from 50% to 20% is much easier than reducing error rates from 20% to 5%. Our current approach is to follow the Pareto principle and focus on the 20% of the ways in which researchers get something wrong, that when when identified, would prevent 80% of the times researchers get something wrong.
