@@ -86,9 +86,9 @@ library(progress)
 # save(xml, file = "psychscience_2004_2024_xml.RData")
 
 
-load("psychscience_2014_2024_xml.RData")
-load("psychscience_openalex_2014_2024.RData")
-load("psychscience_crossref_2014_2024.RData")
+load("data/psychscience_2014_2024_xml.RData")
+load("data/psychscience_openalex_2014_2024.RData")
+load("data/psychscience_crossref_2014_2024.RData")
 
 # Extract data from the XML object
 dois <- unname(sapply(xml, function(x) x[["info"]][["doi"]]))
@@ -693,11 +693,11 @@ for (j in seq(801, total_rows, by = batch_size)) {
   })
 }
 
-filename <- paste0("power_lmm_expanded_", format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), ".RData")
+filename <- paste0("data/power_lmm_expanded_", format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), ".RData")
 save(text_found_power, file = filename)
 
 # Load lmm data.
-load("power_lmm_complete2025-05-24_08-23-08.RData")
+load("data/power_lmm_complete2025-05-24_08-23-08.RData")
 
 # Fix missing } at end of JSON and some missing ". The LLM is not perfect. For app, needs a check if valid json was generated.  
 
@@ -846,9 +846,6 @@ psych_science <- psych_science %>%
 We can now summarize this data.
 
 ```{r}
-library(dplyr)
-library(tidyr)
-library(purrr)
 
 # Assuming psych_science$desired_power is a list-column (each element either a vector of values or a single value)
 
