@@ -93,6 +93,9 @@ library(progress)
 load("data/psychscience_2014_2024_xml.RData")
 load("data/psychscience_openalex_2014_2024.RData")
 load("data/psychscience_crossref_2014_2024.RData")
+# Downloasded in the chunk osf_retrieve, but stored as it takes a long time to run
+all_osf_file_info_psych_science <- readRDS("data/all_osf_file_info_psych_science.rds")
+
 
 # Extract data from the XML object
 dois <- unname(sapply(xml, function(x) x[["info"]][["doi"]]))
@@ -377,7 +380,6 @@ If valid, the link is processed, and the OSF Application Programming Interface (
 # osf_delay(delay = 2)
 # info <- osf_retrieve(links, recursive = TRUE, find_project = TRUE)
 # saveRDS(info, file = "all_osf_file_info_psych_science.rds")
-all_osf_file_info_psych_science <- readRDS("all_osf_file_info_psych_science.rds")
 ```
 
 We can then use this information to determine if, for each file, the information about the files contains text that makes it easy to determine what is being shared. A simple regular expression text search for 'README', 'codebook', 'script', and 'data' (in a number of possible ways that these words can be written) is used to automatically detect what is shared.
@@ -385,39 +387,38 @@ We can then use this information to determine if, for each file, the information
 ```{r summarize_osf_files}
 osf_files_summary <- summarize_contents(all_osf_file_info_psych_science)
 
-# Define the columns to ignore when checking for duplicates
-ignore_cols <- c("section", "header", "div", "p", "s")
-
-# Get the columns to use for duplicate detection
-check_cols <- setdiff(names(osf_files_summary), ignore_cols)
-
-# Remove duplicates based on the remaining columns
-unique_files <- osf_files_summary[!duplicated(osf_files_summary[check_cols]), ]
-
 # Remove rows referring to badges
-unique_files <- subset(unique_files, is.na(text) | text != "osf.io/tvyxz/")
+osf_files_summary <- subset(osf_files_summary, is.na(text) | !(text %in% c("osf.io/tvyxz/", "osf.io/tvyxz")))
+
+# Create a dataframe with unique rows based on both osf_id and download_url
+unique_files <- osf_files_summary[!duplicated(osf_files_summary["osf_id"]), ]
+
+# Count occurrences of each osf_id
+id_counts <- table(unique_files$osf_id)
+
+# Get osf_ids that appear more than once
+duplicate_ids <- names(id_counts[id_counts > 1])
+
+# Should be 0
+length(duplicate_ids)
 
 registrations_only <- subset(unique_files, osf_type == "registrations")
 files_only <- subset(unique_files, osf_type == "files")
 
-hist(files_only$downloads)
+# Count in the unique_files dataframe how many view_only links are published. Say we can screen for these. 
+# Count how many links we find in the articles are on private. They need to be found as text (so text is no NA) and then public should be set to TRUE
+# Count how many papers have at least one linked preregistration over time. I think Lisa should have a function to add these to the main dataframe? 
 
-ggplot(files_only, aes(x = downloads)) +
-  geom_histogram(binwidth = 50, fill = "skyblue", color = "black") +
-  scale_x_continuous(name = "Number of downloads") +
-  labs(title = "File downlaods", y = "Frequency") +
-  theme_minimal()
+
 
 
 ```
 
-Finally, we print a report that communicates to the user - for example, a researcher preparing their manuscript for submission - whether there are suggestions to improve their data repository. We provide feedback about whether any of the four categories could be automatically detected, and if not, provide additional information about what would have made the automated tool recognize the files of interest. The output gives a detailed overview of the information it could not find, alongside a suggestion for how to learn more about best practices in this domain. If researchers use this Papercheck module before submission, they can improve the quality of their data repository in case any information is missing. Papercheck might miss data and code that is shared, but not clearly named. This might be considered a Type 2 error by Papercheck, but our philosophy is that it might still correctly indicate that the data repository can be improved by more clearly naming folders and files, and that this would not only benefit automatic recognition of what is in a repository, but also helps people to find files in a repository.
-
-So far we have used Papercheck to automatically check whether certain types of files exist. But it is also possible to automatically download files, examine their contents, and provide feedback to users. This can be useful to examine datasets (e.g., do files contain IP addresses or other personal information), or code files. Papercheck also contains a function `osf_file_download` to download all files from a project on the OSF while maintaining the folder structure. This should make it easier for reviewers to check all the content shared on the OSF.
+So far we have used Papercheck to check whether links exist, are publicly available, and whether certain types of files exist. But it is also possible to automatically download files, examine their contents, and provide feedback to users. This can be useful to examine datasets (e.g., do files contain IP addresses or other personal information), or code files. Papercheck also contains a function `osf_file_download` to download all files from a project on the OSF while maintaining the folder structure. This should make it easier for reviewers to manually check all content shared on the OSF.
 
 ### Checking Preregistrations
 
-It is increasingly common for researchers to preregister their studies [@spitzer2023registered; @imai2025pre]. As preregistration is a new practice, it is not surprising that it is not always implemented well. One challenge is that researchers do not always indicate where they deviated from their preregistration when reporting results from preregistered studies [@van2024potential]. Reviewers could check whether researchers adhere to the preregistration, but this requires some effort. Automation can provide a partial solution be making information more easily available, and perhaps even performing automated checks of some parts of the preregistration.
+It is increasingly common for researchers to preregister their studies [@spitzer2023registered; @imai2025pre]. As preregistration is a new practice, it is not surprising that researchers do not perform preregistrations following the state-of-the-art. One challenge is that researchers deviate from their preregistration when reporting results from preregistered studies, but do not transparently report these deviations [@van2024potential]. Reviewers could check whether researchers adhere to the preregistration, but this requires some effort. Automation can provide a partial solution by making information from the preregistration more easily available.
 
 Here we demonstrate how Papercheck can automatically retrieve the content of a preregistration. The preregistration can then be presented alongside the relevant information in the manuscript. This makes it easier for peer reviewers to compare the information.
 
@@ -1162,6 +1163,9 @@ observed_power_regex <- "(\\bobserved power\\b|\\bpost[ -]hoc power\\b|\\bretros
 
 text_found_observed_power <- search_text(xml, observed_power_regex)
 n_distinct(text_found_observed_power$id)
+
+text_found_observed_power <- expand_text(text_found_observed_power, xml, expand_to = "paragraph")
+
 ```
 
 ```{r}
