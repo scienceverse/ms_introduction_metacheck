@@ -1,0 +1,1433 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Approaches to Sampling for Quality Control of Artificial Intelligence in Biomedical Research</title>
+				<funder ref="#_u2WT2dV #_8XDZvET">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><roleName>PhD</roleName><forename type="first">S</forename><forename type="middle">F</forename><surname>Chetverikov</surname></persName>
+						</author>
+						<author role="corresp">
+							<persName><roleName>MD</roleName><forename type="first">K</forename><forename type="middle">M</forename><surname>Arzamasov</surname></persName>
+							<email>arzamasovkm@zdrav.mos.ru</email>
+						</author>
+						<author>
+							<persName><roleName>PhD, Leading Researcher,</roleName><forename type="first">;</forename><forename type="middle">A E</forename><surname>Andreichenko</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department" key="dep1">Department of Medical Informatics, Radiomics</orgName>
+								<orgName type="department" key="dep2">Department of Medical Informatics, Radiomics</orgName>
+								<orgName type="department" key="dep3">Deputy Director for Research</orgName>
+								<orgName type="department" key="dep4">Department of Information</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department" key="dep1">Research and Practical Clinical Center for Diagnostics</orgName>
+								<orgName type="department" key="dep2">Department</orgName>
+								<orgName type="institution">Telemedicine Technologies of the Moscow Health Care</orgName>
+								<address>
+									<addrLine>24/1 Petrovka St.</addrLine>
+									<postCode>127051</postCode>
+									<settlement>Moscow</settlement>
+									<country>Russia;</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><roleName>MD, DSc</roleName><forename type="first">A</forename><forename type="middle">V</forename><surname>Vladzimirsky</surname></persName>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">K-SkAI LLC</orgName>
+								<address>
+									<addrLine>17 Naberezhnaya Varkausa</addrLine>
+									<settlement>Petrozavodsk</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="institution">the Republic of Karelia</orgName>
+								<address>
+									<postCode>185031</postCode>
+									<country>Russia;</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff4">
+								<orgName type="institution">ITMO National Research University</orgName>
+								<address>
+									<addrLine>49 Kronverksky Pr.</addrLine>
+									<postCode>197101</postCode>
+									<settlement>Saint Petersburg</settlement>
+									<country>Russia;</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff5">
+								<orgName type="institution">First Moscow State Medical University named after I.M. Sechenov (Sechenov University)</orgName>
+								<address>
+									<addrLine>8/2 Trubetskaya St.</addrLine>
+									<postCode>119991</postCode>
+									<settlement>Moscow</settlement>
+									<country key="RU">Russia</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Approaches to Sampling for Quality Control of Artificial Intelligence in Biomedical Research</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">FE62C4DB215D46198FFC10C0D8B65A59</idno>
+					<idno type="DOI">10.17691/stm2023.15.2.02</idno>
+					<note type="submission">Received December 2, 2022</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:09+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>artificial intelligence</term>
+					<term>statistical methods</term>
+					<term>sampling</term>
+					<term>AI quality control</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The aim of the study is to evaluate the efficacy of approaches to sampling during periodic quality control of the artificial intelligence (AI) results in biomedical practice.</p><p>Materials and Methods. The approaches to sampling based on point statistical estimation, statistical hypothesis testing, employing ready-made statistical tables, as well as options of the approaches presented in GOST R ISO 2859-1-2007 "Statistical methods. Sampling procedures for inspection by attributes" have been analyzed. We have considered variants of sampling of different sizes for general populations from 1000 to 100,000 studies.</p><p>The analysis of the approaches to sampling was carried out as part of an experiment on the use of innovative technologies in computer vision for the analysis of medical images and their further application in the healthcare system of Moscow (Russia).</p><p>Results. Ready-made tables have specific statistical input data, which does not make them a universal option for biomedical research. Point statistical estimation helps to calculate a sample based on given statistical parameters with a certain confidence interval. This approach is promising in the case when only a type I error is important for the researcher, and a type II error is not a priority. Using the approach based on statistical hypothesis testing makes it possible to take account of type I and II errors based on the given statistical parameters. The application of GOST R ISO 2859-1-2007 for sampling allows using ready-made values depending on the given statistical parameters.</p><p>When evaluating the efficacy of the studied approaches, it was found that for our purposes, the optimal number of studies during AI quality control for the analysis of medical images is 80 items. This meets the requirements of representativeness, balance of the risks to the consumer and the AI service provider, as well as optimization of labor costs of employees involved in the process of quality control of the AI results.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>Artificial intelligence (AI) in medicine is a tool that automates routine processes such as filling out electronic records, analyzing and diagnosing medical images, doing analytics, and patient treatment planning. AI helps to reduce labor costs in the process of medical and biological activities, as well as improve the accuracy of recommendations, diagnostics, prescriptions, etc. <ref type="bibr" target="#b0">[1]</ref><ref type="bibr" target="#b1">[2]</ref><ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref><ref type="bibr" target="#b5">[6]</ref><ref type="bibr" target="#b6">[7]</ref>.</p><p>When introducing AI systems into clinical practice, an important part is the quality control of AI results <ref type="bibr" target="#b7">[8]</ref><ref type="bibr">[9]</ref><ref type="bibr">[10]</ref> in order to confirm their safety and effectiveness <ref type="bibr" target="#b9">[11]</ref><ref type="bibr">[12]</ref><ref type="bibr" target="#b10">[13]</ref><ref type="bibr" target="#b11">[14]</ref><ref type="bibr" target="#b12">[15]</ref><ref type="bibr" target="#b13">[16]</ref><ref type="bibr" target="#b14">[17]</ref><ref type="bibr" target="#b15">[18]</ref><ref type="bibr" target="#b16">[19]</ref><ref type="bibr" target="#b17">[20]</ref>. For an autonomous and adaptive AI system, the operational periodic quality control ensuring adjustment with minimal risks and a short response time is of particular value.</p><p>All types of defects in the AI operation can be conditionally divided into two groups according to the method of detection: those detected during automated and manual checks. An automated check provides quality control of the entire population over a certain period. A manual check is carried out on a limited sample and requires significant resource costs, as it involves opening and viewing images under study; clinical analysis of the original image; assessment of the AI results; management of the quality control records, etc. In this regard, the issue of sampling for quality control of the AI results is relevant and should solve at least two important tasks:</p><p>1) representativeness and correctness of the proportions of distribution (content) of the studied trait <ref type="bibr" target="#b18">[21]</ref><ref type="bibr" target="#b19">[22]</ref><ref type="bibr" target="#b20">[23]</ref><ref type="bibr" target="#b21">[24]</ref>;</p><p>2) accounting for the labor costs of employees involved in the manual quality control of the AI results.</p><p>Many approaches have been proposed for calculating sample sizes in various fields of science <ref type="bibr" target="#b22">[25]</ref><ref type="bibr" target="#b23">[26]</ref><ref type="bibr" target="#b24">[27]</ref><ref type="bibr" target="#b25">[28]</ref><ref type="bibr" target="#b26">[29]</ref><ref type="bibr">[30]</ref><ref type="bibr" target="#b28">[31]</ref><ref type="bibr" target="#b29">[32]</ref><ref type="bibr" target="#b30">[33]</ref><ref type="bibr" target="#b31">[34]</ref><ref type="bibr" target="#b32">[35]</ref><ref type="bibr" target="#b33">[36]</ref><ref type="bibr" target="#b34">[37]</ref><ref type="bibr" target="#b35">[38]</ref><ref type="bibr" target="#b36">[39]</ref><ref type="bibr" target="#b37">[40]</ref><ref type="bibr" target="#b38">[41]</ref><ref type="bibr" target="#b39">[42]</ref><ref type="bibr" target="#b40">[43]</ref>, however, it is not possible to make a reasoned choice of one or another approach when planning a biomedical research or when introducing AI for practical use. Thus, in paper <ref type="bibr" target="#b34">[37]</ref>, it is reported that, depending on the approach used, different sample sizes are obtained.</p><p>The aim of the study is to evaluate the efficacy of approaches to sampling when conducting periodic quality control of the AI results in biomedical practice.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Materials and Methods</head><p>Sampling approaches based on point statistical estimation <ref type="bibr" target="#b28">[31,</ref><ref type="bibr" target="#b41">[44]</ref><ref type="bibr">[45]</ref><ref type="bibr">[46]</ref><ref type="bibr">[47]</ref>, statistical hypothesis testingvariant 1 <ref type="bibr" target="#b42">[48]</ref><ref type="bibr">[49]</ref><ref type="bibr">[50]</ref><ref type="bibr" target="#b43">[51]</ref> and variant 2 <ref type="bibr" target="#b44">[52,</ref><ref type="bibr" target="#b45">53]</ref>, the application of GOST R ISO 2859-1-2007 "Statistical methods. Sampling procedures for inspection by attributes" <ref type="bibr" target="#b46">[54]</ref><ref type="bibr">[55]</ref><ref type="bibr">[56]</ref><ref type="bibr">[57]</ref><ref type="bibr">[58]</ref> were considered.</p><p>The analysis of approaches to sampling was carried out as part of an experiment on the use of innovative technologies in the field of computer vision for the analysis of medical images and their further application in the healthcare system of Moscow (Russia) <ref type="bibr">[59,</ref><ref type="bibr" target="#b50">60]</ref>. Previously, various types of defects were found in the results of processing medical images by AI [59], which reduce the clinical and diagnostic value of the systems we studied.</p><p>In this article, a set of medical AI-processed studies over a certain period of time will be called a batch. Each batch consists of product items of the same type, class, size, and composition, processed under almost identical conditions over the same period of time. A product item is an AI-processed study (connected to the radiological information system "Unified Radiological Information Service of the City of Moscow" (URIS)) for a particular reporting period.</p><p>Each study contains the following data: population parameters (gender and age indicators, ethnic composition, regions of residence, etc.); depersonalization data; information on medical facilities which are the source for the formation of a data set; study characteristics (anatomical area(s); modality; projections; types of medical products -diagnostic devices; types and characteristics of research protocols); target pathology in accordance with the International classification of diseases <ref type="bibr" target="#b51">[61]</ref>; cases of presence/absence of pathological findings.</p><p>The quality control of the AI results is carried out repeatedly. When controlling the quality of the results of the AI systems which we study, a manual review of the studies is carried out by experts. Due to a large number (more than 1000) of studies in the batch, there is no possibility of quality control in full due to time constraints, as well as due to the small number of experts. As part of the experiment [59], it has been found that no more than 10% of defective product items are contained in the general population. This means that the entire batch for the reporting period contains no more than 10% of product items with technological defects <ref type="bibr">[62]</ref>. Thus, the article describes approaches that correspond to a qualitative feature, where the proportion of cases in which the studied trait occurs is known. The volume of the general population ranges from 1000 to 100,000 product items.</p><p>The solution to the problem of the quality control of a batch with AI results was provided on the basis of selective observation, based on the concepts of general and sample population.</p><p>This article describes serial repetition-free sampling, where a selected product item was drawn from the entire volume of the general population and not returned back; thus, the probability of getting the remaining product items increased.</p><p>Calculations were performed using the PASS 15 Update -NCSS (<ref type="url" target="www.ncss.com">www.ncss.com</ref>) and LibreOffice Calc (<ref type="url" target="www.libreoffice.org">www.libreoffice.org</ref>) software.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results and Discussion</head><p>The approach based on point statistical estimation considers the deviation of the results of a sample study from the general values. With this approach, a sample size is calculated by the formula:</p><p>2 2 2 Nt wq n N t wq    , where n is the sample size; N is the size of the general population; t is a coefficient showing with what probability (reliability) it is possible to guarantee the reliability of the result obtained or the critical value of the Student's criterion at the appropriate significance level (for a significance level of 0.05, the coefficient t=1.96); Δ is the limiting error of the indicator; w is the proportion of the investigated trait; q=(1-w)</p><p>is the proportion where the investigated trait is absent. Thus, when the proportion of the investigated trait (w) is 0.9, the level of statistical significance is 0.95, and the maximum permissible error (Δ) is 0.05, we get a sample size (n) equal to 138 product items.</p><p>The statistical hypothesis testing approach (variant 1) involves testing the statistical hypothesis H 0 (the quality of the batch meets the requirements) in the presence of an alternative hypothesis H 1 (the quality of the batch does not meet the requirements). If among n-product items the number of defective ones (m) does not exceed the acceptance number c (m≤c) (the maximum permissible number of rejected sample items, which allows making a decision on the acceptance of a product batch in terms of quality), then the product batch is accepted; otherwise, it is rejected.</p><p>To select a control plan (determination of a sample), the following formula is used:</p><formula xml:id="formula_0">0 ( ) ( ) c n n m p m c p m    </formula><p>, where m is the number of defective items in a sample of n; p n (m) is the probability of occurrence of m defective product items in the n sample; c is the acceptance number. Since in the scope of the experiment [59], the size of the entire batch exceeded the sample size by more than 10% [56], the operational characteristics were determined by the formula:</p><formula xml:id="formula_1">p n =C m n q m (1-q) n-m , where C m</formula><p>n is the number of combinations of the appearance of m defective product items in the sample of n:</p><formula xml:id="formula_2">! !( )! m n n C m n m   .</formula><p>In the experimental example [59], the acceptance number equal to two product items was used, calculations were made and curves were plotted for samples of 30, 50, 80, 138 product items (see the Figure ).</p><p>The figure shows the consumer's and the supplier's risks. The supplier's risk is the probability of rejecting a good quality batch (i.e., in the general population, the proportion of defective items of products is less than 10%). Taking into account the proportion of declared defective products from the supplier, the risk is assumed to be 1%. The consumer's risk is the probability of accepting a low-quality batch. Accounting for the proportion of defective products identified by the consumer, the risk is assumed to be 10%.</p><p>Analyzing the data from Table <ref type="table">1</ref> and taking into account the specified risks to the consumer and the supplier at the level of no more than 10% and no more than 5%, respectively, we found that the sample size, equal to 80 product items, meets the requirements of both the consumer and the supplier.</p><p>The approach based on statistical hypothesis testing (variant 2) is based on the principles of the probability of rejecting the null hypothesis; it takes into account both the supplier's and the consumer's risks. The null hypothesis H 0 assumes that if the general population contains more than 10% of defective product items, then the entire batch for the reporting period contains more than 10% of product items with technological defects. Accordingly, under the alternative hypothesis H 1 , less than 10% of product items have technological defects. The probability of rejecting the null hypothesis is at least 80%.</p><p>Calculations were made (Table <ref type="table">2</ref>) for samples of 30, 50, 80, 120 product items with the acceptance number from zero to four (the acceptance number was limited by exceeding the risks to the consumer of over 10% or the supplier -of over 5%). defective items identified by the consumer (10%), it has been found that the sample size equal to 30, 50, 80, and 120 product items, meets the requirements of both the consumer and the supplier with the acceptance number equal to zero product items. Taking into account the proportion of defective items with acceptance numbers greater than zero, the most appropriate sample sizes were 80 or 120 items.</p><p>The approach based on the application of GOST R ISO 2859-1-2007 "Statistical methods. Sampling procedures for inspection by attributes" involves the determination of a sampling scheme for successive batches based on an acceptable level of quality and can be applied to various types of data or records. The acceptable level of quality is expressed as the percentage of nonconforming product items or the number of nonconformities per hundred product items.</p><p>We have considered several variants of sample size determination.</p><p>First, we addressed the "Sample size codes" table <ref type="bibr" target="#b46">[54]</ref>. In our case, the general control level is II, special inspection levels are not used. Since our batch sizes ranged from 1000 to 100,000, the J, K, L, M codes were of interest for us. In this work, we did not plan multi-stage sampling, neither did we imply a transition to a weakened or enhanced control. In this regard, we used the data from the</p><p>table "Single-stage plans under normal control (main T a b l e 2 Dependence of risks on the sample size and acceptance number Sample size Acceptance number/proportion of defects (%) Probability of deviation from the null hypothesis (%) Supplier's risk (%) Consumer's risk (%) 30 0/0 100.0 0 8 30 1.0/3.3 36.2 63.8 37 50 0/0 100.0 0 1 50 1/2 36.4 63.6 7 80 0/0 100.0 0 &lt;1 80 1.0/1.3 92.1 7.9 &lt;1 80 2.0/2.5 67.7 32.3 2 120 0/0 100.0 0 &lt;1 120 1.0/0.8 100.0 0 &lt;1 120 2.0/1.7 98.4 1.6 &lt;1 120 3.0/2.5 91.9 8.1 &lt;1 120 4.0/3.3 78.8 21.2 2 T a b l e 3 Pros and cons of the approaches to sampling Features Approach based on point statistical estimation Approach based on statistical hypothesis testing (variant 1) Approach based on statistical hypothesis testing (variant 2) Approach based on the application of GOST R ISO 2859-1-2007 Pros Ability to determine the sample size using statistical parameters Simple math calculations Ability to choose a confidence interval sufficient for a confident judgment about general parameters based on known sample indicators The consumer's and supplier's risks are taken into account Ability to calculate risks depending on the sample size, the proportion of defective product items and acceptance number Ability to visually determine the most appropriate parameters for research The consumer's and supplier's risks are taken into account Ability to calculate risks depending on the sample size, the proportion of defective product items and acceptance number Statistical parameters are taken into account Ability to calculate confidence intervals for the obtained values The consumer's and supplier's risks are taken into account Minimum preliminary population data are required No need for mathematical calculations No need for additional data processing software Visual determination of the most suitable parameters for research Possibility to apply different control plans at low or high batch quality levels Dependence of a sample size on high and low population sizes Cons Type II error is not taken into account Statistical parameters and confidence interval in biomedical research have a limited scope, beyond which the results are not statistically significant Preliminary data on general population are required Preliminary population data are required Data preprocessing is required to determine the formulas used Fixed values of risks and proportions of defective product items are required before conducting research Preliminary population data are required Fixed risk values are required before conducting research Cases of high item cost used for quality control are not taken into consideration The use of paid software for statistical processing is implied Finer choice of statistical parameters is not allowed More accurate calculation of the consumer's and supplier's risks is not allowed Fixed values of risks and proportions of defective product items before conducting research are required Sample size 138 80 80, 120 125, 500</p><p>Analyzing the data from Table <ref type="table">2</ref> and taking into consideration the specified risks to the consumer and the supplier, as well as the proportion of declared defective items from the supplier (1%) and the proportion of table)" <ref type="bibr" target="#b46">[54]</ref>: for an acceptable consumer quality level of 10% (for batches of 501 to 10,000 studies), the sample size for quality control will be equal to 125 product items with the batch acceptance number equal to zero; for batches of 10,001 to 150,000, the quality control sample size will be 500 items with the batch acceptance number equal to one.</p><p>We then addressed the table "Producer's risk under normal control (percentage of rejected batches for single-stage plans)" <ref type="bibr" target="#b46">[54]</ref> and obtained the supplier's risk of 11.8% for a sample of 125 product items; 9.02% for a sample of 500 product items.</p><p>Table <ref type="table">3</ref> summarizes the pros and cons of the considered approaches.</p><p>The approaches to sample size calculation that we have considered have a number of advantages over the widely used approaches based on fixed or tabular values. Thus, for example, the approaches with application of ready-made tables have specific statistical input data, which does not make it possible to consider them universal <ref type="bibr">[46,</ref><ref type="bibr" target="#b52">63,</ref><ref type="bibr" target="#b53">64]</ref>.</p><p>The table based on V.I. Paniotto's methodology [47] contains values that are calculated for specific parameters: the proportion of the trait is 0.5; allowable error -0.05; confidence level -0.954 (t=2).</p><p>The table based on N. Fox' methodology <ref type="bibr" target="#b54">[65]</ref> also contains a specific parameter: the proportion of the trait is 0.35.</p><p>The values from the tables [47, 65] were calculated using the formulas of the point statistical estimation described in this article above. If the input data of a biomedical study do not match the parameters of the tables, we recommend performing calculations rather than using the given tables to determine the sample size.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conclusion</head><p>The results of this study provide a choice of the most appropriate approaches to achieving the goals of biomedical research. The use of point statistical estimation and the approach based on statistical hypothesis testing allows for the most flexible calculation of sample sizes depending on the input parameters of the study. The use of GOST R ISO 2859-1-2007 for sampling is a priority if the experiment involves the interaction of the researcher and a third-party organization. This allows taking account of the risks and errors to both parties involved in the process.</p><p>The optimal number of studies during quality control of the AI systems that we have studied for the analysis of medical images is 80 product items. This meets the requirements of representativeness, balance of risks to the consumer and the providers of AI services, as well as optimization of labor costs of employees involved in the quality control of artificial intelligence.</p><p>Study funding. This article was prepared by the team of authors as part of a scientific and practical project in the field of medicine (No.EGISU: 122112400040-1) "Reference data sets for the sustainable development of artificial intelligence technologies in medical diagnostics aimed at minimization of the long-term effects of the coronavirus pandemic for the public health in the city of Moscow".</p><p>Conflicts of interest. The authors declare no conflicts of interest.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>1 Dependence</head><label>1</label><figDesc>different sample sizes: vertical dash-dotted line with two dots -supplier's risk; vertical dash-dotted line with one dot -consumer's risk T a b l e</figDesc></figure>
+		</body>
+		<back>
+
+			<div type="funding">
+<div><p>and Radiogenomics 1 ; Head of the Group of Artificial Intelligence 2 ; Leading Researcher 3 ; V.<rs type="person">P. Novik</rs>, <rs type="projectName">Researcher, Sector of the Development of Systems for the Implementation of Intelligent Medical Technologies 1</rs> ; <rs type="person">T.M. Bobrovskaya</rs>, <rs type="person">Junior Researcher</rs>, Sector of the <rs type="projectName">Development of Systems for the Implementation of Intelligent Medical Technologies 1</rs> ;</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_u2WT2dV">
+					<orgName type="project" subtype="full">Researcher, Sector of the Development of Systems for the Implementation of Intelligent Medical Technologies 1</orgName>
+				</org>
+				<org type="funded-project" xml:id="_8XDZvET">
+					<orgName type="project" subtype="full">Development of Systems for the Implementation of Intelligent Medical Technologies 1</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Challenges and prospects for the introduction of artificial intelligence in medicine. Gosudarstvennoe i municipal&apos;noe upravlenie</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">A</forename><surname>Vasyuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">V</forename><surname>Podolskaya</surname></persName>
+		</author>
+		<idno type="DOI">10.22394/2079-1690-2022-1-1-25-32</idno>
+		<ptr target="https://doi.org/10.22394/2079-1690-2022-1-1-25-32" />
+	</analytic>
+	<monogr>
+		<title level="j">Ucenye zapiski</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="25" to="32" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Vasyuta E.A., Podolskaya T.V. Challenges and prospects for the introduction of artificial intelligence in medicine. Gosudarstvennoe i municipal&apos;noe upravlenie. Ucenye zapiski 2022; 1: 25-32, https://doi.org/10.22394/2079- 1690-2022-1-1-25-32.</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Overview of usages of artificial intelligence in medicine</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">R</forename><surname>Yarmukhametov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Naukosfera</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="172" to="178" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Yarmukhametov R.R. Overview of usages of artificial intelligence in medicine. Naukosfera 2020; 12-2: 172-178.</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Artificial intelligence in medicine</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Alekseeva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Zubov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Novikov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.23670/irj.2022.121.7.038</idno>
+		<ptr target="https://doi.org/10.23670/irj.2022.121.7.038" />
+	</analytic>
+	<monogr>
+		<title level="j">Mezdunarodnyj naucno-issledovatel&apos;skij zurnal</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="10" to="13" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Alekseeva M.G., Zubov A.I., Novikov M.Yu. Artificial intelligence in medicine. Mezdunarodnyj naucno-issledovatel&apos;skij zurnal 2022; 7-2: 10-13, https://doi.org/10.23670/irj.2022.121. 7.038.</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Explainable artificial intelligence for medicine</title>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">E</forename><surname>Karpov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Andrikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">A</forename><surname>Maksimenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E</forename><surname>Hramov</surname></persName>
+		</author>
+		<idno type="DOI">10.25881/18110193_2022_2_4</idno>
+		<ptr target="https://doi.org/10.25881/18110193_2022_2_4" />
+	</analytic>
+	<monogr>
+		<title level="j">Vrac i informacionnye tehnologii</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="4" to="11" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Karpov O.E., Andrikov D.A., Maksimenko V.A., Hramov A.E. Explainable artificial intelligence for medicine. Vrac i informacionnye tehnologii 2022; 2: 4-11, https://doi. org/10.25881/18110193_2022_2_4.</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Application of artificial intelligence methods in medicine</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">G</forename><surname>Afimina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">I</forename><surname>Kushnirchuk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Izvestia Rossijskoj voennomedicinskoj akademii</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">S1-S3</biblScope>
+			<biblScope unit="page" from="17" to="19" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Afimina K.G., Kushnirchuk I.I. Application of artificial intelligence methods in medicine. Izvestia Rossijskoj voenno- medicinskoj akademii 2021; 40(S1-S3): 17-19.</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Artificial intelligence in medicine</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Elizarova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Urazova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">N</forename><surname>Ermashov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">N</forename><surname>Pronkin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Professional Science</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="81" to="85" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Elizarova M.I., Urazova K.M., Ermashov S.N., Pronkin N.N. Artificial intelligence in medicine. International Journal of Professional Science 2021; 5: 81-85.</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Evolution of research and development in the field of artificial intelligence technologies for healthcare in the Russian Federation: results of 2021</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">V</forename><surname>Gusev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">V</forename><surname>Vladzymyrskyy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E</forename><surname>Sharova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Arzamasov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E</forename><surname>Khramov</surname></persName>
+		</author>
+		<idno type="DOI">10.17816/dd107367</idno>
+		<ptr target="https://doi.org/10.17816/dd107367" />
+	</analytic>
+	<monogr>
+		<title level="j">Digital Diagnostics</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="178" to="194" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gusev A.V., Vladzymyrskyy A.V., Sharova D.E., Arzamasov K.M., Khramov A.E. Evolution of research and development in the field of artificial intelligence technologies for healthcare in the Russian Federation: results of 2021. Digital Diagnostics 2022; 3(3): 178-194, https://doi.org/10.17816/ dd107367.</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Klinicheskie ispytaniya programmnogo obespecheniya na osnove intellektual&apos;nykh tekhnologiy (luchevaya diagnostika). Seriya &quot;Luchshie praktiki luchevoy i instrumental&apos;noy diagnostiki</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">P</forename><surname>Morozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">V</forename><surname>Vladzimirskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">G</forename><surname>Klyashtornyy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E</forename><surname>Andreychenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">S</forename><surname>Kul'berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">A</forename><surname>Gombolevskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Sergunova</surname></persName>
+		</author>
+		<idno>12.2015 No.174</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Vyp. 57 [Clinical trials of software based on intelligent technologies (radiology). Series &quot;Best practices of radiological and instrumental diagnostics</title>
+		<meeting><address><addrLine>Moscow</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">2019. 2020. 2015</date>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page" from="51" to="59" />
+		</imprint>
+	</monogr>
+	<note>Issue 57 Prikaz Ministerstva zdravookhraneniya RF ot 15 Ob utverzhdenii Poryadka osushchestvleniya monitoringa bezopasnosti meditsinskikh izdeliy Order of the Ministry of Health of the Russian Federation of September On approval of the Procedure for monitoring the safety of medical devices Ob utverzhdenii Pravil provedeniya monitoringa bezopasnosti, kachestva i effektivnosti meditsinskikh izdeliy Decision of the Board of the Eurasian Economic Commission of December</note>
+	<note type="raw_reference">Morozov S.P., Vladzimirskiy A.V., Klyashtornyy V.G., Andreychenko A.E., Kul&apos;berg N.S., Gombolevskiy V.A., Sergunova K.A. Klinicheskie ispytaniya programmnogo obespecheniya na osnove intellektual&apos;nykh tekhnologiy (luchevaya diagnostika). Seriya &quot;Luchshie praktiki luchevoy i instrumental&apos;noy diagnostiki&quot;. Vyp. 57 [Clinical trials of software based on intelligent technologies (radiology). Series &quot;Best practices of radiological and instrumental diagnostics&quot;. Issue 57]. Moscow; 2019; 51 p. 9. Prikaz Ministerstva zdravookhraneniya RF ot 15.09.2020 No.980n &quot;Ob utverzhdenii Poryadka osushchestvleniya monitoringa bezopasnosti meditsinskikh izdeliy&quot; [Order of the Ministry of Health of the Russian Federation of September 15, 2020 No.980n &quot;On approval of the Procedure for monitoring the safety of medical devices&quot;]. 10. Reshenie Kollegii Evraziyskoy ekonomicheskoy komissii ot 22.12.2015 No.174 &quot;Ob utverzhdenii Pravil provedeniya monitoringa bezopasnosti, kachestva i effektivnosti meditsinskikh izdeliy&quot; [Decision of the Board of the Eurasian Economic Commission of December 22, 2015</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">On approval of the Rules for monitoring the safety, quality and efficiency of medical devices</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">No.174 &quot;On approval of the Rules for monitoring the safety, quality and efficiency of medical devices&quot;].</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">803f68a_2. 12. European Commission. Guidance on Clinical Evaluation (MDR)/Performance Evaluation (IVDR) of Medical Device Software</title>
+		<ptr target="https://ec.europa.eu/health/system/files/2020-09/md_mdcg_2020_1_guidance_clinic_eva_md_software_en_0.pdf" />
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+			<publisher>World Health Organization</publisher>
+			<pubPlace>Luxembourg</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Guidance for post-market surveillance and market surveillance of medical devices, including in-vitro-diagnostics. WHO</note>
+	<note type="raw_reference">World Health Organization. Guidance for post-market surveillance and market surveillance of medical devices, including in-vitro-diagnostics. WHO; 2020. URL: https://www. who.int/docs/default-source/essential-medicines/in-vitro- diagnostics/draft-public-pmsdevices.pdf?sfvrsn=f803f68a_2. 12. European Commission. Guidance on Clinical Evaluation (MDR)/Performance Evaluation (IVDR) of Medical Device Software. Luxembourg; 2020. URL: https://ec.europa. eu/health/system/files/2020-09/md_mdcg_2020_1_guidance_ clinic_eva_md_software_en_0.pdf.</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Postmarket Surveillance Under Section 522 of the Federal Food, Drug, and Cosmetic Act. Guidance for Industry and Food and Drug Administration Staff</title>
+		<ptr target="https://www.fda.gov/media/81015/download" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<publisher>U.S. Food and Drug Administration</publisher>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">U.S. Food and Drug Administration. Postmarket Surveillance Under Section 522 of the Federal Food, Drug, and Cosmetic Act. Guidance for Industry and Food and Drug Administration Staff. 2021. URL: https://www.fda.gov/ media/81015/download.</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Ob osnovakh okhrany zdorov&apos;ya grazhdan v Rossiyskoy Federatsii</title>
+		<idno>Federal&apos;nyy zakon ot 21.11.2011 No.323-FZ</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Federal Law of November 21</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note>v red. ot 01.01.2022 No.323-FZ &quot;On the basics of protecting the health of citizens in the Russian Federation&quot; (as amended on January 1, 2022)</note>
+	<note type="raw_reference">Federal&apos;nyy zakon ot 21.11.2011 No.323-FZ &quot;Ob osnovakh okhrany zdorov&apos;ya grazhdan v Rossiyskoy Federatsii&quot; (v red. ot 01.01.2022) [Federal Law of November 21, 2011 No.323-FZ &quot;On the basics of protecting the health of citizens in the Russian Federation&quot; (as amended on January 1, 2022)].</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">The state of artificial intelligence-based FDA-approved medical devices and algorithms: an online database</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Benjamens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhunnoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Meskó</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41746-020-00324-0</idno>
+		<ptr target="https://doi.org/10.1038/s41746-020-00324-0" />
+	</analytic>
+	<monogr>
+		<title level="j">NPJ Digit Med</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">118</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Benjamens S., Dhunnoo P., Meskó B. The state of artificial intelligence-based FDA-approved medical devices and algorithms: an online database. NPJ Digit Med 2020; 3: 118, https://doi.org/10.1038/s41746-020-00324-0.</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Key challenges for delivering clinical impact with artificial intelligence</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Kelly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Karthikesalingam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suleyman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>King</surname></persName>
+		</author>
+		<idno type="DOI">10.1186/s12916-019-1426-2</idno>
+		<ptr target="https://doi.org/10.1186/s12916-019-1426-2" />
+	</analytic>
+	<monogr>
+		<title level="j">BMC Med</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">195</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kelly C.J., Karthikesalingam A., Suleyman M., Corrado G., King D. Key challenges for delivering clinical impact with artificial intelligence. BMC Med 2019; 17(1): 195, https://doi.org/10.1186/s12916-019-1426-2.</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Proposed Regulatory Framework for Modifications to Artificial Intelligence Machine Learning (AI ML)-Based Software as a Medical Device (SaMD)</title>
+		<ptr target="https://www.fda.gov/media/122535/download" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>U.S. Food and Drug Administration</publisher>
+		</imprint>
+	</monogr>
+	<note>Discussion Paper and Request for Feedback</note>
+	<note type="raw_reference">U.S. Food and Drug Administration. Proposed Regulatory Framework for Modifications to Artificial Intelligence Machine Learning (AI ML)-Based Software as a Medical Device (SaMD). Discussion Paper and Request for Feedback. 2019. URL: https://www.fda.gov/media/122535/ download.</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Software as a Medical Device&quot;: Possible Framework for Risk Categorization and Corresponding Considerations</title>
+		<ptr target="https://www.imdrf.org/sites/default/files/docs/imdrf/final/technical/imdrf-tech-140918-samd-framework-risk-categorization-141013.pdf" />
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note>IMDRF Software as a Medical Device (SaMD) Working Group</note>
+	<note type="raw_reference">IMDRF Software as a Medical Device (SaMD) Working Group. &quot;Software as a Medical Device&quot;: Possible Framework for Risk Categorization and Corresponding Considerations. 2014. URL: https://www.imdrf.org/sites/default/files/docs/imdrf/ final/technical/imdrf-tech-140918-samd-framework-risk- categorization-141013.pdf.</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Evaluating artificial intelligence in medicine: phases of clinical research</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">P</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Foreman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gruen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Das</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/jamiaopen/ooaa033</idno>
+		<ptr target="https://doi.org/10.1093/jamiaopen/ooaa033" />
+	</analytic>
+	<monogr>
+		<title level="j">JAMIA Open</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="326" to="331" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Park Y., Jackson G.P., Foreman M.A., Gruen D., Hu J., Das A.K. Evaluating artificial intelligence in medicine: phases of clinical research. JAMIA Open 2020; 3(3): 326-331, https:// doi.org/10.1093/jamiaopen/ooaa033.</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<ptr target="https://lexparency.org/eu/32017R0746/ART_78" />
+		<title level="m">Article 78 -post-market surveillance system of the manufacturer</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">Article 78 -post-market surveillance system of the manufacturer. URL: https://lexparency.org/eu/32017R0746/ ART_78.</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Sample size for beginners</title>
+		<author>
+			<persName><forename type="first">С</forename><forename type="middle">D</forename><surname>Florey</surname></persName>
+		</author>
+		<idno type="DOI">10.1136/bmj.306.6886.1181</idno>
+		<ptr target="https://doi.org/10.1136/bmj.306.6886.1181" />
+	</analytic>
+	<monogr>
+		<title level="j">BMJ</title>
+		<imprint>
+			<biblScope unit="volume">306</biblScope>
+			<biblScope unit="issue">6886</biblScope>
+			<biblScope unit="page" from="1181" to="1184" />
+			<date type="published" when="1993">1993</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Florey С.D. Sample size for beginners. BMJ 1993; 306(6886): 1181-1184, https://doi.org/10.1136/ bmj.306.6886.1181.</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">all or nothing</title>
+		<author>
+			<persName><forename type="first">.</forename><forename type="middle">P</forename><surname>Adler Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sample</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Kontrol&apos; kacestva produkcii</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="26" to="32" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Adler Yu.P. Sample: &quot;all or nothing&quot;. Kontrol&apos; kacestva produkcii 2015; 8: 26-32.</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Is your sample representative?</title>
+		<author>
+			<persName><forename type="first">Yu</forename><forename type="middle">P</forename><surname>Adler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Kontrol&apos; kacestva produkcii</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="39" to="43" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Adler Yu.P. Is your sample representative? Kontrol&apos; kacestva produkcii 2016; 5: 39-43.</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Forming of the representative sample for STEPSsurvey in the republic of Belarus</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">N</forename><surname>Bandarenkо</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">M</forename><surname>Pisaryk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">I</forename><surname>Atrashkevich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">I</forename><surname>Novik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Voprosy organizacii i informatizacii zdravoohranenia</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="30" to="38" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bandarenkо N.N., Pisaryk V.M., Atrashkevich T.I., Novik I.I. Forming of the representative sample for STEPS- survey in the republic of Belarus. Voprosy organizacii i informatizacii zdravoohranenia 2018; 2: 30-38.</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Sample size: how many is enough?</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Burmeister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Aitken</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.aucc.2012.07.002</idno>
+		<ptr target="https://doi.org/10.1016/j.aucc.2012.07.002" />
+	</analytic>
+	<monogr>
+		<title level="j">Aust Crit Care</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="271" to="274" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Burmeister E., Aitken L. Sample size: how many is enough? Aust Crit Care 2012; 25(4): 271-274, https://doi. org/10.1016/j.aucc.2012.07.002.</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Practical issues in calculating the sample size for prevalence studies</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Naing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Winn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">N</forename><surname>Rusli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Arch Orofac Sci</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="9" to="14" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Naing L., Winn T., Rusli B.N. Practical issues in calculating the sample size for prevalence studies. Arch Orofac Sci 2006; 1: 9-14.</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Economically rational sample-size choice and irreproducibility</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Braganza</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/pdf/1908.08702v2.pdf" />
+	</analytic>
+	<monogr>
+		<title level="j">arXiv</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Braganza O. Economically rational sample-size choice and irreproducibility. arXiv; 2019; URL: https://arxiv.org/ pdf/1908.08702v2.pdf.</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Sampling techniques &amp; determination of sample size in applied statistics research: an overview</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">B</forename><surname>Masuku</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int J Economics Commerce Manag</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1" to="22" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Singh A.S., Masuku M.B. Sampling techniques &amp; determination of sample size in applied statistics research: an overview. Int J Economics Commerce Manag 2014; 2(11): 1-22.</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Sample size determination in health studies</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Lwanga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lemeshow</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">World Health Organization</title>
+		<imprint>
+			<biblScope unit="page">30</biblScope>
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+	<note>Kim J., Seo B.S. How to calculate sample size and why</note>
+	<note type="raw_reference">Lwanga S.K., Lemeshow S. Sample size determination in health studies. World Health Organization; 1991; 80 p. 30. Kim J., Seo B.S. How to calculate sample size and why.</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title/>
+		<idno type="DOI">10.4055/cios.2013.5.3.235</idno>
+		<ptr target="https://doi.org/10.4055/cios.2013.5.3.235" />
+	</analytic>
+	<monogr>
+		<title level="j">Clin Orthop Surg</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="235" to="242" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Clin Orthop Surg 2013; 5(3): 235-242, https://doi.org/10.4055/ cios.2013.5.3.235.</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Statisticheskie metody v meditsine i zdravookhranenii [Statistical methods in medicine and public health</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sharafutdinova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">F</forename><surname>Kireeva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">E</forename><surname>Nikolaeva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavlova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">M</forename><surname>Khalfin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Sharafutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">V</forename><surname>Borisova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">B</forename><surname>Latypov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Galikeeva</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sh</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>FGBOU VO BGMU Minzdrava Rossii</publisher>
+			<biblScope unit="page">131</biblScope>
+			<pubPlace>Ufa</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Sharafutdinova N.Kh., Kireeva E.F., Nikolaeva I.E., Pavlova M.Yu., Khalfin R.M., Sharafutdinov M.A., Borisova M.V., Latypov A.B., Galikeeva A.Sh. Statisticheskie metody v meditsine i zdravookhranenii [Statistical methods in medicine and public health]. Ufa: FGBOU VO BGMU Minzdrava Rossii; 2018; 131 p.</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Design and analysis of equivalence clinical trials via the SAS system</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Skaff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sloan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc SUGI</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="page" from="1166" to="1171" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Skaff P.A., Sloan J. Design and analysis of equivalence clinical trials via the SAS system. Proc SUGI 1998; 23: 1166- 1171.</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Sample size determination in planning of scientific research</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">K</forename><surname>Koichubekov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Sorokina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">E</forename><surname>Mkhitaryan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mezdunarodnyj zurnal prikladnyh i fundamental&apos;nyh issledovanij</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="71" to="74" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Koichubekov B.K., Sorokina M.A., Mkhitaryan X.E. Sample size determination in planning of scientific research. Mezdunarodnyj zurnal prikladnyh i fundamental&apos;nyh issledovanij 2014; 4: 71-74.</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Sample size calculations: basic principles and common pitfalls</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Noordzij</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Tripepi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">W</forename><surname>Dekker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zoccali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">W</forename><surname>Tanck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">J</forename><surname>Jager</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/ndt/gfp732</idno>
+		<ptr target="https://doi.org/10.1093/ndt/gfp732" />
+	</analytic>
+	<monogr>
+		<title level="j">Nephrol Dial Transplant</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1388" to="1393" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Noordzij M., Tripepi G., Dekker F.W., Zoccali C., Tanck M.W., Jager K.J. Sample size calculations: basic principles and common pitfalls. Nephrol Dial Transplant 2010; 25(5): 1388-1393, https://doi.org/10.1093/ndt/gfp732.</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Sample size calculation using SAS®, R, and nQuery software</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cody</surname></persName>
+		</author>
+		<ptr target="https://www.sas.com/content/dam/SAS/support/en/sas-global-forum-proceedings/2020/4675-2020.pdf" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>SAS Global Forum</note>
+	<note type="raw_reference">Cody J. Sample size calculation using SAS®, R, and nQuery software. SAS Global Forum; 2020. URL: https:// www.sas.com/content/dam/SAS/support/en/sas-global-forum- proceedings/2020/4675-2020.pdf.</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Formation of the sample population</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">V</forename><surname>Tarakanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">I</forename><surname>Naumkin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Eksperiment i innovacii v skole</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="46" to="49" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Tarakanova V.V., Naumkin B.I. Formation of the sample population. Eksperiment i innovacii v skole 2009; 3: 46-49.</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Determining sample size. Florida: University of Florida</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">D</forename><surname>Israel</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note>IFAS extension</note>
+	<note type="raw_reference">Israel G.D. Determining sample size. Florida: University of Florida, IFAS extension; 2012.</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Sample size calculation</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kadam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bhalerao</surname></persName>
+		</author>
+		<idno type="DOI">10.4103/0974-7788.59946</idno>
+		<ptr target="https://doi.org/10.4103/0974-7788.59946" />
+	</analytic>
+	<monogr>
+		<title level="j">Int J Ayurveda Res</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="55" to="57" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kadam P., Bhalerao S. Sample size calculation. Int J Ayurveda Res 2010; 1(1): 55-57, https://doi.org/10.4103/0974- 7788.59946.</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Sample size determination</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">B</forename><surname>Dell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Holleran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ramakrishnan</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/ilar.43.4.207</idno>
+		<ptr target="https://doi.org/10.1093/ilar.43.4.207" />
+	</analytic>
+	<monogr>
+		<title level="j">ILAR J</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="207" to="213" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Dell R.B., Holleran S., Ramakrishnan R. Sample size determination. ILAR J 2002; 43(4): 207-213, https://doi. org/10.1093/ilar.43.4.207.</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Sample size justification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Collabra Psychol</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="32" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens D. Sample size justification. Collabra Psychol 2022; 8(1): 1-32.</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Determining the sample size in a clinical trial</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kirby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Gebski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Keech</surname></persName>
+		</author>
+		<idno type="DOI">10.5694/j.1326-5377.2002.tb04759.x</idno>
+		<ptr target="https://doi.org/10.5694/j.1326-5377.2002.tb04759.x" />
+	</analytic>
+	<monogr>
+		<title level="j">Med J Aust</title>
+		<imprint>
+			<biblScope unit="volume">177</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="256" to="257" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kirby A., Gebski V., Keech A.C. Determining the sample size in a clinical trial. Med J Aust 2002; 177(5): 256-257, https://doi.org/10.5694/j.1326-5377.2002.tb04759.x.</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">An introduction to power and sample size estimation</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Carley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Harrison</surname></persName>
+		</author>
+		<idno type="DOI">10.1136/emj.20.5.453</idno>
+		<ptr target="https://doi.org/10.1136/emj.20.5.453" />
+	</analytic>
+	<monogr>
+		<title level="j">Emerg Med J</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="453" to="458" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Jones S.R., Carley S., Harrison M. An introduction to power and sample size estimation. Emerg Med J 2003; 20(5): 453-458, https://doi.org/10.1136/emj.20.5.453.</note>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Sample size calculation for clinical trials of medical decision support systems with binary outcome</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Rebrova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">V</forename><surname>Gusev</surname></persName>
+		</author>
+		<idno type="DOI">10.17691/stm2022.14.3.01</idno>
+		<ptr target="https://doi.org/10.17691/stm2022.14.3.01" />
+	</analytic>
+	<monogr>
+		<title level="j">Sovremennye tehnologii v medicine</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page">6</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rebrova O.Yu., Gusev A.V. Sample size calculation for clinical trials of medical decision support systems with binary outcome. Sovremennye tehnologii v medicine 2022; 14(3): 6, https://doi.org/10.17691/stm2022.14.3.01.</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Methods for determining the minimum required sample size in medical research</title>
+		<author>
+			<persName><forename type="first">Е</forename><forename type="middle">G</forename><surname>Schilling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">V</forename><surname>Neubauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Group</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Llc; ; Narkevich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Vinogradov</surname></persName>
+		</author>
+		<ptr target="https://www.kiis.com.ua/materials/books/376072_C6170_paniotto_v_i_maksimenko_v_s_kolichestvennye_metody_v_sociolo.pdf" />
+	</analytic>
+	<monogr>
+		<title level="j">Paniotto V.I., Maksimenko V.S. Kolichestvennye metody v sotsiologicheskikh issledovaniyakh</title>
+		<imprint>
+			<biblScope unit="volume">65</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="10" to="47" />
+			<date type="published" when="2003">2008. 2010. 2019. 2003</date>
+			<publisher>Kiev</publisher>
+		</imprint>
+	</monogr>
+	<note>Acceptance sampling in quality control Public health and healthcare Polunina N.V. Obshchestvennoe zdorov&apos;e i zdravookhranenie Social&apos;nye aspekty zdorov&apos;a naselenia Moscow: Meditsinskoe informatsionnoe agentstvo Quantitative methods in sociological research</note>
+	<note type="raw_reference">Schilling Е.G., Neubauer D.V. Acceptance sampling in quality control. Taylor &amp; Francis Group, LLC; 2008; 709 p. 45. Polunina N.V. Obshchestvennoe zdorov&apos;e i zdravo- okhranenie [Public health and healthcare]. Moscow: Meditsinskoe informatsionnoe agentstvo; 2010; 544 p. 46. Narkevich A.N., Vinogradov K.A. Methods for determining the minimum required sample size in medical research. Social&apos;nye aspekty zdorov&apos;a naselenia 2019; 65(6): 10. 47. Paniotto V.I., Maksimenko V.S. Kolichestvennye metody v sotsiologicheskikh issledovaniyakh [Quantitative methods in sociological research]. Kiev; 2003. URL: https://www. kiis.com.ua/materials/books/376072_C6170_paniotto_v_i_ maksimenko_v_s_kolichestvennye_metody_v_sociolo.pdf.</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Osnovy epidemiologii i statisticheskogo analiza v obshchestvennom zdorov&apos;e i upravlenii zdravookhraneniem [Fundamentals of epidemiology and statistical analysis in public health and health management]</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Syrtsova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">I</forename><surname>Kosagovskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">V</forename><surname>Avksent'eva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">O</forename><surname>Rumyantsev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">A</forename><surname>Saenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><forename type="middle">V</forename><surname>Rumyantseva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chekin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://medstatistic.ru/articles/StatMethodsInClinics.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Statisticheskie metody analiza v klinicheskoy praktike</title>
+		<editor>
+			<persName><forename type="first">D</forename><forename type="middle">K</forename><surname>Agisheva</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename><surname>Zotova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><forename type="middle">A</forename><surname>Matveeva</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><forename type="middle">B</forename><surname>Svetlichnaya</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Matematicheskaya Statistica</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Moscow</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2003">2003. 2010. 2009</date>
+			<biblScope unit="page" from="159" to="150" />
+		</imprint>
+	</monogr>
+	<note>Mathematical statistics Volgograd: VPI (filial) VolgGTU Statistical methods of analysis in clinical practice</note>
+	<note type="raw_reference">Syrtsova L.E., Kosagovskaya I.I., Avksent&apos;eva M.V. Osnovy epidemiologii i statisticheskogo analiza v obshchestvennom zdorov&apos;e i upravlenii zdravookhraneniem [Fundamentals of epidemiology and statistical analysis in public health and health management]. Moscow; 2003; 91 p. 49. Agisheva D.K., Zotova S.A., Matveeva T.A., Svetlichnaya V.B. Matematicheskaya statistica [Mathematical statistics]. Volgograd: VPI (filial) VolgGTU; 2010; 159 p. 50. Rumyantsev P.O., Saenko V.A., Rumyantseva U.V., Chekin S.Yu. Statisticheskie metody analiza v klinicheskoy praktike [Statistical methods of analysis in clinical practice]. 2009. URL: https://medstatistic.ru/articles/ StatMethodsInClinics.pdf.</note>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Determining sample size; how to calculate survey sample size</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Taherdoost</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int J Econ Manag Syst</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="237" to="239" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Taherdoost H. Determining sample size; how to calculate survey sample size. Int J Econ Manag Syst 2017; 2: 237-239.</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Equivalence trials</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">C</forename><surname>Blackwelder</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Encyclopedia of biostatistics</title>
+		<meeting><address><addrLine>New York</addrLine></address></meeting>
+		<imprint>
+			<publisher>John Wiley and Sons</publisher>
+			<date type="published" when="1998">1998</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="1367" to="1372" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Blackwelder W.C. Equivalence trials. In: Encyclopedia of biostatistics. Volume 2. New York: John Wiley and Sons; 1998; p. 1367-1372.</note>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Sample size calculations in clinical research</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Chow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<publisher>Chapman &amp; Hall/CRC Biostatistics Series</publisher>
+			<pubPlace>Florida</pubPlace>
+		</imprint>
+	</monogr>
+	<note>2 nd Edition</note>
+	<note type="raw_reference">Chow S.C., Shao J., Wang H. Sample size calculations in clinical research. 2 nd Edition. Florida: Chapman &amp; Hall/CRC Biostatistics Series; 2008.</note>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Protsedury vyborochnogo kontrolya po al&apos;ternativnomu priznaku. Chast&apos; 1. Plany vyborochnogo kontrolya posledovatel&apos;nykh partiy na osnove priemlemogo urovnya kachestva [Statistical methods. Sampling procedures for inspection by attributes. Part 1: sampling schemes indexed by acceptance quality limit for lotby-lot inspection]</title>
+		<author>
+			<persName><surname>Gost R Iso</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Statisticheskie metody</title>
+		<imprint>
+			<date type="published" when="2007">2859-1-2007. 2007</date>
+			<biblScope unit="page" from="101" to="155" />
+		</imprint>
+	</monogr>
+	<note>Moscow: Standartinform Statistical methods in quality management</note>
+	<note type="raw_reference">GOST R ISO 2859-1-2007. Statisticheskie metody. Protsedury vyborochnogo kontrolya po al&apos;ternativnomu priznaku. Chast&apos; 1. Plany vyborochnogo kontrolya posledovatel&apos;nykh partiy na osnove priemlemogo urovnya kachestva [Statistical methods. Sampling procedures for inspection by attributes. Part 1: sampling schemes indexed by acceptance quality limit for lot- by-lot inspection]. Moscow: Standartinform; 2007; 101 p. 55. Sharashkina T.P. Statisticheskie metody v upravlenii kachestvom [Statistical methods in quality management].</note>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title/>
+		<author>
+			<persName><surname>Saransk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Borodachev S.M. Statisticheskie metody v upravlenii kachestvom</title>
+		<imprint>
+			<biblScope unit="page" from="91" to="56" />
+			<date type="published" when="2013">2013</date>
+			<publisher>Mordovskiy gosudarstvennyy universitet</publisher>
+		</imprint>
+	</monogr>
+	<note>Statistical methods in quality management</note>
+	<note type="raw_reference">Saransk: Mordovskiy gosudarstvennyy universitet; 2013; 91 p. 56. Borodachev S.M. Statisticheskie metody v upravlenii kachestvom [Statistical methods in quality management].</note>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+	</analytic>
+	<monogr>
+		<title level="m">Statisticheskie metody v upravlenii kachestvom</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="87" to="57" />
+		</imprint>
+	</monogr>
+	<note>Statistical methods in quality management</note>
+	<note type="raw_reference">Ekaterinburg: Izdatel&apos;stvo Ural&apos;skogo universiteta; 2016; 87 p. 57. Klyachkin V.N. Statisticheskie metody v upravlenii kachestvom [Statistical methods in quality management].</note>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Research and Practical Clinical Center for Diagnostics and Telemedicine Technologies of the Moscow Health Care Department. Experiment on the use of innovative computer vision technologies for analysis of medical images in the Moscow healthcare system</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">V</forename><surname>Ul'yanovsk ; Efimov</surname></persName>
+		</author>
+		<ptr target="https://www.clinicaltrials.gov/ct2/show/NCT04489992" />
+		<imprint>
+			<date type="published" when="2011">2013. 2011</date>
+			<publisher>UlGTU</publisher>
+			<biblScope unit="page" from="160" to="159" />
+		</imprint>
+	</monogr>
+	<note>Osnovy berezhlivogo proizvodstva [Fundamentals of lean manufacturing]. Ul&apos;yanovsk: UlGTU</note>
+	<note type="raw_reference">Ul&apos;yanovsk: UlGTU; 2013; 156 p. 58. Efimov V.V. Osnovy berezhlivogo proizvodstva [Fundamentals of lean manufacturing]. Ul&apos;yanovsk: UlGTU; 2011; 160 p. 59. Research and Practical Clinical Center for Diagnostics and Telemedicine Technologies of the Moscow Health Care Department. Experiment on the use of innovative computer vision technologies for analysis of medical images in the Moscow healthcare system. URL: https://www.clinicaltrials.gov/ ct2/show/NCT04489992.</note>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<monogr>
+		<title level="m" type="main">A methodology for selection and quality control of the radiological computer vision deployment at the megalopolis scale. medRxiv</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E</forename><surname>Andreychenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">A</forename><surname>Logunova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">A</forename><surname>Gombolevskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E</forename><surname>Nikolaev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">V</forename><surname>Vladzymyrskyy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">E</forename><surname>Sinitsyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">P</forename><surname>Morozov</surname></persName>
+		</author>
+		<idno type="DOI">10.1101/2022.02.12.22270663</idno>
+		<ptr target="https://doi.org/10.1101/2022.02.12.22270663" />
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Andreychenko A.E., Logunova T.A., Gombolevskiy V.A., Nikolaev A.E., Vladzymyrskyy A.V., Sinitsyn V.E., Morozov S.P. A methodology for selection and quality control of the radiological computer vision deployment at the megalopolis scale. medRxiv; 2010, https://doi.org/10.1101/2022.02.12.22270663.</note>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Ob utverzhdenii Poryadka i usloviy provedeniya eksperimenta po ispol&apos;zovaniyu innovatsionnykh tekhnologiy v oblasti komp&apos;yuternogo zreniya dlya analiza meditsinskikh izobrazheniy i dal&apos;neyshego primeneniya v sisteme zdravookhraneniya goroda Moskvy&quot; [Order of the Department of Health of the city of Moscow dated February 24</title>
+		<idno>ICD-10)]. 2021</idno>
+		<ptr target="https://mkb-10.com.62" />
+	</analytic>
+	<monogr>
+		<title level="m">Mezhdunarodnaya klassifikatsiya bolezney 10-go peresmotra</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+	<note>International Classification of Diseases of the 10 th Revision Prikaz Departamenta zdravookhraneniya goroda Moskvy ot 24 On approval of the Procedure and conditions for conducting an experiment on the use of innovative technologies in the field of computer vision for the analysis of medical images and further application in the health care system of the city of Moscow&quot;</note>
+	<note type="raw_reference">Mezhdunarodnaya klassifikatsiya bolezney 10-go peresmotra (MKB-10) [International Classification of Diseases of the 10 th Revision (ICD-10)]. 2021. URL: https://mkb-10.com. 62. Prikaz Departamenta zdravookhraneniya goroda Moskvy ot 24.02.2022 No.160 &quot;Ob utverzhdenii Poryadka i usloviy provedeniya eksperimenta po ispol&apos;zovaniyu innovatsionnykh tekhnologiy v oblasti komp&apos;yuternogo zreniya dlya analiza meditsinskikh izobrazheniy i dal&apos;neyshego primeneniya v sisteme zdravookhraneniya goroda Moskvy&quot; [Order of the Department of Health of the city of Moscow dated February 24, 2022 No.160 &quot;On approval of the Procedure and conditions for conducting an experiment on the use of innovative technologies in the field of computer vision for the analysis of medical images and further application in the health care system of the city of Moscow&quot;].</note>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Basic concepts of statistics. Medicinskij al</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">P</forename><surname>Bavrina</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">manah</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="101" to="111" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bavrina A.P. Basic concepts of statistics. Medicinskij al&apos;manah 2020; 3: 101-111.</note>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Sample size determination in the course of regional sociological research</title>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">S</forename><surname>Koshevoy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">K</forename><surname>Karpova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Izvestia vyssih ucebnyh zavedenij. Povolzskij region</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="98" to="104" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Koshevoy O.S., Karpova M.K. Sample size determination in the course of regional sociological research. Izvestia vyssih ucebnyh zavedenij. Povolzskij region 2011; 2: 98-104.</note>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Sampling and sample size calculation</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mathers</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Sheffield: Trent RDSU</title>
+		<imprint>
+			<biblScope unit="page">41</biblScope>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Fox N., Hunn A., Mathers N. Sampling and sample size calculation. Sheffield: Trent RDSU; 2007; 41 p.</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

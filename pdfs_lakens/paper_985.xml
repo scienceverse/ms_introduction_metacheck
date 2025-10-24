@@ -1,0 +1,2602 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Ten guidelines for designing motor learning studies</title>
+				<funder ref="#_TBeETuW">
+					<orgName type="full">National Science Foundation</orgName>
+					<orgName type="abbreviated">NSF</orgName>
+				</funder>
+				<funder ref="#_tnPakKc">
+					<orgName type="full">National Institutes of Health</orgName>
+					<orgName type="abbreviated">NIH</orgName>
+				</funder>
+				<funder ref="#_U2r5pZP">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Rajiv</forename><surname>Ranganathan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Kinesiology</orgName>
+								<orgName type="institution">Michigan State University</orgName>
+								<address>
+									<settlement>East Lansing</settlement>
+									<region>MI</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">| Mei-Hua</forename><surname>Lee</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Kinesiology</orgName>
+								<orgName type="institution">Michigan State University</orgName>
+								<address>
+									<settlement>East Lansing</settlement>
+									<region>MI</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">|</forename><surname>Chandramouli Krishnan</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Physical Medicine &amp; Rehabilitation</orgName>
+								<orgName type="institution">University of Michigan</orgName>
+								<address>
+									<settlement>Ann Arbor</settlement>
+									<region>MI</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="department">Department of Kinesiology Department of Mechanical Engineering</orgName>
+								<address>
+									<addrLine>308 W Circle Dr Rm 126 East Lansing</addrLine>
+									<postCode>48824</postCode>
+									<region>MI</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Ten guidelines for designing motor learning studies</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1C92E09CFB2E9A0C5731250863BC9A83</idno>
+					<idno type="DOI">10.20338/bjmb.v16i2.283</idno>
+					<note type="submission">Received 24 12 2021 Accepted 13 03 2022</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:14+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Motor learning</term>
+					<term>Skill</term>
+					<term>Experiments</term>
+					<term>Task</term>
+					<term>Analysis</term>
+					<term>Practice</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Motor learning is a central focus of several disciplines including kinesiology, neuroscience and rehabilitation. However, given the different traditions of these fields, this interdisciplinarity can be a challenge when trying to interpret evidence and claims from motor learning experiments. To address this issue, we offer a set of ten guidelines for designing motor learning experiments starting from task selection to data analysis, primarily from the viewpoint of running lab-based experiments. The guidelines are not intended to serve as rigid rules, but instead to raise awareness about key issues in motor learning. We believe that addressing these issues can increase the robustness of work in the field and its relevance to the real-world.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>INTRODUCTION</head><p>Motor learning is a central focus of several disciplines including psychology, kinesiology, neurophysiology, neuroscience, rehabilitation, and engineering. While this diversity of perspectives is a positive feature in terms of the development of new ideas and theories, it also brings associated challenges in terms of interpreting evidence and claims about motor learning. In our experience leading journal clubs, it is not uncommon to discuss a paper with a claim about "motor learning" in the title and end up questioning if the paper was really even about motor learning! A large part of this challenge is due to the fact that theoretical, conceptual, and methodological issues related to the design of motor learning experiments that are 'common knowledge' to researchers in one particular discipline may not always be accessible to researchers from other disciplines.</p><p>To address this issue, we provide a set of ten guidelines to raise awareness about these issues and navigate the design and analysis of motor learning experiments (Table <ref type="table">1</ref>). For each of these decision steps, we discuss common pitfalls and suggest recommendations, citing examples from both classic and recent studies of motor learning. Although several of these factors have been emphasized in prior work <ref type="bibr" target="#b0">[1]</ref><ref type="bibr" target="#b1">[2]</ref><ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref> , the goal of this article is to synthesize this tacit knowledge to provide a step-by-step guide through the entire process from task selection to data analysis and interpretation. The paper is primarily intended for early-career researchers who are new to the field, but we hope that the issues raised can also serve as a starting point for discussions during interdisciplinary collaborations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Special issue:</head><p>The role of practice in motor learning Table <ref type="table">1</ref>. Summary of the ten guidelines for motor learning studies. Each step in the process is listed with associated pitfalls and recommendations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Special issue:</head><p>The role of practice in motor learning 114 of 133 STEP 0: DEFINING WHAT MOTOR LEARNING IS One of the main barriers in motor learning research is that there is no universally accepted definition of motor learning across all disciplines and contexts <ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b6">7</ref> . Even at the behavioral level, definitions of learning have focused on several aspects including improvements in outcome, consistency, stability, persistence, adaptability, and automaticity <ref type="bibr" target="#b7">8</ref> . Other definitions of motor learning have emphasized adaptation and reorganization of existing skills <ref type="bibr" target="#b8">9</ref> , changes in coordination dynamics <ref type="bibr" target="#b9">10</ref> , speed-accuracy tradeoffs <ref type="bibr" target="#b10">11</ref> , information pick up <ref type="bibr" target="#b11">12</ref> and even decision making <ref type="bibr" target="#b12">13</ref> . While there are certainly common characteristics across many definitions that fall under the classic view of learning as a "relatively permanent change in behavior" <ref type="bibr" target="#b3">4</ref> , it is important to note that the specific definition of motor learning adopted can have a major influence on many of the guidelines suggested here. For example, the question of how to measure learning can depend on whether learning is viewed as an improvement in the practiced skill (where learning would be characterized by a retention test with the same task goal and same practice conditions), an improvement in the adaptability or flexibility <ref type="bibr" target="#b13">14</ref> (where learning would be characterized in terms of achieving the same task goal under different conditions), a general change in the movement capability (where learning would be characterized by a transfer test to examine the generality to other task goals that were not practiced), or a change in the underlying movement repertoire (where learning would be characterized by a 'scanning' paradigm examining the stability of different coordination patterns <ref type="bibr" target="#b14">15</ref> ). In this paper, we focus on general guidelines that we believe apply to many motor learning contexts, but these guidelines always have to be considered within the context of how motor learning is defined in that specific context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>STEP 1: TASK SELECTION</head><p>The task has a critical role in motor learning and is perhaps the biggest source of interdisciplinary differences. Given the criticism of 'applied research' for resulting in "disconnected pockets of data" that are unsuitable for the development of general scientific principles <ref type="bibr" target="#b15">16</ref> , the goal in lab-based settings has been to use somewhat artificial tasks to isolate specific aspects of motor learning (e.g., sequence learning, reducing variability). Therefore, choosing a task in lab settings needs to address two issues: (i) provide the feasibility to do experiments (e.g., tasks that can be learned in relatively short periods of time) and (ii) provide insight that is generalizable to real-world tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>The use of 'simple' motor tasks can threaten generalizability to 'real-world' motor learning <ref type="bibr" target="#b0">1,</ref><ref type="bibr" target="#b4">5</ref> . While it is not trivial to define apriori objective criteria on what makes a task simple, they can be roughly characterized as: (i) tasks where learning primarily involves figuring out the task goal and/or using existing movement capabilities to solve the task (rather than requiring a true change in the movement capability), and (ii) tasks with a lack of 'intrinsic information', which makes it difficult for a learner to judge their performance on their own, without feedback from the experimenter <ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b17">18</ref> . While it is likely difficult to identify these characteristics directly, they can be examined in the data, in which learning of such simple tasks is likely to be reflected as: (i) a sudden and very rapid improvement in Special issue: The role of practice in motor learning performance over a few trials of practice <ref type="bibr" target="#b4">5</ref> with very little subsequent improvement (indicating that participants 'figured out' what the task goal was with no change required in movement capability), and (ii) a dramatic drop-off in performance when conditions are slightly changed (e.g., when performing the task after a delay or when withholding augmented feedback). For example, early work examining the role of knowledge of results has been criticized for using such tasks (e.g., draw a line of length 50 cm) where the learner does not have sufficient intrinsic sources of information, and therefore, has to rely on augmented feedback to even understand what the task goal is <ref type="bibr" target="#b17">18</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Explicitly define what the "learning" in the task entails. In view of improving our understanding of how studies from an experimental paradigm relate to others (including real-world learning), it is critical to answer two questions: (i) what is the problem that the learner has to solve to achieve good performance in the task, (ii) how much of this problem is known to the learner prior to learning (versus being discoverable only through practice)? For example, while most studies provide a 'score' that participants have to maximize or minimize, there may be important differences in how much participants 'know' about the task. In some cases, participants may know exactly how they need to improve this score (e.g., landing the ball closer to the target will result in higher scores). On the other hand, in typical reinforcement learning paradigms, the learner has no explicit knowledge of what results in higher scores and has to discover this relation through trialand-error exploration. Making these types of distinctions explicit in the task description may be a critical step in separating out different types of learning studies, which potentially can lead to a better understanding of how findings from particular experimental paradigms generalize to other contexts.</p><p>Balance 'realism' and 'insight'. Given the inherent tradeoff between ecological validity and experimental control, it might be useful to consider tasks that resemble realworld contexts while also providing sufficient richness of measurement beyond just the task outcome <ref type="bibr" target="#b18">19</ref> . For example, Haar and colleagues <ref type="bibr" target="#b19">20</ref> devised a real-world pool task that measured the outcome (e.g., directional error), but also allowed for accurate measurement of whole-body kinematics and EEG. This is not to imply that 'more variables are better', but that well-justified dependent variables that go beyond the task outcome can provide insight into learning (also see Step 8). In addition, using tasks that allow for 'multiple pathways' to learn the task also allows insights into "how" learning occurred. For example, Sternad and colleagues devised a throwing task <ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b21">22</ref> where the main goal for participants is to reduce the variability of the task outcome, but the task was designed in a way that this improvement in variability could be achieved in multiple ways -decreasing noise, moving to more error-tolerant workspaces, or covarying movement parameters. The advantage of such tasks is that one can go beyond typical task outcome measures (where learning is almost certainly bound to have an effect) and look at the effects of learning at other levels of analysis (where the results may be more informative because it may not be easy to predict what the effects of learning may be) and the associated search strategies in the perceptual-motor workspace <ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b23">24</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Special issue:</head><p>The role of practice in motor learning participant and the associated feedback that is given to the participant. As mentioned in Step 1, one of the important aspects of the instruction is how they define the task goal for the participants. In addition to instructions, participants also typically receive some feedback during the task (usually provided using a score). In our view, while there has been an extensive body of literature on the effects of instructions or feedback -for e.g., manipulating attentional focus <ref type="bibr" target="#b24">25</ref> , given the powerful ways that instructions and feedback can channel learning, they should be considered carefully even in tasks where they are not the primary experimental manipulation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>First, in the absence of clear unambiguous instructions, the learning problem may be "ill-defined" as participants may perceive the task goal differently from the way the experimenter intends it. For example, an instruction to "move as quickly as possible" could be interpreted as minimizing reaction time, minimizing movement time or minimizing the total response time.</p><p>Second, instructions or feedback may qualitatively change the strategy adopted to solve the task, especially when there are multiple, competing demands (e.g., "as fast and accurate as possible"). For example, in a speed-accuracy tradeoff experiment, even when other experimental parameters were closely matched, performance strategies under "time minimization" instructions (i.e., reaching to a target as quickly as possible) were qualitatively different from performance under temporal accuracy constraints (i.e., reaching a target as accurately as possible in a specified time) <ref type="bibr" target="#b25">26</ref> . Similarly, feedback can also act to serve as a task constraint. For example, allowing for greater 'tolerance' in temporal precision changed the nature of the speed-accuracy function <ref type="bibr" target="#b26">27</ref> . Given the recent emphasis on measuring speed-accuracy tradeoff functions as a measure of skill <ref type="bibr" target="#b10">11</ref> , these examples highlight the critical role of instructions and feedback in motor learning experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Provide clear instructions. Clear instructions reduce uncertainty about the task goal and reduce between-subject variation in interpreting the tasks (which in turn reduces the need to eliminate 'outliers'). Adding a 'familiarization' block at the start of the experiment can also help provide a quick real-time check as to whether participants indeed understood the instructions.</p><p>Provide feedback consistent with the instructions. The feedback to participants should closely align with the instructions. This not only ensures that participants understand their performance but as seen later in point <ref type="bibr" target="#b7">8</ref> , this also allows for clearly defining dependent variables that can be used to track participants' compliance to the instructions. For example, in a steering task <ref type="bibr" target="#b27">28</ref> , the task instructions were to move a cursor from the start to finish as fast as possible, while staying within the boundaries of a channel. The feedback, therefore, involved a score that involved two terms -one that penalized the overall time and one that penalized the time outside the channel. By varying the weights of individual terms in an integrated score, it is possible to channel participants toward different strategies <ref type="bibr" target="#b28">29</ref> .</p><p>In addition to its informational role, feedback also has a motivational role <ref type="bibr" target="#b3">4</ref> -so it may also be helpful to think of ways to keep participants engaged in the task over long</p><p>BJMB Brazilian Journal of Motor Behavior Ranganathan, Lee, Krishnan 2022 VOL.16 N.2 <ref type="url" target="https://doi.org/10.20338/bjmb.v16i2.283">https://doi.org/10.20338/bjmb.v16i2.283</ref> </p><p>Special issue: The role of practice in motor learning periods of time-e.g., using visual or sound effects to indicate good and bad performance <ref type="bibr" target="#b3">4</ref> , or providing a summary score at the end of a block of trials.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>STEP 3: PRACTICE DURATION</head><p>Given the focus on 'simple' tasks, a large majority of motor learning studies tend to rely on a single session of practice, with possibly the addition of a 24-h retention test <ref type="bibr" target="#b3">4</ref> . However, justifications for such practice durations are rarely specified explicitly. It is perhaps not surprising then that in addition to the type of tasks studied, these extremely short practice durations are another key barrier in translating findings from motor learning experiments to real-world learning or rehabilitation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>First, from a theoretical standpoint, when the duration of practice is not clearly justified, it becomes unclear what process is being studied. Several theories have proposed that learning occurs in stages, with more 'cognitive' processes being engaged early on, followed by more automatic performance later in learning <ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b29">30</ref> . Second, from a measurement standpoint, the duration of practice impacts the reliability and sensitivity of the dependent variable. When practice durations are short, both within-31 and betweensubject 32 variability tends to be high, making measurements less reliable (although these factors depend to a large degree on the task and the stage of learning <ref type="bibr" target="#b32">33</ref> ). When practice durations are long, performance can reach a plateau, making the dependent variable less sensitive to detecting changes between different groups.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Characterize a full learning curve for the task. Rather than rely on preliminary pilot data, we suggest that initial experiments with a new paradigm involve learning with a relatively extended period of time so that the full learning curve can be characterized. The actual duration of this period will depend on the task, with the goal of trying to estimate when the performance reaches a relative plateau. For example, Reis et al. <ref type="bibr" target="#b10">11</ref> examined the effect of brain stimulation on a speed accuracy task over 5 days, with retention periods up to 3 months. This type of initial characterization of tasks has three advantages -(i) it allows subsequent studies to potentially run shorter experiments depending on the research question, (ii) it can be helpful in determining if 'non-significant difference' between groups are due to performance plateaus, and (iii) it also allows for a more natural interpretation of effect sizes in terms of 'practice time saved'. For example, Day et al. <ref type="bibr" target="#b33">34</ref> determined that abbreviated exposures to split-belt walking had the same effect as 4 days of practice at the task. This type of 'natural effect size' may be more intuitive in conveying the magnitude of effects for motor learning studies than relying on default standardized effect sizes like Cohen's d <ref type="bibr" target="#b34">35,</ref><ref type="bibr" target="#b35">36</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>STEP 4: GROUPS</head><p>Most motor learning experiments that attempt to examine the effect of training paradigms rely on 'between-group' manipulations since it is reasonable to assume that motor learning cannot be 'washed out'. In this regard, motor learning studies have relied heavily on 'two group' comparisons -e.g., studies on variable practice typically have a 'constant' group and a 'variable group' <ref type="bibr" target="#b36">37</ref> . However, defining these experimental groups is Special issue: The role of practice in motor learning 118 of 133 critical in determining the insights that can be gained.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>The main pitfall of 'two-group' studies is that most manipulations involve a continuous variable that has non-monotonic effects on learning -i.e., there is an optimal parameter value or challenge point <ref type="bibr" target="#b37">38</ref> at which learning effects are maximal, and the learning effects decrease on either side of this optimal value. Therefore, construction of two groups based on parameter values (e.g., selecting a low variability and high variability group) can yield different results depending on where the parameter values of these groups lie relative to the optimal value 2 . Second, even in cases where the groups are based on a variable that is categorical, two-group studies typically tend to be designed in a way to 'exaggerate' differences between groups <ref type="bibr" target="#b38">39</ref> , which can create misleading effect sizes and limit generalizability and real-world relevance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Characterize 'dose-response curves' across multiple parameter values. Initial studies should characterize the dose-response across a reasonable range of parameter values to detect the presence of any optimal values. For example, an early study on the effect of distributed practice used five groups with inter-trial intervals ranging from 0 to 60 seconds and found no non-monotonic relation on performance or retention <ref type="bibr" target="#b39">40</ref> . On the other hand, a study on summary feedback used multiple groups and found a non-monotonic change -i.e., both too frequent and too infrequent feedback had similar effects on learning <ref type="bibr" target="#b40">41</ref> . While the actual research question is always critical in deciding how many groups are required, this type of extensive initial characterization with groups can help justify the choice of the number of groups (and the specific parameter values chosen for these groups) for subsequent studies using the same tasks.</p><p>Add realistic control groups. Even when a variable is clearly categorical, adding of 'realistic' control groups that represent reasonable choices for learning the task can provide greater clarity on the effect. A recent review characterizes in detail the different types of control groups that can be used in motor learning research <ref type="bibr" target="#b41">42</ref> . One particularly important factor that adds a realistic control group in the context of motor learning is 'practice specificity' -i.e., when practice conditions match the test conditions <ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b43">44</ref> . For example, when examining the effects of variability on learning and consolidation, Wymbs et al. <ref type="bibr" target="#b44">45</ref> used a number of control groups (including adding a 'practice specificity' group where no variability was added) to fully tease out the effect of adding variability. These types of data are not only useful for future studies, but also change the focus of motor learning studies from "whether" a particular type of practice matters to motor learning (which is almost always a "yes" in our view based on the idea that the 'nil' hypothesis of any intervention having zero effect is almost never true <ref type="bibr" target="#b45">46</ref> ) to "how much" it matters (which is much more informative). 2,47 likely indicating that this has become a heuristic determination rather than a justified determination. A difficulty with performing typical justifications with apriori power analysis is BJMB Brazilian Journal of Motor Behavior Ranganathan, Lee, Krishnan 2022 VOL.16 N.2 <ref type="url" target="https://doi.org/10.20338/bjmb.v16i2.283">https://doi.org/10.20338/bjmb.v16i2.283</ref> </p><p>Special issue: The role of practice in motor learning that tasks tend to vary between studies 2 , making it difficult to extract effect sizes from prior work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>The pitfalls of low sample sizes have been extensively covered in other literature <ref type="bibr" target="#b47">48,</ref><ref type="bibr" target="#b48">49</ref> -so we just highlight two main points: (i) low sample sizes have low power, which can lead to missing true effects, and (ii) a literature with low powered studies means that published effects will tend to have inflated effect sizes <ref type="bibr" target="#b47">48</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Justify sample size. Sample size justification statements are critical for judging the informational value of a study. Other than apriori power analysis, these can include other types of justifications such as accuracy or resource constraints <ref type="bibr" target="#b49">50</ref> . McKay et al. <ref type="bibr" target="#b50">51</ref> provide an example of sample size justification where the sample size was based on a prior study, with adjustments to the p-value for sequential analysis. In light of steps 3 and 4 that raise the need for initial characterization of long-term studies with multiple groups, it is critical that these studies also have sufficient sample sizes for reliable estimation of effect sizes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>STEP 6: MANIPULATION CHECKS</head><p>Manipulation checks refer to tests that examine if the designed intervention had the desired effect on the participant. While certain types of interventions do not require such checks since they are directly under the control of the experimenter (e.g., the intertrial interval), other variables are designed to elicit specific responses during practice (for e.g., increasing motor variability using force perturbations). Often, with the emphasis that practice during training may not be reflective of 'true' learning (i.e., the learningperformance distinction) <ref type="bibr" target="#b51">52</ref> , there is sometimes a tendency in motor learning studies to only focus on the end-result without interpreting if an intervention had the desired effect 'during' practice.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>Without a manipulation check, interpretations of results can be ambiguous. For example, a study on contextual interference (typically manipulated using a blocked vs. random schedule) needs a manipulation check that the random schedule indeed created more interference during practice. This manipulation check is usually done by examining if there were higher errors during practice for the random group. Without this check, it is difficult to disambiguate a true 'null result' (i.e., contextual interference did not have a significant influence on learning) from a 'failed manipulation' (i.e., the experimenter's attempt at introducing contextual interference was not successful).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Provide manipulation checks. Manipulation checks can vary depending on the type of study. In some cases, manipulation checks can be done using variables that are already directly recorded during data collection. For example, Cardis et al. <ref type="bibr" target="#b52">53</ref> showed perturbations of the null and task space increased variability in these dimensions. In other cases, there may be the need for separate manipulation checks -e.g., Grand et al. <ref type="bibr" target="#b53">54</ref> used BJMB Brazilian Journal of Motor Behavior Ranganathan, Lee, Krishnan 2022 VOL.16 N.2 <ref type="url" target="https://doi.org/10.20338/bjmb.v16i2.283">https://doi.org/10.20338/bjmb.v16i2.283</ref> </p><p>Special issue: The role of practice in motor learning 120 of 133 both the intrinsic motivation inventory and electroencephalography to examine if the manipulation resulted in increased motivation. When manipulation checks 'fail', it might be critical to consider all aspects of experimental design mentioned in Steps 1-5 (the instructions to the participant, the amount of practice, etc.) as well as the measurement resolution of the variable being used for the manipulation check. However, one caveat when introducing these manipulation checks is to also minimize the possibility that the manipulation checks themselves change the behavior of the participant <ref type="bibr" target="#b54">55</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>STEP 7: TESTS OF LEARNING</head><p>Perhaps one of the most important insights in motor learning is the 'learningperformance' distinction -i.e., that changes in performance during practice are not always indicative of learning <ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b51">52</ref> . This insight has resulted in the use of separate 'tests' of learninge.g., delayed retention tests or transfer tests as conditions for measuring 'true' learning. This raises a critical question as to what test is most applicable for measuring learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>First, there has been an overreliance on the "24h No-KR test" as the 'only' acceptable condition for measuring learning <ref type="bibr" target="#b16">17</ref> . While the 24h No-KR condition can be a good indicator of learning in some cases, both the "24h" and the "No-KR" portions of the test can sometimes be problematic. First, the 24h period is intended for dissipating temporary effects, but whether this makes it a 'true' test of learning may depend to a large degree on the task and the timescale of learning involved. For example, rehabilitation paradigms that attempt to change movement capacity over several weeks typically involve follow-up tests in timescales of weeks or months. Second, the No-KR part of the test is intended to provide a 'stable' performance by minimizing possibilities for learning "during" the test. However, in many cases, because information about performance is available naturally through sensory information outside of "augmented feedback" provided by the experimenter, trying to prevent learning during the test has led to artificial measures such as 'blindfolding' the individual and/or using headphones playing white noise. In such cases, the dramatic change in feedback information may induce the learner to adopt qualitatively different strategies during the test, which are unrelated to the original learning.</p><p>Second, these tests of learning are typically designed to measure only a 'snapshot' of the process (usually as short as 10 trials). This means that the snapshot itself can be unrepresentative of true learning because it can include temporary effects such as warm-up decrement, especially when administered after a time delay, or when there is a sudden change in the context <ref type="bibr" target="#b16">17</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Justify test conditions. We recommend that the test conditions are aligned with the definition of what the learning in the task involves (mentioned in Step 1) and what aspects of information are considered 'part of the task'. For example, Lokesh and Ranganathan <ref type="bibr" target="#b27">28</ref> used a haptic feedback study where the test involved removal of haptic feedback, but retained concurrent visual information of the cursor because this visual information was considered part of the task. Similarly, the timeline of such a test can be aligned with respect to the total learning time and other task factors such as fatigue. For example, a 24 h retention test may be justifiable for tasks with a one-day practice duration,</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>BJMB</head><p>Brazilian Journal of Motor Behavior Ranganathan, Lee, Krishnan 2022 VOL.16 N.2 <ref type="url" target="https://doi.org/10.20338/bjmb.v16i2.283">https://doi.org/10.20338/bjmb.v16i2.283</ref> Special issue: The role of practice in motor learning 121 of 133</p><p>but longer timescales of learning may potentially require longer time intervals. For example, in a balancing task that was practiced over 6 weeks, the retention test was made 3 months after the last practice block <ref type="bibr" target="#b55">56</ref> .</p><p>Make tests more than a single 'snapshot'. Including a retention test with a relatively large number of trials can provide the ability to separate out temporary and relatively permanent effects. For example, studies of massed and distributed practice show that while there are effects in the first few trials of the next day, these differences are quickly eliminated within the next few trials of practice <ref type="bibr" target="#b56">57</ref> . A further alternative is to consider a series of retention periods -for example, Reis et al. <ref type="bibr" target="#b10">11</ref> measured retention at 5 time points from 3 days until approximately 3 months after the last practice. This type of data could characterize retention over time, which is critical for studies that examine learning in the context of a change in the movement capability. In addition to testing over time, transfer tests <ref type="bibr" target="#b0">1,</ref><ref type="bibr" target="#b57">58,</ref><ref type="bibr" target="#b58">59</ref> , which involve testing in conditions that were not originally practiced, can also provide a richer description of learning. However, a critical piece in transfer tests is determining the appropriate transfer conditions so that it is clear how these transfer conditions relate to the originally practiced task. van Rossum 60 emphasizes the use of task analysis as a means of designing transfer tests so that the results from transfer tests can yield useful information about what was learned. For example, in sequential timing tasks, transfer tests with the same or different relative timing patterns as those during practice were used as a critical test to distinguish whether the benefits of variable practice were due to the formation of motor schemata or contextual interference effects <ref type="bibr" target="#b60">61,</ref><ref type="bibr" target="#b61">62</ref> . STEP 8: DEPENDENT VARIABLES Dependent variables in motor learning studies have to accomplish two main goals -(i) the variable sufficiently captures the improvement in task performance, and (ii) it provides 'insight' into how improvements are occurring. Part of the challenge in defining these variables is that motor performance is multidimensional and there is usually no unambiguous choice of variables. For example, in a golf putting task, the dependent variables used to measure learning could be (i) the percent of putts made, (ii) the number of points scored in a scheme defined based on the distance from the hole (e.g., 10 points for making the putt), (iii) the absolute error in terms of the distance from the target, or (iv) the variable error in terms of the consistency of the putts. In some cases, the dependent variable may even be derived 'post hoc' at the data analysis stage -for e.g., the number of putts that were within 1 inch of the hole, or a score that weights the absolute error in the putting task by the time taken to prepare for the putt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>First, the choice between several dependent variables (especially when they are derived post hoc) can inflate researcher degrees of freedom <ref type="bibr" target="#b62">63</ref> . For example, in the golf putting task described above, the choice between many possible dependent variables can result in a situation where some variables show statistically significant differences but others do not. If undisclosed, such flexibility in the choice of dependent variables can lead to a large increase in the false positive rate <ref type="bibr" target="#b62">63</ref> .</p><p>Second, some dependent variables do not have desirable characteristics either from a measurement standpoint or a mechanistic standpoint. For example, from a measurement standpoint, measures such as number of putts made can be insensitive to changes in the magnitude of errors. In terms of mechanistic insight, some dependent variables may not provide sufficient information about the performance. For example, in 2D aiming tasks, using only a scoring system (or radial error) may mask important changes in terms of changes in bias or variability <ref type="bibr" target="#b63">64,</ref><ref type="bibr" target="#b64">65</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Check if the dependent variable shows conceptual alignment. From a conceptual standpoint, the dependent variable should closely align with the instructions and feedback to the participant. As Newell <ref type="bibr" target="#b65">66</ref> states "it seems unreasonable to evaluate the effect of an independent variable primarily through criteria different from that originally stressed to the subject" Moreover, alignment with instructions and feedback reduces researcher degrees of freedom by minimizing the potential for 'post hoc' derived dependent variables. For in a gait tracking task which involved the participants to match a target template with their foot, Krishnan et al. <ref type="bibr" target="#b66">67</ref> define the error measure only in the spatial dimension using an area metric (as opposed to say using RMSE, which would need to involve assuming something about the temporal component that were not part of the instructions). In cases where the dependent variable may not be apparent immediately from the instructions and is a combination of multiple variables (say in a task that emphasizes both speed and accuracy), it might be ideal to pre-register this analysis so that there is transparency about flexibility in data analysis <ref type="bibr" target="#b62">63</ref> .</p><p>Check if the dependent variable shows good measurement properties. From a statistical standpoint, dependent variables should be sensitive enough to track changes with learning. Although measures such as error rates or % success may be used in some contexts because they have functional significance (i.e., in a real game, "near-misses" do not count), in general they may be too coarse-grained to detect differences. While it is desirable to have these dependent variables in real-world units (e.g., error measured in cm), this may not always be feasible and may require other approaches. For example, studies on the free-throw use a point-based system (e.g., 5 points for a swish) to improve the sensitivity of the dependent variable <ref type="bibr" target="#b67">68</ref> . However, it is important to note that any system developed should also be considered on a conceptual basis -i.e., if participants get scored higher for a free throw that goes directly in the hoop compared to one that goes in after bouncing off the rim or the backboard, this information should also be communicated to the participant through instructions.</p><p>Check if the dependent variable provides mechanistic insight. Finally, consider dependent variables that yield 'insight' into the underlying process of motor learning. In many cases, these may be considered 'secondary' variables that help delineate different processes. For example, the dependent variable in many aiming tasks is an absolute error (AE), but this measure is a combination of constant error (CE) and variable error (VE) <ref type="bibr" target="#b68">69</ref> . Therefore, while the AE can be the 'primary' dependent variable (based on conceptual grounds that it was the instruction to the participant) <ref type="bibr" target="#b65">66</ref> , breaking down the AE into secondary variables CE and VE can provide additional insight into 'how' participants got better. Similarly, Lee et al. <ref type="bibr" target="#b69">70</ref> use movement time as the primary dependent variable in a cursor control task, but also measure the path length to examine if increased movement times are due to changes in movement speed (which would not change path length) or taking more circuitous paths (which would result in increased path length).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>BJMB</head><p>Brazilian Journal of Motor Behavior Ranganathan, Lee, Krishnan 2022 VOL.16 N.2 <ref type="url" target="https://doi.org/10.20338/bjmb.v16i2.283">https://doi.org/10.20338/bjmb.v16i2.283</ref> Special issue: The role of practice in motor learning 123 of 133 STEP 9: MEASURE OF LEARNING</p><p>The measure of learning used in the analysis is extremely critical, as they form the basis for inferences drawn from the experiment. Similar to the debate about measuring learning in many other fields, there are two distinct philosophies for measuring motor learning -proficiency (i.e., how good is performance after practice) and growth (i.e., how much has performance changed after practice), and a multitude of measures have been used to quantify learning based on both approaches <ref type="bibr" target="#b70">71</ref> . Proficiency-based measures typically rely on the absolute performance level at the end of practice (e.g., on a retention test) to measure learning. On the other hand, growth-based measures typically use a prepost experimental design, where the change between initial and final performance levels are compared across groups. This change can be (i) a gain score (i.e., final performanceinitial performance), (ii) a gain score that is 'normalized' in some way (e.g., final performance/initial performance *100) or (iii) a post-test score or gain score that uses the pre-test score as a covariate. In addition, the 'rate' of learning is often also computed as a way to capture if one group learns faster than the other. As in the case with the choice of dependent variable, the presence of multiple measures to assess learning can create a challenge, as it increases researcher degrees of freedom.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>First, the use of 'pre-tests' in motor learning has been criticized on two grounds 4 -(i) that pre-test scores in motor learning are unreliable because early trials at a task generally are extremely variable and show very poor correlation with final performance, and (ii) extending the trials in the pre-test to get a reliable measure of baseline performance essentially provides practice at the task, thereby minimizing the room for improvement during the actual intervention.</p><p>Second, the use of gain scores has been criticized as a learning measure 72 especially in cases where the pre-test scores are not the same across groups. For example, since the gain scores are skewed by the initial performance level, individuals with a lower pre-test scores could appear to have greater 'gains' even if their final performance was lower or similar to an individual with higher pre-test scores <ref type="bibr" target="#b70">71</ref> . This will especially be the case in situations where the performance approaches a plateau. While normalizing the gain score (e.g., expressed as a %) can offset some of these issues, this also has to be treated with caution since the normalization procedure makes assumptions about the form of the learning curve.</p><p>The problem with a gain score is even more obvious when using a 'relative retention' measure (i.e., a difference score computed between the last block of practice and the retention test). In this case, the magnitude of relative retention is heavily dependent on performance during practice-a measure that may be affected by factors other than learning <ref type="bibr" target="#b70">71</ref> . Moreover, if groups underwent different types of intervention during practice, the performance at the end of practice is contaminated by the effects of the intervention itself, making it an unsuitable measure to compare learning in the two groups.</p><p>Finally, some motor learning studies use curve fitting (e.g., fitting an exponential) as a means to quantify 'rates' of learning independent of performance level. While this argument is true 'in theory', this relies on two major assumptions -(i) the form of the function actually matches the form of the learning curve (i.e., if an exponential fit is made, that the curve is actually exponential), and (ii) the data have very minimal noise, and the Special issue: The role of practice in motor learning function fits these data extremely well at the individual level. Without full knowledge of these assumptions, it is difficult to interpret results from curve fitting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Minimize baseline imbalances. When initial performances at baseline (i.e., the pre-test) are similar between groups, the type of the dependent variable used in the analysis has a minimal effect on the outcome -i.e., the use of a change score or the final score will lead to similar conclusions. Hence, it is critical to ensure that adequate attempts are made to minimize baseline imbalances. This can be done using three strategies -(i) increasing sample sizes: small sample sizes are more likely to create baseline imbalances; hence, we recommend using adequate sample sizes to ensure that the baseline performance reflects the true group means <ref type="bibr" target="#b72">73,</ref><ref type="bibr" target="#b73">74</ref> , (ii) stratifying groups based on initial performance including treatment of outliers <ref type="bibr" target="#b74">75</ref> , and (iii) using an analysis of covariance (ANCOVA) to adjust for any residual differences in baseline for estimating an unbiased intervention effect <ref type="bibr" target="#b75">76,</ref><ref type="bibr" target="#b76">77</ref> . In cases where 'pre-test' measurements are either not feasible or consistent, it might be helpful just to rely on larger sample sizes and use the final test performance as the measure of learning.</p><p>Interpret results with considerable caution when baseline performances are different. When baseline imbalances are inherent to the research question -e.g., when comparing age-related differences <ref type="bibr" target="#b77">78,</ref><ref type="bibr" target="#b78">79</ref> or the effects of neurological injury <ref type="bibr" target="#b79">80</ref> , the research question can be 'ill-defined' to some degree and the results have to be treated with considerable caution since statistical techniques like ANCOVAs that account for baseline differences can yield misleading results <ref type="bibr" target="#b80">81</ref> . Instead, it might be fruitful to think about potential experiments where ambiguity can be resolved. For example, if a particular study shows that rates of learning in children are higher than adults (but is ambiguous because children still perform lower in an 'absolute' sense relative to the adults), then by extending the practice period, one can test in a follow-up experiment whether there is a point where the children 'outperform' the adults even in terms of absolute levels of performance. This result would help resolve the ambiguity since both absolute and rate measures would show that the children outperformed the adults.</p><p>Pre-register learning measures and robustness checks. Again, as with the choice of the dependent variable, an important way in improving transparency is to preregister the learning measures of the study and make data openly available to other researchers. In particular, adding robustness checks (e.g., comparing learning using multiple learning measures) to check if the outcomes change with the type of learning measures will help improve the interpretation of the study results. STEP 10: PROCESSING DATA Given the fact that most motor learning data inherently involve change in performance over time (i.e., there is no 'stable' performance), with significant within-and between-subject variability, even seemingly standard data analysis procedures can sometimes result in 'artifacts' that can be misleading. In addition, the effect of non-learning related factors on performance (such as fatigue) can also pose challenges during data analysis. Therefore, it is important to examine the effects of steps in the data analysis pipeline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>BJMB</head><p>Brazilian Journal of Motor Behavior Ranganathan, Lee, Krishnan 2022 VOL.16 N.2 <ref type="url" target="https://doi.org/10.20338/bjmb.v16i2.283">https://doi.org/10.20338/bjmb.v16i2.283</ref> </p><p>Special issue: The role of practice in motor learning</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitfalls</head><p>We highlight three examples of artifacts arising in motor learning studies at different levels within the data analysis pipeline:</p><p>Experimental artifacts. While the general 'learning -performance distinction' is well recognized in the context of needing retention or transfer tests 3 , many questions in motor learning require direct analysis of performance curves -e.g. the study of 'online' and 'offline' learning that examine changes in performance 'during' and 'between' practice sessions or even at the level of trials <ref type="bibr" target="#b81">[82]</ref><ref type="bibr" target="#b82">[83]</ref><ref type="bibr" target="#b83">[84]</ref><ref type="bibr" target="#b84">[85]</ref> . One phenomenon observed in these experiments is 'offline consolidation' (also referred to as 'reminiscence' 86 ), where there is a seemingly distinct improvement in performance after a rest break. However, there is a potential for performance artifacts (e.g., effects of inhibition or fatigue) in these types of analyses <ref type="bibr" target="#b56">57,</ref><ref type="bibr" target="#b86">87</ref> and it is worth noting that these consolidation effects are typically observed in speeded tasks (e.g., produce as many typing sequences in a given time period, or tracking moving targets continuously).</p><p>Processing artifacts. General data processing procedures involve some type of averaging to reduce the 'noise' in the data. However, relying on "averaged" data across individuals can substantially alter some types of inferences. From a theoretical point, one of the most well-known artifacts due to averaging is the form of the learning curve which can differ between power-law and exponentials depending on averaging <ref type="bibr" target="#b87">[88]</ref><ref type="bibr" target="#b88">[89]</ref><ref type="bibr" target="#b89">[90]</ref> . As a result, there is potential for artifacts when estimating individual parameters based on groupaveraged data. A second type of averaging that is usually done across trials within a block can mask temporary effects like warm-up decrement <ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b88">89</ref> and create the illusion of a 'discontinuity' in the learning curve even when the learning curve is continuous <ref type="bibr" target="#b86">87</ref> .</p><p>Statistical artifacts. In the analysis of individual differences, 'mathematical coupling' occurs when the response variable directly or indirectly contains all or a part of the predictor variable <ref type="bibr" target="#b90">91</ref> . For instance, studies evaluating initial performance to predict 'gain scores' are expected to see significant associations simply due to the fact that the gain score depends on the initial performance. Relatedly, methods that involve creating 'post hoc' groups based on dichotomizing a continuous response (e.g., analyzing the difference between high and low responders based on a median split) have been criticized from a statistical viewpoint as creating arbitrary or illusory distinctions <ref type="bibr" target="#b91">92</ref> . It is especially important to note that standard procedures used in other domains (such as repeated exposures to examine if the 'response' is reliable within an individual) are not generally applicable in motor learning since it is not possible to wash out prior learning. As a result, results from these types of analyses must be treated with even more caution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Recommendations</head><p>Control experiments for experimental artifacts. In cases where the analysis is based on performance curves, the use of control experiments that can disambiguate temporary effects of performance from learning are critical. For example, to examine if offline learning is truly distinct from 'recovery from inhibition/ fatigue' effects, it might be useful to manipulate the practice/rest interval or perturb neural activity during rest period <ref type="bibr" target="#b92">93</ref> .</p><p>Robustness checks for processing and statistical artifacts. The impact of specific procedures can also be examined by showing how results are impacted by changes in specific parameter choices. For example, when using a parameter based on a group-averaged curve fit, Reis et al. <ref type="bibr" target="#b10">11</ref> show sensitivity analyses to changes in this BJMB Brazilian Journal of Motor Behavior Ranganathan, Lee, Krishnan 2022 VOL.16 N.2 <ref type="url" target="https://doi.org/10.20338/bjmb.v16i2.283">https://doi.org/10.20338/bjmb.v16i2.283</ref> </p><p>Special issue: The role of practice in motor learning parameter. Using simulated data with known properties can also be a critical tool to check the impact of a particular processing procedure. For example, Smeets and Louw <ref type="bibr" target="#b93">94</ref> showed how the decomposition of variability can be sensitive to the choice of variables used in defining the task.</p><p>Providing transparent visualization and open data. Finally, it may be difficult (if not impossible) for one paper to identify all possible artifacts and/or perform all possible robustness checks. Therefore, providing transparent visualizations that go beyond simple bar graphs (e.g., showing individual performance curves with minimal or no averaging) <ref type="bibr" target="#b94">95</ref> and using open science practices like publicly sharing analysis and data can be extremely critical in improving the quality of motor learning science <ref type="bibr" target="#b95">96</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CONCLUSION</head><p>Overall, the pitfalls and recommendations highlight two broad themes in motor learning that require attention. The first theme relates to the relevance of motor learning studies to the real world. As highlighted earlier, while we agree that definitions of motor learning will vary depending on context and discipline, it is perhaps also important to take a pragmatic perspective that in some way, the ultimate goal of motor learning experiments is to be able to apply this knowledge to the real world. In this regard, while broad 'principles' of motor learning are often mentioned in the context of fields like rehabilitation <ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b96">97</ref> , it is difficult to gauge the actual impact of most current motor learning paradigms on these fields. For example, a recent review of stroke rehabilitation literature found that only 8% of studies even mention 'basic science' studies (motor learning experiments in animals or humans) in the Introduction <ref type="bibr" target="#b97">98</ref> . We hope that by raising awareness of several issues that hamper real-world relevance (choice of task, length of practice duration, etc.), the guidelines spur researchers to move outside 'traditional' paradigms in their own subfield with the goal of increasing relevance.</p><p>A second theme that emerges from the guidelines is the need for initiatives that are not just at the level of a single investigator or a lab but at the level of a whole research community. As highlighted in the context of developing 'model task paradigms 2 , many of the proposed recommendations (larger sample sizes, more groups, increasing practice duration, preregistration, sharing open data) require a greater investment of time and effort compared to current publication practices. As a result, we hope that the guidelines spur discussion not only about larger-scale collaborative efforts, but also the need for recognition of such efforts at other levels such as by journal editorial boards, hiring, and promotion and tenure committees.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>STEP 5 :</head><label>5</label><figDesc>SAMPLE SIZESample size is one of the most important factors in experimental design. Most motor learning experiments tend to be small (typical sample sizes of 10-16/group)</figDesc></figure>
+		</body>
+		<back>
+
+			<div type="funding">
+<div><p>Funding: This research is based upon work supported by grants <rs type="funder">NSF</rs> <rs type="grantNumber">1823889</rs>, <rs type="grantNumber">NSF 1804053</rs>, and <rs type="funder">NIH</rs> <rs type="grantNumber">R21-HD092614</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_TBeETuW">
+					<idno type="grant-number">1823889</idno>
+				</org>
+				<org type="funding" xml:id="_tnPakKc">
+					<idno type="grant-number">NSF 1804053</idno>
+				</org>
+				<org type="funding" xml:id="_U2r5pZP">
+					<idno type="grant-number">R21-HD092614</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Special issue:</head><p>The role of practice in motor learning </p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Motor skill acquisition</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<idno type="DOI">10.1146/annurev.ps.42.020191.001241</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Annu Rev Psychol</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="page" from="213" to="237" />
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Newell KM. Motor skill acquisition. Annu Rev Psychol. 1991;42:213-237. doi:10.1146/annurev.ps.42.020191.001241</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">A tale of too many tasks: task fragmentation in motor learning and a call for model task paradigms</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Tomlinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lokesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Patel</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s00221-020-05908-6</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Exp Brain Res</title>
+		<imprint>
+			<biblScope unit="volume">239</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="19" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ranganathan R, Tomlinson AD, Lokesh R, Lin TH, Patel P. A tale of too many tasks: task fragmentation in motor learning and a call for model task paradigms. Exp Brain Res. 2021;239(1):1-19. doi:10.1007/s00221-020-05908-6</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Knowledge of results and motor learning: A review and critical reappraisal</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Salmoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">B</forename><surname>Walter</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0033-2909.95.3.355</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Psychol Bull</title>
+		<imprint>
+			<biblScope unit="volume">95</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="355" to="386" />
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Salmoni AW, Schmidt RA, Walter CB. Knowledge of results and motor learning: A review and critical reappraisal. Psychol Bull. 1984;95(3):355-386. doi:10.1037/0033- 2909.95.3.355</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Motor Control and Learning</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lee</forename><surname>Td</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">5</biblScope>
+		</imprint>
+	</monogr>
+	<note>th ed. Human Kinetics</note>
+	<note type="raw_reference">Schmidt RA, Lee TD. Motor Control and Learning. 5th ed. Human Kinetics; 2011.</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Principles derived from the study of simple skills do not generalize to complex skill learning</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wulf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Shea</surname></persName>
+		</author>
+		<idno type="DOI">10.3758/bf03196276</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Psychon Bull Rev</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="185" to="211" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wulf G, Shea CH. Principles derived from the study of simple skills do not generalize to complex skill learning. Psychon Bull Rev. 2002;9(2):185-211. doi:10.3758/bf03196276</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Motor learning: its relevance to stroke recovery and neurorehabilitation</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Krakauer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Curr Opin Neurol</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="84" to="90" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Krakauer JW. Motor learning: its relevance to stroke recovery and neurorehabilitation. Curr Opin Neurol. 2006;19(1):84-90.</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Progress in Motor Control: A Multidisciplinary Perspective</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-0-387-77064-2_20</idno>
+		<editor>Sternad D</editor>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<publisher>Springer US</publisher>
+			<biblScope unit="page" from="395" to="404" />
+		</imprint>
+	</monogr>
+	<note>Some contemporary issues in motor learning Advances in Experimental Medicine and Biology</note>
+	<note type="raw_reference">Newell KM, Ranganathan R. Some contemporary issues in motor learning. In: Sternad D, ed. Progress in Motor Control: A Multidisciplinary Perspective. Advances in Experimental Medicine and Biology. Springer US; 2009:395-404. doi:10.1007/978-0-387-77064-2_20</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Motor Learning and Control: Concepts and Applications</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Magill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">I</forename><surname>Anderson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<publisher>McGraw-Hill</publisher>
+			<biblScope unit="volume">11</biblScope>
+			<pubPlace>New York</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Magill RA, Anderson DI. Motor Learning and Control: Concepts and Applications. Vol 11. McGraw-Hill New York; 2007.</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">An adaptive process model of motor learning: insights for the teaching of motor skills</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Tani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><forename type="middle">C</forename><surname>Corrêa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Basso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">N</forename><surname>Benda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ugrinowitsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Choshi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nonlinear Dyn Psychol Life Sci</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="47" to="65" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Tani G, Corrêa UC, Basso L, Benda RN, Ugrinowitsch H, Choshi K. An adaptive process model of motor learning: insights for the teaching of motor skills. Nonlinear Dyn Psychol Life Sci. 2014;18(1):47-65.</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Learning as change of coordination dynamics: theory and experiment</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Schöner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Zanone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Kelso</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1992.9941599</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="29" to="48" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schöner G, Zanone PG, Kelso JA. Learning as change of coordination dynamics: theory and experiment. J Mot Behav. 1992;24(1):29-48. doi:10.1080/00222895.1992.9941599</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Noninvasive cortical stimulation enhances motor skill acquisition over multiple days through an effect on consolidation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Reis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">M</forename><surname>Schambra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">G</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.1073/pnas.0805413106</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Proc Natl Acad Sci</title>
+		<imprint>
+			<biblScope unit="volume">106</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1590" to="1595" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Reis J, Schambra HM, Cohen LG, et al. Noninvasive cortical stimulation enhances motor skill acquisition over multiple days through an effect on consolidation. Proc Natl Acad Sci. 2009;106(5):1590-1595. doi:10.1073/pnas.0805413106</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Direct learning</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Jacobs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">F</forename><surname>Michaels</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/10407410701432337</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Ecol Psychol</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="321" to="349" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Jacobs DM, Michaels CF. Direct learning. Ecol Psychol. 2007;19(4):321-349. doi:10.1080/10407410701432337</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">The learning of decision-making on interception and passing in futsal</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">T</forename><surname>De Pinho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Letícia</forename><surname>Da Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Clavijo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Far</forename><surname>Alves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Corrêa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><forename type="middle">C</forename></persName>
+		</author>
+		<idno type="DOI">10.1080/1612197X.2020.1803950</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Int J Sport Exerc Psychol</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1005" to="1021" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">de Pinho ST, Letícia da Silva S, Clavijo FAR, Alves D, Corrêa UC. The learning of decision-making on interception and passing in futsal. Int J Sport Exerc Psychol. 2021;19(6):1005-1021. doi:10.1080/1612197X.2020.1803950</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Repetition without repetition: Challenges in understanding behavioral flexibility in motor skill</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<idno type="DOI">10.3389/fpsyg.2020.02018</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Front Psychol</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<date type="published" when="2018">2020. 2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ranganathan R, Lee MH, Newell KM. Repetition without repetition: Challenges in understanding behavioral flexibility in motor skill. Front Psychol. 2020;11:2018. doi:10.3389/fpsyg.2020.02018</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Evolution of behavioral attractors with learning: nonequilibrium phase transitions</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Zanone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Kelso</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J Exp Psychol Hum Percept Perform</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="403" to="421" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Zanone PG, Kelso JA. Evolution of behavioral attractors with learning: nonequilibrium phase transitions. J Exp Psychol Hum Percept Perform. 1992;18(2):403-421.</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">A closed-loop theory of motor learning</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Adams</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1971.10734898</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="111" to="150" />
+			<date type="published" when="1971">1971</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Adams JA. A closed-loop theory of motor learning. J Mot Behav. 1971;3(2):111-150. doi:10.1080/00222895.1971.10734898</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">On No-KR tests in motor learning, retention and transfer</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.humov.2006.07.009</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Hum Mov Sci</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="155" to="173" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Russell DM, Newell KM. On No-KR tests in motor learning, retention and transfer. Hum Mov Sci. 2007;26(1):155-173. doi:10.1016/j.humov.2006.07.009</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Information feedback for motor skill learning: A review</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">P</forename><surname>Swinnen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Human Kinetics</title>
+		<editor>
+			<persName><forename type="first">H</forename><forename type="middle">N</forename><surname>Zelaznik</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="page" from="37" to="66" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+	<note>Advances in Motor Learning and Control</note>
+	<note type="raw_reference">Swinnen SP. Information feedback for motor skill learning: A review. In: Zelaznik HN, ed. Advances in Motor Learning and Control. Human Kinetics; 1996:37-66.</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Learning and transfer of complex motor skills in virtual reality: a perspective review</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E</forename><surname>Levac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Huber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sternad</surname></persName>
+		</author>
+		<idno type="DOI">10.1186/s12984-019-0587-8</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Neuroengineering Rehabil</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">121</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Levac DE, Huber ME, Sternad D. Learning and transfer of complex motor skills in virtual reality: a perspective review. J Neuroengineering Rehabil. 2019;16(1):121. doi:10.1186/s12984-019-0587-8</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Motor learning in real-world pool billiards</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Haar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Van Assel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Faisal</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41598-020-76805-9</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Sci Rep</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">20046</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Haar S, van Assel CM, Faisal AA. Motor learning in real-world pool billiards. Sci Rep. 2020;10(1):20046. doi:10.1038/s41598-020-76805-9</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Decomposition of variability in the execution of goal-oriented tasks: three components of skill improvement</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sternad</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0096-1523.30.1.212</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Exp Psychol Hum Percept Perform</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="212" to="233" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Müller H, Sternad D. Decomposition of variability in the execution of goal-oriented tasks: three components of skill improvement. J Exp Psychol Hum Percept Perform. 2004;30(1):212-233. doi:10.1037/0096-1523.30.1.212</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Neuromotor noise, error tolerance and velocitydependent costs in skilled performance</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sternad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">O</forename><surname>Abe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Müller</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pcbi.1002159</idno>
+	</analytic>
+	<monogr>
+		<title level="j">PLoS Comput Biol</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page">1002159</biblScope>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Sternad D, Abe MO, Hu X, Müller H. Neuromotor noise, error tolerance and velocity- dependent costs in skilled performance. PLoS Comput Biol. 2011;7(9):e1002159. doi:10.1371/journal.pcbi.1002159</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Perceptual-motor exploration as a function of biomechanical and task constraints</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">V</forename><surname>Mcdonald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Oliver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/0001-6918(93)E0056-8</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Acta Psychol (Amst)</title>
+		<imprint>
+			<biblScope unit="volume">88</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="127" to="165" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">McDonald PV, Oliver SK, Newell KM. Perceptual-motor exploration as a function of biomechanical and task constraints. Acta Psychol (Amst). 1995;88(2):127-165. doi:10.1016/0001-6918(93)E0056-8</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Search strategies in the perceptual-motor workspace and the acquisition of coordination, control, and skill</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">M</forename><surname>Pacheco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">W</forename><surname>Lafe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<idno type="DOI">10.3389/fpsyg.2019.01874</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Front Psychol</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page">1874</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Pacheco MM, Lafe CW, Newell KM. Search strategies in the perceptual-motor workspace and the acquisition of coordination, control, and skill. Front Psychol. 2019;10:1874. doi:10.3389/fpsyg.2019.01874</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Attentional focus and motor learning: a review of 15 years</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wulf</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/1750984X.2012.723728</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Int Rev Sport Exerc Psychol</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="77" to="104" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wulf G. Attentional focus and motor learning: a review of 15 years. Int Rev Sport Exerc Psychol. 2013;6(1):77-104. doi:10.1080/1750984X.2012.723728</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">The effects of temporal-precision and time-minimization constraints on the spatial and temporal accuracy of aimed hand movements</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">G</forename><surname>Carlton</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1994.9941660</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="43" to="50" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Carlton LG. The effects of temporal-precision and time-minimization constraints on the spatial and temporal accuracy of aimed hand movements. J Mot Behav. 1994;26(1):43-50. doi:10.1080/00222895.1994.9941660</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Role of temporal and spatial precision in determining the nature of the speed-accuracy trade-off in aimed-hand movements</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">N</forename><surname>Zelaznik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">P</forename><surname>Mccabe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Thaman</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0096-1523.14.2.221</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Exp Psychol Hum Percept Perform</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="221" to="230" />
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Zelaznik HN, Mone S, McCabe GP, Thaman C. Role of temporal and spatial precision in determining the nature of the speed-accuracy trade-off in aimed-hand movements. J Exp Psychol Hum Percept Perform. 1988;14(2):221-230. doi:10.1037/0096-1523.14.2.221</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Haptic Assistance that restricts the use of redundant solutions is detrimental to motor learning</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lokesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TNSRE.2020.2990129</idno>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans Neural Syst Rehabil Eng</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1373" to="1380" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lokesh R, Ranganathan R. Haptic Assistance that restricts the use of redundant solutions is detrimental to motor learning. IEEE Trans Neural Syst Rehabil Eng. 2020;28(6):1373- 1380. doi:10.1109/TNSRE.2020.2990129</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">The movement speed-accuracy relation in space-time</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Y</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mayer-Kress</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.humov.2012.12.010</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Hum Mov Sci</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="257" to="269" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hsieh TY, Liu YT, Mayer-Kress G, Newell KM. The movement speed-accuracy relation in space-time. Hum Mov Sci. 2013;32(1):257-269. doi:10.1016/j.humov.2012.12.010</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Human Performance</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Fitts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Posner</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1967">1967</date>
+			<pubPlace>Brooks/Cole</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Fitts PM, Posner MI. Human Performance. Brooks/Cole; 1967.</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">The effect of learning on the predictability of psychomotor performance</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Reynolds</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/h0060862</idno>
+		<ptr target="http://dx.doi.org/10.1037/h0060862" />
+	</analytic>
+	<monogr>
+		<title level="j">J Exp Psychol</title>
+		<imprint>
+			<biblScope unit="volume">44</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="189" to="198" />
+			<date type="published" when="1952">1952</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Reynolds B. The effect of learning on the predictability of psychomotor performance. J Exp Psychol. 1952;44(3):189-198. doi:http://dx.doi.org/10.1037/h0060862</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Individual differences in various parameters of motor learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Welch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">M</forename><surname>Henry</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1971.10734895</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="78" to="96" />
+			<date type="published" when="1971">1971</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Welch M, Henry FM. Individual differences in various parameters of motor learning. J Mot Behav. 1971;3(1):78-96. doi:10.1080/00222895.1971.10734895</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Organizing and reorganizing coordination patterns</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Scheidt</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-319-47313-0_18</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Progress in Motor Control. Advances in Experimental Medicine and Biology</title>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Laczko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Latash</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<biblScope unit="volume">2016</biblScope>
+			<biblScope unit="page" from="327" to="349" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ranganathan R, Scheidt RA. Organizing and reorganizing coordination patterns. In: Laczko J, Latash ML, eds. Progress in Motor Control. Advances in Experimental Medicine and Biology. Springer International Publishing; 2016:327-349. doi:10.1007/978-3-319- 47313-0_18</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Accelerating locomotor savings in learning: compressing four training days to one</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Day</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Leech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">T</forename><surname>Roemmich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Bastian</surname></persName>
+		</author>
+		<idno type="DOI">10.1152/jn.00903.2017652</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Neurophysiol</title>
+		<imprint>
+			<biblScope unit="volume">119</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="2100" to="2113" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Day KA, Leech KA, Roemmich RT, Bastian AJ. Accelerating locomotor savings in learning: compressing four training days to one. J Neurophysiol. 2018;119(6):2100-2113. doi:10.1152/jn.00903.2017 652</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Standardized or simple effect size: what should be reported?</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Baguley</surname></persName>
+		</author>
+		<idno type="DOI">10.1348/000712608X377117</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Br J Psychol Lond Engl</title>
+		<imprint>
+			<biblScope unit="volume">100</biblScope>
+			<biblScope unit="page" from="603" to="617" />
+			<date type="published" when="1953">1953. 2009</date>
+		</imprint>
+	</monogr>
+	<note>Pt 3</note>
+	<note type="raw_reference">Baguley T. Standardized or simple effect size: what should be reported? Br J Psychol Lond Engl. 1953. 2009;100(Pt 3):603-617. doi:10.1348/000712608X377117</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">A case against default effect sizes in sport and exercise science</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Caldwell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Vigotsky</surname></persName>
+		</author>
+		<idno type="DOI">10.7717/peerj.10314</idno>
+	</analytic>
+	<monogr>
+		<title level="j">PeerJ</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page">10314</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Caldwell A, Vigotsky AD. A case against default effect sizes in sport and exercise science. PeerJ. 2020;8:e10314. doi:10.7717/peerj.10314</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Specificity and variability of practice</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Shea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">M</forename><surname>Kohl</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/02701367.1990.10608671</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Res Q Exerc Sport</title>
+		<imprint>
+			<biblScope unit="volume">61</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="169" to="177" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Shea CH, Kohl RM. Specificity and variability of practice. Res Q Exerc Sport. 1990;61(2):169-177. doi:10.1080/02701367.1990.10608671</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Challenge point: a framework for conceptualizing the effects of various practice conditions in motor learning</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Guadagnoli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lee</forename><surname>Td</surname></persName>
+		</author>
+		<idno type="DOI">10.3200/JMBR.36.2.212-224661</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="212" to="224" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Guadagnoli MA, Lee TD. Challenge point: a framework for conceptualizing the effects of various practice conditions in motor learning. J Mot Behav. 2004;36(2):212-224. doi:10.3200/JMBR.36.2.212-224 661</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Redressing the balance: Commentary on &quot;examining motor learning in older adults using analogy instruction&quot; by tse, wong, and masters</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bobrownicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sproule</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Macpherson</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.psychsport.2018.05.014</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Psychol Sport Exerc</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="211" to="214" />
+			<date type="published" when="2017">2017. 2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bobrownicki R, Collins D, Sproule J, MacPherson AC. Redressing the balance: Commentary on &quot;examining motor learning in older adults using analogy instruction&quot; by tse, wong, and masters (2017). Psychol Sport Exerc. 2018;38:211-214. doi:10.1016/j.psychsport.2018.05.014</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Time continuously on target as a function of distribution of practice</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bourne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Archer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J Exp Psychol</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="25" to="33" />
+			<date type="published" when="1956">1956</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bourne LE, Archer EJ. Time continuously on target as a function of distribution of practice. J Exp Psychol. 1956;51(1):25-33.</note>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Optimizing summary knowledge of results for skill learning</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Young</forename><surname>De</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Hum Mov Sci</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">3-5</biblScope>
+			<biblScope unit="page" from="325" to="348" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schmidt RA, Lange C, Young DE. Optimizing summary knowledge of results for skill learning. Hum Mov Sci. 1990;9(3-5):325-348.</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Unloading the dice: selection and design of comparison and control groups in controlled trials to enhance translational impact within motor learning and control research</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bobrownicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">J</forename><surname>Carson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Macpherson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Collins</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/1612197X.2021.1956567</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Int J Sport Exerc Psychol</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bobrownicki R, Carson HJ, MacPherson AC, Collins D. Unloading the dice: selection and design of comparison and control groups in controlled trials to enhance translational impact within motor learning and control research. Int J Sport Exerc Psychol. 2021. doi:10.1080/1612197X.2021.1956567</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Specificity vs. generality in learning motor skill</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">M</forename><surname>Henry</surname></persName>
+		</author>
+		<editor>Brown RC, Kenyon GS</editor>
+		<imprint>
+			<date type="published" when="1968">1968</date>
+			<publisher>Prentice Hall</publisher>
+			<biblScope unit="page" from="331" to="340" />
+		</imprint>
+	</monogr>
+	<note>Classical Studies on Physical Activity</note>
+	<note type="raw_reference">Henry FM. Specificity vs. generality in learning motor skill. In: Brown RC, Kenyon GS, eds. Classical Studies on Physical Activity. Prentice Hall; 1968:331-340.</note>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Learning new gait patterns is enhanced by specificity of training rather than progression of task difficulty</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Krishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Dharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">E</forename><surname>Augenstein</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jbiomech.2019.03.014</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Biomech</title>
+		<imprint>
+			<biblScope unit="volume">88</biblScope>
+			<biblScope unit="page" from="33" to="37" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Krishnan C, Dharia AK, Augenstein TE, et al. Learning new gait patterns is enhanced by specificity of training rather than progression of task difficulty. J Biomech. 2019;88:33-37. doi:10.1016/j.jbiomech.2019.03.014</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Motor skills are strengthened through reconsolidation</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">F</forename><surname>Wymbs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Bastian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Celnik</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.cub.2015.11.066</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Curr Biol</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="338" to="343" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wymbs NF, Bastian AJ, Celnik PA. Motor skills are strengthened through reconsolidation. Curr Biol. 2016;26(3):338-343. doi:10.1016/j.cub.2015.11.066</note>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Things I have learned (so far)</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0003-066X.45.12.1304</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Am Psychol</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1304" to="1312" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cohen J. Things I have learned (so far). Am Psychol. 1990;45(12):1304-1312. doi:10.1037/0003-066X.45.12.1304</note>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Underpowered and overworked: Problems with data analysis in motor learning studies</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lohse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Buchanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Miller</surname></persName>
+		</author>
+		<idno type="DOI">10.1123/jmld.2015-0010</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Learn Dev</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="37" to="58" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lohse K, Buchanan T, Miller M. Underpowered and overworked: Problems with data analysis in motor learning studies. J Mot Learn Dev. 2016;4(1):37-58. doi:10.1123/jmld.2015-0010</note>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Power failure: why small sample size undermines the reliability of neuroscience</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jpa</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mokrysz</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/nrn3475</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Nat Rev Neurosci</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="365" to="376" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Button KS, Ioannidis JPA, Mokrysz C, et al. Power failure: why small sample size undermines the reliability of neuroscience. Nat Rev Neurosci. 2013;14(5):365-376. doi:10.1038/nrn3475</note>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Ten common statistical mistakes to watch out for when writing or reviewing a manuscript</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">R</forename><surname>Makin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orban</forename><surname>De Xivry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename></persName>
+		</author>
+		<idno type="DOI">10.7554/eLife.48175</idno>
+		<editor>Rodgers P, Parsons N, Holmes N</editor>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page">48175</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Makin TR, Orban de Xivry JJ. Ten common statistical mistakes to watch out for when writing or reviewing a manuscript. Rodgers P, Parsons N, Holmes N, eds. eLife. 2019;8:e48175. doi:10.7554/eLife.48175</note>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Sample size justification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1525/collabra.33267</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Collabra:Psychology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">33267</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens D. Sample size justification. Collabra:Psychology. 2022; 8(1):33267. doi:10.1525/collabra.33267.</note>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Expecting to teach a novel golf putting task did not enhance retention performance: A replication attempt of Daou and colleagues</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mckay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hussien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Carter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yantha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ste-Marie</surname></persName>
+		</author>
+		<idno type="DOI">10.51224/cik.v1i2.39</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Commun Kinesiol</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">McKay B, Hussien J, Carter M, Yantha Z, Ste-Marie D. Expecting to teach a novel golf putting task did not enhance retention performance: A replication attempt of Daou and colleagues. Commun Kinesiol. 2021;1(2). doi:10.51224/cik.v1i2.39</note>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Learning-performance distinction and memory processes for motor skills: a focused review and perspective</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Kantak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Winstein</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.bbr.2011.11.028</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Behav Brain Res</title>
+		<imprint>
+			<biblScope unit="volume">228</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="219" to="231" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kantak SS, Winstein CJ. Learning-performance distinction and memory processes for motor skills: a focused review and perspective. Behav Brain Res. 2012;228(1):219-231. doi:10.1016/j.bbr.2011.11.028</note>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">High variability impairs motor learning regardless of whether it affects task performance</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cardis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Casadio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<idno type="DOI">10.1152/jn.00158.2017</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Neurophysiol</title>
+		<imprint>
+			<biblScope unit="volume">119</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="39" to="48" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cardis M, Casadio M, Ranganathan R. High variability impairs motor learning regardless of whether it affects task performance. J Neurophysiol. 2017;119(1):39-48. doi:10.1152/jn.00158.2017</note>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Why self-controlled feedback enhances motor learning: Answers from electroencephalography and indices of motivation</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">F</forename><surname>Grand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Bruzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">B</forename><surname>Dyke</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.humov.2015.06.013</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Hum Mov Sci</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="page" from="23" to="32" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Grand KF, Bruzi AT, Dyke FB, et al. Why self-controlled feedback enhances motor learning: Answers from electroencephalography and indices of motivation. Hum Mov Sci. 2015;43:23-32. doi:10.1016/j.humov.2015.06.013</note>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Are manipulation checks necessary?</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Hauser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">C</forename><surname>Ellsworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="DOI">10.3389/fpsyg.2018.00998</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Front Psychol</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page">998</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hauser DJ, Ellsworth PC, Gonzalez R. Are manipulation checks necessary? Front Psychol. 2018;9:998. doi:10.3389/fpsyg.2018.00998</note>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Dynamic properties of human brain structure: Learning-related changes in cortical areas and associated fiber connections</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Taubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Draganski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Anwander</surname></persName>
+		</author>
+		<idno type="DOI">10.1523/JNEUROSCI.2567-10.2010</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Neurosci</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">35</biblScope>
+			<biblScope unit="page" from="11670" to="11677" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Taubert M, Draganski B, Anwander A, et al. Dynamic properties of human brain structure: Learning-related changes in cortical areas and associated fiber connections. J Neurosci. 2010;30(35):11670-11677. doi:10.1523/JNEUROSCI.2567-10.2010</note>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Effect of shift in distribution of practice conditions following interpolated rest</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Adams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Reynolds</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/h0061881</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Exp Psychol</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="32" to="36" />
+			<date type="published" when="1954">1954</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Adams JA, Reynolds B. Effect of shift in distribution of practice conditions following interpolated rest. J Exp Psychol. 1954;47(1):32-36. doi:10.1037/h0061881</note>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Historical review and appraisal of research on the learning, retention, and transfer of human motor skills</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Adams</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0033-2909.101.1.41</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Psychol Bull</title>
+		<imprint>
+			<biblScope unit="volume">101</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="41" to="74" />
+			<date type="published" when="1987">1987</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Adams JA. Historical review and appraisal of research on the learning, retention, and transfer of human motor skills. Psychol Bull. 1987;101(1):41-74. doi:10.1037/0033- 2909.101.1.41</note>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Retention and transfer of motor skills: A review for the practitioner</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Fischman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">W</forename><surname>Christina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Vercruyssen</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00336297.1981.10483753</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Quest</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="181" to="194" />
+			<date type="published" when="1981">1981</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Fischman MG, Christina RW, Vercruyssen MJ. Retention and transfer of motor skills: A review for the practitioner. Quest. 1981;33(2):181-194. doi:10.1080/00336297.1981.10483753</note>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Schmidt&apos;s schema theory: the empirical base of the variability of practice hypothesis</title>
+		<author>
+			<persName><forename type="first">Jha</forename><surname>Van Rossum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Hum Mov Sci</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="387" to="435" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Van Rossum JHA. Schmidt&apos;s schema theory: the empirical base of the variability of practice hypothesis. Hum Mov Sci. 1990;9:387-435.</note>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Variability in practice</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wulf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Schmidt</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1988.10735438</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="133" to="149" />
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wulf G, Schmidt RA. Variability in practice. J Mot Behav. 1988;20(2):133-149. doi:10.1080/00222895.1988.10735438</note>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Variability of practice and contextual interference in motor skill learning</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">G</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Magill</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1995.9941719</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="299" to="309" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hall KG, Magill RA. Variability of practice and contextual interference in motor skill learning. J Mot Behav. 1995;27(4):299-309. doi:10.1080/00222895.1995.9941719</note>
+</biblStruct>
+
+<biblStruct xml:id="b62">
+	<analytic>
+		<title level="a" type="main">False-Positive Psychology: Undisclosed flexibility in data Collection and analysis allows presenting anything as significant</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Simmons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Nelson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Simonsohn</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/0956797611417632</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Psychol Sci</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1359" to="1366" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Simmons JP, Nelson LD, Simonsohn U. False-Positive Psychology: Undisclosed flexibility in data Collection and analysis allows presenting anything as significant. Psychol Sci. 2011;22(11):1359-1366. doi:10.1177/0956797611417632</note>
+</biblStruct>
+
+<biblStruct xml:id="b63">
+	<analytic>
+		<title level="a" type="main">On the continuing problem of inappropriate learning measures: Comment on</title>
+		<author>
+			<persName><forename type="first">Mg ;</forename><surname>Fischman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wulf</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.humov.2015.05.011</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Hum Mov Sci</title>
+		<editor>
+			<persName><surname>Wulf</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="page" from="225" to="231" />
+			<date type="published" when="2014">2014. 2015. 2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Fischman MG. On the continuing problem of inappropriate learning measures: Comment on Wulf et al. (2014) and Wulf et al. (2015). Hum Mov Sci. 2015;42:225-231. doi:10.1016/j.humov.2015.05.011</note>
+</biblStruct>
+
+<biblStruct xml:id="b64">
+	<analytic>
+		<title level="a" type="main">On the problem of two-dimensional error scores: Measures and analyses of accuracy, bias, and consistency</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">R</forename><surname>Hancock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Butler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Fischman</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1995.9941714</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="241" to="250" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hancock GR, Butler MS, Fischman MG. On the problem of two-dimensional error scores: Measures and analyses of accuracy, bias, and consistency. J Mot Behav. 1995;27(3):241- 250. doi:10.1080/00222895.1995.9941714</note>
+</biblStruct>
+
+<biblStruct xml:id="b65">
+	<analytic>
+		<title level="a" type="main">More on absolute error, etc</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1976.10735064</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="139" to="142" />
+			<date type="published" when="1976">1976</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Newell KM. More on absolute error, etc. J Mot Behav. 1976;8(2):139-142. doi:10.1080/00222895.1976.10735064</note>
+</biblStruct>
+
+<biblStruct xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Active robotic training improves locomotor function in a stroke survivor</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Krishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Kantak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">Y</forename><surname>Dhaher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">Z</forename><surname>Rymer</surname></persName>
+		</author>
+		<idno type="DOI">10.1186/1743-0003-9-57</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J NeuroEngineering Rehabil</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">57</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Krishnan C, Ranganathan R, Kantak SS, Dhaher YY, Rymer WZ. Active robotic training improves locomotor function in a stroke survivor. J NeuroEngineering Rehabil. 2012;9(1):57. doi:10.1186/1743-0003-9-57</note>
+</biblStruct>
+
+<biblStruct xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Self-controlled observational practice enhances learning</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wulf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Raupach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pfeiffer</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/02701367.2005.10599266</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Res Q Exerc Sport</title>
+		<imprint>
+			<biblScope unit="volume">76</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="107" to="111" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wulf G, Raupach M, Pfeiffer F. Self-controlled observational practice enhances learning. Res Q Exerc Sport. 2005;76(1):107-111. doi:10.1080/02701367.2005.10599266</note>
+</biblStruct>
+
+<biblStruct xml:id="b68">
+	<analytic>
+		<title level="a" type="main">Absolute error: The devil in disguise</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">W</forename><surname>Schutz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">A</forename><surname>Roy</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1973.10734959</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="141" to="153" />
+			<date type="published" when="1973">1973</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schutz RW, Roy EA. Absolute error: The devil in disguise. J Mot Behav. 1973;5(3):141- 153. doi:10.1080/00222895.1973.10734959</note>
+</biblStruct>
+
+<biblStruct xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Children show limited movement repertoire when learning a novel motor skill</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farshchiansadegh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/desc.12614</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Dev Sci</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">12614</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lee MH, Farshchiansadegh A, Ranganathan R. Children show limited movement repertoire when learning a novel motor skill. Dev Sci. 2018;21(4):e12614. doi:10.1111/desc.12614</note>
+</biblStruct>
+
+<biblStruct xml:id="b70">
+	<analytic>
+		<title level="a" type="main">Distribution of practice in motor skill acquisition: Learning and performance effects reconsidered</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">D</forename><surname>Genovese</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/02701367.1988.10609373</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Res Q Exerc Sport</title>
+		<imprint>
+			<biblScope unit="volume">59</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="277" to="287" />
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lee TD, Genovese ED. Distribution of practice in motor skill acquisition: Learning and performance effects reconsidered. Res Q Exerc Sport. 1988;59(4):277-287. doi:10.1080/02701367.1988.10609373</note>
+</biblStruct>
+
+<biblStruct xml:id="b71">
+	<analytic>
+		<title level="a" type="main">The Case against learning and forgetting scores</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Schmidt</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00222895.1972.10734922</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Mot Behav</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="79" to="88" />
+			<date type="published" when="1972">1972</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schmidt RA. The Case against learning and forgetting scores. J Mot Behav. 1972;4(2):79- 88. doi:10.1080/00222895.1972.10734922</note>
+</biblStruct>
+
+<biblStruct xml:id="b72">
+	<analytic>
+		<title level="a" type="main">Small samples and increased variability -discussing the need for restricted types of randomization in exercise interventions in old age</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Netz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lidor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ziv</surname></persName>
+		</author>
+		<idno type="DOI">10.1186/s11556-019-0224-3</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Eur Rev Aging Phys Act</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">17</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Netz Y, Lidor R, Ziv G. Small samples and increased variability -discussing the need for restricted types of randomization in exercise interventions in old age. Eur Rev Aging Phys Act. 2019;16(1):17. doi:10.1186/s11556-019-0224-3</note>
+</biblStruct>
+
+<biblStruct xml:id="b73">
+	<analytic>
+		<title level="a" type="main">The impact of trial baseline imbalances should be considered in systematic reviews: a methodological case study</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Trowman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Dumville</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Torgerson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cranny</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jclinepi.2007.03.014</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Clin Epidemiol</title>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1229" to="1233" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Trowman R, Dumville JC, Torgerson DJ, Cranny G. The impact of trial baseline imbalances should be considered in systematic reviews: a methodological case study. J Clin Epidemiol. 2007;60(12):1229-1233. doi:10.1016/j.jclinepi.2007.03.014</note>
+</biblStruct>
+
+<biblStruct xml:id="b74">
+	<analytic>
+		<title level="a" type="main">A matching algorithm to address imbalances in study populations: application to the National Institute of Neurological Diseases and Stroke Recombinant Tissue Plasminogen Activator acute stroke trial</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mandava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">V</forename><surname>Kalkonde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">H</forename><surname>Rochat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">A</forename><surname>Kent</surname></persName>
+		</author>
+		<idno type="DOI">10.1161/STROKEAHA.109.574103</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Stroke</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="765" to="770" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Mandava P, Kalkonde YV, Rochat RH, Kent TA. A matching algorithm to address imbalances in study populations: application to the National Institute of Neurological Diseases and Stroke Recombinant Tissue Plasminogen Activator acute stroke trial. Stroke. 2010;41(4):765-770. doi:10.1161/STROKEAHA.109.574103</note>
+</biblStruct>
+
+<biblStruct xml:id="b75">
+	<analytic>
+		<title level="a" type="main">Change Score or Followup Score? An Empirical Evaluation of the Impact of Choice of Mean Difference Estimates</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">K</forename><surname>Holmer</surname></persName>
+		</author>
+		<ptr target="http://www.ncbi.nlm.nih.gov/books/NBK285983/" />
+	</analytic>
+	<monogr>
+		<title level="j">Agency for Healthcare Research and Quality</title>
+		<imprint>
+			<date type="published" when="2015-12-19">2015. December 19, 2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Fu R, Holmer HK. Change Score or Followup Score? An Empirical Evaluation of the Impact of Choice of Mean Difference Estimates. Agency for Healthcare Research and Quality (US); 2015. Accessed December 19, 2021. http://www.ncbi.nlm.nih.gov/books/NBK285983/</note>
+</biblStruct>
+
+<biblStruct xml:id="b76">
+	<analytic>
+		<title level="a" type="main">Change from baseline and analysis of covariance revisited</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Senn</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/sim.2682</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Stat Med</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">24</biblScope>
+			<biblScope unit="page" from="4334" to="4344" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Senn S. Change from baseline and analysis of covariance revisited. Stat Med. 2006;25(24):4334-4344. doi:10.1002/sim.2682</note>
+</biblStruct>
+
+<biblStruct xml:id="b77">
+	<analytic>
+		<title level="a" type="main">Learning new gait patterns: Age-related differences in skill acquisition and interlimb transfer</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Krishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">P</forename><surname>Washabaugh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">M</forename><surname>Althoen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.exger.2018.07.001</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Exp Gerontol</title>
+		<imprint>
+			<biblScope unit="volume">111</biblScope>
+			<biblScope unit="page" from="45" to="52" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Krishnan C, Washabaugh EP, Reid CE, Althoen MM, Ranganathan R. Learning new gait patterns: Age-related differences in skill acquisition and interlimb transfer. Exp Gerontol. 2018;111:45-52. doi:10.1016/j.exger.2018.07.001</note>
+</biblStruct>
+
+<biblStruct xml:id="b78">
+	<analytic>
+		<title level="a" type="main">Age-related deficits in motor learning are associated with altered motor exploration strategies</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.neuroscience.2019.05.047</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Neuroscience</title>
+		<imprint>
+			<biblScope unit="volume">412</biblScope>
+			<biblScope unit="page" from="40" to="47" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lee MH, Ranganathan R. Age-related deficits in motor learning are associated with altered motor exploration strategies. Neuroscience. 2019;412:40-47. doi:10.1016/j.neuroscience.2019.05.047</note>
+</biblStruct>
+
+<biblStruct xml:id="b79">
+	<analytic>
+		<title level="a" type="main">Motor learning after unilateral brain damage</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Winstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Merians</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">J</forename><surname>Sullivan</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/S0028-3932(98)00145-6</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Neuropsychologia</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="975" to="987" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Winstein CJ, Merians AS, Sullivan KJ. Motor learning after unilateral brain damage. Neuropsychologia. 1999;37(8):975-987. doi:10.1016/S0028-3932(98)00145-6</note>
+</biblStruct>
+
+<biblStruct xml:id="b80">
+	<analytic>
+		<title level="a" type="main">A paradox in the interpretation of group comparisons</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">M</forename><surname>Lord</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/h0025105</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Psychol Bull</title>
+		<imprint>
+			<biblScope unit="volume">68</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="304" to="305" />
+			<date type="published" when="1967">1967</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lord FM. A paradox in the interpretation of group comparisons. Psychol Bull. 1967;68(5):304-305. doi:10.1037/h0025105</note>
+</biblStruct>
+
+<biblStruct xml:id="b81">
+	<analytic>
+		<title level="a" type="main">A rapid form of offline consolidation in skill learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bönstrup</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Iturrate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Thompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cruciani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Censor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">G</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.cub.2019.02.049</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Curr Biol</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1346" to="1351" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bönstrup M, Iturrate I, Thompson R, Cruciani G, Censor N, Cohen LG. A rapid form of offline consolidation in skill learning. Curr Biol. 2019;29(8):1346-1351.e4. doi:10.1016/j.cub.2019.02.049</note>
+</biblStruct>
+
+<biblStruct xml:id="b82">
+	<analytic>
+		<title level="a" type="main">Neuroplasticity subserving motor skill learning</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Dayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">G</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.neuron.2011.10.008</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Neuron</title>
+		<imprint>
+			<biblScope unit="volume">72</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="443" to="454" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Dayan E, Cohen LG. Neuroplasticity subserving motor skill learning. Neuron. 2011;72(3):443-454. doi:10.1016/j.neuron.2011.10.008</note>
+</biblStruct>
+
+<biblStruct xml:id="b83">
+	<analytic>
+		<title level="a" type="main">The acquisition of skilled motor performance: fast and slow experience-driven changes in primary motor cortex</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Karni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Meyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rey-Hipolito</surname></persName>
+		</author>
+		<idno type="DOI">10.1073/pnas.95.3.861</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Proc Natl Acad Sci U S A</title>
+		<imprint>
+			<biblScope unit="volume">95</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="861" to="868" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Karni A, Meyer G, Rey-Hipolito C, et al. The acquisition of skilled motor performance: fast and slow experience-driven changes in primary motor cortex. Proc Natl Acad Sci U S A. 1998;95(3):861-868. doi:10.1073/pnas.95.3.861</note>
+</biblStruct>
+
+<biblStruct xml:id="b84">
+	<analytic>
+		<title level="a" type="main">Online and offline contributions to motor learning change with practice, but are similar across development</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Lee</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s00221-019-05639-3</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Exp Brain Res</title>
+		<imprint>
+			<biblScope unit="volume">237</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="2865" to="2873" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lee MH. Online and offline contributions to motor learning change with practice, but are similar across development. Exp Brain Res. 2019;237(11):2865-2873. doi:10.1007/s00221-019-05639-3</note>
+</biblStruct>
+
+<biblStruct xml:id="b85">
+	<analytic>
+		<title level="a" type="main">The status of research in reminiscence</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Buxton</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/h0053614</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Psychol Bull</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="313" to="340" />
+			<date type="published" when="1943">1943</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Buxton CE. The status of research in reminiscence. Psychol Bull. 1943;40(5):313-340. doi:10.1037/h0053614</note>
+</biblStruct>
+
+<biblStruct xml:id="b86">
+	<analytic>
+		<title level="a" type="main">Sleep and motor learning: Is there room for consolidation?</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">C</forename><surname>Rickard</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/bul0000009</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Psychol Bull</title>
+		<imprint>
+			<biblScope unit="volume">141</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="812" to="834" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Pan SC, Rickard TC. Sleep and motor learning: Is there room for consolidation? Psychol Bull. 2015;141(4):812-834. doi:10.1037/bul0000009</note>
+</biblStruct>
+
+<biblStruct xml:id="b87">
+	<analytic>
+		<title level="a" type="main">The power law repealed: the case for an exponential law of practice</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Heathcote</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Mewhort</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychon Bull Rev</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="185" to="207" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Heathcote A, Brown S, Mewhort DJ. The power law repealed: the case for an exponential law of practice. Psychon Bull Rev. 2000;7(2):185-207.</note>
+</biblStruct>
+
+<biblStruct xml:id="b88">
+	<analytic>
+		<title level="a" type="main">Time scales in motor learning and development</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mayer-Kress</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychol Rev</title>
+		<imprint>
+			<biblScope unit="volume">108</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="57" to="82" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Newell KM, Liu YT, Mayer-Kress G. Time scales in motor learning and development. Psychol Rev. 2001;108(1):57-82.</note>
+</biblStruct>
+
+<biblStruct xml:id="b89">
+	<analytic>
+		<title level="a" type="main">Human learning: Power laws or multiple characteristic time scales?</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Newell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mayer-Kress</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">T</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Tutor Quant Methods Psychol</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="66" to="76" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Newell KM, Mayer-Kress G, Liu YT. Human learning: Power laws or multiple characteristic time scales? Tutor Quant Methods Psychol. 2006;2(2):66-76.</note>
+</biblStruct>
+
+<biblStruct xml:id="b90">
+	<analytic>
+		<title level="a" type="main">Taking proportional out of stroke recovery</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Hawe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Scott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">P</forename><surname>Dukelow</surname></persName>
+		</author>
+		<idno type="DOI">10.1161/STROKEAHA.118.023006</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Stroke</title>
+		<imprint>
+			<biblScope unit="volume">50</biblScope>
+			<biblScope unit="page" from="204" to="211" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hawe RL, Scott SH, Dukelow SP. Taking proportional out of stroke recovery. Stroke. 2018;50:204-211. doi:10.1161/STROKEAHA.118.023006</note>
+</biblStruct>
+
+<biblStruct xml:id="b91">
+	<analytic>
+		<title level="a" type="main">Statistical pitfalls of personalized medicine</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Senn</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/d41586-018-07535-2</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">563</biblScope>
+			<biblScope unit="issue">7733</biblScope>
+			<biblScope unit="page" from="619" to="621" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Senn S. Statistical pitfalls of personalized medicine. Nature. 2018;563(7733):619-621. doi:10.1038/d41586-018-07535-2</note>
+</biblStruct>
+
+<biblStruct xml:id="b92">
+	<analytic>
+		<title level="a" type="main">Skill Memory: Mind the ever-decreasing gap for offline processing</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Robertson</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.cub.2019.03.007</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Curr Biol</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="287" to="R289" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Robertson EM. Skill Memory: Mind the ever-decreasing gap for offline processing. Curr Biol. 2019;29(8):R287-R289. doi:10.1016/j.cub.2019.03.007</note>
+</biblStruct>
+
+<biblStruct xml:id="b93">
+	<analytic>
+		<title level="a" type="main">The contribution of covariation to skill improvement is an ambiguous measure: Comment on Müller and Sternad</title>
+		<author>
+			<persName><forename type="first">Jbj</forename><surname>Smeets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Louw</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0096-1523.33.1.246</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Exp Psychol Hum Percept Perform</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="246" to="249" />
+			<date type="published" when="2004">2004. 2007</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Smeets JBJ, Louw S. The contribution of covariation to skill improvement is an ambiguous measure: Comment on Müller and Sternad (2004). J Exp Psychol Hum Percept Perform. 2007;33(1):246-249. doi:10.1037/0096-1523.33.1.246</note>
+</biblStruct>
+
+<biblStruct xml:id="b94">
+	<analytic>
+		<title level="a" type="main">Beyond bar and line graphs: Time for a new data presentation paradigm</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Weissgerber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">M</forename><surname>Milic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Winham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">D</forename><surname>Garovic</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pbio.1002128</idno>
+	</analytic>
+	<monogr>
+		<title level="j">PLOS Biol</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">1002128</biblScope>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Weissgerber TL, Milic NM, Winham SJ, Garovic VD. Beyond bar and line graphs: Time for a new data presentation paradigm. PLOS Biol. 2015;13(4):e1002128. doi:10.1371/journal.pbio.1002128</note>
+</biblStruct>
+
+<biblStruct xml:id="b95">
+	<analytic>
+		<title level="a" type="main">A manifesto for reproducible science</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Munafò</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dvm</forename><surname>Bishop</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-016-0021</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Nat Hum Behav</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="9" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Munafò MR, Nosek BA, Bishop DVM, et al. A manifesto for reproducible science. Nat Hum Behav. 2017;1(1):1-9. doi:10.1038/s41562-016-0021</note>
+</biblStruct>
+
+<biblStruct xml:id="b96">
+	<analytic>
+		<title level="a" type="main">Infusing motor learning research into neurorehabilitation practice: a historical perspective with case exemplar from the accelerated skill acquisition program</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Winstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lewthwaite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Blanton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">B</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wishart</surname></persName>
+		</author>
+		<idno type="DOI">10.1097/NPT.0000000000000046</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J Neurol Phys Ther JNPT</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="190" to="200" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Winstein CJ, Lewthwaite R, Blanton SR, Wolf LB, Wishart L. Infusing motor learning research into neurorehabilitation practice: a historical perspective with case exemplar from the accelerated skill acquisition program. J Neurol Phys Ther JNPT. 2014;38(3):190-200. doi:10.1097/NPT.0000000000000046</note>
+</biblStruct>
+
+<biblStruct xml:id="b97">
+	<analytic>
+		<title level="a" type="main">Scientific basis and active ingredients of current therapeutic interventions for stroke rehabilitation</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Doherty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gussert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaplinski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Koje</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Krishnan</surname></persName>
+		</author>
+		<idno type="DOI">10.3233/RNN-211243</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Restorative Neurology and Neuroscience</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="97" to="107" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ranganathan R, Doherty C, Gussert M, Kaplinski E, Koje M, Krishnan C. Scientific basis and active ingredients of current therapeutic interventions for stroke rehabilitation. Restorative Neurology and Neuroscience; 2022; 40(2):97-107. doi: 10.3233/RNN-211243</note>
+</biblStruct>
+
+<biblStruct xml:id="b98">
+	<analytic>
+		<title level="a" type="main">Ten guidelines for designing motor learning studies</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M-H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Krishnan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Editor: Dr Matheus Maia Pacheco, CIFI2D, Faculty of Sport, University of Porto, Portugal. Copyright:© 2022 Ranganathan, Lee and Krishnan and BJMB</title>
+		<editor>
+			<persName><forename type="first">E</forename><forename type="middle">S</forename><surname>Vitória</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Brazil</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Guest</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="page" from="112" to="133" />
+		</imprint>
+		<respStmt>
+			<orgName>Dr Fabio Augusto Barbieri -São Paulo State University (UNESP), Bauru, SP, Brazil; Dr José Angelo Barela -São Paulo State University (UNESP), Rio Claro, SP, Brazil; Dr Natalia Madalena Rinaldi -Federal University of Espírito Santo (UFES</orgName>
+		</respStmt>
+	</monogr>
+	<note>This is an open-access article distributed under the terms of the Creative Commons Attribution-Non Commercial-No Derivatives 4.0 International License which permits unrestricted use, distribution, and reproduction in any medium, provided the original author and source are credited</note>
+	<note type="raw_reference">Citation: Ranganathan R, Lee M-H, Krishnan C. (2022). Ten guidelines for designing motor learning studies. Brazilian Journal of Motor Behavior, 16(2):112-133. Editors: Dr Fabio Augusto Barbieri -São Paulo State University (UNESP), Bauru, SP, Brazil; Dr José Angelo Barela - São Paulo State University (UNESP), Rio Claro, SP, Brazil; Dr Natalia Madalena Rinaldi -Federal University of Espírito Santo (UFES), Vitória, ES, Brazil. Guest Editor: Dr Matheus Maia Pacheco, CIFI2D, Faculty of Sport, University of Porto, Portugal. Copyright:© 2022 Ranganathan, Lee and Krishnan and BJMB. This is an open-access article distributed under the terms of the Creative Commons Attribution-Non Commercial-No Derivatives 4.0 International License which permits unrestricted use, distribution, and reproduction in any medium, provided the original author and source are credited.</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

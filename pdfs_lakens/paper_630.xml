@@ -1,0 +1,1105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="es">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Análisis de poder como justificación de la muestra: estrategia analítica para la búsqueda del verdadero efecto</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Jesua</forename><surname>Guzmán González</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sánchez</forename><surname>Franco</surname></persName>
+						</author>
+						<author>
+							<persName><surname>García</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Luis</forename><surname>Miguel</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sánchez</forename><surname>Loyo</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Departamento de Estudios en Lenguas Indígenas</orgName>
+								<orgName type="institution" key="instit1">Centro Universitario de Ciencias de la Socia- les y Humanidades</orgName>
+								<orgName type="institution" key="instit2">Universidad de Guadalajara</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Y</forename><surname>Saúl</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ramírez</forename><surname>De</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Los</forename><surname>Santos</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">Departamento de Psicología Básica</orgName>
+								<orgName type="institution" key="instit1">Centro Universitario de Ciencias de la Salud</orgName>
+								<orgName type="institution" key="instit2">Universidad de Guadalajara Resumen El Manual de publicación de la Asociación Americana de Psicología</orgName>
+								<orgName type="institution" key="instit3">reconocer efectos reales en la investigación. Se subraya la relevancia de la estadística en la construcción del conocimiento y la ne- cesidad de estrategias para incrementar la confiabilidad de la producción científica</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jesua</forename><surname>Guzmán-González</surname></persName>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="department">Doctorado en Biociencias</orgName>
+								<orgName type="institution" key="instit1">Centro Universitario de los Altos</orgName>
+								<orgName type="institution" key="instit2">Universidad de Guadalajara</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Análisis de poder como justificación de la muestra: estrategia analítica para la búsqueda del verdadero efecto</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5F54C193F69CF5FF6133E7404139871D</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:06+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>sample size</term>
+					<term>power analysis</term>
+					<term>effect size</term>
+					<term>robust statistics</term>
+					<term>analytical strategy</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>en su séptima edición (2020), destaca la importancia de privilegiar la calidad en la publicación de artículos científicos. Uno de sus capítulos se relaciona con los estándares de reporte de resultados para artículos de revista, que se centra en la precisión de los resultados, con especial atención en los aspectos cuantitativos, para aumentar la capacidad de identificar efectos reales en la investigación mediante el análisis de poder (AP), que, en este trabajo, se presenta como una herramienta esencial en el diseño y análisis de estudios científicos; también, se sugiere como una estrategia analítica para calcular el tamaño de la muestra. Se explica que el AP se deriva de la propuesta estadística de Neyman-Pearson para la comprobación de hipótesis. Se proporcionan definiciones clave, como el poder estadístico (β), el valor alfa crítico (α), el tamaño del efecto (δ) y el tamaño de la muestra (n). Mediante el enfoque del AP, se puede coadyuvar a mejorar la calidad y transparencia en la investigación científica, así como la capacidad de</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="es">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>INTRODUCCIÓN</head><p>El Manual de publicación de la Asociación Psicológica Americana, en su séptima versión (2020) presenta mayor atención a aspectos de la publicación como la diversidad, inclusividad y elementos que consideran importantes para educar, crear, persuadir o expandir un conocimiento específico <ref type="bibr" target="#b5">(Bradley et al., 2020)</ref>. Dentro de este último elemento, se encuentra el capítulo denominado estándares de reporte de resultados para artículos de revista o, por sus siglas en inglés, JARS ( Journal Article Reporting Standards). El capítulo se centra en una serie de recomendaciones que permiten mejorar la calidad del artículo en términos de precisión, claridad y transparencia de los resultados. Este capítulo, respecto de los estándares cuantitativos, dedica un apartado al tamaño de la muestra, el poder estadístico y la precisión de los resultados reportados a fin de aumentar el poder estadístico del artículo científico conocido como análisis de poder (AP). El AP es definido como una medida que se utiliza en el diseño y análisis de estudios científicos para evaluar la capacidad, alcance y fuerza de una estrategia analítica de detectar un verdadero efecto o una relación real entre variables <ref type="bibr" target="#b0">(Aberson, 2019)</ref>, lo cual resulta con mayor poder en comparación con el uso único del abordaje de Neyman-Pearson del test de la significancia de la hipótesis nula <ref type="bibr" target="#b14">(Greenland et al., 2016)</ref>. En otras palabras, es la probabilidad de que una estrategia analítica, por lo regular mediante pruebas estadísticas, pueda identificar la existencia de una diferencia o efecto significativo en el fenómeno a estudiar. Las recomendaciones del citado manual se han señalado por décadas con poco éxito <ref type="bibr" target="#b6">(Button et al., 2013;</ref><ref type="bibr" target="#b8">Cohen, 1988)</ref> debido a que, en vez de profundizar en métodos compatibles y de robustez con muestras pequeñas que mantengan en niveles adecuados el resultado del AP <ref type="bibr">(Smith y Little, 2018)</ref>, con frecuencia se decide aumentar el número de la muestra (n) sin considerar que eso no necesariamente es la solución que mejor se ajusta al fenómeno. De hecho, una muestra mayor no siempre permite encontrar el efecto deseado por algunas simples razones. La primera es que es probable que un mayor tamaño del efecto (TE) se asocie a muestras más pequeñas y, a la inversa, se podrá encontrar un TE pequeño en muestras más grandes. Eso no depende per se del tamaño de la muestra, sino del TE deseado que haya sido reportado antes en la literatura especializada. En general, el AP ha demostrado ser la forma más efectiva durante el proceso de interpretación, recolección y búsqueda de hallazgos relevantes para la comprobación de hipótesis, incluso más efectiva que aumentar la n de la muestra en el estudio <ref type="bibr">(Bartlett y Charles, 2022)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ANÁLISIS DE PODER EN LAS HIPÓTESIS: LOS PASOS HACIA LA VERDAD</head><p>Los seres humanos tienen la capacidad de desarrollar inferencias y generar nociones del mundo gracias al desarrollo cognitivo <ref type="bibr">(Colombo y Seriès, 2012)</ref>. Estas nociones de la realidad son parte integral de las hipótesis dada su naturaleza especulativa y tendencia a la generalización, y varían en grado de ajuste y alcance del fenómeno observado. Conocemos alrededor de 45 tipos de hipótesis en el método científico actual (Ortiz-Uribe, 2003); sin embargo, esta capacidad no es libre de errores porque es probable que se cometan diversas falacias <ref type="bibr" target="#b4">(Bordes-Solanas, 2011)</ref>. Es importante aclarar que los errores, en cuanto a las falacias se trata, no se refieren necesariamente a la equivocación, sino a la imprecisión, en otras palabras, a un sesgo. <ref type="bibr" target="#b16">Gutiérrez-Cabria (1994)</ref> argumenta que la estadística es una herramienta que puede prevenir la aparición de estos sesgos, y fungir como una línea de defensa ante las falacias. Además, es una herramienta indispensable para la construcción del conocimiento, razón por la cual conocer de manera adecuada la estrategia analítica permite saber, primero, que las nociones creadas nunca son, en esencia, erróneas o ciertas, sino que deben entenderse bajo un grado de ajuste a la realidad percibida, y segundo, que la estadística es solo una herramienta útil para describir y contrastar esa descripción del mundo que el ser humano percibe como real. Mediante una integración de lo anterior, podemos partir de que el ser humano se encuentra formulando hipótesis de su entorno en forma constante más o menos precisas, ante lo cual la estadística presenta un rol importante cuidando que las inferencias sean lo menos imprecisas posible. Lo anterior es generalizable a todas las ciencias, incluidas las consideradas "blandas", como las ciencias humanas <ref type="bibr">(Ortiz-Uribe, 2003)</ref>. Véase el ejemplo de las ciencias nomotécnicas (como la sociología) en comparación con las ciencias naturales (como la física), en las que, a pesar de que la primera es de contenido metafísico y la segunda de contenido físico, ambas son susceptibles a los sesgos en la percepción. Es necesario aclarar en este punto que no existe un método correcto o incorrecto para entender un fenómeno, sino que, al igual que las hipótesis, habrá métodos que tengan un grado de ajuste mayor o menor para el fenómeno observado. Aunado a esto, es una realidad que, en la actualidad, las ciencias consideradas como "blandas" se encuentran en una crisis de confianza dada la baja posibilidad de replicación de hallazgos <ref type="bibr" target="#b21">(Ioannidis, 2005)</ref>, por lo que se han desarrollado múltiples estrategias para mejorar la construcción del conocimiento y la producción científica. Se sabe que no resulta conveniente llevar a cabo una evaluación de una muestra determinada sin haber hecho un AP. Debido a lo antes descrito y a que las funciones de la potencia estadística no son lineales y son específicas de la estrategia estadística del estudio <ref type="bibr" target="#b8">(Cohen, 1988)</ref>, el AP se deriva del poder estadístico propuesto por Neyman-Pearson para comprobación de la hipótesis <ref type="bibr">(Neyman y Pearson, 1993)</ref>. Entonces, antes de hablar de este, definiremos algunos de sus elementos constituyentes, es decir, cuáles son los tipos de error, entender la distribución muestral (central y no central) y conocer las variables definiendo el significado del poder estadístico (β), el valor alfa crítico (α), el TE (δ) y la n (véase tabla 1), ya que, si especificamos tres de estas, podemos encontrar la cuarta <ref type="bibr" target="#b0">(Aberson, 2019)</ref>. La tabla 1 contiene el resumen de estas variables y las definiciones clásicas de estos elementos.</p><p>Tabla 1 Resumen de conceptos en estadística constituyentes del AP y su uso común Símbolo Definición Uso Alfa (α) Área bajo la curva que representa la zona crítica necesaria de superar, que se interpreta como la probabilidad de aceptar un falso positivo Tradicionalmente, este se configura al 0.05, lo que se traduce a tener la probabilidad de un 5% de aceptar el error de observar un fenómeno que no está ahí. Existen otras disciplinas más exigentes, como los ensayos clínicos en los que se exige un 0.001 Beta (β) Área bajo la curva que representa la zona crítica necesaria a superar, que se interpreta como la probabilidad de aceptar un falso negativo Tradicionalmente, este se configura al 0.80, lo que se traduce a tener la probabilidad de un 20% de aceptar el error de no observar un fenómeno que está ahí. No existe un consenso sólido que indique cuál sería el β deseado, pero se considera que este valor es el mínimo aceptable Delta (δ)</p><p>Representa la magnitud de distancia entre dos medidas obtenidas de grupos independientes Este cálculo depende casi exclusivamente del fenómeno estudiado; sin embargo, aunque se conocen algunos valores empíricos que ayudan a un punto de partida para las ciencias de la conducta (δ = 0.23 como efecto pequeño, δ = 0.60 como efecto moderado y δ = 0.78 como efecto amplio), se recomienda consultar los metaanálisis del fenómeno específico para averiguar su efecto particular Muestra (n)</p><p>Bajo la perspectiva del AP, este es el número necesario de observaciones para apreciar un verdadero efecto</p><p>El número de observaciones mínimas necesarias para evidenciar un verdadero efecto entre dos grupos</p><p>Como mencionamos, la estadística es una herramienta esencial para evitar caer en errores interpretativos y funciona como una línea de defensa para prevenir imprecisiones en la comunidad científica con hallazgos y, también, para no engañarnos a nosotros mismos con sesgos. La teoría estadística predominante, llamada frecuentista, es un marco de trabajo matemático basado en la distribución normal, que supone que la probabilidad de aparición de un fenómeno se acumula con el tiempo. Dada esta aproximación, se considera que pueden existir fundamentalmente dos tipos de sesgos: afirmar que existe un fenómeno cuando no lo hay (error tipo I), también denominado falso positivo, y negar que existe un fenómeno cuando en realidad lo hay (error tipo II), conocido como falso negativo. La estrategia más común es mediante el valor α, también conocido como valor p (p value). Este es un procedimiento estadístico que permite evitar el error tipo I en fenómenos susceptibles de ser medidos <ref type="bibr" target="#b28">(Pepper, 1972)</ref>. Clásicamente, es la primera línea de defensa contra ses-gos. La mayoría de los software estadísticos lo calculan por programación estándar; sin embargo, dicho estadístico se ha visto limitado en potencia para brindar una adecuada conclusión <ref type="bibr" target="#b34">(Solla et al., 2018)</ref> ante la ausencia de conocimiento estadístico previo. El α, bajo el supuesto de interpretación del marco fisheriano, es interpretado como una medida continua de compatibilidad entre los datos observados que sirven para rechazar la H 0 , de tal forma la compatibilidad de los datos con la H 0 puede establecerse con el continuo entre 1 (perfectamente compatible) y 0 (perfectamente incompatible) <ref type="bibr" target="#b38">(Wasserstein et al., 2019)</ref>. Además, el α parte del teorema del límite central, el cual asume que todo fenómeno observado tenderá a centralizarse de tal manera que la "normalidad" se observará en la frecuencia de aparición de un fenómeno en el universo observable (μ); por lo tanto, las muestras provenientes de dicho universo (M) pueden acercarse o alejarse del μ en dependencia de variables que convergen en el mismo fenómeno. Estas muestras pueden utilizarse para compararse con la μ, comparar dos muestras M 1 y M 2 , o bien, asociar algún fenómeno de naturaleza medible, y luego se someterá a prueba el grado de ajuste en el que se diferencia o se acerca a lo esperado. Estas pruebas de hipótesis, en general provenientes de técnicas estadísticas, se centran en la fuente de variabilidad dentro de la clásica distribución normal.</p><p>Por otro lado, el poder estadístico es definido como 1-β <ref type="bibr" target="#b8">(Cohen, 1988</ref><ref type="bibr" target="#b9">(Cohen, , 1992))</ref>, donde la β es la probabilidad de error permisible para un falso negativo (tipo II), es decir, la probabilidad de no detectar un efecto como significativo si la hipótesis neutra es falsa y se cumplen los supuestos de la prueba de significancia. Esto significa que, si existe un poder más alto en el estudio, si un verdadero efecto está presente, se detecta con mayor frecuencia. <ref type="bibr" target="#b8">Cohen (1988)</ref> menciona que, para estudios en psicología, el nivel recomendado de la β es de 0.80, y surge de la afirmación de Neyman y Pearson (1933) que los falsos positivos son cuatro veces peores para la ciencia que los falsos negativos. Por lo tanto, si los "falsos positivos" (α) se mantienen al (0.05) 5%, los falsos negativos (β) no deberían ser mayores del 20%. Cabe mencionar que esta afirmación es arbitraria y sigue en estudio una mejor decisión al respecto. Ambas medidas se encuentran presentes dentro de la distribución muestral y, clásicamente, se describe a la H 0 como la probabilidad de distribución centrada en cero. Se puede rechazar la H 0 si los resultados observados son mayores que el valor crítico observado en el α. Esta crea una zona de rechazo en una de las colas de distribución; si los resultados observados se encuentran dentro de la zona de rechazo, se concluye que los datos serían improbables si se supone que la hipótesis alterna fuese verdadera, y si se rechaza la hipótesis nula. Con esta posibilidad, entonces existen dos maneras de declarar la zona de rechazo: hipótesis no direccional y direccional. La primera corresponde a la suposición de que existirá un efecto independientemente de la dirección del efecto, es decir, en cualquiera de las dos colas extremas de la distribución muestral, por ejemplo, diferencias de medias entre grupos (M 1 ≠ M 2 ), lo que quiere decir que la H 0 se interpretaría como que no existirán diferencias entre grupos. La segunda corresponde a un fenómeno en el que existe una dirección o un sesgo de la diferencia, por ejemplo, que el primer grupo es mayor que el segundo (M 1 &gt; M 2 ) o viceversa (M 1 &lt; M 2 ). En este último caso, conocido como prueba de una sola cola, el área de rechazo se posicionará en dependencia de la dirección de interés, por ejemplo, si existe un efecto techo en la distribución de los datos en el que no se puede obtener más allá del μ y se busca objetivar que el grupo es mayor o menor del presentado. Se puede encontrar que el primer grupo es más grande que el segundo, pero no importa cuán grande sea la diferencia, no se puede rechazar la hipótesis nula porque es contraria a la predicción direccional.</p><p>Respecto a los TE, estos son una familia de cálculos que han cobrado relevancia conforme la investigación estadística aumenta. <ref type="bibr" target="#b9">Cohen (1992)</ref> menciona el siguiente supuesto: "El principal producto de la indagación en la investigación es una o más medidas del tamaño del efecto, no los valores p" <ref type="bibr" target="#b9">(Cohen, 1992</ref><ref type="bibr">(Cohen, , p. 1310))</ref>.</p><p>Estimar el TE permite cuantificar la magnitud de un fenómeno observado en cualquiera de sus variantes: diferencia de medias (grupos), varianza compartida (correlaciones), área bajo la curva <ref type="bibr" target="#b31">(Salgado, 2018)</ref> y la proporción de aparición de un fenómeno en contraste con otro <ref type="bibr" target="#b30">(Rouder et al., 2009)</ref>. La versión más conocida de cálculo del TE es la δ, también conocida como d de Cohen, la cual es una medida cuantitativa que permite entender el grado en el que un fenómeno (categoría, agrupación, característica, condición, etcétera) distancia la distribución muestral entre los grupos. En la propuesta original, <ref type="bibr">Cohen (2013)</ref> sugirió que la δ no tiene una interpretación estandarizada, contrario a entenderse como el valor p, lo cual implicaría una serie de errores metodológicos y estadísticos <ref type="bibr" target="#b8">(Cohen, 1988;</ref><ref type="bibr" target="#b15">Gurnsey, 2017)</ref>, por lo que, actualmente, se considera que debe complementarse con la finalidad de mejorar la precisión de la interpretación <ref type="bibr" target="#b2">(Baguley, 2009)</ref>. Existen diferentes fórmulas para estimar los TE: para muestras con homogeneidad de varianzas <ref type="bibr">(Cohen, 2013)</ref>, sin homogeneidad de varianzas o comparaciones pareadas <ref type="bibr" target="#b13">(Glass et al., 1981</ref>) y de una sola muestra en la que el tamaño de ambos grupos es desproporcional <ref type="bibr" target="#b20">(Hedges, 1981)</ref>.</p><p>Nota: En la δ de Cohen debe obtenerse la σ estándar en común, o bien, sumar la σ de ambos grupos y dividirla entre dos. En la Δ de Glass se considera que, si las σ difieren y se viola la homogeneidad de las varianzas, no es apropiado utilizar el método de la δ, por lo que se puede tabular la σ del grupo control; esta configuración obtiene mayor proporcional al tamaño del grupo control. Por último, en la g de Hedges lo recomendado es ponderar* la σ de cada grupo por su tamaño de muestra. M = media psicología donde la δ fue de 0.23 para un TE pequeño, δ = 0.60 para un TE moderado y δ = 0.78 para un TE amplio, mientras que para las neurociencias se encontró un δ = 0.14 para un TE pequeño, δ = 0.44 para un TE moderado y un δ = 0.67 para un TE amplio. Lo anterior cobra relevancia dado que, a pesar de que estos cálculos son procedimientos que se consideraban complementarios, tras las sugerencias de la Asociación Americana de Psicología <ref type="bibr" target="#b41">(Wilkinson, 1999)</ref>, se decidieron integrar al reporte de resultados a fin de mejorar las pruebas de hipótesis <ref type="bibr" target="#b18">(Hand, 2012)</ref>. Lamentablemente, solo el 10% de las revistas en Latinoamérica han integrado este cálculo <ref type="bibr" target="#b12">(García et al., 2008)</ref>, lo que pudiera contribuir en su menor impacto y visibilidad científica. La evidencia científica aconseja calcularlos en el mismo estudio para mejorar la robustez de análisis, dado que se ha reportado una correlación importante entre el valor δ, el factor Bayes y el valor p, lo que permite disminuir la incertidumbre en la comprobación de los supuestos.</p><p>Respecto a lo anterior, un estudio realizado por Wetzels et al. ( <ref type="formula">2011</ref>) encontró que, en un total de 855 pruebas t, los valores p, los valores δ y el factor Bayes tenían una gran probabilidad de coincidir en el sustento de la hipótesis (véase figura 1). Esta potencia estadística permite que los investigadores no sobreestimen la evidencia a favor de un efecto solo con el valor p <ref type="bibr" target="#b40">(Wetzels et al., 2011)</ref>.</p><p>Cabe aclarar que la δ de <ref type="bibr" target="#b8">Cohen (1988)</ref> fue diseñada para datos con distribución paramétrica, aunque existen alternativas viables para muestras no paramétricas debido a que se conocen 70 variantes de medidas del TE <ref type="bibr" target="#b23">(Kirk, 2003)</ref>. Al respecto, la correlación de rangos biseriales (r rb ) <ref type="bibr" target="#b11">(Cureton, 1956)</ref>, modificada por <ref type="bibr" target="#b39">Wendt (1972)</ref> y basada en la fórmula de la U de Mann Whitney, es la que se conoce con mejores propiedades para las distribuciones no paramétricas <ref type="bibr" target="#b17">(Guzmán-González et al., 2023)</ref>. Esta resulta de la modificación de la aproximación biserial cuyo centro del cálculo es el coeficiente de correlación entre rangos (Y y Z). Esta correlación es adecuada para la distribución no paramétrica porque utiliza una relación monotónica entre Y y Z similar a la de la correlación de la Tau-b de Kendall o la ρ de Spearman, que siguen la aproximación matemática de la U de Mann-Whitney <ref type="bibr" target="#b22">(Kerby, 2014)</ref> basada en rangos. La fórmula es la siguiente:</p><formula xml:id="formula_0">r rb = 1 -(2U)/ (n 1 * n 2 )</formula><p>Aunque se sabe poco acerca de sus propiedades estadísticas, se han hecho cálculos de validez (Chmura-Kraemer, 2014) y concordancia entre la r rb y la δ de Cohen clásica que demuestran que son válidas para su uso estadístico <ref type="bibr" target="#b17">(Guzmán-González et al., 2023)</ref>. La fórmula de conversión es la siguiente:</p><formula xml:id="formula_1">r= δ/√(δ^2+4)</formula><p>Respecto a la pregunta sobre cuál magnitud del TE es adecuada, <ref type="bibr" target="#b35">(Szucs &amp; Ioannidis, 2017)</ref> encontraron δ empíricos reportados para estudios en el campo de la dad similar, es decir, las M serán similares si el fenómeno es estable. Otro ejemplo es que, si la μ del grupo A es bien conocida al igual que la μ del grupo B, conforme la muestra aumente solo se irá reduciendo la σ si el M es general. De manera inversa, si se ha encontrado un valor de δ pequeño, ocurre un fenómeno ligeramente diferente, ya que, para encontrar efectos de tales características que tengan significancia, se requiere una muestra mayor, que es lo que realizan la mayoría de los investigadores. Un mayor efecto necesita menos muestra, mientras que un menor efecto demanda mayor muestra. Referente a lo anterior, es conveniente primero conocer cuál es el TE buscado en la literatura y tratar de replicarlo. Una forma sencilla de hacerlo es buscar en metaanálisis, que son la forma de evidencia científica de mayor jerarquía. Además, a partir del TE se pueden llevar a cabo diferentes abordajes; entre ellos, el que pudiera ser de utilidad para estudios en conducta es el coeficiente de superposición ( ), que se calcula multiplicando dos veces la función de la distribución acumulativa para la distribución Lo anterior es tomado para nuestro trabajo porque se han identificado cuáles medidas son las que pudieran predecir un verdadero efecto. Aunque pudiera parecer contraintuitivo no necesariamente un valor p por debajo de su significancia, implica un verdadero fenómeno, ya que, por efectos de una distribución atípica, se puede obtener una significancia y sugerir que existe un fenómeno donde no lo hay. El verdadero efecto dependerá más de aquello que se desea comprobar que de una medida estandarizada. Una explicación de esto es la siguiente: se trata de un fenómeno tan amplio que es visible incluso sin pruebas estadísticas, por ejemplo, un grupo A con un promedio (M) de 65.42 y una desviación estándar (σ) de 9.8, y un grupo B con una M = 53.14 y σ = 9.8. Al hacer el cálculo sencillo del TE, la δ = 1.22 supone un efecto amplio, entonces la probabilidad de una significancia es mayor; es posible que en este estudio exista una significancia positiva (p =&gt; 0.05), y eso será independiente de la muestra; por lo tanto, aunque se evalúen, por ejemplo, 15 sujetos o 150, si el valor de δ es alto, se obtendrá una significancia dado que las M y σ tendrán una variabili-normal por el negativo de la mitad de la δ (Al-Saleh &amp; Samawi, 2007):</p><p>La interpretación que pudiera enriquecer la explicación del fenómeno es la siguiente: por ejemplo, si se aplicara un cuestionario a dos grupos independientes (casos y controles) y se obtuviera una δ = 1, como resultado se obtendría un = .6170; al multiplicar por 100 el resultado, se puede interpretar que, alrededor de un 62% de los grupos, tienen puntuaciones que coinciden (están superpuestas) o se interceptan entre sí; por lo tanto, eso significa también que cerca de un 38% de las puntuaciones son diferentes entre ambos grupos. La riqueza proviene de explicar este grado de compatibilidad entre grupos, en especial para desempeños en tareas o cuestionarios. Si se busca profundizar en estos cálculos, se puede consultar a Ventura-León (2018)los investigadores reportan que la diferencia entre dos distribuciones es pequeña (d &gt; .20, quien reporta los códigos en R para realizar el cálculo.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>JUSTIFICACIÓN DE LA MUESTRA</head><p>Desde el reconocimiento de la crisis de confiabilidad <ref type="bibr" target="#b19">(Hartgerink et al., 2017;</ref><ref type="bibr" target="#b21">Ioannidis, 2005)</ref>, se han hecho esfuerzos para mejorar los métodos usuales que determinan el tamaño de la muestra <ref type="bibr" target="#b32">(Simmons et al., 2011)</ref> logramos dos cosas. Primero, mostramos que a pesar del respaldo nominal de los psicólogos empíricos a una baja tasa de hallazgos falsos positivos (≤ .05. Existen al menos seis maneras de poder justificar el tamaño de la muestra <ref type="bibr" target="#b24">(Lakens, 2022)</ref>; sin embargo, la de mayor uso es la de representatividad. Desde esta perspectiva, se considera que la forma clásica para muestreos aleatorios simples, que cabe aclarar que existen diferentes aproximaciones en dependencia del tipo de muestreo, es mediante la siguiente ecuación: La anterior forma tiene un uso central en la epidemiología <ref type="bibr" target="#b25">(Milton, 2001;</ref><ref type="bibr" target="#b29">Polit, 2002)</ref> debido a que busca una sensibilidad suficiente para poder efectuar una prueba Z diseñada para muestras mayores de 130 sujetos. No obstante, esta aproximación es poco sensible en estudios observacionales o diseños experimentales en los que la población a estudiar suele ser pequeña o se tiene acceso a pocos sujetos en los que se objetiva el fenómeno. Por ejemplo, con esta aproximación, mientras menor sea la población, mayor es el número de la muestra; inversamente, si se tiene mayor población, menor será la muestra para representarla, es decir, si se tienen 100 sujetos de población, la muestra debe ser de 80, pero si se tiene una población de 1,000, la muestra tendrá que ser de 278, o si son 10,000, será de 370. Conforme la población vaya aumentando, la muestra se estabilizará, de tal modo que si ahora se tiene una población de 100,000, se necesitarán tan solo 383 en la muestra, o si son 1'000,000, será de 385 fijo por más que se incremente la población. Por ende, es poco realista que algún investigador que estudie fenómenos poco típicos, enfermedades raras o que cuente con recursos limitados pueda utilizar esta fórmula para justificar su n. Por ello, sugerimos utilizar el AP, que no es una propuesta novedosa, pero ha sido poco utilizada. Existen tres formas comunes de usarlo: el primero es denominado a priori; el segundo, calculando la sensibilidad; y el tercero es hacer un post-hoc. Con base en el objetivo de nuestro trabajo, solo profundizaremos en el primero, ya que es el que permite calcular la n en función de un δ de interés en particular para un fenómeno específico. A continuación, mostramos una explicación gráfica a manera de guía utilizando el programa Jamovi 2.3.2 (2022) de libre acceso. Primero, tras abrir el programa, se selecciona el botón de módulos ubicado en la esquina superior derecha y se da clic en "Biblioteca Jamovi". Luego, se instala el módulo "jpower".</p><p>Segundo, ya instalado el módulo "japower", se seleccionará de la barra de módulos y se dará clic al tipo de muestra que se tiene (independientes, pareadas o una muestra).</p><p>Tercero (se realizará el ejemplo para muestras independientes), del lado izquierdo de la pantalla, en la opción calcular se seleccionará "N por grupo". Para muestras pareadas o una muestra, se lleva a cabo el mismo procedimiento, pero se omite el dato de tamaño relativo del grupo 2 al grupo 1, lo que significa que, si el tamaño relativo es de 1, habrá 36 sujetos por grupo; si este valor se modifica por ejemplo a 1.5, ahora habrá 36 sujetos en un grupo y 45 en el otro. Lo anterior es buscando un δ de 0.67 Cuarto, se ingresarán los valores del TE mínimo de interés (δ), el poder mínimo deseado que puede consultarse en la literatura previa o metaanálisis, el tamaño relativo del grupo 2 al grupo 1, el α (rango de error tipo I) y las colas (a dos colas o a una cola). En el ejemplo se supondrán los valores deseados para el estudio: δ = 0.67 para un efecto amplio como es sugerido en estudios de neurociencias, un poder de 0.80, un tamaño relativo de 1, un α = 0.05 y a dos colas.</p><p>Quinto, se seleccionarán las gráficas en caso de ser deseadas, así como un texto de explicación si se necesitara.</p><p>Sexto, del lado derecho se podrá observar el cálculo de N realizado, así como las descripciones del poder por TE. En el ejemplo realizado se calcula que se necesitarán al menos 36 sujetos o muestras por grupo como previamente se describió.</p><p>El resultado de las tablas anteriores indica el poder para detectar el error tipo II, por lo que el TE seguro para identificar el verdadero efecto debe ser 0.67 o superior, cualquier resultado menor corre el riesgo debido a que tiene menor poder estadístico.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>DISCUSIÓN Y CONCLUSIONES</head><p>Este trabajo busca principalmente servir como una guía para estudiantes, profesores e investigadores que requieren realizar el cálculo de su muestra para sus estudios de manera válida y con consenso científico. Como hemos comentado en anteriores párrafos, lo propuesto aquí no es algo novedoso y ha habido esfuerzos tanto por las comunidades científicas, como la Asociación Americana de Psicología (2020) y las revistas especializadas, para que se utilice con la finalidad de generar un abordaje adecuado de los fenómenos. Más allá de proponer un método estándar, el trabajo tiene el objetivo contrario: posicionar y difundir el conocimiento de que existen múltiples formas válidas para efectuar el abordaje estadístico en la ciencia, contrario a la noción de que siempre deben utilizarse los métodos clásicos y obtener siempre los mismos resultados porque son "más robustos", ya que el número no hace a la ciencia, sino su precisión. La literatura ha insistido en que existen múltiples herramientas matemáticas igual de válidas y robustas, pero de baja difusión entre la comunidad científica. Este tipo de información "divergente" y también con sustento científico debe difundirse con mayor frecuencia. En particular, usar el AP permite realizar el cálculo de la muestra para buscar un TE preciso para el fenómeno en particular, casi de manera personalizada para cada línea de investigación. Por lo anterior, sugerimos a los líderes de líneas de generación del conocimiento abordar sus propios estudios y hallazgos empleando el TE a fin de ser cada vez más precisos en sus resultados y que se re-porte la transparencia necesaria para la comunidad científica. Lo anterior se encuentra respaldado con la noción de que la productividad en equipos de ciencia es, en general, mayor en comparación con la de los investigadores individuales <ref type="bibr" target="#b42">(Wuchty et al., 2007)</ref>, por lo que instruir a estudiantes, posdoctorandos y técnicos académicos a entender los fenómenos de estudio desde el AP probablemente beneficiará la producción del conocimiento.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figura 1 .</head><label>1</label><figDesc>Figura 1. Relación entre el TE y los valores p (A), relación entre el TE y el factor bayesiano (B) y, por último, relación entre el valor p y el factor bayesiano (C). Diagrama de dispersión en el que los puntos indican una coherencia relativa entre los tres cálculos realizados a partir de la muestra dada (855), mientras que los indicados por triángulos señalan grandes inconsistencias, adaptado de Wetzels<ref type="bibr" target="#b40">(Wetzels et al., 2011)</ref>.</figDesc><graphic coords="6,202.65,220.60,148.05,144.00" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Volumen 15, Número 1, 2023</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>Jesua Guzmán González, Franco Sánchez García, Luis Miguel Sánchez-Loyo y Saúl Ramírez de los Santos</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Applied Power Analysis for the Behavioral Sciences</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Aberson</surname></persName>
+		</author>
+		<idno type="DOI">10.4324/9781315171500</idno>
+		<ptr target="https://doi.org/10.4324/9781315171500" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>Routledge</publisher>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Aberson, C. L. (2019). Applied Power Analysis for the Behavioral Sciences. Routledge. https://doi.org/10.4324/9781315171500</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Interference on Overlapping Coefficients in Two Exponential Populations</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Al-Saleh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">M</forename><surname>Samawi</surname></persName>
+		</author>
+		<idno type="DOI">10.22237/jmasm/1193890440</idno>
+		<ptr target="https://doi.org/10.22237/jmasm/1193890440" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Modern Applied Statistical Methods</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="503" to="516" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Al-Saleh, M. F., &amp; Samawi, H. M. (2007). Interference on Over- lapping Coefficients in Two Exponential Populations. Journal of Modern Applied Statistical Methods, 6(2), 503-516. https:// doi.org/10.22237/jmasm/1193890440</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Standardized or simple effect size: What should be reported?</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Baguley</surname></persName>
+		</author>
+		<idno type="DOI">10.1348/000712608X377117</idno>
+		<ptr target="https://doi.org/10.1348/000712608X377117" />
+	</analytic>
+	<monogr>
+		<title level="j">British Journal of Psychology</title>
+		<imprint>
+			<biblScope unit="volume">100</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="603" to="617" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Baguley, T. (2009). Standardized or simple effect size: What should be reported? British Journal of Psychology, 100(3), 603- 617. https://doi.org/10.1348/000712608X377117</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Power to the People: A Beginner&apos;s Tutorial to Power Analysis using jamovi</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bartlett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Charles</surname></persName>
+		</author>
+		<idno type="DOI">10.15626/MP.2021.3078</idno>
+		<ptr target="https://doi.org/10.15626/MP.2021.3078" />
+	</analytic>
+	<monogr>
+		<title level="j">Meta-Psychology</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bartlett, J., &amp; Charles, S. (2022). Power to the People: A Begin- ner&apos;s Tutorial to Power Analysis using jamovi. Meta-Psycholo- gy, 6. https://doi.org/10.15626/MP.2021.3078</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<author>
+			<persName><surname>Bordes-Solanas</surname></persName>
+		</author>
+		<title level="m">Las trampas de Circe: falacias lógicas y argumentación informal</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note>st ed. Cátedra teorema</note>
+	<note type="raw_reference">Bordes-Solanas. (2011). Las trampas de Circe: falacias lógicas y ar- gumentación informal (1st ed.). Cátedra teorema.</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">The APA Publication Manual: Changes in the Seventh Edition</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bradley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Noble</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hendricks</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1066480720911625</idno>
+		<ptr target="https://doi.org/10.1177/1066480720911625" />
+	</analytic>
+	<monogr>
+		<title level="j">The Family Journal</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="126" to="130" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bradley, L., Noble, N., &amp; Hendricks, B. (2020). The APA Publication Manual: Changes in the Seventh Edi- tion. The Family Journal, 28(2), 126-130. https://doi. org/10.1177/1066480720911625</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Power failure: why small sample size undermines the reliability of neuroscience</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mokrysz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Flint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">S J</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Munafò</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/nrn3475</idno>
+		<ptr target="https://doi.org/10.1038/nrn3475" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Reviews Neuroscience</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="365" to="376" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Button, K. S., Ioannidis, J. P. A., Mokrysz, C., Nosek, B. A., Flint, J., Robinson, E. S. J., &amp; Munafò, M. R. (2013). Power failure: why small sample size undermines the reliability of neuro- science. Nature Reviews Neuroscience, 14(5), 365-376. https:// doi.org/10.1038/nrn3475</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chmura-Kraemer</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/9781118445112</idno>
+		<ptr target="https://doi.org/10.1002/9781118445112" />
+		<title level="m">Wiley StatsRef: Statistics Reference Online</title>
+		<editor>
+			<persName><forename type="first">N</forename><surname>Balakrishnan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Colton</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">B</forename><surname>Everitt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">W</forename><surname>Piegorsch</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">F</forename><surname>Ruggeri</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Teugels</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Wiley</publisher>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Chmura-Kraemer, H. (2014). Wiley StatsRef: Statistics Refer- ence Online (N. Balakrishnan, T. Colton, B. Everitt, W. Pie- gorsch, F. Ruggeri, &amp; J. L. Teugels (Eds.)). Wiley. https://doi. org/10.1002/9781118445112</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.4324/9780203771587</idno>
+		<ptr target="https://doi.org/10.4324/9780203771587" />
+		<title level="m">Statistical Power Analysis for the Behavioral Sciences (Erlbaum</title>
+		<imprint>
+			<publisher>Routledge</publisher>
+			<date type="published" when="1988">1988</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note>nd ed.</note>
+	<note type="raw_reference">Cohen, J. (1988). Statistical Power Analysis for the Behavioral Sciences (Erlbaum (Ed.); 2nd ed.). Routledge. https://doi. org/10.4324/9780203771587</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Things I have learned (so far)</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/10109-028</idno>
+		<ptr target="https://doi.org/10.1037/10109-028" />
+	</analytic>
+	<monogr>
+		<title level="m">Methodological issues &amp; strategies in clinical research</title>
+		<imprint>
+			<publisher>American Psychological Association</publisher>
+			<date type="published" when="1992">1992</date>
+			<biblScope unit="page" from="315" to="333" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cohen, J. (1992). Things I have learned (so far). In Methodological issues &amp; strategies in clinical research. (pp. 315-333). American Psychological Association. https://doi.org/10.1037/10109- 028</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Bayes in the Brain-On Bayesian Modelling in Neuroscience</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Colombo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Seriès</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/bjps/axr043</idno>
+		<ptr target="https://doi.org/10.1093/bjps/axr043" />
+	</analytic>
+	<monogr>
+		<title level="j">The British Journal for the Philosophy of Science</title>
+		<imprint>
+			<biblScope unit="volume">63</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="697" to="723" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Colombo, M., &amp; Seriès, P. (2012). Bayes in the Brain-On Bayes- ian Modelling in Neuroscience. The British Journal for the Philosophy of Science, 63(3), 697-723. https://doi.org/10.1093/ bjps/axr043</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Rank-biserial correlation</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">E</forename><surname>Cureton</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/BF02289138</idno>
+		<ptr target="https://doi.org/10.1007/BF02289138" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychometrika</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="287" to="290" />
+			<date type="published" when="1956">1956</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cureton, E. E. (1956). Rank-biserial correlation. Psychometrika, 21(3), 287-290. https://doi.org/10.1007/BF02289138</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Tamaño del efecto en las revistas de Psicología indizadas en Redalyc</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>García</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ortega</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>De La Fuente</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Informes Psicológicos</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="173" to="188" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">García, J., Ortega, E., &amp; De la Fuente, L. (2008). Tamaño del efec- to en las revistas de Psicología indizadas en Redalyc. Informes Psicológicos, 10(11), 173-188.</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">V</forename><surname>Glass</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mcgaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">V</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename></persName>
+		</author>
+		<title level="m">Meta-Analysis in Social Research. SAGE publiclations inc</title>
+		<imprint>
+			<date type="published" when="1981">1981</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Glass, G. V., McGaw, B., &amp; G.V., S. (1981). Meta-Analysis in So- cial Research. SAGE publiclations inc.</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Statistical tests, P values, confidence intervals, and power: a guide to misinterpretations</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Greenland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Senn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">J</forename><surname>Rothman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Carlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Poole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">N</forename><surname>Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">G</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s10654-016-0149-3</idno>
+		<ptr target="https://doi.org/10.1007/s10654-016-0149-3" />
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Epidemiology</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="337" to="350" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Greenland, S., Senn, S. J., Rothman, K. J., Carlin, J. B., Poole, C., Goodman, S. N., &amp; Altman, D. G. (2016). Statistical tests, P values, confidence intervals, and power: a guide to misinter- pretations. European Journal of Epidemiology, 31(4), 337-350. https://doi.org/10.1007/s10654-016-0149-3</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Statistics for research in Psychology: A modern approach using estimation</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gurnsey</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>SAGE publiclations inc</publisher>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gurnsey, R. (2017). Statistics for research in Psychology: A modern approach using estimation. SAGE publiclations inc.</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Filosofía de la estadística</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gutiérrez-Cabria</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+			<publisher>Servei de Publicacions Universitat de Valéncia</publisher>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gutiérrez-Cabria, S. (1994). Filosofía de la estadística. Servei de Publicacions Universitat de Valéncia.</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Tamaño del efecto para distribuciones No-paramétricas: concordancia entre medidas parala robustez de análisis en ciencias de la conducta</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">I</forename><surname>Guzmán-González</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Sánchez-García</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ramirez-Vega</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Sánchez-Loyo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ramírez-De Los Santos</surname></persName>
+		</author>
+		<ptr target="https://mileees.cucs.udg.mx/ojs/index.php/MILEEES/arti-cle/view/89" />
+	</analytic>
+	<monogr>
+		<title level="j">Metodología, Instrumentación, Lógica, Estadística, Evidencias Y Epistemología En Salud</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">14</biblScope>
+			<biblScope unit="page" from="43" to="54" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Guzmán-González, J. I., Sánchez-García, F., Ramirez-Vega, H., Sánchez-Loyo, L. M., &amp; Ramírez-de los Santos, S. (2023). Tamaño del efecto para distribuciones No-paramétricas: concordancia entre medidas parala robustez de análisis en ciencias de la conducta. Metodología, Instrumentación, Lógica, Estadística, Evidencias Y Epistemología En Salud, 1(14), 43-54. https://mileees.cucs.udg.mx/ojs/index.php/MILEEES/arti- cle/view/89</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Understanding The New Statistics: Effect Sizes, Confidence Intervals, and Meta-Analysis</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Hand</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/j.1751-5823.2012.00187_26.x</idno>
+		<ptr target="https://doi.org/10.1111/j.1751-5823.2012.00187_26.x" />
+	</analytic>
+	<monogr>
+		<title level="j">International Statistical Review</title>
+		<editor>
+			<persName><forename type="first">G</forename><surname>Cumming</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="volume">80</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hand, D. J. (2012). Understanding The New Statistics: Effect Sizes, Confidence Intervals, and Meta-Analysis. In G. Cum- ming (Ed.), International Statistical Review (Vol. 80, Issue 2). https://doi.org/10.1111/j.1751-5823.2012.00187_26.x</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H J</forename><surname>Hartgerink</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Wicherts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A L M</forename><surname>Van Assen</surname></persName>
+		</author>
+		<idno type="DOI">10.1525/collabra.71</idno>
+		<ptr target="https://doi.org/10.1525/collabra.71" />
+	</analytic>
+	<monogr>
+		<title level="m">Too Good to be False: Nonsignificant Results Revisited</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="3" to="4" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hartgerink, C. H. J., Wicherts, J. M., &amp; van Assen, M. A. L. M. (2017). Too Good to be False: Nonsignificant Results Re- visited. Collabra: Psychology, 3(1). https://doi.org/10.1525/ collabra.71</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Distribution Theory for Glass&apos;s Estimator of Effect size and Related Estimators</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">V</forename><surname>Hedges</surname></persName>
+		</author>
+		<idno type="DOI">10.3102/10769986006002107</idno>
+		<ptr target="https://doi.org/10.3102/10769986006002107" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Educational Statistics</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="107" to="128" />
+			<date type="published" when="1981">1981</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hedges, L. V. (1981). Distribution Theory for Glass&apos;s Es- timator of Effect size and Related Estimators. Jour- nal of Educational Statistics, 6(2), 107-128. https://doi. org/10.3102/10769986006002107</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Why Most Published Research Findings Are False</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pmed.0020124</idno>
+		<ptr target="https://doi.org/10.1371/journal.pmed.0020124" />
+	</analytic>
+	<monogr>
+		<title level="j">PLoS Medicine</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">124</biblScope>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ioannidis, J. P. A. (2005). Why Most Published Research Findings Are False. PLoS Medicine, 2(8), e124. https://doi.org/10.1371/ journal.pmed.0020124</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">The Simple Difference Formula: An Approach to Teaching Nonparametric Correlation</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Kerby</surname></persName>
+		</author>
+		<idno type="DOI">10.2466/11.IT.3.1</idno>
+		<ptr target="https://doi.org/10.2466/11.IT.3.1" />
+	</analytic>
+	<monogr>
+		<title level="j">Comprehensive Psychology</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note>3, 11.IT.3.1.</note>
+	<note type="raw_reference">Kerby, D. S. (2014). The Simple Difference Formula: An Approach to Teaching Nonparametric Correlation. Comprehensive Psy- chology, 3, 11.IT.3.1. https://doi.org/10.2466/11.IT.3.1</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">The importance of effect magnitude</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">E</forename><surname>Kirk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Handbook of Research Methods in Experimental Psychology</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Davis</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Blackwell</publisher>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="83" to="105" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kirk, R. E. (2003). The importance of effect magnitude. In S. Da- vis (Ed.), Handbook of Research Methods in Experimental Psy- chology (pp. 83-105). Blackwell.</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Sample Size Justification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1525/collabra.33267</idno>
+		<ptr target="https://doi.org/10.1525/collabra.33267" />
+	</analytic>
+	<monogr>
+		<title level="j">Collabra: Psychology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2022). Sample Size Justification. Collabra: Psychology, 8(1). https://doi.org/10.1525/collabra.33267</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Milton</surname></persName>
+		</author>
+		<title level="m">Estadística para la biología y ciencias de la salud</title>
+		<imprint>
+			<publisher>McGraw</publisher>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+	<note>rd ed.</note>
+	<note type="raw_reference">Milton, S. (2001). Estadística para la biología y ciencias de la salud (3rd ed.). Edit. McGraw.</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">The testing of statistical hypotheses in relation to probabilities a priori</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Neyman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">S</forename><surname>Pearson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mathematical Proceedings of the Cambridge Philosophical Society</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="492" to="510" />
+			<date type="published" when="1993">1993</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Neyman, J., &amp; Pearson, E. S. (1993). The testing of statistical hypotheses in relation to probabilities a priori. Mathemat- ical Proceedings of the Cambridge Philosophical Society, 29(4), 492-510.</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">G</forename><surname>Ortíz-Uribe</surname></persName>
+		</author>
+		<title level="m">Diccionario de metodología de la investi-gación científica</title>
+		<imprint>
+			<publisher>Noriega Editores</publisher>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+	<note>st ed.</note>
+	<note type="raw_reference">Ortíz-Uribe, F. G. (2003). Diccionario de metodología de la investi- gación científica (1st ed.). Noriega Editores.</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Pepper</surname></persName>
+		</author>
+		<idno type="DOI">10.2307/2106292</idno>
+		<ptr target="https://doi.org/10.2307/2106292" />
+	</analytic>
+	<monogr>
+		<title level="m">Systems Philosophy as a World Hypothesis</title>
+		<imprint>
+			<date type="published" when="1972">1972</date>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="page">548</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Pepper, S. C. (1972). Systems Philosophy as a World Hypothesis. Philosophy and Phenomenological Research, 32(4), 548. https:// doi.org/10.2307/2106292</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Investigación científica en ciencias de la salud</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Polit</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0000165-000</idno>
+		<ptr target="https://doi.org/10.1037/0000165-000" />
+	</analytic>
+	<monogr>
+		<title level="m">McGraw Hill. Publication manual of the American Psychological Association</title>
+		<imprint>
+			<publisher>American Psychological Association</publisher>
+			<date type="published" when="2002">2002. 2020</date>
+		</imprint>
+	</monogr>
+	<note>th ed. th ed.</note>
+	<note type="raw_reference">Polit, H. (2002). Investigación científica en ciencias de la salud (5th ed.). McGraw Hill. Publication manual of the American Psychological Association (7th ed.). (2020). American Psychological Association. https://doi. org/10.1037/0000165-000</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Bayesian t tests for accepting and rejecting the null hypothesis</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">N</forename><surname>Rouder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">L</forename><surname>Speckman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">D</forename><surname>Morey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Iverson</surname></persName>
+		</author>
+		<idno type="DOI">10.3758/PBR.16.2.225</idno>
+		<ptr target="https://doi.org/10.3758/PBR.16.2.225" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychonomic Bulletin &amp; Review</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="225" to="237" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rouder, J. N., Speckman, P. L., Sun, D., Morey, R. D., &amp; Iverson, G. (2009). Bayesian t tests for accepting and rejecting the null hypothesis. Psychonomic Bulletin &amp; Review, 16(2), 225-237. https://doi.org/10.3758/PBR.16.2.225</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Transforming the Area under the Normal Curve (AUC) into Cohen&apos;s d, Pearson&apos;s r pb , Odds-Ratio, and Natural Log Odds-Ratio: Two Conversion Tables</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Salgado</surname></persName>
+		</author>
+		<idno type="DOI">10.5093/ejpalc2018a5</idno>
+		<ptr target="https://doi.org/10.5093/ejpalc2018a5" />
+	</analytic>
+	<monogr>
+		<title level="j">The European Journal of Psychology Applied to Legal Context</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="35" to="47" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Salgado, J. F. (2018). Transforming the Area under the Normal Curve (AUC) into Cohen&apos;s d, Pearson&apos;s r pb , Odds-Ratio, and Natural Log Odds-Ratio: Two Conversion Tables. The European Journal of Psychology Applied to Legal Context, 10(1), 35-47. https://doi.org/10.5093/ejpalc2018a5</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Simmons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Nelson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Simonsohn</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/0956797611417632</idno>
+		<ptr target="https://doi.org/10.1177/0956797611417632" />
+	</analytic>
+	<monogr>
+		<title level="m">False-Positive Psychology</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="page" from="1359" to="1366" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Simmons, J. P., Nelson, L. D., &amp; Simonsohn, U. (2011). False-Pos- itive Psychology. Psychological Science, 22(11), 1359-1366. https://doi.org/10.1177/0956797611417632</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Small is beautiful: In defense of the small-N design</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">L</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">R</forename><surname>Little</surname></persName>
+		</author>
+		<idno type="DOI">10.3758/s13423-018-1451-8</idno>
+		<ptr target="https://doi.org/10.3758/s13423-018-1451-8" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychonomic Bulletin &amp; Review</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="2083" to="2101" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Smith, P. L., &amp; Little, D. R. (2018). Small is beautiful: In defense of the small-N design. Psychonomic Bulletin &amp; Review, 25(6), 2083-2101. https://doi.org/10.3758/s13423-018-1451-8</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Why a P-Value is Not Enough</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Solla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bertoncelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Musoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Bertoncelli</surname></persName>
+		</author>
+		<idno type="DOI">10.1097/BSD.0000000000000695</idno>
+		<ptr target="https://doi.org/10.1097/BSD.0000000000000695" />
+	</analytic>
+	<monogr>
+		<title level="j">Clinical Spine Surgery</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="385" to="388" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Solla, F., Tran, A., Bertoncelli, D., Musoff, C., &amp; Bertoncel- li, C. M. (2018). Why a P-Value is Not Enough. Clinical Spine Surgery, 31(9), 385-388. https://doi.org/10.1097/ BSD.0000000000000695</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Empirical assessment of published effect sizes and power in the recent cognitive neuroscience and psychology literature</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Szucs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pbio.2000797</idno>
+		<ptr target="https://doi.org/10.1371/journal.pbio.2000797" />
+	</analytic>
+	<monogr>
+		<title level="j">PLOS Biology</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2017">2017. 2000797</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Szucs, D., &amp; Ioannidis, J. P. A. (2017). Empirical assessment of published effect sizes and power in the recent cognitive neuroscience and psychology literature. PLOS Biology, 15(3), e2000797. https://doi.org/10.1371/journal.pbio.2000797</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<monogr>
+		<title level="m">The jamovi project</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>The jamovi project</note>
+	<note type="raw_reference">The jamovi project. (2022). The jamovi project (2.3).</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Otras formas de entender la d de Cohen</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ventura-León</surname></persName>
+		</author>
+		<idno type="DOI">10.35670/1667-4545</idno>
+		<ptr target="https://doi.org/10.35670/1667-4545" />
+	</analytic>
+	<monogr>
+		<title level="j">Revista Evaluar</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page">22305</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ventura-León, J. (2018). Otras formas de entender la d de Cohen. Revista Evaluar, 18(3). https://doi.org/10.35670/1667-4545. v18.n3.22305</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Moving to a World Beyond</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Wasserstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Schirm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Lazar</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00031305.2019.1583913</idno>
+		<idno>&lt; 0.05</idno>
+		<ptr target="https://doi.org/10.1080/00031305.2019.1583913" />
+	</analytic>
+	<monogr>
+		<title level="j">American Statistician</title>
+		<imprint>
+			<biblScope unit="volume">73</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="19" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wasserstein, R. L., Schirm, A. L., &amp; Lazar, N. A. (2019). Moving to a World Beyond &quot;p &lt; 0.05.&quot; American Statistician, 73(1), 1-19. https://doi.org/10.1080/00031305.2019.1583913</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Dealing with a common problem in Social science: A simplified rank-biserial coefficient of correlation based on the U statistic</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Wendt</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/ejsp.2420020412</idno>
+		<ptr target="https://doi.org/10.1002/ejsp.2420020412" />
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Social Psychology</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="463" to="465" />
+			<date type="published" when="1972">1972</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wendt, H. W. (1972). Dealing with a common problem in Social science: A simplified rank-biserial coefficient of correlation based on the U statistic. European Journal of Social Psychology, 2(4), 463-465. https://doi.org/10.1002/ejsp.2420020412</note>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wetzels</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Matzke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">N</forename><surname>Rouder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">J</forename><surname>Iverson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E.-J</forename><surname>Wagenmakers</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691611406923</idno>
+		<ptr target="https://doi.org/10.1177/1745691611406923" />
+	</analytic>
+	<monogr>
+		<title level="m">Statistical Evidence in Experimental Psychology</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="291" to="298" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wetzels, R., Matzke, D., Lee, M. D., Rouder, J. N., Iverson, G. J., &amp; Wagenmakers, E.-J. (2011). Statistical Evidence in Exper- imental Psychology. Perspectives on Psychological Science, 6(3), 291-298. https://doi.org/10.1177/1745691611406923</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Statistical methods in psychology journals: Guidelines and explanations</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wilkinson</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0003-066X.54.8.594</idno>
+		<ptr target="https://doi.org/10.1037/0003-066X.54.8.594" />
+	</analytic>
+	<monogr>
+		<title level="j">American Psychologist</title>
+		<imprint>
+			<biblScope unit="volume">54</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="594" to="604" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wilkinson, L. (1999). Statistical methods in psychology journals: Guidelines and explanations. American Psychologist, 54(8), 594-604. https://doi.org/10.1037/0003-066X.54.8.594</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">The Increasing Dominance of Teams in Production of Knowledge</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wuchty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Uzzi</surname></persName>
+		</author>
+		<idno type="DOI">10.1126/science.1136099</idno>
+		<ptr target="https://doi.org/10.1126/science.1136099" />
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">326</biblScope>
+			<biblScope unit="page" from="1036" to="1039" />
+			<date type="published" when="2007">2007. 2023</date>
+		</imprint>
+	</monogr>
+	<note>Recibido: septiembre 25, 2023 Última revisión: octubre 9, 2023 Aceptado: octubre 13</note>
+	<note type="raw_reference">Wuchty, S., Jones, B., &amp; Uzzi, B. (2007). The Increasing Dom- inance of Teams in Production of Knowledge. Science, 326, 1036-1039. https://doi.org/10.1126/science.1136099 Recibido: septiembre 25, 2023 Última revisión: octubre 9, 2023 Aceptado: octubre 13, 2023</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Blockchain-based Conceptual Model to Address Educational Certificate Verification Challenges in Tanzania</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Said</forename><forename type="middle">Hamisi</forename><surname>Said</surname></persName>
+							<email>saids@nm-aist.ac.tz</email>
+						</author>
+						<author>
+							<persName><forename type="first">Mussa</forename><forename type="middle">Ally</forename><surname>Dida</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Efraim</forename><forename type="middle">Michael</forename><surname>Kosia</surname></persName>
+							<email>efraim.kosia@nm-aist.ac.tz</email>
+						</author>
+						<author>
+							<persName><forename type="first">Ramadhani</forename><forename type="middle">S</forename><surname>Sinde</surname></persName>
+							<email>ramadhani.sinde@nm-aist.ac.tz</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="department">School of Computational and Communication Science and Engineering</orgName>
+								<orgName type="institution">The Nelson Mandela African Institution of Science and Technology</orgName>
+								<address>
+									<country key="TZ">Tanzania</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="department">School of Computational and Communication Science and Engineering</orgName>
+								<orgName type="institution">The Nelson Mandela African Institution of Science and Technology</orgName>
+								<address>
+									<country key="TZ">Tanzania</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="department">The Nelson Mandela African Institution of Science and Technology</orgName>
+								<address>
+									<country key="TZ">Tanzania</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="department">School of Computational and Communication Science and Engineering</orgName>
+								<orgName type="institution">The Nelson Mandela African Institution of Science and Technology</orgName>
+								<address>
+									<country key="TZ">Tanzania</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Blockchain-based Conceptual Model to Address Educational Certificate Verification Challenges in Tanzania</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">595E18827DFAC649E6D9414E9B998B9A</idno>
+					<idno type="DOI">10.48084/etasr.6170</idno>
+					<note type="submission">Received: 5 July 2023 | Revised: 3 August 2023 | Accepted: 8 August 2023</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>blockchain</term>
+					<term>smart contract</term>
+					<term>interplanetary file system</term>
+					<term>educational certificates</term>
+					<term>counterfeiting</term>
+					<term>verification</term>
+					<term>Tanzania</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The proliferation of counterfeit educational certificates is an ongoing issue around the world, including Tanzania. The effect of this malpractice is detrimental to the credibility of education. Traditional strategies to prevent fake certificates are abortive, calling for a more sophisticated approach. Blockchain technology has recently emerged as an ideal solution to this problem due to its inherent attributes that ensure disintermediation, immutability, tamper proof, anonymity, transparency, consensus, security, and trust. However, most existing blockchain-based solutions lack crucial functionalities that are pertinent to the Tanzanian education system. This study unveiled the challenges faced by the current verification system in Tanzania and proposed a blockchain-based conceptual model to address them. The proposed model is based on blockchain, smart contracts, and the Interplanetary File System (IPFS). Quantitative and qualitative methods were used to investigate certification problems in Tanzania and modeling techniques were used to construct the conceptual model. The findings showed that the main challenges of the current verification system emanate from manual procedures, unverifiable credentials, susceptibility of centralized storage systems, disintegrated verification systems, revocation problems, difficulties in communication, and high dependency on the issuers. These challenges undermine certificate verification, impose a significant setback in the fight against forgeries, and create loopholes for forgeries to persist. It was conceptually demonstrated that these issues can be resolved through the proposed blockchain-based solution.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>INTRODUCTION</head><p>Educational certificates are documents used to certify an individual's achievement in education and provide proof that the holder possesses the knowledge and skills required to qualify for different responsibilities <ref type="bibr" target="#b0">[1]</ref><ref type="bibr" target="#b1">[2]</ref><ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref>. Possession of such credentials can provide an individual with social and economic opportunities <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b4">5]</ref>. As these benefits are desirable, some individuals who cannot endure the cost, time, and hassles required to obtain them resort to cheating on their qualifications by producing counterfeit certificates <ref type="bibr" target="#b4">[5]</ref><ref type="bibr" target="#b5">[6]</ref>. With the advancement of multimedia and printing technologies, the production of counterfeit certificates has become easier and their quality has improved to such an extent that it is difficult to distinguish between fake and genuine <ref type="bibr" target="#b6">[7]</ref>. Counterfeiting of certificates can involve the fabrication of a new certificate (using fake seals, signatures, etc.), the modification of a legitimate certificate (by altering its content such as grades, etc.), degree mills (acquiring certificates from fictitious learning institutions), the in-house fabrication of certificates by corrupt officials of a legitimate institution, a mistranslation of foreign certificates, impersonation, and the deceitful use of a revoked certificate <ref type="bibr" target="#b7">[8]</ref><ref type="bibr" target="#b8">[9]</ref><ref type="bibr" target="#b9">[10]</ref><ref type="bibr" target="#b10">[11]</ref>. Moreover, it may also involve hacking the issuer's database to modify educational records <ref type="bibr" target="#b11">[12]</ref>.</p><p>The sale of fake certificates has become a lucrative business with a billion-dollar market around the world <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b12">13]</ref>.</p><p>According to <ref type="bibr" target="#b13">[14]</ref>, there are more than 2 million fake degrees in the United States. In <ref type="bibr" target="#b7">[8]</ref>, the existence of around 810 fake learning institutions in the United States and about 272 in the United Kingdom was reported. According to a report by the Indian authorities, around 40,000 people in Bangalore gained employment using fake academic qualifications <ref type="bibr" target="#b14">[15]</ref>. In Tanzania, in 2017, the verification of secondary school and teacher certificates of 400,035 public servants revealed that almost 10,000 possessed fake certificates <ref type="bibr" target="#b15">[16]</ref>. The effect of this malpractice not only damages the reputation and credibility of education but also leads to poor performance and productivity at work and deprives genuine graduates of their deserved opportunities <ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref><ref type="bibr" target="#b16">17]</ref>. Prevention of this menace is mainly based on verification strategies <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b17">18]</ref>. Several verification strategies against certificate forgery have been proposed and established, but the problem persists, showing that the currently employed methods are not able to tackle it and there is a need for more sophisticated approaches. Blockchain technology has recently emerged as a potential tool to solve problems that seemed impossible using traditional technologies, due to its ability to build trust-free, transparent, and distributed systems that run on a peer-to-peer consensus network through which strangers with different interests can transact without relying on intermediaries or central authorities for trust maintenance <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b18">[19]</ref><ref type="bibr" target="#b19">[20]</ref>. This technology was brought to light in 2008 through the Bitcoin cryptocurrency <ref type="bibr" target="#b20">[21]</ref>. Since then, it has been enormously transformed and its application has gained ground in various domains <ref type="bibr" target="#b21">[22]</ref><ref type="bibr" target="#b22">[23]</ref><ref type="bibr" target="#b23">[24]</ref>, including document verification for fraud detection <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b24">25]</ref>. Blockchain can substantially enhance credential verification and effectively combat counterfeiting <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b22">23]</ref> due to its innate properties that ensure: disintermediation of management, immutability and tamper-proof of records, anonymity of users, consensus and transparency of transactions, security of the system, and trust between parties <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b24">25]</ref>.</p><p>However, to fully realize the potential of blockchain-based certification solutions, their implementation should be tailored to the contextual needs of a particular education system, as the education system differs from country to country <ref type="bibr" target="#b25">[26]</ref>. This study investigated the challenges of the traditional verification system in Tanzania and proposed a blockchain-based conceptual model tailored to them, demonstrating how it can address them. The proposed blockchain-based conceptual model is unique in the sense that it can address the certification problem at all national education levels (from secondary schools to university), incorporates regulatory authorities to manage registration and deregistration of issuing institutions to the system, controls access permissions of different roles involved in the system, allows issuance and on-chain revocation of certificates, allows third-parties to verify certificates by directly querying the blockchain, and uses decentralized off-chain storage alongside blockchain to facilitate storage of raw data. Finally, it facilitates the issuance, revocation, and verification of the "equivalent statements" for graduates who acquired certificates abroad.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. BACKGROUND</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Certification and Verification Ecosystem in Tanzania</head><p>The educational qualification verification ecosystem consists of four major entities, regulators, issuers, graduates, and recruiters, who work together to achieve the verification life cycle, as shown in Figure <ref type="figure" target="#fig_0">1</ref>. Educational qualifications verification ecosystem in Tanzania.</p><p>The government, through the respective ministry of education, establishes the regulatory bodies for different types and levels of education in the country. These regulators include the Tanzania Commission for Universities (TCU) which is responsible for universities <ref type="bibr" target="#b26">[27]</ref>, the National Council for Technical and Vocational Education and Training (NACTVET) for technical and vocational institutions <ref type="bibr" target="#b27">[28]</ref>, the National Examination Council of Tanzania (NECTA) that is mandated to oversee national examinations <ref type="bibr" target="#b29">[29]</ref>, and the Ministry of Education Science and Technology (MoEST) as the general custodian of education <ref type="bibr" target="#b30">[30]</ref>. These bodies are responsible for, among other things, approving the issuers of educational qualifications in the country. As such, they publish a list of approved issuers to which third parties can refer if they wish to ascertain the legitimacy of the issuing institutions. According to Tanzanian regulations, they also evaluate the educational qualifications awarded outside the country, determine their comparability with the Tanzanian qualifications standard, and issue a comparable certificate called the statement of equivalence. This is done at every level of education by the respective regulator to ensure that these qualifications are understood and recognized by employers, educational institutions, and other authorities in Tanzania.</p><p>Issuers are learning institutions or government authorities that have the right to produce, maintain, and issue educational qualifications. These include NECTA for all national examination qualifications, the Vocational Education and Training Authority (VETA) <ref type="bibr" target="#b31">[31]</ref> for all vocational qualifications, technical colleges for technical qualifications awards, and universities for university qualifications. They award certificates to students who have met the graduation requirements and retain certification records in their registries for reference during verification or other purposes. Apart from awarding a certificate, they can also revoke it if issued by mistake or if the graduate commits academic or non-academic misconduct.</p><p>After receiving a certificate, graduates can present it to prospective recruiters during job applications, admissions, or other purposes. Recruiters must verify the validity of the certificates presented to ensure that they do not enlist candidates with forged credentials. However, they cannot achieve this task without the support of the issuers and regulators. Therefore, in addition to performing internal verification, recruiters usually consult with issuers to verify certificates issued by institutions within the country. In case of certificates granted outside the country, the recruiters consult the regulators, who are responsible for assessing and issuing equivalent statements for foreign awards. Recruiters must also confirm that the learning institution exists legally. To do so, they consult a list of approved issuers published by the respective regulators on their websites.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Blockchain Technology</head><p>Blockchain embeds many technologies, including cryptography, hash functions, peer-to-peer (P2P) networks, and consensus algorithms <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b32">32]</ref>. Blockchain can be defined as a distributed digital ledger consisting of a growing chain of transactional records sealed in blocks that are linked together using a cryptographic hash to ensure security <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b33">[33]</ref><ref type="bibr" target="#b34">[34]</ref>. Through their nodes, users of the blockchain constantly add new cryptographically signed transactions to the ledger. Special users, called miners, seal the transaction into a block and attach it to the blockchain ledger <ref type="bibr" target="#b35">[35]</ref>. Before appending, the blocks are hashed using a one-way hash function, such as the Secure Hash Algorithm (SHA)-2 or 3, and then chronologically linked by including a hash value of a previous block in a newly added block <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b36">36]</ref> to form a chain of blocks. This mechanism ensures the integrity, immutability, and tamper-proof of the data in the ledger <ref type="bibr" target="#b2">[3]</ref>. Figure <ref type="figure" target="#fig_1">2</ref> shows the structure of a block and the way they are linked. A block consists of a header and content. The content holds transactions, while the header contains metadata such as block hashes (for current and previous blocks), a timestamp (block creation time), and a random number (nonce) to verify the block's hash <ref type="bibr" target="#b33">[33,</ref><ref type="bibr" target="#b37">37]</ref>. The ledger and its data are then replicated among the nodes in a P2P network, making it distributed and decentralized <ref type="bibr" target="#b35">[35,</ref><ref type="bibr" target="#b38">[38]</ref><ref type="bibr" target="#b39">[39]</ref>. Being decentralized and distributed means that no single node acts as a central server, as each node holds data, and the transaction of each node is visible to all other nodes, making the blockchain transparent, secure, reliable, and trustworthy <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b38">38,</ref><ref type="bibr" target="#b39">39]</ref>. Any update to the ledger can only occur if most nodes agree to the change to ensure the integrity, transparency, and authenticity of the transactions <ref type="bibr" target="#b1">[2]</ref>. The consensus mechanism is used to reach an agreement among the nodes on the node to add a new block and on the block to be added to the blockchain <ref type="bibr" target="#b40">[40]</ref>. This consensus is handled by algorithms such as Proof-of-Work (PoW), Proof-of-Stake (PoS), Delegated Proof-of-Stake (DPoS), and Byzantine Fault Tolerance (BFT), depending on the blockchain platform <ref type="bibr" target="#b38">[38,</ref><ref type="bibr" target="#b41">41]</ref>. So far, there are many blockchain platforms, but the most popular are Bitcoin <ref type="bibr" target="#b20">[21]</ref>, Ethereum <ref type="bibr" target="#b42">[42]</ref>, and Hyperledger <ref type="bibr" target="#b43">[43]</ref>. Blockchain can be public, private, or consortium, and its access can be permissionless or permissioned <ref type="bibr" target="#b36">[36,</ref><ref type="bibr" target="#b38">38]</ref>. A public blockchain, sometimes called permissionless, is free for anyone to join the network, read or write to the ledger, validate transactions, and mine the blocks <ref type="bibr" target="#b44">[44,</ref><ref type="bibr" target="#b45">45]</ref>. A private blockchain, also called permissioned, is owned by a single organization that is responsible for managing the blockchain and controlling access, and reading and writing the ledger <ref type="bibr" target="#b45">[45]</ref>. Unlike private and public, a consortium blockchain is owned by a group of organizations to provide an inter-organization service. In this blockchain, the consensus process is carried out by participating organizations, while reading or writing permissions may be public, or restricted to the consortium members <ref type="bibr" target="#b40">[40,</ref><ref type="bibr" target="#b46">46]</ref>. With blockchain, strangers can transact without relying on intermediaries for trust keeping <ref type="bibr" target="#b9">[10]</ref>. Instead, trust is ensured by asymmetric cryptographic algorithms <ref type="bibr" target="#b18">[19]</ref>, such as RSA, which is a prominent algorithm in asymmetric cryptosystems <ref type="bibr" target="#b53">[53]</ref>. These attributes made blockchain a disruptive technology with broad applications in various domains such as finance <ref type="bibr" target="#b20">[21]</ref>, health <ref type="bibr" target="#b47">[47]</ref>, agriculture, and education <ref type="bibr" target="#b48">[48]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Smart Contracts</head><p>In its first generation, blockchain was only associated with cryptocurrency, but in the second generation, smart contracts were introduced to make it programmable and applicable beyond cryptocurrencies <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b49">49]</ref>. Smart contracts are computer programs (codes) stored on the blockchain that run automatically when the required conditions are met <ref type="bibr" target="#b33">[33,</ref><ref type="bibr" target="#b35">35,</ref><ref type="bibr" target="#b50">[50]</ref><ref type="bibr" target="#b51">[51]</ref>. The concept of smart contracts, though recently popularized in blockchain applications, was first introduced in 1997 <ref type="bibr" target="#b52">[52]</ref>. Typically, all blockchains contain smart contracts as built-in scripts to execute their transaction logic <ref type="bibr" target="#b34">[34]</ref>. However, most blockchains, such as Bitcoin, offer very limited programmability. Ethereum blockchain is a pioneer in supporting Turing-Complete smart contracts that can perform general-purpose programming <ref type="bibr" target="#b32">[32,</ref><ref type="bibr" target="#b35">35,</ref><ref type="bibr" target="#b53">53]</ref>, as it provides a dedicated high-level programming language and an execution environment named Ethereum Virtual Machine (EVM) <ref type="bibr">[32-33, 35, 53-54]</ref>. In Ethereum, smart contracts are created by nodes through a special transaction, and they are assigned a unique address on the blockchain <ref type="bibr" target="#b55">[55]</ref>. Similarly, they are executed only when triggered by a transaction directed at them through their address, specifying the input data and the function to be called <ref type="bibr" target="#b37">[37,</ref><ref type="bibr" target="#b55">55]</ref>. They are executed independently and exactly as programmed without the possibility of censorship, falsification, or interference by third parties <ref type="bibr" target="#b46">[46]</ref>. The introduction of smart contracts has enabled blockchain to handle more complex business constraints and promoted its application to domains other than cryptocurrency. The core functionalities of the proposed blockchain-based conceptual model in this study, such as the issuance, revocation, and verification of certificates, are demonstrated using smart contracts. Smart contracts are also used to manage the registration, deregistration, and access control of different roles involved in the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. InterPlanatery File System (IPFS)</head><p>Although blockchain provides useful properties, its computational power and storage space remain limited and expensive <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b35">35,</ref><ref type="bibr" target="#b37">37]</ref>. For that reason, it is common practice to store raw data off-chain while storing only a few critical data, such as hashes and meta-data on the chain <ref type="bibr" target="#b35">[35]</ref>. To address this need, several off-chain data storage solutions have been developed, including IPFS, Swarm, Sia, and StorJ <ref type="bibr" target="#b56">[56]</ref>. Of all, IPFS <ref type="bibr" target="#b57">[57]</ref> is the most popular and widely used. IPFS is a decentralized and secure content-addressable file storage system that distributes stored contents among nodes in a P2P network <ref type="bibr" target="#b33">[33,</ref><ref type="bibr" target="#b58">58]</ref>. IPFS is content addressable in the sense that each content (file), locally stored in a peer node, is hashed and the generated hash is used as a content identifier (CID) <ref type="bibr" target="#b33">[33,</ref><ref type="bibr" target="#b58">58]</ref>. During retrieval, the content is located by specifying its CID rather than its location <ref type="bibr" target="#b58">[58]</ref>. The proposed model uses IPFS for the storage of raw certificates, equivalent statements, issuer profile information, and other complementary information to relieve the blockchain from storage overhead.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. RELATED WORKS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Non-Blockchain-based Related Works</head><p>Before the advent of blockchain, scholars and practitioners used non-blockchain-based techniques to improve the verification of educational certificates and alleviate associated fraud <ref type="bibr" target="#b59">[59]</ref>. These methods came in a variety of ways and used different techniques, such as OCR <ref type="bibr" target="#b60">[60]</ref>, hash <ref type="bibr" target="#b61">[61]</ref>, 2D barcode <ref type="bibr" target="#b62">[62]</ref>, QR codes <ref type="bibr" target="#b63">[63]</ref>, RFID <ref type="bibr" target="#b64">[64]</ref>, NFC <ref type="bibr" target="#b65">[65]</ref>, web applications <ref type="bibr" target="#b6">[7]</ref>, and mobile applications <ref type="bibr" target="#b66">[66]</ref>. In <ref type="bibr" target="#b12">[13]</ref>, poor verification methods were shown to fail to detect forgeries. Furthermore, since the verification process left loopholes for bad actors to use fake certificates, the digitization of the verification process was suggested at all levels of education. In <ref type="bibr" target="#b66">[66]</ref>, QR codes and web and mobile applications were used to develop a certificate verification system for Semarang University in Indonesia. This approach formulated a fingerprint of the certificate information, which was encoded along with a URL link to the web application as a QR code. For verification, the verifiers scan a QR code using their smartphone to redirect to the web app where information is stored for comparison. In <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b67">67]</ref>, challenges in verifying educational credentials against counterfeits were found, and web-based applications were developed to authenticate credentials. These approaches were somewhat similar, as they both involved centralized databases of student records and provided an Application Programming Interface (API) for recruiters (e.g. employers) to access them via a web-based application. However, these techniques are manual or semi-automated, making them inefficient for certificate verification and forgery prevention <ref type="bibr" target="#b59">[59]</ref>. Furthermore, most of them depend on conventional centralized database systems. As a result, they are vulnerable to a single point of failure <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b56">56]</ref>, internal <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b68">68]</ref> and other security threats.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Blockchain-based Related Works</head><p>Several initiatives and research efforts have been presented on utilizing blockchain for educational certificate verification and forgery prevention. Blockcerts <ref type="bibr" target="#b69">[69]</ref> is one of the early blockchain-based initiatives on certification. This is an open standard platform based on Bitcoin that enables educational institutions to implement blockchain-based solutions for issuing, sharing, and verifying certificates. However, as noted in <ref type="bibr" target="#b70">[70]</ref>, it cannot verify the issuing institutions, as it does not check if the public key is owned by the issuer, leaving a chance for fake institutions to issue certificates. Moreover, it does not implement on-chain certificate revocation <ref type="bibr" target="#b71">[71]</ref>. In 2017, the University of Nicosia (UNIC) used Blockcerts and became the first institution to issue all academic certificates on the Bitcoin blockchain <ref type="bibr" target="#b72">[72]</ref>. In their solution, a PDF certificate is hashed using SHA-256, and the digest is stored on the blockchain so that third parties can access it to verify the certificate. This solution is limited to a single university and inherits Blockcerts limitations. Capitalizing on the same Blockcerts, Malta is said to be the first country to issue educational certificates on the blockchain at a national level <ref type="bibr" target="#b73">[73]</ref>. This solution is said to operate at the national level, but its technical details have not been presented. However, the use of Blockerts may embed its limitations.</p><p>Many other solutions followed with some improvements. For example, using the ARK blockchain, EduCTX was proposed in <ref type="bibr" target="#b36">[36]</ref> to improve the issuance, storage, sharing and verification of credits accrued from higher education. The system is based on the European Credit Transfer and Accumulation System (ECTS) and represents ECTS credits as ECTX tokens on the blockchain. In <ref type="bibr" target="#b0">[1]</ref>, Blockchain for Education was proposed using the public Ethereum blockchain, smart contracts, IPFS, and proof-of-stake to issue, share, and validate certificates. In <ref type="bibr" target="#b25">[26]</ref>, the University of Zurich BlockChain (UZHBC) was proposed for certificate verification, using the public Ethereum blockchain and smart contracts. In <ref type="bibr" target="#b9">[10]</ref>, a comprehensive blockchain-based solution, called Cerberus, was presented for the verification of higher education certificates, combining the Ethereum blockchain with QR codes to improve usability and using on-chain smart contracts to improve certificate revocation. Other similar solutions, such as SmartCert <ref type="bibr" target="#b75">[74]</ref>, VECefblock <ref type="bibr" target="#b38">[38]</ref>, and Educ-Dapp <ref type="bibr" target="#b37">[37]</ref>, were also proposed to overcome the problem of fake credentials during recruitment.</p><p>In general, these solutions were oriented to the requirements of particular educational systems. For example, VECefblock was designed following the Vietnamese education structure, UZHBC is specific for the University of Zurich, UNIC's solution is restricted to their university, and EduCTX is meant for higher education institutions that follow ECTS standards. For that reason, they cannot directly fit into solving the certification problem in the Tanzanian education system. As suggested in <ref type="bibr" target="#b25">[26]</ref>, to fully realize the potential of blockchain-based certification solutions, its implementation should be tailored to the contextual needs of a particular education system, because the education system differs from one country to another. Therefore, the proposal of this study is tailored to the setup of the Tanzanian educational certification system to address the contextual challenges correctly. Moreover, apart from issuance and verification of certificates, it incorporates regulatory authorities to manage issuing institutions, controls the role's access permissions, provides onchain certificate revocation, uses decentralized off-chain storage, and takes into account the equivalent statements for certificates acquired abroad. The existing solutions have not included all these features, hence partially solving the certification problem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. METHODOLOGY</head><p>Due to the multidisciplinary nature of this study, a combination of methods was used. The first part describes the methods used to uncover certification problems in Tanzania, while the second describes the design of the conceptual model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Uncovering the Certification Problems 1) Research Approach and Design</head><p>Quantitative and qualitative research approaches were used to provide a deeper and broader understanding of the certification problem. The case study design strategy was adopted, as suggested in <ref type="bibr" target="#b76">[75]</ref><ref type="bibr" target="#b77">[76]</ref>, to thoroughly investigate the challenges of certificate verification in the case of Tanzania.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2) Research Setting and Participants</head><p>This study was conducted in the Tanzanian context because it is intended to uncover and address the challenges of certificate verification in Tanzania. The study focused on secondary, vocational, technical, and university certificates, which are the most used in applications for jobs, admissions, and other purposes. Information on certification issues was gathered from certificate issuers (educational institutions), recruiters (employers and admission officers), and regulators of educational institutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3) Sample Size and Sampling Technique</head><p>A total of 137 participants were involved, including 65 issuers, 67 certificates, and 5 regulators. Cochran's formula for the unknown population and its adjustment formula for the finite population were used to determine the sample size for issuers and recruiters, whereas, for regulators, a complete enumeration was used <ref type="bibr" target="#b78">[77]</ref><ref type="bibr" target="#b79">[78]</ref>. The respondents were selected using a nonprobabilistic sampling technique called Stratified Purposive Sampling <ref type="bibr" target="#b80">[79]</ref><ref type="bibr" target="#b81">[80]</ref> to focus on cases that are rich in desired information and can accommodate the heterogeneity of the research population (certification stakeholders), which is divided into different groups <ref type="bibr" target="#b82">[81]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4) Data Collection and Analysis</head><p>This study adopted methodological and data source triangulation techniques in data collection to ensure the validity and reliability of its findings, as suggested by <ref type="bibr" target="#b83">[82]</ref><ref type="bibr" target="#b84">[83]</ref>. Data were collected from multiple certification stakeholders using questionnaires and interviews, supplemented by observations and documentary reviews to capture different perspectives on the certification problem in Tanzania. For data analysis, descriptive and thematic approaches were used to analyze quantitative and qualitative data, respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Designing the Conceptual Model</head><p>The design concept of the model relies on existing knowledge from the literature and other available resources. Its construction involved the use of design modeling techniques and tools to represent and describe the structure, components, relationships, behavior, and functionality of the proposed artifact. The Unifier Modeling Language (UML) <ref type="bibr" target="#b85">[84]</ref> was used as a general guideline to inform the design, and the diagrams.net <ref type="bibr" target="#b86">[85]</ref> diagramming tool was used for creating a visual representation of the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. RESULTS AND DISCUSSION</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Current Verification Process and Methods</head><p>The verification process begins when recruiters receive certificates from their candidates as they submit applications via email, hand delivery, or online application systems. After receiving a certificate, the recruiters verify it using several methods, as shown in Figure <ref type="figure" target="#fig_2">3</ref>. From the findings, 76.1% of the recruiters reach out to issuers for verification, 71.6% ask their applicants to get their certificates certified by a notary or issuer, 64.2% inspect the certificate's security features, 43.3% indicated that, apart from checking the certificates, they also examine the competence of the candidates via aptitude tests, 29.9% verify online via an API that links their online application system to issuer's centralized database, however, this is only used for secondary certificates and only applicable to few recruiters who use online application systems, 23.9% accept a certificate by a mere trust or its look without establishing concrete facts, and 4.5% verify by scanning QR codes imprinted on the certificates. The results show that the most widely used method is reaching out to issuers for verification, implying a high dependency on the issuers for verification. This dependency is attributed to the fact that the proof-of-authenticity features embedded in the certificates can only be confirmed by the issuers, and issuers are the only ones who maintain student records that can be referred to for verification of certificates. QR code scanning is the least used method because it is an emerging technology in Tanzania and only a few institutions use such codes. As mentioned above, in addition to conducting internal verification, the recruiters also consult issuers to verify certificates. Figure <ref type="figure" target="#fig_3">4</ref> shows that after receiving verification requests, the issuers verify using the following methods: All issuers (100%) indicated that they consult student or certificate records to match the information, 73.8% indicated that they inspect the certificate's security features, and 9.2% indicated that they scan QR codes embedded on the certificates. However, most of them use a combination of methods. The reasons that contribute to the low adoption of QR codes by recruiters are also applicable to issuers. Verification methods used by issuers (educational institutions).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>www.etasr.com Said et al.: A Blockchain-based Conceptual Model to Address Educational Certificate Verification …</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Challenges in the Verification of Educational Certificates</head><p>Figure <ref type="figure" target="#fig_4">5</ref> shows the findings from the respondents who were asked to identify the challenges of verification of certificates in Tanzania, and the following are the main indicated issues. Challenges facing the current certificate verification system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>1) Manual Verification Procedures</head><p>Most of the respondents (89.8%) indicated that manual procedures are the main challenge in certificate verification. Due to the paper-based nature of certificates in Tanzania, their verification process is predominantly manual. The current process includes actions such as communication between the parties involved in the verification, and storage, sharing, recording and retrieving of information, inspection of security features, scanning of QR codes, and notarization of the certificates. Essentially, all these activities are carried out manually, without any kind of automation. According to recruiters and issuers, the verification process is burdensome, lengthy, time-consuming, costly, inefficient, and unreliable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2) Unverifiability of Certificates</head><p>Approximately 70% of the respondents indicated that unverifiable credentials from recruiters are one of the challenges facing the verification of certificates. To protect a certificate from forgery, issuers usually incorporate physical security features such as holograms, signatures, stamps, and others to act as a tamper-proof and proof-of-authenticity. However, these features are secretively encoded by the issuers to avoid imitation, and they are the only ones who can decode them. Consequently, recruiters cannot verify the authenticity of certificates because they are unfamiliar with the features.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3) Communication Drawbacks</head><p>To reliably verify the certificate, recruiters have to seek assistance from issuers and regulators. They communicate by sending letters with certificates to be verified, which are then delivered by physical visits, postal mail, or email, while sometimes they also use phone calls to inquire for verification. As indicated by 59.9% of the respondents, current communication methods pose some serious challenges that impede the verification of certificates for fraud prevention. These methods are associated with delayed delivery of verification requests and responses. As a result, a lot of time is spent either reaching out to the institutions or waiting for verification feedback. Sometimes, the request may not be responded to. Additionally, there is a significant financial burden in facilitating physical visits and communication. For instance, an employer responded that "contacting issuers to verify certificates takes a very long time, like weeks or even months, and, worse enough, they may not respond to our requests. Physically visiting each issuing institution is not feasible because it is more expensive and time-consuming."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4) Vulnerability of Centralized Systems</head><p>The issuing institutions maintain graduate records in their registries, stored electronically in centralized computer systems along with physical storage in file cabinets. Issuers retrieve the information required from these records to print or verify certificates. Therefore, the security of these systems is crucial. However, since these systems are centralized, they are vulnerable to attacks and difficult to secure, as indicated by 40.1% of the respondents. As they act as a single point of failure, both issuers and recruiters reported several instances in which they were unable to perform verification due to system failure or unavailability. Second, they are susceptible to internal threats posed by corrupt officials, who may collude with graduates to manipulate records and print fake certificates. Most issuers admit that it is hard to control internal system users, especially super users, from tampering with records.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>5) Certificate Revocation Issues</head><p>Approximately 36% of the respondents expressed that an inappropriate revocation mechanism imposes significant challenges in the verification of certificates. As mentioned above, issuers can revoke a graduate certificate in case of a problem. The current revocation mechanism involves writing a letter to the graduate and issuing a public notice of the annulment. However, this approach does not provide a way to retract a certificate from the revoked person. That that the person may continue to use it illegally despite the Public notice alone, as is currently done, is not enough, because it cannot be readily available to recruiters whenever they need to verify a certificate. As a result, most of the recruiters do not check whether a presented certificate is revoked or not, as asserted by one of the recruiters: "We have way to tell whether the certificate is revoked or not."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>6) Disintegrated Verification Systems</head><p>During the recruitment application, the candidates must submit several certificates acquired from different educational institutions. To verify the credentials of a single candidate, recruiters need to check with each institution, as there is no single point through which all the certificates can be verified. The process of consulting many institutions for verification is described as tedious, time-consuming, expensive, and inefficient, especially when having many candidates to verify. Approximately 72% of the respondents pointed out this issue as one of the bottlenecks of the verification process. This fact was reinforced by one of the recruiters, who stated that "there is no common repository of graduates' information that includes data from all issuers, which recruiters could access through a single interface for verifying all the certificates. As a result, the verification of certificates becomes difficult."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>7) Dependency on Issuers for Verification</head><p>As indicated by 76.1% of recruiters, reaching out to issuers is the most used method for verifying certificates, implying a high dependency on the issuers for verification. This overdependency on the issuers imposes some challenges to both issuers and recruiters, as indicated by 56.2% of the respondents. On the issuer side, they are overloaded by the heavy workload imposed by a large volume of verification requests they receive from recruiters across the country. On the other hand, recruiters spend a lot of time and money reaching out to issuers for verification while pending the recruitment to wait for the verification outcome.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. The Proposed Blockchain-based Conceptual Model 1) Architecture Overview</head><p>This study proposed a model to solve the identified certificate verification challenges in Tanzania. Figure <ref type="figure" target="#fig_5">6</ref> shows the proposed model based on blockchain, smart contracts, IPFS, and a decentralized application. This model supports the issuance, revocation, and verification of certificates and equivalent statements on the blockchain. Since the proposed model aims to improve certificate verification and forgery prevention during recruitment, focuses on certificates that are applicable during recruitment (i.e. secondary, vocational, technical, and university certificates). This model involves the same actors as in the traditional verification system, that is, a central authority responsible for establishing regulatory bodies, regulatory bodies responsible for approving issuing institutions, issuing institutions, graduates, and recruiters (employers, admission officers). This architecture allows users to join the blockchain network through their respective front-ends on the decentralized application (DApp). The DApp intermediates the interaction between users, the blockchain, and IPFS. The DApp is powered by smart contracts that execute on the blockchain. Smart contracts are used to implement the core logic of the model, contain variables to store certificate hashes and their associated metadata, and functions and methods for handling all the operation logic over them. Contracts can be implemented using programming languages, such as Solidity, and deployed in any blockchain platform that supports smart contracts, such as Ethereum. IPFS is used as decentralized offchain storage of files and their associated metadata. Due to the storage and computational limitations of blockchain, if everything is performed on-chain, its performance becomes poor. Therefore, shifting some of the data and activities offwill potentially boost the overall performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2) Management of User Roles and Permissions</head><p>The management of user roles and permissions is a crucial aspect of the model. This mechanism ensures that only authorized institutions can join the blockchain to issue or revoke certificates <ref type="bibr" target="#b37">[37]</ref>, and, in turn, fake institutions can be prevented from issuing certificates <ref type="bibr" target="#b87">[86]</ref>. Furthermore, it can also provide a way for the government and its authorities to monitor the issuance of certificates <ref type="bibr" target="#b87">[86]</ref>. Smart contracts can be programmed to provide some checks, ensuring that only users with the appropriate permissions can perform transactions in the ledger <ref type="bibr" target="#b32">[32,</ref><ref type="bibr" target="#b46">46]</ref>. Figure <ref type="figure" target="#fig_6">7</ref> shows a hierarchical scheme of roles in the proposed model that involves the central authority, regulators, and issuers. Graduates and recruiters are not included in this hierarchy because they only retrieve information from the ledger, which does not involve any transaction. The central authority (e.g. the Ministry of Education representing the government) will initiate the smart contracts and act as their administrator. Through smart contracts, the central authority will register the regulators (such as TCU, NACTVET, etc.), who in turn will register the issuers. Since there are different issuing institutions at different levels of education and each level has its regulatory body, the model is designed to involve several regulators, and through smart contracts' configuration, each regulator will be allowed to register its respective issuers to the blockchain. After joining the blockchain, the regulators will register their respective issuers on the blockchain and grant them permission to issue and revoke certificates. According to Tanzania regulations, apart from approving the issuers, the regulators are mandated to suspend or stop the issuer from issuing certificates if they fail to meet the required quality standards. Using smart contracts, the model also allows regulators to remove issuers from the blockchain when needed. Smart contracts act as the brain behind this model and contain features such as structs, mapping, and functions. The "structs" will be used for storing user information, "mapping" (a key-value data structure) will be used to associate the user's blockchain address with their stored details, and "functions" will be used to implement all the operation logic for user registration, deregistration, and permissions. To facilitate registration, a function can be implemented to accept user registration details (such as name, address, etc.) and associate them with the specific addresses on a smart contract. For deregistration, another function can be implemented to allow user removal by deleting their details from the contracts. Functions can also be implemented to define user roles and restrict access and permissions. Due to storage limitations, the blockchain only stores essential details, such as CIDs, and raw files containing issuer profile information will be stored in the IPFS. Using CIDs, recruiters will be able to retrieve the corresponding files from the IPFS, allowing them to confirm the legitimacy of the issuers during certificate verification. Identification and authorization scheme in the proposed model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3) The Issuance Process</head><p>To issue certificates (as shown in Figure <ref type="figure" target="#fig_7">8</ref>), registered issuers will begin by preparing digital certificates in PDF or other formats that encode the certificate's information, such as the issuer's name, student's name, student's picture, graduation date, certificate identity, award title, and grade <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b25">26]</ref>. The PDF file format is more appropriate for compatibility with legacy systems because PDF documents from the Student Record Management System (SRMS), which are normally used to print paper-based certificates, may now be used as input to the proposed system. This document and other associated metadata (such as the graduate's blockchain address) are uploaded to the DApp. The DApp forwards it to IPFS, where it is hashed using a deterministic one-way cryptographic hash function to generate a unique hash value. While the raw files are stored in the IPFS, the hash value is returned to the DApp, which then pushes it to the blockchain. To achieve this, the DApp invokes the smart contract function through a transaction signed using the issuer's private key and passes the hash value as an argument <ref type="bibr" target="#b39">[39]</ref>. The smart contract function will verify the authenticity of the transaction source, ensuring that it comes from an authorized issuer. The function then stores the hash value alongside the certificate metadata, such as its revocation status and others, in the ledger. After that, a transaction ID/hash is returned to the DApp, then to the issuer, and the issuer shares it with the graduate along with the digital certificate. The graduate can also obtain the issued credentials on the DApp. Through the DApp, graduates will be able to retrieve, view, and download certificates. Only hash values of the certificates and a few attributes, such as their revocation status, are stored on-chain. Real digital certificates will be stored offchain on the IPFS.</p><p>In the blockchain, graduates are identified using their blockchain addresses, which are generated using wallets such as MetaMask. Wallets typically generate public and private keys, which are used to create the corresponding blockchain addresses <ref type="bibr" target="#b33">[33]</ref>. In the proposed model, graduates will be able to set up their wallet accounts, through which they can generate and manage their cryptographic keys and their corresponding blockchain addresses <ref type="bibr" target="#b9">[10]</ref>. The wallet is then connected to the DApp through which the blockchain address can be shared with the issuers to be used to issue a certificate. Each certificate hash stored on the blockchain must be affiliated with the blockchain address of the corresponding graduate. This is achievable by using the "mapping" data structure of smart contracts. To make the model applicable across different levels of education, the same blockchain address will be used at every level of education attended by the graduate to ensure that all the certificates acquired throughout his educational journey are associated with the same address. The process of issuing a certificate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4) The Revocation Process</head><p>Issuers can also revoke a certificate. Smart contracts deployed on the blockchain are used to handle revocation logic, as they contain data structures to maintain the revocation status of certificates and functions to manage the process <ref type="bibr" target="#b32">[32]</ref>. During revocation (as shown in Figure <ref type="figure" target="#fig_8">9</ref>), using the certificate information, such as its transaction ID, the authorized issuer identifies the hash of the certificate to be revoked. Then, a revocation transaction is issued that invokes the appropriate function of the smart contract to update the revocation status <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b9">10]</ref>. After that, the smart contract returns the revocation information to the DApp, through which it is sent to the issuer, and the graduate is informed about the revocation of the certificate. The DApp also updates the IPFS content of the revoked certificate to reflect the current status. This mechanism will give recruiters a means of knowing whether the certificate is revoked or not by querying the certificate status through a corresponding smart contract function. The process of revoking a certificate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>5) The Verification Process</head><p>Graduates use the certificates received to apply for different opportunities, such as employment and admission to educational institutions. During the application, the graduates share the certificate along with its unique identifier/hash with the recruiters (e.g., prospective employers). This sharing can be done separately through a secure communication channel such as email, a messaging application, or other dedicated applications. As shown in Figure <ref type="figure" target="#fig_0">10</ref>, after receiving a certificate and its unique identifier/hash from the graduate, the recruiter submits it to the DApp's verification interface and clicks the verification button to trigger the verification process. The DApp then invokes the smart contract function dedicated to the verification of certificates and passes a certificate identifier/hash as a parameter. The smart contract searches the blockchain ledger to find the matching hash and retrieves the associated certificate details. Then it returns this information to the DApp for further processing. Using the certificate hash/id obtained from the smart contracts, the DApp also retrieves the corresponding certificate files, issuer's profile information, and other metadata from the IPFS to complement verification. This IPFS information is also returned to the DApp. The DApp performs several verification checks to validate the certificate and the verification result is presented to the recruiter, indicating whether the certificate is valid, invalid, or revoked. This includes displaying the raw certificate and issuer profile information from the IPFS for recruiters to preview. Finally, the graduate is informed of the verification result through a separate communication channel. In this way, recruiters can verify the authenticity of a certificate in terms of its provenance, integrity of its content, legitimacy of its issuer, status, and impersonation of holder.</p><p>10. The process of verifying a certificate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>6) Handling Equivalent Statements</head><p>As stated above, according to Tanzanian regulations, educational qualifications obtained outside the country must be converted into equivalent Tanzanian qualifications. As a result, a comparable certificate is produced and issued to the graduate to be used in Tanzania, commonly known as a certificate of equivalence or equivalent statement. To comply with this requirement, the proposed model has incorporated a mechanism for issuing, revoking, and verifying equivalent statements. The process of handling these certificates is very similar to the process involved in domestically issued certificates. The only difference is that an equivalent statement is issued by the regulatory bodies (regulators) instead of the issuing institutions (issuers). To issue the equivalent statement, the regulator prepares an equivalent statement in PDF format. This document, along with other information, is uploaded to the DApp. The DApp forwards them to the IPFS, where they are hashed to generate a unique hash value. The raw files are stored in the IPFS while the hash is returned to the DApp. The DApp then sends the hash and related metadata to the smart contract through a transaction signed using the regulator's private key. The smart contract must verify the source of the transaction to ensure that it comes from an authorized regulator. After confirmation, the transaction is allowed, and the hash is stored in the ledger. Finally, the transaction id/hash is returned to the DApp, presented to the regulator, and the regulator shares it with the graduate along with the equivalent statement.</p><p>To revoke an equivalent statement, the regulator begins by identifying the hash of an equivalent statement to be revoked and then triggers a revocation transaction through the DApp, which invokes the smart contract to update the revocation attribute associated with the equivalent statement's Subsequently, the revocation information is sent back to the DApp, through which it comes to the regulator, and the regulator informs the graduate of the revocation. Similarly, the DApp updates the IPFS content to reflect the current status. In the verification part, the recruiter submits the equivalent statement's id/hash given by the graduate to the DApp and initiates the verification process. Using the identifier/hash, the DApp retrieves the equivalent statement information from the blockchain and IPFS and performs the verification checks to authenticate the document. This includes checking its revocation status and displaying the raw equivalent statement files from the IPFS for the recruiters to preview. The verification result is then presented to the recruiter, indicating whether the equivalent statement is valid, invalid, or revoked. Finally, the graduate is informed of the verification result.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. How the Proposed Blockchain-based Solution Addresses the Identified Verification Challenges</head><p>Most of the limitations of the current verification system in Tanzania emanate from paper certificates and manual verification procedures. This model can eliminate both of them by introducing digital certificates and automating the tasks involved in the issuance and verification process. Recruiters will be able to verify certificates by a simple search on the blockchain system and easily get reliable results in real time <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b25">26]</ref>, eliminating burdensome, lengthy, costly, and inefficient verification processes <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b38">38]</ref>. One further problem with current paper-based certificates or certificates of equivalence is that the embedded security features (e.g. holograms, signatures, etc.), which act as proof of their authenticity, are not verifiable by the recruiters because of their unfamiliarity with them and lack of specialized tools. However, with digitally signed certificates and their metadata in the blockchain, the digital fingerprint or hash value stored on the blockchain becomes their proof of authenticity <ref type="bibr" target="#b0">[1]</ref>. This fingerprint or hash value can be easily accessed by the recruiters to verify a certificate by a simple lookup on the blockchain, making the certificates easily verifiable <ref type="bibr" target="#b10">[11]</ref>. The traditional verification system in Tanzania has a high dependence on issuers for the verification of certificates and equivalent statements. This means that recruiters cannot reliably verify certificates and equivalent statements without consulting the issuers. This imposes a high workload on issuers because they have to mobilize resources and dedicate time to handle verification requests, while recruiters spend a lot of time and money consulting issuers. However, the disintermediation property of the blockchain removes the dependency on central authorities <ref type="bibr" target="#b87">[86]</ref>. Therefore, the proposed blockchain-based solution will allow recruiters to authenticate certificates and equivalent statements on their own without relying on the issuing institutions <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b88">87]</ref>. This will eliminate the need to consult the issuing institutions, speed up the verification process, reduce verification expenses, and relieve workers of work overload <ref type="bibr">[3, 10-11, 26, 87]</ref>. Additionally, most institutions maintain registries or computer systems to retrieve the information required to print and verify certificates or equivalent statements. These systems are based on centralized databases in combination with some physical storage and introduce a single point of failure, are susceptible to internal threats, and internal officials may tamper with records and produce fake certificates. However, due to the decentralized and distributed nature of the blockchain, where records are replicated on all nodes in a P2P blockchain network <ref type="bibr" target="#b2">[3]</ref>, it is difficult for the system to be attacked <ref type="bibr" target="#b39">[39]</ref>, fail, or lose data <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b88">87]</ref>. Furthermore, the immutability, tamperproof, and transparent nature of blockchain makes it impossible internal officers to manipulate stored records and produce fake certificates <ref type="bibr" target="#b9">[10]</ref>.</p><p>Regarding the problems caused by disintegrated verification systems, the proposed blockchain-based system can solve the problem by allowing all certificates, including equivalent statements, to be issued on a common platform from which all recruiters can verify them through a single interface <ref type="bibr" target="#b38">[38,</ref><ref type="bibr" target="#b89">88]</ref>. In so doing, even hundreds of certificates and equivalent statements can be verified effortlessly, in a matter of minutes, and with less cost. In traditional verification systems, as found in the case of Tanzania, it is difficult for issuers to revoke a certificate or an equivalent statement and for recruiters to examine if it is revoked or not. In the proposed blockchain-based system, revocation can be achieved by including a revocation status in the data structure of the smart contracts deployed on the blockchain <ref type="bibr" target="#b32">[32,</ref><ref type="bibr" target="#b37">37]</ref>. Through a specific smart contract function, the status can be set to indicate that the certificate or equivalent statement is revoked <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b9">10]</ref>. Therefore, anyone who tries to use a revoked certificate fraudulently will be prevented. This revocation status will be visible to recruiters during verification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>TABLE I. THE VERIFICATION CHALLENGES AND THEIR CORRESPONDING BLOCKCHAIN-BASED SOLUTIONS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Identified certificate verification challenges A blockchain-based solution to the identified challenges</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Paper-based certificates and manual verification procedures</head><p>The proposed solution introduces digital certificates and automates the verification process. The recruiters will verify a certificate or an equivalent statement by simply querying its hash on the blockchain and get results instantly.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Disintegrated certification and verification systems</head><p>The proposed solution introduces a single platform through which all certificates or equivalent statements from different education levels can be issued and a single interface through which the recruiters can verify them.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dependency on the issuers for verification of certificates</head><p>The proposed solution leverages the disintermediation property of the blockchain that enables the recruiters to verify the authenticity of certificates and equivalent statements without relying on the issuers or regulators, removing the need to consult the issuing institutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Unverifiability of the current paper-based certificates</head><p>The proposed solution uses the hash value of a certificate or equivalent statement stored in the blockchain as their proof-of-authenticity. This hash value is easily verifiable by a simple lookup on the blockchain, hence making the certificates easily verifiable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Challenges regarding communication between parties involved in the certificate verification process</head><p>With the proposed solution, communication between the parties involved in verifying certificates or equivalent statements will no longer be needed because the recruiters will verify them independently by querying their hash from the blockchain.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Vulnerability of centralized systems used to maintain certificate records</head><p>The proposed solution leverages the decentralization and distribution nature of the blockchain, where data is replicated to all nodes in a P2P network, making it resilient to attacks, failures, or data loss. In addition, its immutability property makes it secure from internal threats.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Certificate revocation issues</head><p>The proposed solution uses on-chain revocation by including a revocation status on the smart contracts deployed in the blockchain. This status can be set to indicate that the certificate is revoked and recruiters will invoke this status to tell if the certificate is revoked.</p><p>In general, apart from addressing the challenges of the current paper-based certificates, as shown in Table <ref type="table">I</ref>, the following are the main functionalities and contributions of the proposed model:  Addresses the certification problem at different levels of education across the country. This can be achieved by ensuring that graduates use the same blockchain address and ID throughout their educational journey and that all acquired certificates or equivalent statements are associated with them.</p><p> Incorporates a hierarchical scheme of identification and authorization that includes the central authority, the regulators, and the issuers. Using smart contracts, the authority registers the regulators, and the regulators register their respective issuers on the blockchain. It ensures that the entities involved in transactions are known and authorized to avoid degree mills.</p><p> Emphasizes how to control the access permissions of different roles involved in the system. Smart contracts will be used to incorporate information about the participating entities and the rules that define their permissions.</p><p> Introduces an on-chain revocation mechanism. Smart contracts provide a data structure that can include a revocation status variable, indicating if the certificate is revoked. Recruiters can refer to that status to know that the certificate or equivalent statement is revoked.</p><p> Facilitates the issuance of certificates and equivalent statements on the blockchain. The process involves hashing a certificate or equivalent statement and storing its hash on the blockchain while storing the raw files and other complementary information in the IPFS.</p><p> Provides a mechanism for third parties (recruiters) to verify certificates by directly querying the certificate's hash from the blockchain and other complementary information from IPFS.</p><p> Provides a mechanism for issuing and verifying foreign certificates on the blockchain using their equivalent statements. The regulators, responsible for generating equivalent statements for foreign awards, will upload these statements to the system and the hash will be stored in the blockchain for verification purposes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. CONCLUSION AND FUTURE WORK</head><p>This study investigated the educational certificate verification problem in Tanzania and proposed a blockchainbased conceptual model to address the identified challenges and improve the verification process of certificates and equivalent statements. The challenges facing the current verification system in Tanzania arise from manual procedures, unverifiable credentials, dependency on issuers, centralized systems, disintegrated systems, revocation, and communication-related issues. These challenges undermine the verification of certificates and equivalent statements, creating loopholes for forgeries to persist. The proposed model can solve these challenges by digitizing certificates or equivalent statements, cryptographically hashing them, and hosting their hashes on the blockchain ledgers so that third parties who wish verify certificates or equivalent statements can simply query the blockchain. In addition, other unique contributions of this include handling the certification problem at different levels of education, involving regulatory bodies to manage issuers of certificates, controlling access permissions of different roles involved in the system, on-chain revocation of certificates using smart contracts, and handling of the certificates acquired abroad.</p><p>In this approach, recruiters can perform verification without depending on issuers, accelerating the verification process, reducing expenses, and relieving them from the verification complexities. Unlike traditional systems, the proposed blockchain-based solution can be more reliable because it is highly secure against attacks, failures, and loss of records. It also includes an efficient mechanism to revoke a certificate or equivalent statement and inform recruiters. Most importantly, it is presumed that this model will positively contribute to the efforts to prevent certificate fraud. Although the proposed model is tailored to the Tanzanian qualifications system, it can be assimilated to other countries with similar educational structures that face the same challenges.</p><p>The primary goal of this study was not to provide a full implementation of a blockchain-based system but to unveil the challenges associated with the certificate verification process based on ground truth data from the Tanzanian setting and provide a detailed conceptual design of a blockchain-based model, underlining how it can address these problems. However, considering the need to demonstrate its applicability, the proposed conceptual model will be implemented to evaluate its viability in the issuance and verification of certificates for the detection of counterfeits. To be specific, a prototype or proof-of-concept based on the underlined scheme will be developed and deployed on a blockchain platform, such as Ethereum, that supports smart contracts. Finally, it will be evaluated and validated to demonstrate its performance from a practical point of view.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1.Educational qualifications verification ecosystem in Tanzania.</figDesc><graphic coords="2,310.44,352.68,237.48,226.92" type="vector_box" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 .</head><label>2</label><figDesc>Fig. 2.The blockchain data structure, showing block structure and interconnections.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 3 .</head><label>3</label><figDesc>Fig. 3.Verification methods used by recruiters (e.g. employers, admission officers, and others).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 4 .</head><label>4</label><figDesc>Fig. 4.Verification methods used by issuers (educational institutions).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 5 .</head><label>5</label><figDesc>Fig. 5.Challenges facing the current certificate verification system.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 6 .</head><label>6</label><figDesc>Fig. 6. Schematic representation of a proposed blockchain-based conceptual model for the issuance and verification of educational certificates.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Fig. 7 .</head><label>7</label><figDesc>Fig. 7.Identification and authorization scheme in the proposed model.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Fig. 8 .</head><label>8</label><figDesc>Fig. 8.The process of issuing a certificate.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Fig. 9 .</head><label>9</label><figDesc>Fig. 9.The process of revoking a certificate.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Vol. 13, No. 5, 2023, 11691-11704</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>www.etasr.com Said et al.: A Blockchain-based Conceptual Model to Address Educational Certificate Verification …</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Blockchain for Education: Lifelong Learning Passport</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Gräther</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kolvenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ruland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schütte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Torres</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wendland</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Blockchain Engineering: Challenges and Opportunities for Computer Science Research</title>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+	<note>ERCIM-Blockchain</note>
+	<note type="raw_reference">W. Gräther, S. Kolvenbach, R. Ruland, J. Schütte, C. Torres, and F. Wendland, &quot;Blockchain for Education: Lifelong Learning Passport,&quot; ERCIM-Blockchain 2018: Blockchain Engineering: Challenges and Opportunities for Computer Science Research, 2018.</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">F</forename><surname>Camilleri</surname></persName>
+		</author>
+		<title level="m">Blockchain in Education</title>
+		<meeting><address><addrLine>Luxembourg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Publications Office of the European Union</publisher>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">A. Grech and A. F. Camilleri, Blockchain in Education. Luxembourg: Publications Office of the European Union, 2017.</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Blockchain based framework for educational certificates verification</title>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">S</forename><surname>Saleh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Ghazali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Rana</surname></persName>
+		</author>
+		<idno type="DOI">10.31838/jcr.07.03.13</idno>
+		<ptr target="https://doi.org/10.31838/jcr.07.03.13" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of critical reviews</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">03</biblScope>
+			<biblScope unit="page" from="79" to="84" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">O. S. Saleh, O. Ghazali, and M. E. Rana, &quot;Blockchain based framework for educational certificates verification,&quot; Journal of critical reviews, vol. 7, no. 03, pp. 79-84, 2020, https://doi.org/10.31838/jcr.07.03.13.</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Potential of blockchain technology to solve fake diploma problem</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">H</forename><surname>Sayed</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Juvaskyla, Juvaskyla, Finland</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">MSc Thesis</note>
+	<note type="raw_reference">R. H. Sayed, &quot;Potential of blockchain technology to solve fake diploma problem,&quot; MSc Thesis, University of Juvaskyla, Juvaskyla, Finland, 2019.</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">A Framework for the Adoption of Blockchain Technology in Academic Certificate-Verification Systems: A Case Study in Nigeria</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Effiong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<pubPlace>Tallinn, Estonia</pubPlace>
+		</imprint>
+		<respStmt>
+			<orgName>Talinn University of Technology</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">MSc Thesis</note>
+	<note type="raw_reference">M. E. Effiong, &quot;A Framework for the Adoption of Blockchain Technology in Academic Certificate-Verification Systems: A Case Study in Nigeria,&quot; MSc Thesis, Talinn University of Technology, Tallinn, Estonia, 2020.</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Corrupt schools, corrupt universities: what can be done</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hallak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Poisson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<publisher>International Institute for Educational Planning</publisher>
+			<pubPlace>Paris</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">J. Hallak and M. Poisson, Corrupt schools, corrupt universities: what can be done? Paris: International Institute for Educational Planning, 2007.</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A Generic Certificate Verification System for Nigerian Universities</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Obilikwu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Usman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">D</forename><surname>Kwaghtyo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Computer Science and Mobile Computing</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="137" to="148" />
+			<date type="published" when="2019-10">Oct. 2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">P. Obilikwu, K. Usman, and K. D. Kwaghtyo, &quot;A Generic Certificate Verification System for Nigerian Universities,&quot; International Journal of Computer Science and Mobile Computing, vol. 8, no. 10, pp. 137-148, Oct. 2019.</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eyal</forename><surname>Ben Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Winch</surname></persName>
+		</author>
+		<title level="m">Diploma and Accreditation Mills: New Trends in Credential Abuse</title>
+		<meeting><address><addrLine>London, UK</addrLine></address></meeting>
+		<imprint>
+			<publisher>Verifile Limited and Accredibase</publisher>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Eyal Ben Cohen and R. Winch, Diploma and Accreditation Mills: New Trends in Credential Abuse. London, UK: Verifile Limited and Accredibase, 2011.</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Degree Mills: The Billion-Dollar Industry That Has Sold Over a Million Fake Diplomas</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ezell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Bear</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>Prometheus Books</publisher>
+			<pubPlace>New York, NY, USA</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">A. Ezell and John Bear, Degree Mills: The Billion-Dollar Industry That Has Sold Over a Million Fake Diplomas. New York, NY, USA: Prometheus Books, 2012.</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Cerberus: A Blockchain-Based Accreditation and Degree Verification System</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tariq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">Binte</forename><surname>Haq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">T</forename><surname>Ali</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TCSS.2022.3188453</idno>
+		<ptr target="https://doi.org/10.1109/TCSS.2022.3188453" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computational Social Systems</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1503" to="1514" />
+			<date type="published" when="2023-12">Dec. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">A. Tariq, H. Binte Haq, and S. T. Ali, &quot;Cerberus: A Blockchain-Based Accreditation and Degree Verification System,&quot; IEEE Transactions on Computational Social Systems, vol. 10, no. 4, pp. 1503-1514, Dec. 2023, https://doi.org/10.1109/TCSS.2022.3188453.</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">A Graduation Certificate Verification Model via Utilization of the Blockchain Technology</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Ghazali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">S</forename><surname>Saleh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Telecommunication, Electronic and Computer Engineering (JTEC)</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">3-2</biblScope>
+			<biblScope unit="page" from="29" to="34" />
+			<date type="published" when="2018-09">Sep. 2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">O. Ghazali and O. S. Saleh, &quot;A Graduation Certificate Verification Model via Utilization of the Blockchain Technology,&quot; Journal of Telecommunication, Electronic and Computer Engineering (JTEC), vol. 10, no. 3-2, pp. 29-34, Sep. 2018.</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Student grades believed to be hacked at University of Regina -Regina | Globalnews.ca</title>
+		<ptr target="https://globalnews.ca/news/3790701/student-grades-believed-to-be-hacked-at-university-of-regina/" />
+	</analytic>
+	<monogr>
+		<title level="j">Global News</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">&quot;Student grades believed to be hacked at University of Regina -Regina | Globalnews.ca,&quot; Global News. https://globalnews.ca/news/3790701/ student-grades-believed-to-be-hacked-at-university-of-regina/.</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">An inquiry on strategies to mitigate fake certificates: a case of Tanzania</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sengati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kitinya</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Development Research</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page">14781</biblScope>
+			<date type="published" when="2018-12">Dec. 2018</date>
+			<pubPlace>Art</pubPlace>
+		</imprint>
+	</monogr>
+	<note>International Journal of Development Research</note>
+	<note type="raw_reference">P. Sengati and E. Kitinya, &quot;An inquiry on strategies to mitigate fake certificates: a case of Tanzania | International Journal of Development Research (IJDR),&quot; International Journal of Development Research, vol. 8, Dec. 2018, Art. no. 14781.</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">An introduction to the Economics of Fake Degrees</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Grolleau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lakhal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mzoughi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Economic Issues</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="673" to="693" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">G. Grolleau, T. Lakhal, and N. Mzoughi, &quot;An introduction to the Economics of Fake Degrees,&quot; Journal of Economic Issues, vol. 42, no. 3, pp. 673-693, 2008.</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Degree certificate racket thrives in Bengaluru</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gowhar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Hindu</title>
+		<imprint>
+			<date type="published" when="2017-06-22">Jun. 22, 2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">I. Gowhar, &quot;Degree certificate racket thrives in Bengaluru,&quot; The Hindu, Jun. 22, 2017.</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Your Business is your Business: Fake certificates in TZ economic equation</title>
+		<ptr target="https://www.thecitizen.co.tz/tanzania/magazines/your-business-is-our-business-fake-certificates-in-tz-economic-equation-2590982" />
+		<imprint>
+			<date type="published" when="2021-03-30">Mar. 30, 2021</date>
+		</imprint>
+	</monogr>
+	<note>The Citizen</note>
+	<note type="raw_reference">&quot;Your Business is your Business: Fake certificates in TZ economic equation,&quot; The Citizen, Mar. 30, 2021. https://www.thecitizen.co.tz/ tanzania/magazines/your-business-is-our-business-fake-certificates-in- tz-economic-equation-2590982.</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Qualification, Award and Recognition Fraud in Higher Education in Zimbabwe</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">C</forename><surname>Garwe</surname></persName>
+		</author>
+		<idno type="DOI">10.5296/jse.v5i2.7456</idno>
+		<ptr target="https://doi.org/10.5296/jse.v5i2.7456" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Studies in Education</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="119" to="135" />
+			<date type="published" when="2015-04">Apr. 2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">E. C. Garwe, &quot;Qualification, Award and Recognition Fraud in Higher Education in Zimbabwe,&quot; Journal of Studies in Education, vol. 5, no. 2, pp. 119-135, Apr. 2015, https://doi.org/10.5296/jse.v5i2.7456.</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">A Study on Blockchain Technology as a Dominant Feature to Mitigate Reputational Risk for Indian Academic Institutions and Universities</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">K</forename><surname>Rangi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Applied Engineering and Management Letters</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="275" to="284" />
+			<date type="published" when="2020-12">Dec. 2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">P. K. Rangi and S. Aithal, &quot;A Study on Blockchain Technology as a Dominant Feature to Mitigate Reputational Risk for Indian Academic Institutions and Universities,&quot; International Journal of Applied Engineering and Management Letters, vol. 4, no. 2, pp. 275-284, Dec. 2020.</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Blockchain as a confidence machine: The problem of trust &amp; challenges of governance</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">De</forename><surname>Filippi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mannan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Reijers</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.techsoc.2020.101284</idno>
+		<ptr target="https://doi.org/10.1016/j.techsoc.2020.101284" />
+	</analytic>
+	<monogr>
+		<title level="m">Technology www.etasr.com Said et al.: A Blockchain-based Conceptual Model to Address Educational Certificate Verification … in Society</title>
+		<imprint>
+			<date type="published" when="2020-08">Aug. 2020</date>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="page">101284</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">P. De Filippi, M. Mannan, and W. Reijers, &quot;Blockchain as a confidence machine: The problem of trust &amp; challenges of governance,&quot; Technology www.etasr.com Said et al.: A Blockchain-based Conceptual Model to Address Educational Certificate Verification … in Society, vol. 62, Aug. 2020, Art. no. 101284, https://doi.org/10.1016/ j.techsoc.2020.101284.</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Perspectives of Blockchain Technology, its Relation to the Cloud and its Potential Role in Computer Science Education</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Purdon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Erturk</surname></persName>
+		</author>
+		<idno type="DOI">10.48084/etasr.1629</idno>
+		<ptr target="https://doi.org/10.48084/etasr.1629" />
+	</analytic>
+	<monogr>
+		<title level="j">Technology &amp; Applied Science Research</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="2340" to="2344" />
+			<date type="published" when="2017-12">Dec. 2017</date>
+		</imprint>
+	</monogr>
+	<note>Engineering</note>
+	<note type="raw_reference">I. Purdon and E. Erturk, &quot;Perspectives of Blockchain Technology, its Relation to the Cloud and its Potential Role in Computer Science Education,&quot; Engineering, Technology &amp; Applied Science Research, vol. 7, no. 6, pp. 2340-2344, Dec. 2017, https://doi.org/10.48084/etasr.1629.</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Bitcoin: A Peer-to-Peer Electronic Cash System</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nakamoto</surname></persName>
+		</author>
+		<ptr target="https://bitcoin.org/bitcoin.pdf" />
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">S. Nakamoto, &quot;Bitcoin: A Peer-to-Peer Electronic Cash System.&quot; https://bitcoin.org/bitcoin.pdf.</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">An Edge -IoT Framework and Prototype based on Blockchain for Smart Healthcare Applications</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">K</forename><surname>Al-Shammari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Syed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">B</forename><surname>Syed</surname></persName>
+		</author>
+		<idno type="DOI">10.48084/etasr.4245</idno>
+		<ptr target="https://doi.org/10.48084/etasr.4245" />
+	</analytic>
+	<monogr>
+		<title level="j">Technology &amp; Applied Science Research</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="7326" to="7331" />
+			<date type="published" when="2021-08">Aug. 2021</date>
+		</imprint>
+	</monogr>
+	<note>Engineering</note>
+	<note type="raw_reference">N. K. Al-Shammari, T. H. Syed, and M. B. Syed, &quot;An Edge -IoT Framework and Prototype based on Blockchain for Smart Healthcare Applications,&quot; Engineering, Technology &amp; Applied Science Research, vol. 11, no. 4, pp. 7326-7331, Aug. 2021, https://doi.org/10.48084/ etasr.4245.</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Blockchain and Higher Education Diplomas</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Q</forename><surname>Castro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Au-Yong-Oliveira</surname></persName>
+		</author>
+		<idno type="DOI">10.3390/ejihpe11010013</idno>
+		<ptr target="https://doi.org/10.3390/ejihpe11010013" />
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Investigation in Health, Psychology and Education</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="154" to="167" />
+			<date type="published" when="2021-03">Mar. 2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">R. Q. Castro and M. Au-Yong-Oliveira, &quot;Blockchain and Higher Education Diplomas,&quot; European Journal of Investigation in Health, Psychology and Education, vol. 11, no. 1, pp. 154-167, Mar. 2021, https://doi.org/10.3390/ejihpe11010013.</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Blockchain: A Disruptive and Transformative Technology of the Fourth Industrial Revolution</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Mwandosya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Luhanga</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Business Management Review</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="16" to="31" />
+			<date type="published" when="2021-03">Mar. 2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">M. J. Mwandosya and M. L. Luhanga, &quot;Blockchain: A Disruptive and Transformative Technology of the Fourth Industrial Revolution,&quot; Business Management Review, vol. 23, no. 2, pp. 16-31, Mar. 2021.</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename><surname>Preukschat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Reed</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Self-Sovereign Identity. Shelter Island</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<publisher>Manning Publications</publisher>
+			<pubPlace>NY, USA</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">A. Preukschat and D. Reed, Self-Sovereign Identity. Shelter Island, NY, USA: Manning Publications, 2021.</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">The Proposal of a Blockchain-Based Architecture for Transparent Certificate Handling</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gresch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rodrigues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Scheid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Kanhere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Stiller</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-030-04849-5_16</idno>
+		<ptr target="https://doi.org/10.1007/978-3-030-04849-5_16" />
+	</analytic>
+	<monogr>
+		<title level="m">Business Information Systems Workshops</title>
+		<meeting><address><addrLine>Berlin, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="185" to="196" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">J. Gresch, B. Rodrigues, E. Scheid, S. S. Kanhere, and B. Stiller, &quot;The Proposal of a Blockchain-Based Architecture for Transparent Certificate Handling,&quot; in Business Information Systems Workshops, Berlin, Germany, 2019, pp. 185-196, https://doi.org/10.1007/978-3-030-04849- 5_16.</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">United Republic of Tanzania</title>
+		<ptr target="https://www.ilo.org/dyn/natlex/natlex4.detail" />
+	</analytic>
+	<monogr>
+		<title level="j">The Universities Act</title>
+		<imprint>
+			<date type="published" when="2005-06">2005. Jun. 2006. p_lang=en&amp;p_isn=82136&amp;p_country=TZA&amp;p_count=27 0</date>
+			<pubPlace>Tanzania</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">&quot;The Universities Act, 2005,&quot; United Republic of Tanzania, Tanzania, Jun. 2006. [Online]. Available: https://www.ilo.org/dyn/natlex/ natlex4.detail?p_lang=en&amp;p_isn=82136&amp;p_country=TZA&amp;p_count=27 0.</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Amendment of the National Council for Technical Education Act (cap. 129)</title>
+		<ptr target="https://www.parliament.go.tz/polis/uploads/bills/acts/1649232323-ACT%20NO" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<pubPlace>Tanzania</pubPlace>
+		</imprint>
+	</monogr>
+	<note>United Republic of Tanzania %206%20THE%20WRITTEN%20 LAWS%20(MISCELLANEOUS%20AMENDMENTS)%20(NO.%204)</note>
+	<note type="raw_reference">&quot;Amendment of the National Council for Technical Education Act (cap. 129),&quot; United Republic of Tanzania, Tanzania, 2021. [Online]. Available: https://www.parliament.go.tz/polis/uploads/bills/acts/ 1649232323-ACT%20NO.%206%20THE%20WRITTEN%20 LAWS%20(MISCELLANEOUS%20AMENDMENTS)%20(NO.%204)</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<monogr>
+		<title level="m">%20ACT,%202021.pdf</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">%20ACT,%202021.pdf.</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<monogr>
+		<title level="m" type="main">The National Examinations Council of Tanzania Act</title>
+		<ptr target="https://necta.go.tz/exam_formarts/NECTA_ACT_RE_2019.pdf" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<pubPlace>Tanzania</pubPlace>
+		</imprint>
+	</monogr>
+	<note>United Republic of Tanzania</note>
+	<note type="raw_reference">&quot;The National Examinations Council of Tanzania Act,&quot; United Republic of Tanzania, Tanzania, 2019. [Online]. Available: https://necta.go.tz/ exam_formarts/NECTA_ACT_RE_2019.pdf.</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">United Republic of Tanzania</title>
+		<ptr target="https://www.ilo.org/dyn/natlex/natlex4.detail?p_lang=en&amp;p_isn=94089&amp;p_country=TZA&amp;p_count=285" />
+	</analytic>
+	<monogr>
+		<title level="j">The National Education Act</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<date type="published" when="1978">1978. 1978. 1978</date>
+			<pubPlace>Tanzania</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">&quot;The National Education Act, 1978 (No. 25 of 1978).,&quot; United Republic of Tanzania, Tanzania, 1978. [Online]. Available: https://www.ilo.org/dyn/natlex/natlex4.detail?p_lang=en&amp;p_isn=94089 &amp;p_country=TZA&amp;p_count=285.</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<monogr>
+		<title level="m" type="main">The Vocational Education and Training Act</title>
+		<imprint>
+			<pubPlace>United Republic of Tanzania, Tanzania</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">&quot;The Vocational Education and Training Act,&quot; United Republic of Tanzania, Tanzania.</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Ethereum-Blockchain-Based Technology of Decentralized Smart Contract Certificate System</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/IOTM.0001.1900094</idno>
+		<ptr target="https://doi.org/10.1109/IOTM.0001.1900094" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Internet of Things Magazine</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="44" to="50" />
+			<date type="published" when="2020-06">Jun. 2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">R. Xie et al., &quot;Ethereum-Blockchain-Based Technology of Decentralized Smart Contract Certificate System,&quot; IEEE Internet of Things Magazine, vol. 3, no. 2, pp. 44-50, Jun. 2020, https://doi.org/10.1109/ IOTM.0001.1900094.</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Building Smart Contracts and DApps</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Antonopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">W D</forename><surname>Ph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mastering</forename><surname>Ethereum</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>O&apos;Reilly Media, Inc</publisher>
+			<pubPlace>Sebastopol, CA, USA</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">A. M. Antonopoulos and G. W. Ph.D, Mastering Ethereum: Building Smart Contracts and DApps. Sebastopol, CA, USA: O&apos;Reilly Media, Inc., 2018.</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">A Systematic Review and Empirical Analysis of Blockchain Simulators</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Paulavičius</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Grigaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Filatovas</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ACCESS.2021.3063324</idno>
+		<ptr target="https://doi.org/10.1109/ACCESS.2021.3063324" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Access</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="38010" to="38028" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">R. Paulavičius, S. Grigaitis, and E. Filatovas, &quot;A Systematic Review and Empirical Analysis of Blockchain Simulators,&quot; IEEE Access, vol. 9, pp. 38010-38028, 2021, https://doi.org/10.1109/ACCESS.2021.3063324.</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">A Taxonomy of Blockchain-Based Systems for Architecture Design</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICSA.2017.33</idno>
+		<ptr target="https://doi.org/10.1109/ICSA.2017.33" />
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE International Conference on Software Architecture (ICSA)</title>
+		<meeting><address><addrLine>Gothenburg, Sweden</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017-04">Apr. 2017</date>
+			<biblScope unit="page" from="243" to="252" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">X. Xu et al., &quot;A Taxonomy of Blockchain-Based Systems for Architecture Design,&quot; in 2017 IEEE International Conference on Software Architecture (ICSA), Gothenburg, Sweden, Apr. 2017, pp. 243-252, https://doi.org/10.1109/ICSA.2017.33.</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">EduCTX: A Blockchain-Based Higher Education Credit Platform</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Turkanović</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hölbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Košič</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Heričko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kamišalić</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ACCESS.2018.2789929</idno>
+		<ptr target="https://doi.org/10.1109/ACCESS.2018.2789929" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Access</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="5112" to="5127" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">M. Turkanović, M. Hölbl, K. Košič, M. Heričko, and A. Kamišalić, &quot;EduCTX: A Blockchain-Based Higher Education Credit Platform,&quot; IEEE Access, vol. 6, pp. 5112-5127, 2018, https://doi.org/ 10.1109/ACCESS.2018.2789929.</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">A Blockchainbased Architecture for Query and Registration of Student Degree Certificates</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W S</forename><surname>Abreu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">F</forename><surname>Coutinho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">I M</forename><surname>Bezerra</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3425269.3425285</idno>
+		<ptr target="https://doi.org/10.1145/3425269.3425285" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 14th Brazilian Symposium on Software Components, Architectures, and Reuse</title>
+		<meeting>the 14th Brazilian Symposium on Software Components, Architectures, and Reuse<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-07">Jul. 2020</date>
+			<biblScope unit="page" from="151" to="160" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">A. W. S. Abreu, E. F. Coutinho, and C. I. M. Bezerra, &quot;A Blockchain- based Architecture for Query and Registration of Student Degree Certificates,&quot; in Proceedings of the 14th Brazilian Symposium on Software Components, Architectures, and Reuse, New York, NY, USA, Jul. 2020, pp. 151-160, https://doi.org/10.1145/3425269.3425285.</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Towards a blockchain-based certificate authentication system in Vietnam</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-C</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B.-L</forename><surname>Do</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PeerJ Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="266" to="e266" />
+			<date type="published" when="2020-03">Mar. 2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">B. M. Nguyen, T.-C. Dao, and B.-L. Do, &quot;Towards a blockchain-based certificate authentication system in Vietnam.,&quot; PeerJ Computer Science, vol. 6, pp. e266-e266, Mar. 2020.</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">BCERT -A Decentralized Academic Certificate System Distribution Using Blockchain Technology</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Leka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Selimi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal on Information Technologies &amp; Security</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="103" to="118" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">E. Leka and B. Selimi, &quot;BCERT -A Decentralized Academic Certificate System Distribution Using Blockchain Technology,&quot; International Journal on Information Technologies &amp; Security, vol. 12, no. 4, pp. 103-118, 2020.</note>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Consortium blockchains: Overview, applications and challenges</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Dib</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">L</forename><surname>Brousmiche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Durand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Thea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">Ben</forename><surname>Hamida</surname></persName>
+		</author>
+		<ptr target="https://hal.science/hal-02271063" />
+	</analytic>
+	<monogr>
+		<title level="j">International Journal On Advances in Telecommunications</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">O. Dib, K. L. Brousmiche, A. Durand, E. Thea, and E. Ben Hamida, &quot;Consortium blockchains: Overview, applications and challenges,&quot; International Journal On Advances in Telecommunications, 2018, [Online]. Available: https://hal.science/hal-02271063.</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Performance Evaluation of Blockchain Systems: A Systematic Survey</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ghaemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Khazaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Musilek</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ACCESS.2020.3006078</idno>
+		<ptr target="https://doi.org/10.1109/ACCESS.2020.3006078" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Access</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="126927" to="126950" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">C. Fan, S. Ghaemi, H. Khazaei, and P. Musilek, &quot;Performance Evaluation of Blockchain Systems: A Systematic Survey,&quot; IEEE Access, vol. 8, pp. 126927-126950, 2020, https://doi.org/10.1109/ACCESS. 2020.3006078.</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Ethereum: A Next-Generation Smart Contract and Decentralized Application Platform</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Buterin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">V. Buterin, &quot;Ethereum: A Next-Generation Smart Contract and Decentralized Application Platform.,&quot; 2014.</note>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Elrom</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hyperledger</surname></persName>
+		</author>
+		<title level="m">The Blockchain Developer: A Practical Guide for Designing, Implementing, Publishing, Testing, and Securing Distributed Blockchain-based Projects</title>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Elrom</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Berkeley, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Apress</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="299" to="348" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">E. Elrom, &quot;Hyperledger,&quot; in The Blockchain Developer: A Practical Guide for Designing, Implementing, Publishing, Testing, and Securing Distributed Blockchain-based Projects, E. Elrom, Ed. Berkeley, CA, USA: Apress, 2019, pp. 299-348.</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">A Secure and Privacy-Preserving E-Government Framework Using Blockchain and Artificial Immunity</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Elisa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Naik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Boongoen</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ACCESS.2023.3239814</idno>
+		<ptr target="https://doi.org/10.1109/ACCESS.2023.3239814" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Access</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page" from="8773" to="8789" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">N. Elisa, L. Yang, F. Chao, N. Naik, and T. Boongoen, &quot;A Secure and Privacy-Preserving E-Government Framework Using Blockchain and Artificial Immunity,&quot; IEEE Access, vol. 11, pp. 8773-8789, 2023, https://doi.org/10.1109/ACCESS.2023.3239814.</note>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Blockchain Based Academic Records Verification in Smart Cities</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Aamir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Qureshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">A</forename><surname>Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Huzaifa</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s11277-020-07226-0</idno>
+		<ptr target="https://doi.org/10.1007/s11277-020-07226-0" />
+		<imprint>
+			<date type="published" when="2020-08">Aug. 2020</date>
+			<biblScope unit="volume">113</biblScope>
+			<biblScope unit="page" from="1397" to="1406" />
+		</imprint>
+	</monogr>
+	<note>Wireless Personal Communications</note>
+	<note type="raw_reference">M. Aamir, R. Qureshi, F. A. Khan, and M. Huzaifa, &quot;Blockchain Based Academic Records Verification in Smart Cities,&quot; Wireless Personal Communications, vol. 113, no. 3, pp. 1397-1406, Aug. 2020, https://doi.org/10.1007/s11277-020-07226-0.</note>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Design of an e-diploma system based on consortium blockchain and facial recognition</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">F</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">C</forename><surname>Chiu</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s10639-021-10840-5</idno>
+		<ptr target="https://doi.org/10.1007/s10639-021-10840-5" />
+	</analytic>
+	<monogr>
+		<title level="m">Education and Information Technologies</title>
+		<imprint>
+			<date type="published" when="2022-05">May 2022</date>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="page" from="5495" to="5519" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">C. S. Hsu, S. F. Tu, and P. C. Chiu, &quot;Design of an e-diploma system based on consortium blockchain and facial recognition,&quot; Education and Information Technologies, vol. 27, no. 4, pp. 5495-5519, May 2022, https://doi.org/10.1007/s10639-021-10840-5.</note>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Blockchain-Assisted Homomorphic Encryption Approach for Skin Lesion Diagnosis using Optimal Deep Learning Model</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rajeshkumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ananth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mohananthini</surname></persName>
+		</author>
+		<idno type="DOI">10.48084/etasr.5594</idno>
+		<ptr target="https://doi.org/10.48084/etasr.5594" />
+	</analytic>
+	<monogr>
+		<title level="j">Technology &amp; Applied Science Research</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="10978" to="10983" />
+			<date type="published" when="2023-06">Jun. 2023</date>
+		</imprint>
+	</monogr>
+	<note>Engineering</note>
+	<note type="raw_reference">K. Rajeshkumar, C. Ananth, and N. Mohananthini, &quot;Blockchain- Assisted Homomorphic Encryption Approach for Skin Lesion Diagnosis using Optimal Deep Learning Model,&quot; Engineering, Technology &amp; Applied Science Research, vol. 13, no. 3, pp. 10978-10983, Jun. 2023, https://doi.org/10.48084/etasr.5594.</note>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Blockchain for Modern Applications: A Survey</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Krichen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ammi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mihoub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Almutiq</surname></persName>
+		</author>
+		<idno type="DOI">10.3390/s22145274</idno>
+		<ptr target="https://doi.org/10.3390/s22145274" />
+	</analytic>
+	<monogr>
+		<title level="j">Sensors</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">14</biblScope>
+			<date type="published" when="2022-01">Jan. 2022</date>
+			<pubPlace>Art</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">M. Krichen, M. Ammi, A. Mihoub, and M. Almutiq, &quot;Blockchain for Modern Applications: A Survey,&quot; Sensors, vol. 22, no. 14, Jan. 2022, Art. no. 5274, https://doi.org/10.3390/s22145274.</note>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Blockchain 1.0 to Blockchain 4.0-The Evolutionary Transformation of Blockchain Technology</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mukherjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Pradhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Blockchain Technology: Applications and Challenges</title>
+		<editor>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Panda</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Jena</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Swain</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Satapathy</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Cham, Switzerland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="29" to="49" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">P. Mukherjee and C. Pradhan, &quot;Blockchain 1.0 to Blockchain 4.0-The Evolutionary Transformation of Blockchain Technology,&quot; in Blockchain Technology: Applications and Challenges, S. K. Panda, A. K. Jena, S. K. Swain, and S. C. Satapathy, Eds. Cham, Switzerland: Springer International Publishing, 2021, pp. 29-49.</note>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<author>
+			<persName><forename type="first">H</forename><surname>Taherdoost</surname></persName>
+		</author>
+		<idno type="DOI">10.3390/info14020117</idno>
+		<ptr target="https://doi.org/10.3390/info14020117" />
+	</analytic>
+	<monogr>
+		<title level="m">Smart Contracts in Blockchain Technology: A Critical Review</title>
+		<imprint>
+			<date type="published" when="2023-02">Feb. 2023</date>
+			<biblScope unit="volume">14</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">H. Taherdoost, &quot;Smart Contracts in Blockchain Technology: A Critical Review,&quot; Information, vol. 14, no. 2, Feb. 2023, Art. no. 117, https://doi.org/10.3390/info14020117.</note>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Learn Ethereum: Build your own decentralized applications with Ethereum and smart contracts</title>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">(</forename><surname>Brian) Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>Packt Publishing Ltd</publisher>
+			<pubPlace>Birmingham, UK</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">X. (Brian) Wu, Z. Zou, and D. Song, Learn Ethereum: Build your own decentralized applications with Ethereum and smart contracts. Birmingham, UK: Packt Publishing Ltd, 2019.</note>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Formalizing and Securing Relationships on Public Networks</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Szabo</surname></persName>
+		</author>
+		<idno type="DOI">10.5210/fm.v2i9.548</idno>
+		<ptr target="https://doi.org/10.5210/fm.v2i9.548" />
+	</analytic>
+	<monogr>
+		<title level="j">First Monday</title>
+		<imprint>
+			<date type="published" when="1997-09">Sep. 1997</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">N. Szabo, &quot;Formalizing and Securing Relationships on Public Networks,&quot; First Monday, Sep. 1997, https://doi.org/10.5210/fm.v2i9. 548.</note>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Smart Contract execution costs optimisation on blockchain network</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Čeke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kunosić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Buzađija</surname></persName>
+		</author>
+		<idno type="DOI">10.23919/MIPRO55190.2022.9803805</idno>
+		<ptr target="https://doi.org/10.23919/MIPRO55190.2022.9803805" />
+	</analytic>
+	<monogr>
+		<title level="m">2022 45th Jubilee International Convention on Information, Communication and Electronic Technology (MIPRO)</title>
+		<meeting><address><addrLine>Opatija, Croatia</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-02">Feb. 2022</date>
+			<biblScope unit="page" from="1442" to="1447" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">D. Čeke, S. Kunosić, and N. Buzađija, &quot;Smart Contract execution costs optimisation on blockchain network,&quot; in 2022 45th Jubilee International Convention on Information, Communication and Electronic Technology (MIPRO), Opatija, Croatia, Feb. 2022, pp. 1442-1447, https://doi.org/ 10.23919/MIPRO55190.2022.9803805.</note>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Blockchain and smart contracts for higher education registry in Brazil</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Palma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A G</forename><surname>Vigil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">L</forename><surname>Pereira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Martina</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/nem.2061</idno>
+		<ptr target="https://doi.org/10.1002/nem.2061" />
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Network Management</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2019">2019. 2061</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">L. M. Palma, M. A. G. Vigil, F. L. Pereira, and J. E. Martina, &quot;Blockchain and smart contracts for higher education registry in Brazil,&quot; International Journal of Network Management, vol. 29, no. 3, 2019, Art. no. e2061, https://doi.org/10.1002/nem.2061.</note>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<analytic>
+		<title level="a" type="main">An Introduction to Ethereum and Smart Contracts: Bitcoin &amp; The Blockchain</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Peyrott</surname></persName>
+		</author>
+		<ptr target="https://auth0.com/blog/an-introduction-to-ethereum-and-smart-contracts" />
+	</analytic>
+	<monogr>
+		<title level="m">Auth0 -Blog</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">S. Peyrott, &quot;An Introduction to Ethereum and Smart Contracts: Bitcoin &amp; The Blockchain,&quot; Auth0 -Blog. https://auth0.com/blog/an- introduction-to-ethereum-and-smart-contracts.</note>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Decentralized document version control using ethereum blockchain and IPFS</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nizamuddin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Salah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Azad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Arshad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Rehman</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.compeleceng.2019.03.014</idno>
+		<ptr target="https://doi.org/10.1016/j.compeleceng.2019.03.014" />
+	</analytic>
+	<monogr>
+		<title level="j">Computers &amp; Electrical Engineering</title>
+		<imprint>
+			<biblScope unit="volume">76</biblScope>
+			<biblScope unit="page" from="183" to="197" />
+			<date type="published" when="2019-06">Jun. 2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">N. Nizamuddin, K. Salah, M. Ajmal Azad, J. Arshad, and M. H. Rehman, &quot;Decentralized document version control using ethereum blockchain and IPFS,&quot; Computers &amp; Electrical Engineering, vol. 76, pp. 183-197, Jun. 2019, https://doi.org/10.1016/j.compeleceng.2019.03.014.</note>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">IPFS -Content Addressed, Versioned, P2P File System</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Benet</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.1407.3561</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.1407.3561" />
+	</analytic>
+	<monogr>
+		<title level="j">arXiv</title>
+		<imprint>
+			<date type="published" when="2014-07-14">Jul. 14, 2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">J. Benet, &quot;IPFS -Content Addressed, Versioned, P2P File System.&quot; arXiv, Jul. 14, 2014, https://doi.org/10.48550/arXiv.1407.3561.</note>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Can the Inter Planetary File System Become an Alternative to Centralized Architectures?</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Oliveira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rahouti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jaesim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Siasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ko</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-030-85540-6_75</idno>
+		<ptr target="https://doi.org/10.1007/978-3-030-85540-6_75" />
+	</analytic>
+	<monogr>
+		<title level="m">Human Interaction, Emerging Technologies and Future Systems V, 2022</title>
+		<imprint>
+			<biblScope unit="page" from="597" to="604" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">D. Oliveira, M. Rahouti, A. Jaesim, N. Siasi, and L. Ko, &quot;Can the Inter Planetary File System Become an Alternative to Centralized Architectures?,&quot; in Human Interaction, Emerging Technologies and Future Systems V, 2022, pp. 597-604, https://doi.org/10.1007/978-3- 030-85540-6_75.</note>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Graduation Certificate Verification Model: A Preliminary Study</title>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">S</forename><surname>Saleh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Ghazali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qusay</forename><surname>Al</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maatouk</forename></persName>
+		</author>
+		<idno type="DOI">10.14569/IJACSA.2019.0100777</idno>
+		<ptr target="https://doi.org/10.14569/IJACSA.2019.0100777" />
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Advanced Computer Science and Applications</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">O. S. Saleh, O. Ghazali, and Qusay Al Maatouk, &quot;Graduation Certificate Verification Model: A Preliminary Study,&quot; International Journal of Advanced Computer Science and Applications, vol. 10, no. 7, 2019, https://doi.org/10.14569/IJACSA.2019.0100777.</note>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Paper-based Document Authentication using Digital Signature and QR Code</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Warasart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kuacharoen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">th International Conference on Computer Engineering and Technology</title>
+		<imprint>
+			<date type="published" when="2012">2012. 2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">M. Warasart and P. Kuacharoen, &quot;Paper-based Document Authentication using Digital Signature and QR Code,&quot; presented at the 4th International Conference on Computer Engineering and Technology (ICCET 2012), 2012.</note>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Higher Educational Certificate Authentication System Using QR Code Tag</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">A</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-W</forename><surname>Jang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Applied Engineering Research</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">20</biblScope>
+			<biblScope unit="page" from="9728" to="9734" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">H. A. Ahmed and J.-W. Jang, &quot;Higher Educational Certificate Authentication System Using QR Code Tag,&quot; International Journal of Applied Engineering Research, vol. 12, no. 20, pp. 9728-9734, 2017.</note>
+</biblStruct>
+
+<biblStruct xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Hardcopy Document Authentication Based on Public Key Encryption and 2D Barcodes</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Eldefrawy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Alghathbar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">K</forename><surname>Khan</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ISBAST.2012.16</idno>
+		<ptr target="https://doi.org/10.1109/ISBAST.2012.16" />
+	</analytic>
+	<monogr>
+		<title level="m">2012 International Symposium on Biometrics and Security Technologies</title>
+		<meeting><address><addrLine>Taipei, Taiwan</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2012-03">Mar. 2012</date>
+			<biblScope unit="page" from="77" to="81" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">M. H. Eldefrawy, K. Alghathbar, and M. K. Khan, &quot;Hardcopy Document Authentication Based on Public Key Encryption and 2D Barcodes,&quot; in 2012 International Symposium on Biometrics and Security Technologies, Taipei, Taiwan, Mar. 2012, pp. 77-81, https://doi.org/10.1109/ISBAST.2012.16.</note>
+</biblStruct>
+
+<biblStruct xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Degree Certificate Authentication using QR Code and Smartphone</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Singhal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Pavithr</surname></persName>
+		</author>
+		<idno type="DOI">10.5120/21315-4303</idno>
+		<ptr target="https://doi.org/10.5120/21315-4303" />
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Computer Applications</title>
+		<imprint>
+			<biblScope unit="volume">120</biblScope>
+			<biblScope unit="issue">16</biblScope>
+			<biblScope unit="page" from="38" to="43" />
+			<date type="published" when="2015-06">Jun. 2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">A. Singhal and R. S. Pavithr, &quot;Degree Certificate Authentication using QR Code and Smartphone,&quot; International Journal of Computer Applications, vol. 120, no. 16, pp. 38-43, Jun. 2015, https://doi.org/10.5120/21315-4303.</note>
+</biblStruct>
+
+<biblStruct xml:id="b64">
+	<analytic>
+		<title level="a" type="main">RFID Enabled Secure Certificate</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Science and Research</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1910" to="1915" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">S. Singh, &quot;RFID Enabled Secure Certificate,&quot; International Journal of Science and Research, vol. 4, no. 5, pp. 1910-1915, 2013.</note>
+</biblStruct>
+
+<biblStruct xml:id="b65">
+	<analytic>
+		<title level="a" type="main">NFC based Anti-Counterfeiting Scheme for Certificates Identification and Verification in offline environment by using RSA digital Signature</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">Y</forename><surname>Hunegnaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bagane</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Pure and Applied Mathematics</title>
+		<imprint>
+			<biblScope unit="volume">118</biblScope>
+			<biblScope unit="issue">24</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Y. Y. Hunegnaw and P. Bagane, &quot;NFC based Anti-Counterfeiting Scheme for Certificates Identification and Verification in offline environment by using RSA digital Signature,&quot; International Journal of Pure and Applied Mathematics, vol. 118, no. 24, 2018.</note>
+</biblStruct>
+
+<biblStruct xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Web-based document certification system with advanced encryption standard digital signature</title>
+		<author>
+			<persName><forename type="first">Henny</forename><surname>Indriyawati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Titin</forename><surname>Winarti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vensy</forename><surname>Vydia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Indonesian Journal of Electrical Engineering and Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2021-04">Apr. 2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Henny Indriyawati, Titin Winarti, and Vensy Vydia, &quot;Web-based document certification system with advanced encryption standard digital signature,&quot; Indonesian Journal of Electrical Engineering and Computer Science, vol. 22, no. 1, Apr. 2021.</note>
+</biblStruct>
+
+<biblStruct xml:id="b67">
+	<monogr>
+		<title level="m" type="main">E-verification-A case of academic testimonials</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Muthoni</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<pubPlace>Kenya</pubPlace>
+		</imprint>
+		<respStmt>
+			<orgName>University of Nairobi</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">MSc Thesis</note>
+	<note type="raw_reference">J. M. Muthoni, &quot;E-verification-A case of academic testimonials,&quot; MSc Thesis, University of Nairobi, Kenya, 2015.</note>
+</biblStruct>
+
+<biblStruct xml:id="b68">
+	<analytic>
+		<title level="a" type="main">Trusted Academic Transcripts on the Blockchain: A Systematic Literature Review</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Caldarelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ellul</surname></persName>
+		</author>
+		<idno type="DOI">10.3390/app11041842</idno>
+		<ptr target="https://doi.org/10.3390/app11041842" />
+	</analytic>
+	<monogr>
+		<title level="j">Applied Sciences</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<date type="published" when="1842">Jan. 2021. 1842</date>
+			<pubPlace>Art</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">G. Caldarelli and J. Ellul, &quot;Trusted Academic Transcripts on the Blockchain: A Systematic Literature Review,&quot; Applied Sciences, vol. 11, no. 4, Jan. 2021, Art. no. 1842, https://doi.org/10.3390/app11041842.</note>
+</biblStruct>
+
+<biblStruct xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Blockcerts-An Open Infrastructure for Academic Credentials on the Blockchain</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">M L L</forename><surname>Initiative</surname></persName>
+		</author>
+		<ptr target="https://medium.com/mit-media-lab/blockcerts-an-open-infrastructure-for-academic" />
+	</analytic>
+	<monogr>
+		<title level="m">MIT Media Lab Learning Initiative</title>
+		<imprint>
+			<date type="published" when="2016-10">Oct. 2016</date>
+		</imprint>
+	</monogr>
+	<note>credentials-on-theblockchain-899a6b880b2f</note>
+	<note type="raw_reference">M. M. L. L. Initiative, &quot;Blockcerts-An Open Infrastructure for Academic Credentials on the Blockchain,&quot; MIT Media Lab Learning Initiative, Oct. 2016. [Online]. Available: https://medium.com/mit-media- lab/blockcerts-an-open-infrastructure-for-academic-credentials-on-the- blockchain-899a6b880b2f.</note>
+</biblStruct>
+
+<biblStruct xml:id="b70">
+	<analytic>
+		<title level="a" type="main">Security analysis of a blockchain-based protocol for the certification of academic credentials</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chiaraluce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kodra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Spalazzi</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.1910.04622</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.1910.04622" />
+	</analytic>
+	<monogr>
+		<title level="j">arXiv</title>
+		<imprint>
+			<date type="published" when="2019-10-10">Oct. 10, 2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">M. Baldi, F. Chiaraluce, M. Kodra, and L. Spalazzi, &quot;Security analysis of a blockchain-based protocol for the certification of academic credentials.&quot; arXiv, Oct. 10, 2019, https://doi.org/10.48550/arXiv.1910. 04622.</note>
+</biblStruct>
+
+<biblStruct xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Blockchain Application in Higher Education Diploma Management and Results Analysis</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">R</forename><surname>Vidal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gouveia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Soares</surname></persName>
+		</author>
+		<idno type="DOI">10.25046/aj0506104</idno>
+		<ptr target="https://doi.org/10.25046/aj0506104" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Science, Technology and Engineering Systems Journal</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="871" to="882" />
+			<date type="published" when="2020-12">Dec. 2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">F. R. Vidal, F. Gouveia, and C. Soares, &quot;Blockchain Application in Higher Education Diploma Management and Results Analysis,&quot; Advances in Science, Technology and Engineering Systems Journal, vol. 5, no. 6, pp. 871-882, Dec. 2020, https://doi.org/10.25046/aj0506104.</note>
+</biblStruct>
+
+<biblStruct xml:id="b72">
+	<monogr>
+		<title level="m" type="main">University of Nicosia is the First University in the World to Publish Diplomas of All Graduating Students on the Blockchain</title>
+		<ptr target="https://www.unic.ac.cy/university-of-nicosia-is-the-first-university-in-the-world-to-publish-diplomas-of-all-graduating-students-on-the-blockchain/" />
+		<imprint>
+			<date type="published" when="2023-07-31">Jul. 31, 2023</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Nicosia</orgName>
+		</respStmt>
+	</monogr>
+	<note type="raw_reference">&quot;University of Nicosia is the First University in the World to Publish Diplomas of All Graduating Students on the Blockchain,&quot; University of Nicosia, Jul. 31, 2023. https://www.unic.ac.cy/university-of-nicosia-is- the-first-university-in-the-world-to-publish-diplomas-of-all-graduating- students-on-the-blockchain/.</note>
+</biblStruct>
+
+<biblStruct xml:id="b73">
+	<analytic>
+		<title level="a" type="main">Malta is first country to put education certificates on blockchain</title>
+		<ptr target="http://www.maltatoday.com.mt/news/national/" />
+	</analytic>
+	<monogr>
+		<title level="j">MaltaToday.com.mt</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">&quot;Malta is first country to put education certificates on blockchain,&quot; MaltaToday.com.mt. http://www.maltatoday.com.mt/news/national/</note>
+</biblStruct>
+
+<biblStruct xml:id="b74">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">/malta_is_first_country_to_put_education_certificates_on_blockc hain</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">/malta_is_first_country_to_put_education_certificates_on_blockc hain.</note>
+</biblStruct>
+
+<biblStruct xml:id="b75">
+	<analytic>
+		<title level="a" type="main">SmartCert BlockChain Imperative for Educational Certificates</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Obaidat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Al-Lahham</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/JEEIT.2019.8717505</idno>
+		<ptr target="https://doi.org/10.1109/JEEIT.2019.8717505" />
+	</analytic>
+	<monogr>
+		<title level="m">2019 IEEE Jordan International Joint Conference on Electrical Engineering and Information Technology (JEEIT)</title>
+		<meeting><address><addrLine>Amman, Jordan</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-04">Apr. 2019</date>
+			<biblScope unit="page" from="629" to="633" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">T. Kanan, A. T. Obaidat, and M. Al-Lahham, &quot;SmartCert BlockChain Imperative for Educational Certificates,&quot; in 2019 IEEE Jordan International Joint Conference on Electrical Engineering and Information Technology (JEEIT), Amman, Jordan, Apr. 2019, pp. 629- 633, https://doi.org/10.1109/JEEIT.2019.8717505.</note>
+</biblStruct>
+
+<biblStruct xml:id="b76">
+	<analytic>
+		<title level="a" type="main">Case Study Research in Software Engineering-It is a Case, and it is a Study, but is it a Case Study?</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wohlin</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.infsof.2021.106514</idno>
+		<ptr target="https://doi.org/10.1016/j.infsof.2021.106514" />
+	</analytic>
+	<monogr>
+		<title level="j">Information and Software Technology</title>
+		<imprint>
+			<biblScope unit="volume">133</biblScope>
+			<date type="published" when="2021-05">May 2021</date>
+		</imprint>
+	</monogr>
+	<note>Art. no. 106514</note>
+	<note type="raw_reference">C. Wohlin, &quot;Case Study Research in Software Engineering-It is a Case, and it is a Study, but is it a Case Study?,&quot; Information and Software Technology, vol. 133, May 2021, Art. no. 106514, https://doi.org/ 10.1016/j.infsof.2021.106514.</note>
+</biblStruct>
+
+<biblStruct xml:id="b77">
+	<monogr>
+		<title level="m" type="main">Single case studies vs. multiple case studies: A comparative study</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gustafsson</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">J. Gustafsson, &quot;Single case studies vs. multiple case studies: A comparative study.&quot;</note>
+</biblStruct>
+
+<biblStruct xml:id="b78">
+	<analytic>
+		<title level="a" type="main">Sampling techniques &amp; determination of sample size in applied statistics research: An overview</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">B</forename><surname>Masuku</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Economics, Commerce and Management</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<date type="published" when="2014-11">Nov. 2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">A. S. Singh and M. B. Masuku, &quot;Sampling techniques &amp; determination of sample size in applied statistics research: An overview,&quot; International Journal of Economics, Commerce and Management, vol. 2, no. 11, Nov. 2014.</note>
+</biblStruct>
+
+<biblStruct xml:id="b79">
+	<monogr>
+		<title level="m" type="main">Sampling techniques</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">G</forename><surname>Cochran</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1977">1977</date>
+			<publisher>John Wiley &amp; Sons</publisher>
+			<pubPlace>Hoboken, NJ, USA</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">W. G. Cochran, Sampling techniques. Hoboken, NJ, USA: John Wiley &amp; Sons, 1977.</note>
+</biblStruct>
+
+<biblStruct xml:id="b80">
+	<analytic>
+		<title level="a" type="main">Methodology of Non-probability Sampling in Survey Research</title>
+		<author>
+			<persName><forename type="first">K.-S</forename><surname>Kim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">American Journal of Biomedical Science &amp; Research</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page">616</biblScope>
+			<date type="published" when="2022-03">Mar. 2022</date>
+			<pubPlace>Art</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">K.-S. Kim, &quot;Methodology of Non-probability Sampling in Survey Research,&quot; American Journal of Biomedical Science &amp; Research, vol. 15, no. 6, Mar. 2022 Art. no. 616.</note>
+</biblStruct>
+
+<biblStruct xml:id="b81">
+	<analytic>
+		<title level="a" type="main">Sampling in Qualitative Research</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shaheen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pradhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ranajee</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Qualitative Techniques for Workplace Data Analysis</title>
+		<meeting><address><addrLine>Hersley, PA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>IGI Global</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="25" to="51" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">M. Shaheen, S. Pradhan, and Ranajee, &quot;Sampling in Qualitative Research,&quot; in Qualitative Techniques for Workplace Data Analysis, Hersley, PA, USA: IGI Global, 2019, pp. 25-51.</note>
+</biblStruct>
+
+<biblStruct xml:id="b82">
+	<analytic>
+		<title level="a" type="main">Sample Size Justification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1525/collabra.33267</idno>
+		<ptr target="https://doi.org/10.1525/collabra.33267" />
+	</analytic>
+	<monogr>
+		<title level="j">Collabra: Psychology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2022-03">Mar. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">D. Lakens, &quot;Sample Size Justification,&quot; Collabra: Psychology, vol. 8, no. 1, Mar. 2022, Art. no. 33267, https://doi.org/10.1525/collabra.33267.</note>
+</biblStruct>
+
+<biblStruct xml:id="b83">
+	<monogr>
+		<title level="m" type="main">Case Study Research in Software Engineering: Guidelines and Examples</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Runeson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Host</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rainer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Regnell</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>John Wiley &amp; Sons</publisher>
+			<pubPlace>Hoboken, NJ, USA</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">P. Runeson, M. Host, A. Rainer, and B. Regnell, Case Study Research in Software Engineering: Guidelines and Examples. Hoboken, NJ, USA: John Wiley &amp; Sons, 2012.</note>
+</biblStruct>
+
+<biblStruct xml:id="b84">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Tracy</surname></persName>
+		</author>
+		<title level="m">Qualitative Research Methods: Collecting Evidence, Crafting Analysis, Communicating Impact</title>
+		<meeting><address><addrLine>Hoboken, NJ, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>John Wiley &amp; Sons</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">S. J. Tracy, Qualitative Research Methods: Collecting Evidence, Crafting Analysis, Communicating Impact. Hoboken, NJ, USA: John Wiley &amp; Sons, 2019.</note>
+</biblStruct>
+
+<biblStruct xml:id="b85">
+	<monogr>
+		<title level="m" type="main">Unified Model Language</title>
+		<ptr target="http://www.uml.org/" />
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">&quot;Unified Model Language.&quot; http://www.uml.org/.</note>
+</biblStruct>
+
+<biblStruct xml:id="b86">
+	<monogr>
+		<title level="m" type="main">Draw.io</title>
+		<ptr target="https://app.diagrams.net/" />
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">&quot;Draw.io.&quot; https://app.diagrams.net/.</note>
+</biblStruct>
+
+<biblStruct xml:id="b87">
+	<analytic>
+		<title level="a" type="main">CryptoCert: A Blockchain-Based Academic Credential System</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">W</forename><surname>Jonnalagadda Aswani Kumar Cherukuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kathiravan</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Annapurna</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Recent Trends in Blockchain for Information Systems Security and Privacy</title>
+		<meeting><address><addrLine>Boca Raton, FL, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>CRC Press</publisher>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">V. W. Jonnalagadda Aswani Kumar Cherukuri, Kathiravan Srinivasan, Annapurna, &quot;CryptoCert: A Blockchain-Based Academic Credential System,&quot; in Recent Trends in Blockchain for Information Systems Security and Privacy, Boca Raton, FL, USA: CRC Press, 2021.</note>
+</biblStruct>
+
+<biblStruct xml:id="b88">
+	<analytic>
+		<title level="a" type="main">Blockchain Technology: Redefining Trust for Digital Certificates</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Capece</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Levialdi Ghiron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pasquale</surname></persName>
+		</author>
+		<idno type="DOI">10.3390/su12218952</idno>
+		<ptr target="https://doi.org/10.3390/su12218952" />
+	</analytic>
+	<monogr>
+		<title level="j">Sustainability</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">21</biblScope>
+			<date type="published" when="2020-01">Jan. 2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">G. Capece, N. Levialdi Ghiron, and F. Pasquale, &quot;Blockchain Technology: Redefining Trust for Digital Certificates,&quot; Sustainability, vol. 12, no. 21, Jan. 2020, Art. no. 8952, https://doi.org/10.3390/ su12218952.</note>
+</biblStruct>
+
+<biblStruct xml:id="b89">
+	<analytic>
+		<title level="a" type="main">Blockchain and its Potential in Education</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Turcu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Turcu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Chiuchisan</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.1903.09300</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.1903.09300" />
+	</analytic>
+	<monogr>
+		<title level="j">arXiv</title>
+		<imprint>
+			<date type="published" when="2019-05">Mar. 05, 2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">C. Turcu, C. Turcu, and I. Chiuchisan, &quot;Blockchain and its Potential in Education.&quot; arXiv, Mar. 05, 2019, https://doi.org/10.48550/arXiv.1903. 09300.</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2801 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main"></title>
+				<funder ref="#_8bKb3SH">
+					<orgName type="full">German Research Foundation</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C0F0EED1B5B408121FFCB3B20C5C35DC</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:11+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract/>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>A systematic review of Null Hypothesis Significance Testing, sample sizes, and statistical power in research using the Implicit Relational Assessment Procedure</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ian Hussey</head><p>Following recent calls to examine the replicability of behavioral research, I examined two key determinants of replicability, namely sample sizes and statistical power, in research using the Implicit Relational Assessment Procedure (IRAP). A systematic review was used to gather all published studies employing the IRAP and extract their designs and sample sizes. The use of Null Hypothesis Significance Testing was found to be nearly ubiquitous, justifying the examination of statistical power. Using an established method, median sample sizes were used to estimate the statistical power to detect the average published effect size in psychological research (r = .20) in each year. Sample sizes and the statistical power they imply were found to be very low in IRAP studies (in 2022: median N = 64, power = 0.34). At the current rate of growth, the median study will only reach the recommended minimum power of at least 0.80 by 2080. The IRAP literature was directly compared with the Social and Personality psychology literature using an existing dataset. Median sample sizes and their implied statistical power were lower in the IRAP literature in all years than they were in Social and Personality psychology at the beginning of the Replication Crisis in 2011, and indeed in all subsequent years. Improvements in sample sizes and statistical power in the Social and Personality psychology literature were significantly and substantially larger than in the IRAP literature. Direct tests of the reproducibility and replicability of claims in the IRAP literature are needed.</p><p>Two seminal articles were published in 2011 whose implications the field of psychology is still grappling with. The first, by Daryl <ref type="bibr" target="#b7">Bem (2011)</ref>, contained literally impossible results about a supposed human ability to predict the future. It was remarkable, not merely in its claims, but because it employed modal research practices for the field to substantiate these conclusions. A second article by <ref type="bibr">Simmons and colleagues (2011)</ref>, coincidentally published around the same time as <ref type="bibr" target="#b7">Bem (2011)</ref> but without any knowledge of his paper, demonstrated how those modal research practices can easily and routinely generate statistically significant results from what is actually just noise. The fallout from this pair of papers and many more before and since is now a matter of history for some (e.g., for personal accounts see <ref type="bibr" target="#b29">Gelman, 2016;</ref><ref type="bibr" target="#b89">Spellman, 2015)</ref>. But their impact has been uneven and recognition of the Replication Crisis as a serious issue to be reckoned with has been heterogenous, both within and between fields. It would be too easy to dismiss the Replication Crisis as specific to Social and Personality psychology when other fields employ similar research practices. Over time, recognition of these issues has spread to other areas of psychology (e.g., clinical psychology: <ref type="bibr" target="#b90">Tackett et al., 2019)</ref> as well as a diverse range of other fields including cancer biology, economics, methodology, sociology, and philosophy <ref type="bibr" target="#b1">(Baker &amp; Dolgin, 2017;</ref><ref type="bibr" target="#b8">Boulesteix et al., 2020;</ref><ref type="bibr" target="#b9">Buckwalter, 2022;</ref><ref type="bibr" target="#b32">Gordon et al., 2020;</ref><ref type="bibr" target="#b76">Page et al., 2021)</ref>.</p><p>These calls to take seriously the question of replicability have recently been echoed in the behavioral research communities. A recent editorial for Perspectives on Behavior Science characterized the situation well:</p><p>"Despite certain metatheoretical disputes <ref type="bibr" target="#b10">(Burgos &amp; Killeen, 2019)</ref>, behavior science, behavior analysis, and psychology have much more in common than differences. Hence the 'replication crisis' in psychology could well be repeated in behavior science and behavior analysis. Even if it is not, it may hold some important lessons for both scientists and practitioners." <ref type="bibr">(Hantula, 2019, pp. 4-5)</ref> Similarly, the Association for Contextual Behavioral Science's Taskforce on the Strategies and Tactics of Contextual Behavioral Science Research (2021) recently announced its explicit support for Open Science principles, including data transparency and a focus on replication. As such, there is now support for the idea that behavioral science, including component fields such as Behavior Analysis and Contextual Behavioral Science, would be enhanced by examining and enhancing the transparency and replicability of its findings.</p><p>In some ways, this could be seen as an appropriate return to our roots, from which we should never have departed. To take some positive examples of our field's history here, whereas general psychology journals have until recently rarely published replication studies <ref type="bibr">(Makel et al., 2012)</ref>, behavioral journals such as the Journal of Experimental Analysis of Behavior and Journal of Applied Behavior Analysis have a long history of publishing them. Behavioral research also has a long history of sharing research data (i.e., trial-level singlecase experimental design data being presented in tables and plots). Lastly, despite being written over 60 years ago, fully one-quarter of Murray Sidman's seminal behavioral textbook Tactics of Scientific <ref type="bibr">Research (1960)</ref> is dedicated to discussion of the need for replication studies, their taxonomy and function, and links between replication and generalization. Replicability, sample size, and statistical power Statistical power is the probability of detecting a true effect, and is synonymous with the sensitivity of a test and its False Negative Rate <ref type="bibr" target="#b15">(Cohen, 1988)</ref>. Low statistical power in original studies is a key contributor to the Replication Crisis in psychology (e.g., <ref type="bibr" target="#b0">Asendorpf et al., 2013;</ref><ref type="bibr" target="#b11">Button et al., 2013;</ref><ref type="bibr" target="#b70">Munafò et al., 2017)</ref>, with highly powered replications only obtaining the original finding in around one third to one-half of studies depending on the definition of successful replication, and effect sizes observed in replication studies are typically only one-third the size of those in original studies (e.g., <ref type="bibr" target="#b22">Ebersole et al., 2020;</ref><ref type="bibr" target="#b58">Klein et al., 2018;</ref><ref type="bibr">Open Science Collaboration, 2015)</ref>. Journals that publish underpowered studies are likely to publish a greater proportion of conclusions that are false positives <ref type="bibr" target="#b3">(Bakker et al., 2012;</ref><ref type="bibr" target="#b51">Ioannidis, 2005)</ref>. As such, in reaction to the Replication Crisis in psychology, many have called for psychology research to employ more highly-powered tests and therefore larger sample sizes (e.g., <ref type="bibr" target="#b0">Asendorpf et al., 2013;</ref><ref type="bibr" target="#b11">Button et al., 2013;</ref><ref type="bibr" target="#b70">Munafò et al., 2017;</ref><ref type="bibr" target="#b93">Wagenmakers et al., 2012)</ref>.</p><p>Along with the False Positive Rate (implemented via the α-level, typically &lt; .05), statistical power is one of two key properties of inference via NHST that defines the long-run error rates of the inferences we make from data. Power is generally a less familiar concept than αlevel for many researchers, but it is so central to our ability to make inferences from data <ref type="bibr" target="#b17">(Cohen, 1992)</ref>. Nonetheless, for decades, statistical power remained very low in the behavioral sciences <ref type="bibr">(i.e., around .46: Cohen, 1990)</ref>. Additionally, research has shown that researchers' intuitions about the statistical power implied by rulesof-thumb sample sizes are inaccurate and overestimate power <ref type="bibr" target="#b2">(Bakker et al., 2016)</ref>.</p><p>To assess the efficacy of this more recent call for higher power motivated by the Replication Crisis, on the sample sizes employed in published research, Fraley and colleagues <ref type="bibr" target="#b27">(Fraley et al., 2022;</ref><ref type="bibr" target="#b28">Fraley &amp; Vazire, 2014)</ref> quantified the median sample size employed in articles published in nine personality and social psychology journals between 2011 (arguably the start of the Replication Crisis) and 2019. <ref type="bibr">Fraley and colleagues (2022)</ref> observed that median sample sizes, and therefore implied statistical power, have indeed increased over the last decade in social and personality psychology research, from very poor (circa .50 in 2011) to acceptable (circa .90 in 2019). In doing so, Fraley and colleagues <ref type="bibr" target="#b27">(Fraley et al., 2022;</ref><ref type="bibr" target="#b28">Fraley &amp; Vazire, 2014)</ref> provided both a relatively simple method to assess the implied power across a body of work and a useful dataset to compare other fields against.</p><p>The current study employs this method to provide one of the first examinations of a key determinant of the replicability of research in an area of work relevant to both behaviorism and Contextual Behavioural Science. The stated goal of CBS is "creating a science more adequate to the challenge of the human condition" (S. C. <ref type="bibr" target="#b38">Hayes et al., 2012)</ref>. Efforts to meet this noble goal would be aided by scientific findings that are reliable, reproducible, and replicable <ref type="bibr" target="#b70">(Munafò et al., 2017)</ref>. This fact was recently recognized by leadership within the CBS community (Task Force on the Strategies and Tactics of Contextual Behavioral Science Research, 2021), which served as motivation for the current work. The Implicit Relational Assessment Procedure (IRAP)</p><p>The Implicit Relational Assessment Procedure (IRAP: <ref type="bibr" target="#b5">Barnes-Holmes et al., 2006)</ref> is a reaction-timebased task used variously as a measure of implicit attitudes in implicit social cognition research and a measure of the strength of relational responding within Contextual Behavioral Science research <ref type="bibr" target="#b40">(Hughes et al., 2012)</ref>. One meta-analysis suggested that the IRAP demonstrates relatively high criterion validity compared to other implicit measures such as the Implicit Association Test <ref type="bibr" target="#b92">(Vahey et al., 2015)</ref>. However, multiple other meta-analyses have also suggested that the IRAP has poor internal consistency (estimates of α from .51 to .60) and unacceptably low test-retest reliability (estimates of r from .13 to .43: <ref type="bibr" target="#b34">Greenwald &amp; Lai, 2020;</ref><ref type="bibr" target="#b47">Hussey &amp; Drake, 2020a)</ref>. This presents somewhat of a conundrum, as the reliability places an upper limit on validity (i.e., through attenuation of observable correlations: Revelle, 2009).</p><p>One explanation for these seemingly irreconcilable results is that the IRAP literature may suffer from poor replicability, such as inflated effect sizes and false positive rates. This is not implausible. Although the IRAP grew out of the behaviorist tradition <ref type="bibr" target="#b6">(Barnes-Holmes et al., 2010)</ref>, IRAP studies typically employ the same research designs and inference methods as Social and Personality psychology (e.g., Null Hypothesis Significance Testing, NHST), and are therefore subject to the same concerns as any research employing this inference approach. One specific class of statistical methods, multiway Analyses of Variance (ANOVAs, i.e., those with more than one independent variable such as 2-way ANOVAs and 3-way ANOVAs), are almost ubiquitous in IRAP research. Due to familywise error rates, the use of multiway ANOVA in exploratory or inductive research inflates false positive rates much higher than the 5% rate implied by the standard alpha level of 0.05 <ref type="bibr" target="#b19">(Cramer et al., 2016)</ref>. In the case of a simple 2 X 2 between groups ANOVA, this can be illustrated with simple math: if a researcher is willing to accept the result of any of the three p values generated by the ANOVA (i.e., either of the main effects or the interaction effect) as evidence of an effect, as would be common when applying the ANOVA in an exploratory or inductive manner, then the false positive rate for the ANOVA as a whole is not equal to the alpha value (e.g., 5%), but a higher value. Specifically, False Positive Rate = 1 -(1 -𝑎𝑙𝑝ℎ𝑎) ! , where k is the number of p values <ref type="bibr" target="#b19">(Cramer et al., 2016)</ref>. Using alpha = 0.05 and k = 3 (i.e., two main effects and one interaction effect), the False Positive Rate = 14.3%. <ref type="bibr" target="#b19">Cramer et al. (2016)</ref> note that the false positive rate implied by larger ANOVA designs, such as those often employed in IRAP research (e.g., 4 X 2 X 2 mixed within-between ANOVAs), are higher again, but would require specific simulation studies to estimate. The unavoidable implication is that if the IRAP literature employs a statistical method, which is known to have both inflated false positive rates under modal use and inflated false negative rates under low statistical power, then the published IRAP literature will have inflated rates of false conclusions (i.e., low replicability). At a minimum, there is no sound statistical basis by which the IRAP literature could be judged to be a priori immune from such concerns. Rather, the replicability of conclusions in the published IRAP literature must be assessed empirically, via both direct replication studies and assessment of indicators of replicability, such as sample size and statistical power.</p><p>It is also worth noting that, given that it is the probability of detecting effects that exist, high statistical power is a desirable property regardless of whether a researcher is employing Null Hypothesis Significance Testing in a deductive manner <ref type="bibr" target="#b59">(Lakens, 2021)</ref> or in an inductive manner (e.g., to generate new hypotheses rather than test existing ones). Some IRAP researchers have stated they do the latter <ref type="bibr" target="#b54">(Kavanagh, Matthyssen, et al., 2019)</ref>, although as an aside it should be recognized that this risks representing a form of Hypothesizing After Results Are Known (HARKing: <ref type="bibr" target="#b56">Kerr, 1998)</ref>, which lowers the replicability of findings <ref type="bibr" target="#b70">(Munafò et al., 2017)</ref>. Regardless of a researcher's self-identified approach as deductive versus inductive, it should be recognized that a smaller number of high-powered studies generally generates a larger number of true conclusions than a larger number of low-powered studies <ref type="bibr" target="#b62">(LeBel et al., 2017)</ref>.</p><p>The current study therefore represents a first effort toward quantifying two related indicators of replicability in the IRAP literature. I performed a systematic review of published research using the IRAP and then applied <ref type="bibr" target="#b27">Fraley et al.'s (2022;</ref><ref type="bibr"></ref> see also <ref type="bibr" target="#b28">Fraley &amp; Vazire, 2014)</ref> approach to estimating median sample size over time and the implied statistical power in this literature. As noted in those publications, median sample sizes are more appropriate than other metrics of central tendency (e.g., the mean) due to the strong skew in sample sizes. The median is also highly interpretable as it tells you that half of the studies had larger sample sizes than this value and half of the studies had smaller sample sizes than this.</p><p>Sample sizes in the IRAP literature were then contrasted with sample sizes employed elsewhere. Notionally, a comparison with closely related literatures might seem appropriate, such as studies employing other implicit measures such as the Implicit Association Test <ref type="bibr" target="#b35">(Greenwald et al., 1998)</ref>, Affect Misattribution Procedure <ref type="bibr" target="#b78">(Payne et al., 2005)</ref>, or Evaluative Priming Task <ref type="bibr" target="#b25">(Fazio et al., 1995)</ref>. However, this comparison is quite extreme: thanks in part to the popularity of the Project Implicit website (implicit.harvard.edu), studies employing other implicit measures often contain thousands of participants (e.g., <ref type="bibr" target="#b41">Hughes et al., 2022)</ref>, frequently contain tens of thousands <ref type="bibr" target="#b4">(Bar-Anan &amp; Nosek, 2014;</ref><ref type="bibr" target="#b73">Nosek et al., 2007)</ref>, sometimes contain hundreds of thousands <ref type="bibr" target="#b49">(Hussey et al., 2019)</ref>, and occasionally even millions of participants <ref type="bibr" target="#b94">(Xu et al., 2014)</ref>. Of course, the sample sizes employed in the field of implicit social cognition are apparently large not only in comparison to the IRAP but also in comparison to other areas of Social and Personality psychology. As such, it is perhaps more informative to compare sample sizes in the IRAP literature with a more diverse sample as a reference, such as the Social and Personality psychology literature as a whole. I, therefore, made use of the openly available dataset created by <ref type="bibr" target="#b27">Fraley et al. (2022)</ref>, which covers the Social and Personality psychology literature.</p><p>Method Data was obtained from two separate sources. Research designs and sample sizes within the published IRAP literature were obtained via a systematic review. To provide a comparison for this literature, existing data on the research designs and sample sizes reported in articles published in nine Social and Personality Psychology journals was taken from a recent openlyavailable dataset <ref type="bibr" target="#b27">(Fraley et al., 2022)</ref>. The data extraction method for the IRAP literature is based on the example provided by <ref type="bibr" target="#b27">Fraley et al. (2022)</ref>. A systematic review of research designs in the IRAP research <ref type="bibr">(2006)</ref><ref type="bibr">(2007)</ref><ref type="bibr">(2008)</ref><ref type="bibr">(2009)</ref><ref type="bibr">(2010)</ref><ref type="bibr">(2011)</ref><ref type="bibr">(2012)</ref><ref type="bibr">(2013)</ref><ref type="bibr">(2014)</ref><ref type="bibr">(2015)</ref><ref type="bibr">(2016)</ref><ref type="bibr">(2017)</ref><ref type="bibr">(2018)</ref><ref type="bibr">(2019)</ref><ref type="bibr">(2020)</ref><ref type="bibr">(2021)</ref><ref type="bibr">(2022)</ref> Results from both searches were integrated. Results of each stage of this review are computationally reproducible: BibTeX files for all articles at each stage of the search and exclusion process are available in the supplementary materials (osf.io/vpwuy) and can be updated by others or used for other evidence synthesis or meta-science purposes.</p><p>Both the Web of Science and PsycINFO databases were searched. Boolean search terms for the Web of Science database were "implicit relational assessment procedure" OR "IRAP" in the title, abstract, or keywords. Search constraints were publication date between 2006 and 2022, limited to publications in English. The search was run on 23 December 2018. The systematic review was updated with a second search run on 11 September 2022.</p><p>A PRISMA flow chart <ref type="bibr" target="#b69">(Moher et al., 2009)</ref> detailing all exclusions can be found in Figure <ref type="figure" target="#fig_0">1</ref>. 372 records were obtained from the database searches and 5 from other sources. After duplicates were removed, 232 records remained. The retained records were screened based on their title and abstract. The inclusion criterion was the use of the Implicit Relational Assessment Procedure (IRAP) within the study. Variant procedures such as the Mixed-Trials IRAP (MT-IRAP: <ref type="bibr" target="#b64">Levin et al., 2010)</ref> and the Training IRAP (T-IRAP: <ref type="bibr" target="#b57">Kilroe et al., 2014)</ref> were excluded on the basis that, although these tasks share similar names with the IRAP, their specifics diverge so substantially from the IRAP as to represent a strong risk of a jingle fallacy: the mistaken assumption that two measures sharing the same name measure the same thing (e.g., <ref type="bibr" target="#b65">Lilienfeld &amp; Strother, 2020)</ref>. For example, the IRAP requires participants to provide responses that are both notionally consistent and inconsistent with their pre-experimentally established learning history (e.g., to respond to "White people" and "positive" with "true" on some blocks and "false" on others). In contrast, the Training IRAP requires responding consistent with only one of these patterns in order to establish that pattern of responding rather than assess it. Despite its name, the Training IRAP is therefore more closely related to the Relational Evaluation Procedure (e.g., J. <ref type="bibr" target="#b37">Hayes et al., 2016)</ref> than the IRAP.</p><p>The risk of a jingle fallacy also applies to treating the IRAP and MT-IRAP as being meaningfully similar. Whereas the IRAP alternates between response patterns between blocks, the MT-IRAP does it between trials through the inclusion of an additional stimulus that indicates whether participants should tell the "truth" (provide a history-consistent response) or "lie" (provide a history-inconsistent response) on that trial. There are thus parallels between the MT-IRAP and the Recoding Free version of the Implicit Association Test (IAT-RF: <ref type="bibr" target="#b83">Rothermund et al., 2009)</ref> as variants of their respective original tasks. To the best of my knowledge, no work to date has assessed the correlation between IRAPs and MT-IRAPs designed to assess the same domain. More broadly, it is important to note that although the IRAP and several other tasks including the Implicit Association Test are collectively labeled "implicit measures", scores on these tasks are typically found to correlate poorly with one another, even when the tasks share some procedural features and are intended to measure the same domain (e.g., <ref type="bibr" target="#b14">Clayton et al., 2023;</ref><ref type="bibr" target="#b84">Schimmack, 2021;</ref><ref type="bibr"></ref> for a detailed conceptual critique see <ref type="bibr" target="#b18">Corneille &amp; Hütter, 2020)</ref>. As such, in the absence of evidence for convergent validity between the IRAP and MT-IRAP, the MT-IRAP was excluded out of an abundance of caution against introducing jingle fallacy into the analysis. 161 records remained after the title and abstract exclusions. The full texts of these articles were then screened using the same inclusion criterion. Ten articles were excluded based on this full-text search. In each case, this was because they did not employ an IRAP (or IRAP variant) at all, or because they employed an IRAP variant such as a Training IRAP or Mixed-Trials IRAP. A list of these exclusions and their individual reasons is available in the supplementary materials. After all exclusions, 151 published articles and book chapters using the IRAP were found that met the inclusion criteria. The full text for each record was then inspected to extract the following information for each study described: the sample size after exclusions (N); study design (between, within, or mixed); the number of between group conditions; and whether the study reported employing Null Hypothesis Significance Testing (NHST). The sample size after exclusions was extracted rather than the sample prior to exclusions given the IRAP's established high attrition rate <ref type="bibr" target="#b50">(Hussey et al., 2015)</ref>. Note that comparisons among multiple IRAP trial types were excluded from consideration when labeling a given study as including a within-subjects element, given that this feature is so common in the literature. Where a study employed multiple designs (e.g., both correlating the IRAP with a criterion variable and examining the pattern of IRAP effects between groups) it was labeled "mixed". As such, "mixed" refers not only to mixed within-between research designs but also to articles that reported both within and between</p><p>Records identified through database searching (n = 372) Records after duplicates removed (n = 232) Records screened (n = 232) Duplicates excluded (n = 145) Additional records identified through other sources (n = 5) Records excluded (n = 71) Full-text articles assessed for eligibility (n = 161) Studies included in qualitative synthesis (n = 151) Full-text articles excluded, with reasons (n = 10) Total items found (n = 151)</p><p>designs. This was suitable for the current analytic purposes, which required excluding the purely withinsubject studies from the analyses to estimate statistical power correctly (i.e., using those studies employing at least one between groups analysis).</p><p>Review of research practices in Social and Personality Psychology journals (2011-2019) Fraley et al. (2022) recently reviewed the sample sizes employed in nine Social and Personality Psychology journals (European Journal of Social Psychology, European Journal of Personality, Journal of Experimental Social Psychology, Journal of Personality, Journal of Personality and Social Psychology, Journal of Research in Personality, Personality and Social Psychology Bulletin, Psychological Science, and Social and Personality Psychology Science). The authors extracted data from a random 20% of the empirical studies published in each journal in each year between 2011 and 2019. According to the authors, their chosen start date corresponded to the beginning of the Replication Crisis in psychology, which many would place at the publication of impactful papers by Bem (2011) and Simmons et al. (2011). As in Fraley et al. (2022), (a) only data from studies that employed between group comparisons were employed for the below analyses; and (b) only studies in Social and Personality psychology were included. Studies published in Psychological Science, which is a general psychology journal, were individually screened by Fraley et al. (2022) for their relevance to Social or Personality psychology and excluded appropriately. Their openly available dataset was obtained from their supplementary materials (i.e., osf.io/rvbxp). The analytic dataset included sample sizes from 3047 studies (range 113 to 631 studies per journal). Results Prevalence of Null Hypothesis Significance Testing in the IRAP literature</p><p>Given that the IRAP emerged from the behavioral tradition <ref type="bibr" target="#b6">(Barnes-Holmes et al., 2010)</ref>, I considered it possible that some IRAP studies may employ inference methods other than Null Hypothesis Significance Testing (NHST), including Single Case Experimental Design methods. Such studies would be both likely to employ smaller sample sizes and would not be susceptible to issues of statistical power in quite the same way as those which explicitly employed NHST. As such, before applying any critique that was relevant only to studies employing NHST, I first began by quantifying the proportion of IRAP publications that employed NHST.</p><p>One publication did not report the sample size <ref type="bibr" target="#b20">(Cullen &amp; Barnes-Holmes, 2008)</ref>. The remaining 150 publications contained 188 studies. Just 3 studies in two articles (1.6%) did not employ NHST (i.e., <ref type="bibr" target="#b52">Jackson et al., 2016;</ref><ref type="bibr" target="#b80">Rafacz et al., 2019)</ref>. The overwhelming majority of published IRAP studies have employed NHST (185 studies, 97.9%). As such, the constraints of inference via NHST necessarily apply to these studies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sample size in the IRAP literature</head><p>Distribution of sample sizes In the 185 studies that both employed NHST and reported sample sizes, a total of 8384 participants were reported. Sample sizes ranged from 9 to 210 participants, Median = 41, Median Absolute Deviation (MAD) = 17.8. A histogram of the distribution of sample sizes in IRAP research can be found in Figure <ref type="figure" target="#fig_2">2</ref>. Change in sample size per study over time Change in sample sizes over time was quantified by calculating the median sample size for each year. In order to illustrate the change in sample sizes used in all IRAP studies over time, the median sample size per study per year using all studies was calculated (see Figure <ref type="figure">3</ref>, green line). In this and all subsequent figures, the straight line represents the fitted Ordinary Least Squares linear regression line (discussed later) and the shaded region around it represents its 95% Confidence Interval. As can be seen in Figure <ref type="figure">3</ref>, across years, median sample sizes in IRAP studies have been small (range of medians 12 to 64). Notably, given that these are medians, this also implies that half of the studies in each year employ samples that are even smaller than this. Data from all plots are available in table format in the supplementary materials (osf.io/4v3qa).</p><p>To quantify any changes in an accessible manner, an Ordinary Least Squares linear regression was fit to the data with median sample size as the dependent variable and year as the independent variable. Year was rescored so that 2006 was the intercept. Results demonstrated that the estimated median sample size per study increased from an estimated 22.5, 95% <ref type="bibr">CI [10.7,</ref><ref type="bibr">34.2]</ref> in 2006 (the model intercept) by an average of 1.8, 95% CI [0.6, 3.1], p = .008 participants per year (see Figure <ref type="figure">3</ref>, green line).</p><p>Change in sample size per group over time While the previous quantification benefits from including data from all studies and therefore providing an overview of the literature, it does not necessarily compare like with like over time in a way that facilitates understanding statistical power. For example, imagine</p><p>0 10 20 30 40 0 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200 210 220 Sample size (N) Number of studies</p><p>two studies: the first has a sample size of 100 in two between-group conditions, and the second has a sample size of 150 in three between-group conditions. The studies have different sample sizes, but this does not translate to them having higher statistical power for their pairwise group comparisons: both have an average of 50 participants per group. To compare like with like, it is useful to also plot the median sample per group (aka cell within the factorial design). The median sample size per experimental group per year was therefore calculated by dividing the study sample size by the number of between-group conditions employed within each study. Similarly, to compare like with like, only studies employing between groups comparisons were included (69.5% of all studies). This rationale follows that employed by <ref type="bibr" target="#b27">Fraley et al. (2022)</ref>. Figure <ref type="figure">3</ref> therefore also plots the median sample size per study per year using all studies (see Figure <ref type="figure">3</ref>, blue line).</p><p>Figure <ref type="figure">3</ref>. Median sample size per year in IRAP studies A similar regression was fitted this time using median sample sizes per group as the dependent variable. Results demonstrated that the estimated median sample size per group increased from an estimated 10.2, 95% <ref type="bibr">CI [6.8,</ref><ref type="bibr">13.7]</ref> in 2006 (the model intercept) by an average of 0.9, 95% CI [0.5, 1.2], p &lt; .001 participants per year (see Figure <ref type="figure">3</ref>, blue line). Caveats about robustness notwithstanding, because this analysis compares like with like better than the previous one, these results likely represent a more appropriate estimation of the change in sample sizes over time with regard to implications for statistical power. Statistical power in the IRAP literature I then quantified the median statistical power that these median sample sizes imply. It is important to recall that statistical power is a function of multiple variables other than sample size, and power and sample size should not be treated as synonymous. Power is a function of (1) a specific type of test, (2) its alpha level, (3) whether one-tailed or two-tailed hypotheses are employed, (4) the sample size estimate, and (5) the effect size of interest. Choices must be made for each of these in order to estimate power. As in <ref type="bibr" target="#b27">Fraley et al. (2022)</ref>, I therefore (1) limited my consideration to specific analyses (i.e., independent t-tests or Pearson's r correlations, using equivalent effect sizes for each); (2) employed the standard alpha level of .05; (3) employed modal two-tailed comparisons; (4) estimated the median sample size from the literature that used broadly consistent designs (i.e., median N estimated from studies that reported at least one between-group comparison, excluding exclusively within-sample designs); and (5) estimated the ability to detect an effect size of Cohen's d = .408. This effect size is equivalent to a Pearson's r = .20 (as used in as used in <ref type="bibr" target="#b27">Fraley et al., 2022)</ref>, which has been shown in multiple meta-analyses to be approximately the average size effect found across the psychology research literature <ref type="bibr" target="#b30">(Gignac &amp; Szodorai, 2016;</ref><ref type="bibr" target="#b39">Hemphill, 2003;</ref><ref type="bibr" target="#b81">Richard et al., 2003)</ref>. Implied statistical power was calculated using the above parameters for each year using the R package pwr <ref type="bibr" target="#b13">(Champely, 2016)</ref>. Results can be found in Figure <ref type="figure" target="#fig_4">4</ref>. The dotted line represents <ref type="bibr" target="#b15">Cohen's (1988)</ref> commonly accepted guideline for a minimum power of 0.80. As can be seen in the plot, the implied statistical power to detect an average effect size in the IRAP literature is very low (range 0.10 to 0.34).</p><p>To illustrate the magnitude of change in power over time, power and median sample size were entered into a regression as the dependent variable, otherwise similar to the previous analyses. Results demonstrated that the implied statistical power to detect the average published effect size (Cohen's d = 0.408, equivalent to Pearson's r = 0.20) was increasing from an estimated 0.14, 95% CI [0.11, 0.18] in 2006 (the model intercept) by an average of 0.009, 95% CI [0.005, 0.012], p &lt; .001. This estimate was used to calculate how long it would take to achieve <ref type="bibr" target="#b15">Cohen's (1988)</ref> recommendation of power of at least 0.80. If this linear rate of growth continued, the median IRAP 20 40 60 '06 '07 '08 '09 <ref type="bibr">'10 '11 '12 '13 '14 '15 '16 '17 '18 '19 '20 '21 '22</ref> Year Median sample size (N) Participants per study (all studies) Participants per group (studies with between-subjects comparisons) 0.0 0.2 0.4 0.6 0.8 1.0 '06 '07 '08 '09 <ref type="bibr">'10 '11 '12 '13 '14 '15 '16 '17 '18 '19 '20 '21 '22</ref> Year Power sample size would take another 58 years to reach this commonly accepted minimum for statistical power (i.e., in 2080). Note that this is not a prediction that the rate of growth will be linear or stable, but a prediction based on these assumptions, in a world where IRAP researchers' behavior stays on their current trajectory. Comparing the IRAP literature with Social and Personality Psychology</p><p>The analyses reported in the previous section demonstrate that median sample sizes and implied statistical power in the IRAP literature are low in absolute terms. It is useful to supplement this with a relative comparison, i.e., to research in other areas, using the dataset provided by <ref type="bibr" target="#b27">Fraley et al. (2022)</ref>. Whereas <ref type="bibr" target="#b27">Fraley et al. (2022)</ref> calculated median sample size by journal, I calculate a single overall median for Social and Personality and psychology in order to make a simple comparison between these two literatures.</p><p>However, <ref type="bibr" target="#b27">Fraley et al. (2022)</ref> did not extract the number of between-group conditions employed in each study, only the design (between, within, or mixed within-between) and sample size. The most direct and informative comparison possible with the IRAP literature is, therefore, the comparison of median sample sizes by study in studies that employed between-group comparisons (i.e., where the analyses in the previous section compared medians for each group rather than for each study). Medians and power will therefore differ between the analyses reported in these analyses and those reported in the previous section. Analyses in the previous section represent more appropriate absolute estimates, whereas those reported here are more useful for comparisons. Comparing median sample sizes Figure <ref type="figure" target="#fig_6">5</ref> illustrates the median sample sizes per study per year for IRAP studies (green line) compared to the Social and Psychology literature (blue line). A regression was fitted to the data, with median sample size as the dependent variable; and year, literature (IRAP literature vs. Social and Personality psychology literature), and their interaction as independent variables. The estimate of the interaction effect was used to test the hypothesis that the change in median sample size over time was larger in Social and Personality psychology studies than in IRAP studies. Results demonstrated that this difference was statistically significant, substantive in size, and in the predicted direction, B = 18.5, 95% <ref type="bibr">CI [14.5,</ref><ref type="bibr">22.5]</ref>, p &lt; .001.</p><p>Comparing statistical power The statistical power implied by each median sample size was then calculated using the same manner as previously. See Figure <ref type="figure" target="#fig_7">6</ref>, in which the dotted line represents <ref type="bibr" target="#b15">Cohen's (1988)</ref> commonly accepted guideline for a minimum power of at least 0.80. Power estimates were then entered into a regression as the dependent variable. The independent variables were identical to the previous regression model. The estimate of the interaction effect was used to test the hypothesis that the change in implied statistical power to detect the average published effect size (Cohen's d = 0.408, equivalent to Pearson's r = 0.20) over time was larger in Social and Personality psychology studies than IRAP studies. Results demonstrated that this difference was statistically significant, substantive in size, and in the predicted direction, B = .04, 95% CI [.03, .06], p &lt; .001. Discussion Results demonstrated the sample sizes employed in IRAP literature have been problematically small in both absolute terms and relative to the sample sizes employed in Social and Personality psychology studies. The statistical power to detect the average effect size in published psychology research (i.e., Cohen's d = 0.408, equivalent to Pearson's r = .20: Gignac &amp; Szodorai, 0 50 100 150 200 250 <ref type="bibr">'06 '07 '08 '09 '10 '11 '12 '13 '14 '15 '16 '17 '18 '19 '20 '21 '22</ref> Year Median sample size (N) per study Social Psychology IRAP research 0.0 0.2 0.4 0.6 0.8 1.0 <ref type="bibr">'06 '07 '08 '09 '10 '11 '12 '13 '14 '15 '16 '17 '18 '19 '20 '21 '22</ref> Year Power Social Psychology IRAP research 2016; <ref type="bibr" target="#b39">Hemphill, 2003;</ref><ref type="bibr" target="#b81">Richard et al., 2003)</ref> implied by the median sample sizes in IRAP research are also problematically low in both absolute terms and relative to that in the Social and Personality psychology literature. Implied statistical power was &lt; 35% in all years, where <ref type="bibr" target="#b15">Cohen (1988)</ref> recommends a minimum power of 80%.</p><p>Although the sample sizes employed in IRAP studies (and therefore implied power) are increasing detectibly over time, the rate of this increase is too low to make meaningful progress. Results suggest that if the current rate of linear increase in median sample sizes continued it would take 58 years for just half of IRAP studies to meet <ref type="bibr" target="#b15">Cohen's (1988)</ref> recommendation of power of a minimum of least 0.80 (i.e., in 2080).</p><p>When compared with the sample sizes employed in 3047 studies published across nine Social and Personality psychology journals <ref type="bibr" target="#b27">(Fraley et al., 2022)</ref>, results demonstrated that median samples sizes (and therefore implied statistical power) increased at a much greater rate in Social and Personality psychology between 2011 and 2019 than they did in IRAP studies between 2006 and 2022. Furthermore, median sample sizes and their implied statistical power were lower in the IRAP literature in all years than they were at the beginning of the Replication Crisis in Social and Personality Psychology in 2011, and indeed in all subsequent years (see Figures <ref type="figure" target="#fig_6">5</ref> and <ref type="figure" target="#fig_7">6</ref>).</p><p>The necessary implications of this low power must be appreciated: they imply that of all effects of average size in the population that have been studied in IRAP publications, those effects that truly exist in the population not detected in nearly two-thirds of cases. Even for those researchers who self-identify as employing NHST in an inductive manner (e.g., <ref type="bibr" target="#b54">Kavanagh, Matthyssen, et al., 2019)</ref>, this would imply most opportunities to induce hypotheses from data are missed because there was insufficient power to generate significant results. Simulation studies such as those by <ref type="bibr">Bakker and colleagues (2012)</ref> and LeBel and colleagues (2017) demonstrate that a smaller number of betterpowered studies produces a larger number of true inferences than a larger number of less well-powered studies. As such, even researchers with very limited resources available to them would be better to allocate those resources to larger studies. Recommendations for power analyses and sample sizes Readers might reasonably seek concrete recommendations for sample sizes in future IRAP studies. Unfortunately, my answer may be unsatisfying:</p><p>(1) it depends, and (2) it should probably be much larger than you think. This position is drawn from a few sources. First, the authors of the seminal article "False Positive Psychology" paper (2011) have since stated that one of their biggest regrets in that paper was to specify a minimum sample size, due to the subsequent misuse of that recommendation <ref type="bibr" target="#b87">(Simmons et al., 2018</ref>). It's worth noting that similar misuses of sample size recommendations are already visible within the IRAP literature: <ref type="bibr">Vahey and colleagues (2015)</ref> reported an analysis of the IRAP's clinical criterion validity and the results of multiple power analyses based on their effect size estimate. Citations of <ref type="bibr" target="#b92">Vahey et al. (2015)</ref> often inappropriately or inaccurately cite these recommendations. For example, many papers have cited the sample size recommendations reported in <ref type="bibr">Vahey et al.'s (2015)</ref> abstract (i.e., "N = 29 to 37") even when the authors employed a completely different analysis (e.g., other than a one-tailed Pearson's r correlation with αlevel = .05) and/or are conducting research outside of the clinical domain to which <ref type="bibr" target="#b92">Vahey et al. (2015)</ref> limited the scope of their meta-analysis (e.g., <ref type="bibr" target="#b23">Farrell et al., 2015;</ref><ref type="bibr" target="#b53">Kavanagh et al., 2016;</ref><ref type="bibr" target="#b55">Kavanagh, Roelandt, et al., 2019;</ref><ref type="bibr" target="#b63">Leech &amp; Barnes-Holmes, 2020;</ref><ref type="bibr" target="#b67">Maloney &amp; Barnes-Holmes, 2016)</ref>.</p><p>Second, research has demonstrated that researchers' intuitions about the relationship between statistical power and sample size are inaccurate and tend to greatly overestimate power <ref type="bibr" target="#b2">(Bakker et al., 2016)</ref>. Deeper engagement with sample size choices and their power implications is therefore warranted.</p><p>In light of the above, I am reluctant to provide sample size recommendations that risk being cited or followed unthinkingly, absent of context or specifics. Instead, I encourage readers to think more deeply about their inference method, engage with the concept and calculation of statistical power, and plan their studies accordingly. In general, power analyses should be conducted and reported in a reproducible manner, for example using the pwr R package <ref type="bibr" target="#b13">(Champely, 2016)</ref> or Superpower <ref type="bibr" target="#b12">(Caldwell et al., 2022)</ref>. For a beginner introduction to statistical power using interactive visualizations, see <ref type="bibr" target="#b66">Magnusson (2023)</ref>. For a seminal book-length treatment see <ref type="bibr" target="#b15">Cohen (1988)</ref>. It is also worth considering that tests of interaction effects are often reported in the IRAP literature, typically via the interaction term in multiway ANOVAs. Determining statical power for interaction terms is more complex than implied by some power analysis software such as G*Power <ref type="bibr" target="#b24">(Faul et al., 2007)</ref>, and I recommend that researchers should base power analyses on specific forms of expected or plausible interactions (e.g., reversed, fully attenuated, partially attenuated) and their post hoc tests rather than the interaction term in an ANOVA alone (see <ref type="bibr" target="#b12">Caldwell et al., 2022;</ref><ref type="bibr" target="#b88">Sommet et al., 2022)</ref>.</p><p>Separately, sample size determination also involves additional considerations beyond power analysis, such as the availability of resources and desired precision <ref type="bibr" target="#b60">(Lakens, 2022)</ref>. Researchers should consider that sample sizes employed in power analyses do not have to be based on as-yet-unknown estimates of the effect size they are studying, but can instead be based on the researchers' Smallest Effect Size of Interest (SESOI: <ref type="bibr">Lakens, Scheel, et al., 2018)</ref>. Previous work has also pointed out ways in which standard power analyses may still under-power studies due to between-study heterogeneity. This may require that sample sizes be increased further. For a discussion of this issue as well as materials for performing power analyses that can account for this see <ref type="bibr" target="#b68">McShane and Böckenholt (2014)</ref>.</p><p>Of course, power is not the only factor that influences the quality of inferences when using NHST. Exploratory multiway ANOVAs are commonly reported in IRAP publications, and yet corrections for multiple testing (i.e., to control the family-wise error rate) are rarely applied. <ref type="bibr">Cramer and colleagues (2016)</ref> demonstrated that this factor alone gives rise to false positive rates that are greatly inflated beyond the 5% implied by an α-level of 0.05 (e.g., 14% in 2 X 2 between group ANOVAs). Exactly how high false positive rates are inflated for the specific types of multiway ANOVAs employed in IRAP research (e.g., 4 X 2 mixed withinbetween repeated measures ANOVAs) remains unclear. Future research may wish to examine this in simulation studies.</p><p>Many other factors influence the replicability of findings, providing many opportunities for researchers to improve the strength of the evidence provided by their studies <ref type="bibr" target="#b72">(Nosek et al., 2018)</ref>. Researchers should therefore also give serious consideration to preregistering their sample size planning justifications, their chosen sample size, stopping rule, precise analysis plan, and other elements of their research, such as their chosen α-level <ref type="bibr" target="#b61">(Lakens, Adolfi, et al., 2018)</ref>.</p><p>While keeping the above numerous qualifiers in mind as to why power calculations must be done for each study with respect to its design, measurement quality, and specific analysis, some readers may nonetheless wish for some discussion of the sample size needed to detect specific effects in future IRAP studies. I will therefore take two examples, both related to common use cases for the IRAP.</p><p>First, imagine a researcher who wishes to detect a correlation between IRAP scores and another continuous variable. Power analyses were again conducted using the R package pwr <ref type="bibr" target="#b13">(Champely, 2016)</ref>. To detect a correlation that is the magnitude of the average effect size observed in published psychological research (i.e., Pearson's r = 0.20); with an α-level of 0.05 and a twosided test (typical for correlations and regression); 194 participants would be needed to obtain the minimum recommended power (0.80), or 319 participants for high power (0.95). Comparing these sample sizes to the sample sizes observed in the published IRAP literature, 1% of published IRAP studies employed a sample size sufficient to detect the average effect size in the broader psychology literature (r = .20) with minimum recommended power (0.80), and 0% could detect this with high power (0.95). Note that half of all published effects are smaller than the average, and therefore would require even higher sample sizes to detect.</p><p>Second, imagine that a researcher wishes to detect a difference in mean IRAP scores between two groups, and they wish to power the study to detect effect sizes that are at least the average transdiagnostic efficacy of Acceptance and Commitment Therapy versus active and inactive control groups as reported in a recent review of meta-analyses (Hedges' g = 0.46: <ref type="bibr" target="#b31">Gloster et al., 2020)</ref>. This effect size is no more or less meaningful than any other for the sake of illustration but is chosen to leverage intuitions the reader may have to define its Smallest Effect Size of Interest. That is, such a study would be powered to detect mean differences on the IRAP between groups that are no smaller than the general efficacy of ACT. Loosely speaking, I am inviting the reader to think about other effect sizes they have an intuition for in order to provide a benchmark. For example, if you are interested in between groups differences that are smaller than the average efficacy of ACT, you would need more participants than this again. With an effect size of Cohen's d = .46 (i.e., ignoring the very small difference between Hedges' g and Cohen's d at this sample size), an α-level of 0.05, a two-sided test, and two equally sized groups; 152 participants would be needed to obtain the minimum recommended power (0.80), or 248 participants for high power (0.95). Comparing these sample sizes to the sample sizes observed in published IRAP research employing between-groups or mixed within-between designs, 2% of such published IRAP studies employed a sample size sufficient to detect an effect size the same size as the average transdiagnostic efficacy of Acceptance and Commitment Therapy (Hedges' g = 0.46: <ref type="bibr" target="#b31">Gloster et al., 2020)</ref> with minimum recommended power (0.80), and 0% could detect this with high power (0.95).</p><p>Please note again that the above power analyses are not specific recommendations for future IRAP research, and this article should not be cited as a source of such recommendations, but rather are worked examples of (a) how authors should begin to engage with conducting their own a priori power analyses, and (b) illustrative of how underpowered the published IRAP literature is to detect effect sizes of these magnitudes. I reiterate this caution due to The Law of Lakens' Guidelines, which states that whenever you try to make the point that researchers should not follow certain guidelines, you will nonetheless sometimes be cited as a source of said guidelines <ref type="bibr" target="#b82">(Rohrer, 2023)</ref>. Limitations Extraction of sample sizes Sample sizes were extracted from the original articles by a single coder and no estimates of inter-rater reliability were therefore produced. All data and code for the current manuscript are public, therefore making the accuracy of these extractions testable in principle. However, given this is a non-trivial task, and inaccurate data extractions could lead to bias, the lack of a second scorer must be acknowledged as a limitation.</p><p>Choice of effect size One limitation of the current study is the choice of the effect size for which power was calculated (i.e., Pearson's r = .20, equivalent to Cohen's d = .408). This value was selected to be able to draw direct comparisons with <ref type="bibr" target="#b27">Fraley et al. (2022)</ref> and therefore the literature on Social and Personality psychology. Additionally, this estimate was derived from multiple large-scale meta-science studies estimating the average effect size reported in psychology research across thousands of papers <ref type="bibr" target="#b30">(Gignac &amp; Szodorai, 2016;</ref><ref type="bibr" target="#b39">Hemphill, 2003;</ref><ref type="bibr" target="#b81">Richard et al., 2003)</ref>. No such estimates exist for the IRAP literature.</p><p>One meta-analysis of the IRAP's criterion validity does exist <ref type="bibr" target="#b92">(Vahey et al., 2015)</ref>, but that study involved a different estimand to the current work (i.e., it provided an answer to a different question). Whereas the current analyses require an estimate of all average observed effect sizes, <ref type="bibr" target="#b92">Vahey et al. (2015)</ref> included just 15 of 46 publications they found, and 56 effect sizes of the at least 308 effect sizes reported in those articles. These publications and effect sizes were not sampled randomly but by applying inclusion criteria related to clinical relevance, making their estimate unsuitable for the current purposes.</p><p>Potential for systematic differences in effect sizes between literatures</p><p>It is important to consider the possibility that the effect sizes observed within the IRAP literature are simply much larger than those observed in other areas of psychology. This would undermine the comparisons between the implied power in the IRAP literature versus the Social and Personality Psychology literature which are based on an assumption of similar average effect sizes. However, this would require that the IRAP itself is unique or distinct in some way that allows it to capture larger-than-average effect sizes. Given that the IRAP is used to study a diverse range of topics covering social psychology (e.g., race and gender: De <ref type="bibr" target="#b21">Schryver et al., 2018;</ref><ref type="bibr" target="#b42">Hughes et al., 2016)</ref>, clinical psychology (e.g., depression, suicidality, eating disorders, and OCD: <ref type="bibr" target="#b46">Hussey et al., 2016;</ref><ref type="bibr" target="#b45">Hussey &amp; Barnes-Holmes, 2012;</ref><ref type="bibr" target="#b71">Nicholson &amp; Barnes-Holmes, 2012;</ref><ref type="bibr" target="#b77">Parling et al., 2012), and</ref><ref type="bibr">behaviorism (e.g., within Relational Frame Theory: Finn et al., 2016;</ref><ref type="bibr" target="#b79">Pidgeon et al., 2021)</ref>, the common link across the IRAP literature is therefore not the domain in which the task is employed, but the use of the task itself. While it is quite feasible that effect sizes differ in one domain relative to another (e.g., effect sizes in persuasion research might simply be larger than in perception research, or vice versa), this is not the case when a range of domains is considered.</p><p>It is relatively easier to estimate the probability that larger effect sizes will be observed using one task relative to others: average observable effect sizes are limited by the reliability of the task being used to capture them <ref type="bibr">(i.e., via attenuation: Revelle, 2009)</ref>. The IRAP's reliability has been shown to be less than acceptable according to common recommendations (e.g., α = .60 and test-retest r = .43 according to one meta-analysis: Greenwald &amp; Lai, 2020; reliability was found to be substantially lower in a different analysis: Hussey &amp; Drake, 2020a; recommendation for α &gt; .70: <ref type="bibr" target="#b74">Nunnally &amp; Bernstein, 1994)</ref>. Measures in Social and Personality psychology have generally been shown to possess higher reliability than this in reliability-generalization metaanalyses <ref type="bibr" target="#b33">(Greco et al., 2018)</ref>. It is mathematically implausible that a less reliable than average task can consistently capture larger than average effect sizes. As such, it is unlikely that average effect sizes in the IRAP literature are larger than those in other literatures (although the reverse is plausibly the case).</p><p>Generalizability The limitations of the dataset generated by <ref type="bibr" target="#b27">Fraley et al. (2022)</ref> covering the Social and Personality psychology literature are discussed in their original article and will be reiterated here. Those authors elected to code articles from a subset of the more prestigious Social and Personality psychology journals, and there is potential that their estimates are not perfectly representative of articles published in other journals in that field. Only increasingly larger-scale assessments of literature can resolve this. There are already signs of progress here: <ref type="bibr" target="#b27">Fraley et al. (2022)</ref> have already updated their dataset once (see <ref type="bibr" target="#b28">Fraley &amp; Vazire, 2014)</ref> and state that they will continue to do so again in the future.</p><p>The current research represents an effort to extend this form of assessment beyond Social and Personality psychology. It is unclear whether the present results for the IRAP literature would generalize to the broader behavioral literature. Given recent calls for scrutiny of the replicability of behavioral research (e.g., <ref type="bibr" target="#b36">Hantula, 2019;</ref><ref type="bibr">Task</ref>  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conclusion</head><p>Given that statistical power across a literature is a key determinant of the replicability of the findings in that literature, these results paint a worrying picture for the replicability of IRAP research. These concerns add to concerns vocalized elsewhere about the IRAP's reliability <ref type="bibr" target="#b43">(Hussey, 2020;</ref><ref type="bibr" target="#b47">Hussey &amp; Drake, 2020a)</ref>, a method factor that confounds several common analyses of IRAP data <ref type="bibr" target="#b48">(Hussey &amp; Drake, 2020b)</ref>, and the fact that most IRAP studies come from a very narrow range of individuals and labs, potentially impacting the replicability and generalizability of claims <ref type="bibr" target="#b44">(Hussey, 2022)</ref>. Researchers should therefore interpret the results and conclusions of published IRAP research with some caution and be cautious in choosing to employ the IRAP in their work. In line with a recent statement by the Association for Contextual Behavioral Science explicitly embracing the need for replication studies (Task Force on the Strategies and Tactics of Contextual Behavioral Science Research, 2021), direct assessments of the reproducibility and replicability of the published IRAP literature is likely warranted.</p><p>Author note Ian Hussey, Ruhr University Bochum, Germany. ian.hussey@rub.de.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Statements and Declarations</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. PRISMA flow chart for systematic review</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Histogram of the distribution of sample sizes in IRAP studies</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. The statistical power to detect the average published effect size (Cohen's d = 0.408 or Pearson's r = 0.20) implied by median sample size per group per year in IRAP studies</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Median sample size per year in IRAP studies compared to Social and Personality Psychology studies</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. The statistical power to detect the average published effect size (Cohen's d = 0.408 or Pearson's r = 0.20) implied by median sample size per study per year in IRAP studies compared to Social and Personality Psychology studies</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><figDesc>Force on the Strategies and Tactics of Contextual Behavioral Science Research, 2021), future research should examine median sample sizes in studies employing NHST in the behavioral literature (e.g., journals such as Journal of Contextual Behavioral Science, The Psychological Record, and Perspectives of Behavioral Science).</figDesc></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>I would like to thank <rs type="person">Jamie Cummins</rs> and <rs type="person">Chad E. Drake</rs> for their feedback on earlier versions of this manuscript.</p></div>
+			</div>
+			<div type="funding">
+<div><head>Funding</head><p>This research was supported by the <rs type="programName">META-REP Priority Program</rs> of the <rs type="funder">German Research Foundation</rs> (#<rs type="grantNumber">464488178</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_8bKb3SH">
+					<idno type="grant-number">464488178</idno>
+					<orgName type="program" subtype="full">META-REP Priority Program</orgName>
+				</org>
+			</listOrg>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Availability of data, code and materials</head><p>All data, code and materials are available at osf.io/vpwuy. A supplementary materials document is available at osf.io/4v3qa.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conflict of Interest</head><p>The author declares that he has no relevant financial or non-financial interests to disclose.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Recommendations for Increasing Replicability in Psychology: Recommendations for increasing replicability</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Asendorpf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Conner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>De Fruyt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>De Houwer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J A</forename><surname>Denissen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fiedler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fiedler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">C</forename><surname>Funder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kliegl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Perugini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">W</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schmitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A G</forename><surname>Van Aken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Weber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Wicherts</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/per.1919</idno>
+		<ptr target="https://doi.org/10.1002/per.1919" />
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Personality</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="108" to="119" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Asendorpf, J. B., Conner, M., De Fruyt, F., De Houwer, J., Denissen, J. J. A., Fiedler, K., Fiedler, S., Funder, D. C., Kliegl, R., Nosek, B. A., Perugini, M., Roberts, B. W., Schmitt, M., van Aken, M. A. G., Weber, H., &amp; Wicherts, J. M. (2013). Recommendations for Increasing Replicability in Psychology: Recommendations for increasing replicability. European Journal of Personality, 27(2), 108-119. https://doi.org/10.1002/per.1919</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Cancer reproducibility project releases first results</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Dolgin</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/541269a</idno>
+		<ptr target="https://doi.org/10.1038/541269a" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="issue">7637</biblScope>
+			<biblScope unit="page">541</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Baker, M., &amp; Dolgin, E. (2017). Cancer reproducibility project releases first results. Nature, 541(7637). https://doi.org/10.1038/541269a</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Researchers&apos; Intuitions About Power in Psychological Research</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H J</forename><surname>Hartgerink</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Wicherts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">L J</forename><surname>Van Der Maas</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/0956797616647519</idno>
+		<ptr target="https://doi.org/10.1177/0956797616647519" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Science</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bakker, M., Hartgerink, C. H. J., Wicherts, J. M., &amp; van der Maas, H. L. J. (2016). Researchers&apos; Intuitions About Power in Psychological Research. Psychological Science. https://doi.org/10.1177/0956797616647519</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">The rules of the game called psychological science</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Van Dijk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Wicherts</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691612459060</idno>
+		<ptr target="https://doi.org/10.1177/1745691612459060" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="543" to="554" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bakker, M., van Dijk, A., &amp; Wicherts, J. M. (2012). The rules of the game called psychological science. Perspectives on Psychological Science, 7(6), 543- 554. https://doi.org/10.1177/1745691612459060</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">A comparative investigation of seven indirect attitude measures</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bar-Anan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<idno type="DOI">10.3758/s13428-013-0410-6</idno>
+		<ptr target="https://doi.org/10.3758/s13428-013-0410-6" />
+	</analytic>
+	<monogr>
+		<title level="j">Behavior Research Methods</title>
+		<imprint>
+			<biblScope unit="volume">46</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="668" to="688" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bar-Anan, Y., &amp; Nosek, B. A. (2014). A comparative investigation of seven indirect attitude measures. Behavior Research Methods, 46(3), 668-688. https://doi.org/10.3758/s13428-013-0410-6</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hayden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Milne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stewart</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Do you really know what you believe? Developing the Implicit Relational Assessment Procedure (IRAP) as a direct measure of implicit beliefs</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="page" from="169" to="177" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Barnes-Holmes, D., Barnes-Holmes, Y., Power, P., Hayden, E., Milne, R., &amp; Stewart, I. (2006). Do you really know what you believe? Developing the Implicit Relational Assessment Procedure (IRAP) as a direct measure of implicit beliefs. The Irish Psychologist, 32(7), 169-177.</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A sketch of the Implicit Relational Assessment Procedure (IRAP) and the Relational Elaboration and Coherence (REC) model</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stewart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Boles</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/BF03395726</idno>
+		<ptr target="https://doi.org/10.1007/BF03395726" />
+	</analytic>
+	<monogr>
+		<title level="j">The Psychological Record</title>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="527" to="542" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Barnes-Holmes, D., Barnes-Holmes, Y., Stewart, I., &amp; Boles, S. (2010). A sketch of the Implicit Relational Assessment Procedure (IRAP) and the Relational Elaboration and Coherence (REC) model. The Psychological Record, 60(3), 527-542. https://doi.org/10.1007/BF03395726</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Feeling the future: Experimental evidence for anomalous retroactive influences on cognition and affect</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Bem</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/a0021524</idno>
+		<ptr target="https://doi.org/10.1037/a0021524" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Personality and Social Psychology</title>
+		<imprint>
+			<biblScope unit="volume">100</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="407" to="425" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bem, D. J. (2011). Feeling the future: Experimental evidence for anomalous retroactive influences on cognition and affect. Journal of Personality and Social Psychology, 100(3), 407-425. https://doi.org/10.1037/a0021524</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">A replication crisis in methodological research? Significance</title>
+		<author>
+			<persName><forename type="first">A.-L</forename><surname>Boulesteix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Charlton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Seibold</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/1740-9713.01444</idno>
+		<ptr target="https://doi.org/10.1111/1740-9713.01444" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="page" from="18" to="21" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Boulesteix, A.-L., Hoffmann, S., Charlton, A., &amp; Seibold, H. (2020). A replication crisis in methodological research? Significance, 17(5), 18- 21. https://doi.org/10.1111/1740-9713.01444</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">The replication crisis and philosophy</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Buckwalter</surname></persName>
+		</author>
+		<idno type="DOI">10.33735/phimisci.2022.9193</idno>
+		<ptr target="https://doi.org/10.33735/phimisci.2022.9193" />
+	</analytic>
+	<monogr>
+		<title level="j">Philosophy and the Mind Sciences</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Buckwalter, W. (2022). The replication crisis and philosophy. Philosophy and the Mind Sciences, 3. https://doi.org/10.33735/phimisci.2022.9193</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Suing for Peace in the War Against Mentalism</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Burgos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">R</forename><surname>Killeen</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s40614-018-0169-2</idno>
+		<ptr target="https://doi.org/10.1007/s40614-018-0169-2" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Behavior Science</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="241" to="266" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Burgos, J. E., &amp; Killeen, P. R. (2019). Suing for Peace in the War Against Mentalism. Perspectives on Behavior Science, 42(2), 241-266. https://doi.org/10.1007/s40614-018-0169-2</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Power failure: Why small sample size undermines the reliability of neuroscience</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mokrysz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Flint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">S J</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Munafò</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/nrn3475</idno>
+		<ptr target="https://doi.org/10.1038/nrn3475" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Reviews Neuroscience</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="365" to="376" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Button, K. S., Ioannidis, J. P. A., Mokrysz, C., Nosek, B. A., Flint, J., Robinson, E. S. J., &amp; Munafò, M. R. (2013). Power failure: Why small sample size undermines the reliability of neuroscience. Nature Reviews Neuroscience, 14(5), 365-376. https://doi.org/10.1038/nrn3475</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Superpower: Simulation-Based Power Analysis for Factorial Designs</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Caldwell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Debruine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Love</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Aust</surname></persName>
+		</author>
+		<ptr target="https://CRAN.R-project.org/package=Superpower" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Caldwell, A., Lakens, D., DeBruine, L., Love, J., &amp; Aust, F. (2022). Superpower: Simulation-Based Power Analysis for Factorial Designs (0.2.0). https://CRAN.R-project.org/package=Superpower</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Champely</surname></persName>
+		</author>
+		<ptr target="https://CRAN.R-project.org/package=pwr" />
+		<title level="m">Basic Functions for Power Analysis</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Champely, S. (2016). pwr: Basic Functions for Power Analysis. https://CRAN.R- project.org/package=pwr</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">The BIAT and the AMP as measures of racial prejudice in political science: A methodological assessment</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Clayton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Horrillo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Sniderman</surname></persName>
+		</author>
+		<idno type="DOI">10.1017/psrm.2022.56</idno>
+		<ptr target="https://doi.org/10.1017/psrm.2022.56" />
+	</analytic>
+	<monogr>
+		<title level="j">Political Science Research and Methods</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="363" to="373" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Clayton, K., Horrillo, J., &amp; Sniderman, P. M. (2023). The BIAT and the AMP as measures of racial prejudice in political science: A methodological assessment. Political Science Research and Methods, 11(2), 363-373. https://doi.org/10.1017/psrm.2022.56</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Statistical power analysis for the behavioral sciences</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cohen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1988">1988</date>
+			<publisher>Erlbaum</publisher>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cohen, J. (1988). Statistical power analysis for the behavioral sciences. Erlbaum.</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Things I have learned (so far)</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0003-066X.45.12.1304</idno>
+		<ptr target="https://doi.org/10.1037/0003-066X.45.12.1304" />
+	</analytic>
+	<monogr>
+		<title level="j">American Psychologist</title>
+		<imprint>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page">45</biblScope>
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cohen, J. (1990). Things I have learned (so far). American Psychologist, 45(12). https://doi.org/10.1037/0003-066X.45.12.1304</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">A power primer</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0033-2909.112.1.155</idno>
+		<ptr target="https://doi.org/10.1037/0033-2909.112.1.155" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Bulletin</title>
+		<imprint>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">155</biblScope>
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cohen, J. (1992). A power primer. Psychological Bulletin, 112(1), 155. https://doi.org/10.1037/0033-2909.112.1.155</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Implicit? What Do You Mean? A Comprehensive Review of the Delusive Implicitness Construct in Attitude Research</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corneille</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hütter</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1088868320911325</idno>
+		<ptr target="https://doi.org/10.1177/1088868320911325" />
+	</analytic>
+	<monogr>
+		<title level="j">Personality and Social Psychology Review</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="212" to="232" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Corneille, O., &amp; Hütter, M. (2020). Implicit? What Do You Mean? A Comprehensive Review of the Delusive Implicitness Construct in Attitude Research. Personality and Social Psychology Review, 24(3), 212-232. https://doi.org/10.1177/1088868320911325</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Hidden multiplicity in exploratory multiway ANOVA: Prevalence and remedies</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">O J</forename><surname>Cramer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Van Ravenzwaaij</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Matzke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Steingroever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wetzels</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">P P P</forename><surname>Grasman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">J</forename><surname>Waldorp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E.-J</forename><surname>Wagenmakers</surname></persName>
+		</author>
+		<idno type="DOI">10.3758/s13423-015-0913-5</idno>
+		<ptr target="https://doi.org/10.3758/s13423-015-0913-5" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychonomic Bulletin &amp; Review</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="640" to="647" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cramer, A. O. J., van Ravenzwaaij, D., Matzke, D., Steingroever, H., Wetzels, R., Grasman, R. P. P. P., Waldorp, L. J., &amp; Wagenmakers, E.-J. (2016). Hidden multiplicity in exploratory multiway ANOVA: Prevalence and remedies. Psychonomic Bulletin &amp; Review, 23(2), 640-647. https://doi.org/10.3758/s13423-015-0913-5</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Implicit pride and prejudice: A heterosexual phenomenon?</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cullen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The psychology of modern prejudice</title>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Morrison</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><forename type="middle">G</forename><surname>Morrison</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Nova Science Publishers</publisher>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="195" to="223" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cullen, C., &amp; Barnes-Holmes, D. (2008). Implicit pride and prejudice: A heterosexual phenomenon? In M. A. Morrison &amp; T. G. Morrison (Eds.), The psychology of modern prejudice (pp. 195-223). Nova Science Publishers.</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">The PIIRAP: An alternative scoring algorithm for the IRAP using a probabilistic semiparametric effect size measure</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>De Schryver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>De Neve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cartwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jcbs.2018.01.001</idno>
+		<ptr target="https://doi.org/10.1016/j.jcbs.2018.01.001" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Contextual Behavioral Science</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="97" to="103" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">De Schryver, M., Hussey, I., De Neve, J., Cartwright, A., &amp; Barnes-Holmes, D. (2018). The PIIRAP: An alternative scoring algorithm for the IRAP using a probabilistic semiparametric effect size measure. Journal of Contextual Behavioral Science, 7, 97- 103. https://doi.org/10.1016/j.jcbs.2018.01.001</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Many Labs 5: Testing Pre-Data-Collection Peer Review as an Intervention to Increase Replicability</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Ebersole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">B</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Baranski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D.-J</forename><surname>Bart-Plange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">R</forename><surname>Buttrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Chartier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Corker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Corley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">K</forename><surname>Hartshorne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ijzerman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">B</forename><surname>Lazarević</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Rabagliati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Ropovik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Aczel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">F</forename><surname>Aeschbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Andrighetto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Arnal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Arrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Babincak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245920958687</idno>
+		<ptr target="https://doi.org/10.1177/2515245920958687" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="309" to="331" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ebersole, C. R., Mathur, M. B., Baranski, E., Bart- Plange, D.-J., Buttrick, N. R., Chartier, C. R., Corker, K. S., Corley, M., Hartshorne, J. K., IJzerman, H., Lazarević, L. B., Rabagliati, H., Ropovik, I., Aczel, B., Aeschbach, L. F., Andrighetto, L., Arnal, J. D., Arrow, H., Babincak, P., … Nosek, B. A. (2020). Many Labs 5: Testing Pre-Data-Collection Peer Review as an Intervention to Increase Replicability. Advances in Methods and Practices in Psychological Science, 3(3), 309-331. https://doi.org/10.1177/2515245920958687</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Exploring attitudes towards gender and science: The advantages of an IRAP approach versus the IAT</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Farrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cochrane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Mchugh</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jcbs.2015.04.002</idno>
+		<ptr target="https://doi.org/10.1016/j.jcbs.2015.04.002" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Contextual Behavioral Science</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="121" to="128" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Farrell, L., Cochrane, A., &amp; McHugh, L. (2015). Exploring attitudes towards gender and science: The advantages of an IRAP approach versus the IAT. Journal of Contextual Behavioral Science, 4(2), 121-128. https://doi.org/10.1016/j.jcbs.2015.04.002</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">G*Power 3: A flexible statistical power analysis program for the social, behavioral, and biomedical sciences</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Faul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Erdfelder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A.-G</forename><surname>Lang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Buchner</surname></persName>
+		</author>
+		<idno type="DOI">10.3758/BF03193146</idno>
+		<ptr target="https://doi.org/10.3758/BF03193146" />
+	</analytic>
+	<monogr>
+		<title level="j">Behavior Research Methods</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="175" to="191" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Faul, F., Erdfelder, E., Lang, A.-G., &amp; Buchner, A. (2007). G*Power 3: A flexible statistical power analysis program for the social, behavioral, and biomedical sciences. Behavior Research Methods, 39(2), 175-191. https://doi.org/10.3758/BF03193146</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Variability in automatic activation as an unobtrusive measure of racial attitudes: A bona fide pipeline</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">H</forename><surname>Fazio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">C</forename><surname>Dunton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Williams</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0022-3514.69.6.1013</idno>
+		<ptr target="https://doi.org/10.1037/0022-3514.69.6.1013" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Personality and Social Psychology</title>
+		<imprint>
+			<biblScope unit="volume">69</biblScope>
+			<biblScope unit="page" from="1013" to="1027" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Fazio, R. H., Jackson, J. R., Dunton, B. C., &amp; Williams, C. J. (1995). Variability in automatic activation as an unobtrusive measure of racial attitudes: A bona fide pipeline? Journal of Personality and Social Psychology, 69, 1013-1027. https://doi.org/10.1037/0022-3514.69.6.1013</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Exploring the behavioral dynamics of the Implicit Relational Assessment Procedure: The impact of three types of introductory rules</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Graddy</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s40732-016-0173-4</idno>
+		<ptr target="https://doi.org/10.1007/s40732-016-0173-4" />
+	</analytic>
+	<monogr>
+		<title level="j">The Psychological Record</title>
+		<imprint>
+			<biblScope unit="volume">66</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="309" to="321" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Finn, M., Barnes-Holmes, D., Hussey, I., &amp; Graddy, J. (2016). Exploring the behavioral dynamics of the Implicit Relational Assessment Procedure: The impact of three types of introductory rules. The Psychological Record, 66(2), 309-321. https://doi.org/10.1007/s40732-016-0173-4</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">C</forename><surname>Fraley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Y</forename><surname>Chong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Baacke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Greco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vazire</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/25152459221120217</idno>
+		<ptr target="https://doi.org/10.1177/25152459221120217" />
+	</analytic>
+	<monogr>
+		<title level="m">Journal N-Pact Factors From 2011 to 2019: Evaluating the Quality of Social/Personality Journals With Respect to Sample Size and Statistical Power</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page">251524592211202</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Fraley, R. C., Chong, J. Y., Baacke, K. A., Greco, A. J., Guan, H., &amp; Vazire, S. (2022). Journal N-Pact Factors From 2011 to 2019: Evaluating the Quality of Social/Personality Journals With Respect to Sample Size and Statistical Power. Advances in Methods and Practices in Psychological Science, 5(4), 251524592211202. https://doi.org/10.1177/25152459221120217</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">C</forename><surname>Fraley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vazire</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pone.0109019</idno>
+		<ptr target="https://doi.org/10.1371/journal.pone.0109019" />
+	</analytic>
+	<monogr>
+		<title level="m">The N-Pact Factor: Evaluating the Quality of Empirical Journals with Respect to Sample Size and Statistical Power</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page">109019</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Fraley, R. C., &amp; Vazire, S. (2014). The N-Pact Factor: Evaluating the Quality of Empirical Journals with Respect to Sample Size and Statistical Power. PLOS ONE, 9(10), e109019. https://doi.org/10.1371/journal.pone.0109019</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">What has happened down here is the winds have changed</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gelman</surname></persName>
+		</author>
+		<ptr target="http://andrewgelman.com/2016/09/21/what-has-happened-down-here-is-the-winds-have-changed/" />
+	</analytic>
+	<monogr>
+		<title level="m">Statistical Modeling, Causal Inference, and Social Science</title>
+		<imprint>
+			<date type="published" when="2016-09-21">2016. September 21</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gelman, A. (2016, September 21). What has happened down here is the winds have changed. Statistical Modeling, Causal Inference, and Social Science. http://andrewgelman.com/2016/09/21/what-has- happened-down-here-is-the-winds-have-changed/</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Effect size guidelines for individual differences researchers</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">E</forename><surname>Gignac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">T</forename><surname>Szodorai</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.paid.2016.06.069</idno>
+		<ptr target="https://doi.org/10.1016/j.paid.2016.06.069" />
+	</analytic>
+	<monogr>
+		<title level="j">Personality and Individual Differences</title>
+		<imprint>
+			<biblScope unit="volume">102</biblScope>
+			<biblScope unit="page" from="74" to="78" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gignac, G. E., &amp; Szodorai, E. T. (2016). Effect size guidelines for individual differences researchers. Personality and Individual Differences, 102, 74-78. https://doi.org/10.1016/j.paid.2016.06.069</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">The empirical status of acceptance and commitment therapy: A review of meta-analyses</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Gloster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Walder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Levin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Twohig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Karekla</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jcbs.2020.09.009</idno>
+		<ptr target="https://doi.org/10.1016/j.jcbs.2020.09.009" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Contextual Behavioral Science</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="page" from="181" to="192" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gloster, A. T., Walder, N., Levin, M. E., Twohig, M. P., &amp; Karekla, M. (2020). The empirical status of acceptance and commitment therapy: A review of meta-analyses. Journal of Contextual Behavioral Science, 18, 181-192. https://doi.org/10.1016/j.jcbs.2020.09.009</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Are replication rates the same across academic fields? Community forecasts from the DARPA SCORE programme</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Viganola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dreber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Goldfedder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Holzmeister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Johannesson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Twardy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pfeiffer</surname></persName>
+		</author>
+		<idno type="DOI">10.1098/rsos.200566</idno>
+		<ptr target="https://doi.org/10.1098/rsos.200566" />
+	</analytic>
+	<monogr>
+		<title level="j">Royal Society Open Science</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gordon, M., Viganola, D., Bishop, M., Chen, Y., Dreber, A., Goldfedder, B., Holzmeister, F., Johannesson, M., Liu, Y., Twardy, C., Wang, J., &amp; Pfeiffer, T. (2020). Are replication rates the same across academic fields? Community forecasts from the DARPA SCORE programme. Royal Society Open Science, 7(7). https://doi.org/10.1098/rsos.200566</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Meta-Analysis of Coefficient Alpha: A Reliability Generalization Study</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Greco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>O'boyle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">S</forename><surname>Cockburn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yuan</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/joms.12328</idno>
+		<ptr target="https://doi.org/10.1111/joms.12328" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Management Studies</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="583" to="618" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Greco, L. M., O&apos;Boyle, E. H., Cockburn, B. S., &amp; Yuan, Z. (2018). Meta-Analysis of Coefficient Alpha: A Reliability Generalization Study. Journal of Management Studies, 55(4), 583-618. https://doi.org/10.1111/joms.12328</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Implicit Social Cognition</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Greenwald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Lai</surname></persName>
+		</author>
+		<idno type="DOI">10.1146/annurev-psych-010419-050837</idno>
+		<ptr target="https://doi.org/10.1146/annurev-psych-010419-050837" />
+	</analytic>
+	<monogr>
+		<title level="j">Annual Review of Psychology</title>
+		<imprint>
+			<biblScope unit="volume">71</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="419" to="445" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Greenwald, A. G., &amp; Lai, C. K. (2020). Implicit Social Cognition. Annual Review of Psychology, 71(1), 419-445. https://doi.org/10.1146/annurev-psych- 010419-050837</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Measuring individual differences in implicit cognition: The Implicit Association Test</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Greenwald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E</forename><surname>Mcghee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Schwartz</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0022-3514.74.6.1464</idno>
+		<ptr target="https://doi.org/10.1037/0022-3514.74.6.1464" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Personality and Social Psychology</title>
+		<imprint>
+			<biblScope unit="volume">74</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1464" to="1480" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Greenwald, A. G., McGhee, D. E., &amp; Schwartz, J. L. (1998). Measuring individual differences in implicit cognition: The Implicit Association Test. Journal of Personality and Social Psychology, 74(6), 1464- 1480. https://doi.org/10.1037/0022-3514.74.6.1464</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Editorial: Replication and Reliability in Behavior Science and Behavior Analysis: A Call for a Conversation</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Hantula</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s40614-019-00194-2</idno>
+		<ptr target="https://doi.org/10.1007/s40614-019-00194-2" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Behavior Science</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="11" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hantula, D. A. (2019). Editorial: Replication and Reliability in Behavior Science and Behavior Analysis: A Call for a Conversation. Perspectives on Behavior Science, 42(1), 1-11. https://doi.org/10.1007/s40614-019-00194-2</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Assessing and Training Young Children in Same and Different Relations Using the Relational Evaluation Procedure (REP)</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stewart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mcelwee</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s40732-016-0191-2</idno>
+		<ptr target="https://doi.org/10.1007/s40732-016-0191-2" />
+	</analytic>
+	<monogr>
+		<title level="j">The Psychological Record</title>
+		<imprint>
+			<biblScope unit="volume">66</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="547" to="561" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hayes, J., Stewart, I., &amp; McElwee, J. (2016). Assessing and Training Young Children in Same and Different Relations Using the Relational Evaluation Procedure (REP). The Psychological Record, 66(4), 547-561. https://doi.org/10.1007/s40732-016-0191-2</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Contextual Behavioral Science: Creating a science more adequate to the challenge of the human condition</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">G</forename><surname>Wilson</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jcbs.2012.09.004</idno>
+		<ptr target="https://doi.org/10.1016/j.jcbs.2012.09.004" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Contextual Behavioral Science</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="1" to="16" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hayes, S. C., Barnes-Holmes, D., &amp; Wilson, K. G. (2012). Contextual Behavioral Science: Creating a science more adequate to the challenge of the human condition. Journal of Contextual Behavioral Science, 1(1-2), 1-16. https://doi.org/10.1016/j.jcbs.2012.09.004</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Interpreting the magnitudes of correlation coefficients</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Hemphill</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0003-066X.58.1.78</idno>
+		<ptr target="https://doi.org/10.1037/0003-066X.58.1.78" />
+	</analytic>
+	<monogr>
+		<title level="j">American Psychologist</title>
+		<imprint>
+			<biblScope unit="volume">58</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="78" to="79" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hemphill, J. F. (2003). Interpreting the magnitudes of correlation coefficients. American Psychologist, 58(1), 78-79. https://doi.org/10.1037/0003- 066X.58.1.78</note>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Holding on to our functional roots when exploring new intellectual islands: A voyage through implicit cognition research</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Vahey</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jcbs.2012.09.003</idno>
+		<ptr target="https://doi.org/10.1016/j.jcbs.2012.09.003" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Contextual Behavioral Science</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="17" to="38" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hughes, S., Barnes-Holmes, D., &amp; Vahey, N. A. (2012). Holding on to our functional roots when exploring new intellectual islands: A voyage through implicit cognition research. Journal of Contextual Behavioral Science, 1(1-2), 17-38. https://doi.org/10.1016/j.jcbs.2012.09.003</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Effects on the Affect Misattribution Procedure are strongly moderated by influence awareness</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cummins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<idno type="DOI">10.3758/s13428-022-01879-4</idno>
+		<ptr target="https://doi.org/10.3758/s13428-022-01879-4" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hughes, S., Cummins, J., &amp; Hussey, I. (2022). Effects on the Affect Misattribution Procedure are strongly moderated by influence awareness. Behavior Research Methods. https://doi.org/10.3758/s13428-022-01879-4</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Faking revisited: Exerting strategic control over performance on the Implicit Relational Assessment Procedure</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Corrigan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jolie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Murphy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/ejsp.2207</idno>
+		<ptr target="https://doi.org/10.1002/ejsp.2207" />
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Social Psychology</title>
+		<imprint>
+			<biblScope unit="volume">46</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="632" to="648" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hughes, S., Hussey, I., Corrigan, B., Jolie, K., Murphy, C., &amp; Barnes-Holmes, D. (2016). Faking revisited: Exerting strategic control over performance on the Implicit Relational Assessment Procedure. European Journal of Social Psychology, 46(5), 632-648. https://doi.org/10.1002/ejsp.2207</note>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">The Implicit Relational Assessment Procedure is not suitable for individual use</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<idno type="DOI">10.31234/osf.io/w2ygr</idno>
+		<ptr target="https://doi.org/10.31234/osf.io/w2ygr" />
+	</analytic>
+	<monogr>
+		<title level="j">PsyArXiv</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hussey, I. (2020). The Implicit Relational Assessment Procedure is not suitable for individual use. PsyArXiv. https://doi.org/10.31234/osf.io/w2ygr</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">The IRAP as a Measure of Implicit Cognition: A Case of Frankenstein&apos;s Monster</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<idno type="DOI">10.31234/osf.io/qmg6s</idno>
+		<ptr target="https://doi.org/10.31234/osf.io/qmg6s" />
+	</analytic>
+	<monogr>
+		<title level="j">PsyArXiv</title>
+		<editor>
+			<persName><surname>Barnes-Holmes</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Harte</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note>Reply to</note>
+	<note type="raw_reference">Hussey, I. (2022). Reply to Barnes-Holmes &amp; Harte (2022) &quot;The IRAP as a Measure of Implicit Cognition: A Case of Frankenstein&apos;s Monster.&quot; PsyArXiv. https://doi.org/10.31234/osf.io/qmg6s</note>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">The Implicit Relational Assessment Procedure as a measure of implicit depression and the role of psychological flexibility</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.cbpra.2012.03.002</idno>
+		<ptr target="https://doi.org/10.1016/j.cbpra.2012.03.002" />
+	</analytic>
+	<monogr>
+		<title level="j">Cognitive and Behavioral Practice</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="573" to="582" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hussey, I., &amp; Barnes-Holmes, D. (2012). The Implicit Relational Assessment Procedure as a measure of implicit depression and the role of psychological flexibility. Cognitive and Behavioral Practice, 19(4), 573-582. https://doi.org/10.1016/j.cbpra.2012.03.002</note>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Individuals with current suicidal ideation demonstrate implicit &quot;fearlessness of death</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Booth</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jbtep.2015.11.003</idno>
+		<ptr target="https://doi.org/10.1016/j.jbtep.2015.11.003" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Behavior Therapy and Experimental Psychiatry</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="page" from="1" to="9" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hussey, I., Barnes-Holmes, D., &amp; Booth, R. (2016). Individuals with current suicidal ideation demonstrate implicit &quot;fearlessness of death.&quot; Journal of Behavior Therapy and Experimental Psychiatry, 51, 1-9. https://doi.org/10.1016/j.jbtep.2015.11.003</note>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Drake</surname></persName>
+		</author>
+		<idno type="DOI">10.31234/osf.io/ge3k7</idno>
+		<ptr target="https://doi.org/10.31234/osf.io/ge3k7" />
+	</analytic>
+	<monogr>
+		<title level="m">The Implicit Relational Assessment Procedure demonstrates poor internal consistency and test-retest reliability: A meta-analysis</title>
+		<imprint>
+			<date type="published" when="2020">2020a</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hussey, I., &amp; Drake, C. E. (2020a). The Implicit Relational Assessment Procedure demonstrates poor internal consistency and test-retest reliability: A meta-analysis. PsyArXiv. https://doi.org/10.31234/osf.io/ge3k7</note>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">The Implicit Relational Assessment Procedure is not very sensitive to the attitudes and learning histories it is used to assess</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Drake</surname></persName>
+		</author>
+		<idno type="DOI">10.31234/osf.io/sp6jx</idno>
+		<ptr target="https://doi.org/10.31234/osf.io/sp6jx" />
+	</analytic>
+	<monogr>
+		<title level="j">PsyArXiv</title>
+		<imprint>
+			<date type="published" when="2020">2020b</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hussey, I., &amp; Drake, C. E. (2020b). The Implicit Relational Assessment Procedure is not very sensitive to the attitudes and learning histories it is used to assess. PsyArXiv. https://doi.org/10.31234/osf.io/sp6jx</note>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Ebersole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Axt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<idno type="DOI">10.17605/OSF.IO/PCJWF</idno>
+		<ptr target="https://doi.org/10.17605/OSF.IO/PCJWF" />
+		<title level="m">The Attitudes, Identities, and Individual Differences (AIID) Study and Dataset</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hussey, I., Hughes, S., Lai, C. K., Ebersole, C. R., Axt, J., &amp; Nosek, B. A. (2019). The Attitudes, Identities, and Individual Differences (AIID) Study and Dataset. https://doi.org/10.17605/OSF.IO/PCJWF</note>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Interpreting and inverting with less cursing: A guide to interpreting IRAP data</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Thompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mcenteggart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jcbs.2015.05.001</idno>
+		<ptr target="https://doi.org/10.1016/j.jcbs.2015.05.001" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Contextual Behavioral Science</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="157" to="162" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hussey, I., Thompson, M., McEnteggart, C., Barnes- Holmes, D., &amp; Barnes-Holmes, Y. (2015). Interpreting and inverting with less cursing: A guide to interpreting IRAP data. Journal of Contextual Behavioral Science, 4(3), 157-162. https://doi.org/10.1016/j.jcbs.2015.05.001</note>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Why Most Published Research Findings Are False</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pmed.0020124</idno>
+		<ptr target="https://doi.org/10.1371/journal.pmed.0020124" />
+	</analytic>
+	<monogr>
+		<title level="j">PLOS Medicine</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">124</biblScope>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ioannidis, J. P. A. (2005). Why Most Published Research Findings Are False. PLOS Medicine, 2(8), e124. https://doi.org/10.1371/journal.pmed.0020124</note>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Whatever gets your heart pumping: The impact of implicitly selected reinforcer-focused statements on exercise intensity</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Larry Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Humphreys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Gauthier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Westwood</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jcbs.2015.11.002</idno>
+		<ptr target="https://doi.org/10.1016/j.jcbs.2015.11.002" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Contextual Behavioral Science</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="48" to="57" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Jackson, M. L., Larry Williams, W., Hayes, S. C., Humphreys, T., Gauthier, B., &amp; Westwood, R. (2016). Whatever gets your heart pumping: The impact of implicitly selected reinforcer-focused statements on exercise intensity. Journal of Contextual Behavioral Science, 5(1), 48-57. https://doi.org/10.1016/j.jcbs.2015.11.002</note>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Using the IRAP to explore natural language statements</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kavanagh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Hussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mcenteggart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jcbs.2016.10.001</idno>
+		<ptr target="https://doi.org/10.1016/j.jcbs.2016.10.001" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Contextual Behavioral Science</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="247" to="251" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kavanagh, D., Hussey, I., McEnteggart, C., Barnes- Holmes, Y., &amp; Barnes-Holmes, D. (2016). Using the IRAP to explore natural language statements. Journal of Contextual Behavioral Science, 5(4), 247-251. https://doi.org/10.1016/j.jcbs.2016.10.001</note>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Exploring the use of pictures of self and other in the IRAP: Reflecting upon the emergence of differential trial type effects</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kavanagh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Matthyssen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mcenteggart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Vastano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Psychology &amp; Psychological Therapy</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="323" to="336" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kavanagh, D., Matthyssen, N., Barnes-Holmes, Y., Barnes-Holmes, D., McEnteggart, C., &amp; Vastano, R. (2019). Exploring the use of pictures of self and other in the IRAP: Reflecting upon the emergence of differential trial type effects. International Journal of Psychology &amp; Psychological Therapy, 19(3), 323-336.</note>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<analytic>
+		<title level="a" type="main">The On-Going Search for Perspective-Taking IRAPs: Exploring the Potential of the Natural Language-IRAP</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kavanagh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roelandt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Van Raemdonck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mcenteggart</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s40732-019-00333-w</idno>
+		<ptr target="https://doi.org/10.1007/s40732-019-00333-w" />
+	</analytic>
+	<monogr>
+		<title level="j">The Psychological Record</title>
+		<imprint>
+			<biblScope unit="volume">69</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="291" to="314" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kavanagh, D., Roelandt, A., Van Raemdonck, L., Barnes-Holmes, Y., Barnes-Holmes, D., &amp; McEnteggart, C. (2019). The On-Going Search for Perspective-Taking IRAPs: Exploring the Potential of the Natural Language-IRAP. The Psychological Record, 69(2), 291-314. https://doi.org/10.1007/s40732-019-00333-w</note>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">HARKing: Hypothesizing after the results are known. Personality and Social Psychology Review: An</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">L</forename><surname>Kerr</surname></persName>
+		</author>
+		<idno type="DOI">10.1207/s15327957pspr0203_4</idno>
+		<ptr target="https://doi.org/10.1207/s15327957pspr0203_4" />
+	</analytic>
+	<monogr>
+		<title level="j">Official Journal of the Society for Personality and Social Psychology, Inc</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="196" to="217" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kerr, N. L. (1998). HARKing: Hypothesizing after the results are known. Personality and Social Psychology Review: An Official Journal of the Society for Personality and Social Psychology, Inc, 2(3), 196-217. https://doi.org/10.1207/s15327957pspr0203_4</note>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Using the T-IRAP interactive computer program and applied behavior analysis to teach relational responding in children with autism</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kilroe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Murphy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/h0100578</idno>
+		<ptr target="https://doi.org/10.1037/h0100578" />
+	</analytic>
+	<monogr>
+		<title level="j">Behavioral Development Bulletin</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="60" to="80" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kilroe, H., Murphy, C., Barnes-Holmes, D., &amp; Barnes- Holmes, Y. (2014). Using the T-IRAP interactive computer program and applied behavior analysis to teach relational responding in children with autism. Behavioral Development Bulletin, 19(2), 60-80. https://doi.org/10.1037/h0100578</note>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Many Labs 2: Investigating Variation in Replicability Across Samples and Settings</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Vianello</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hasselman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">G</forename><surname>Adams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">B</forename><surname>Adams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Alper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Aveyard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Axt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Babalola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Š</forename><surname>Bahník</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Berkics</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">R</forename><surname>Berry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Bialobrzeska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">D</forename><surname>Binan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bocian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Brandt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Busching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245918810225</idno>
+		<ptr target="https://doi.org/10.1177/2515245918810225" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="443" to="490" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Klein, R. A., Vianello, M., Hasselman, F., Adams, B. G., Adams, R. B., Alper, S., Aveyard, M., Axt, J. R., Babalola, M. T., Bahník, Š., Batra, R., Berkics, M., Bernstein, M. J., Berry, D. R., Bialobrzeska, O., Binan, E. D., Bocian, K., Brandt, M. J., Busching, R., … Nosek, B. A. (2018). Many Labs 2: Investigating Variation in Replicability Across Samples and Settings. Advances in Methods and Practices in Psychological Science, 1(4), 443-490. https://doi.org/10.1177/2515245918810225</note>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<analytic>
+		<title level="a" type="main">The Practical Alternative to the p Value Is the Correctly Used p Value</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691620958012</idno>
+		<ptr target="https://doi.org/10.1177/1745691620958012" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Psychological Sciene</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="639" to="648" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2021). The Practical Alternative to the p Value Is the Correctly Used p Value. Perspectives on Psychological Sciene, 16(3), 639-648. https://doi.org/10.1177/1745691620958012</note>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Sample Size Justification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1525/collabra.33267</idno>
+		<ptr target="https://doi.org/10.1525/collabra.33267" />
+	</analytic>
+	<monogr>
+		<title level="j">Collabra: Psychology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">33267</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2022). Sample Size Justification. Collabra: Psychology, 8(1), 33267. https://doi.org/10.1525/collabra.33267</note>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Equivalence Testing for Psychological Research: A Tutorial</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">G</forename><surname>Adolfi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Albers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Anvari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A J</forename><surname>Apps</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">E</forename><surname>Argamon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Baguley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">B</forename><surname>Becker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">D</forename><surname>Benning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E</forename><surname>Bradford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Buchanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Caldwell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Van Calster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Carlsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-C</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">J</forename><surname>Colling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">S</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Crook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Zwaan</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-018-0311-xLakens</idno>
+		<ptr target="https://doi.org/10.1177/2515245918770" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Methods and Practices in Psychological Science</title>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Scheel</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Isager</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="259" to="269" />
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+	<note>Justify your alpha Nature Human Behaviour</note>
+	<note type="raw_reference">Lakens, D., Adolfi, F. G., Albers, C. J., Anvari, F., Apps, M. A. J., Argamon, S. E., Baguley, T., Becker, R. B., Benning, S. D., Bradford, D. E., Buchanan, E. M., Caldwell, A. R., Van Calster, B., Carlsson, R., Chen, S.-C., Chung, B., Colling, L. J., Collins, G. S., Crook, Z., … Zwaan, R. A. (2018). Justify your alpha. Nature Human Behaviour, 2(3), 168-171. https://doi.org/10.1038/s41562-018-0311-x Lakens, D., Scheel, A. M., &amp; Isager, P. M. (2018). Equivalence Testing for Psychological Research: A Tutorial. Advances in Methods and Practices in Psychological Science, 1(2), 259-269. https://doi.org/10.1177/2515245918770</note>
+</biblStruct>
+
+<biblStruct xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Benefits of open and high-powered research outweigh costs</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">P</forename><surname>Lebel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Loving</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/pspi0000049</idno>
+		<ptr target="https://doi.org/10.1037/pspi0000049" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Personality and Social Psychology</title>
+		<imprint>
+			<biblScope unit="volume">113</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="230" to="243" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">LeBel, E. P., Campbell, L., &amp; Loving, T. J. (2017). Benefits of open and high-powered research outweigh costs. Journal of Personality and Social Psychology, 113(2), 230-243. https://doi.org/10.1037/pspi0000049</note>
+</biblStruct>
+
+<biblStruct xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Training and testing for a transformation of fear and avoidance functions via combinatorial entailment using the Implicit Relational Assessment Procedure (IRAP): Further exploratory analyses</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Leech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.beproc.2019.104027</idno>
+		<ptr target="https://doi.org/10.1016/j.beproc.2019.104027" />
+	</analytic>
+	<monogr>
+		<title level="m">Behavioural Processes</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page">172</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Leech, A., &amp; Barnes-Holmes, D. (2020). Training and testing for a transformation of fear and avoidance functions via combinatorial entailment using the Implicit Relational Assessment Procedure (IRAP): Further exploratory analyses. Behavioural Processes, 172. https://doi.org/10.1016/j.beproc.2019.104027</note>
+</biblStruct>
+
+<biblStruct xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Creating an implicit measure of cognition more suited to applied research: A test of the Mixed Trial-Implicit Relational Assessment Procedure (MT-IRAP)</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Levin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Waltz</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/h0100911</idno>
+		<ptr target="https://doi.org/10.1037/h0100911" />
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Behavioral Consultation and Therapy</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="245" to="262" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Levin, M. E., Hayes, S. C., &amp; Waltz, T. (2010). Creating an implicit measure of cognition more suited to applied research: A test of the Mixed Trial-Implicit Relational Assessment Procedure (MT-IRAP). International Journal of Behavioral Consultation and Therapy, 6(3), 245-262. https://doi.org/10.1037/h0100911</note>
+</biblStruct>
+
+<biblStruct xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Psychological measurement and the replication crisis: Four sacred cows</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">O</forename><surname>Lilienfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Strother</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/cap0000236</idno>
+		<ptr target="https://doi.org/10.1037/cap0000236" />
+	</analytic>
+	<monogr>
+		<title level="j">Canadian Psychology / Psychologie Canadienne</title>
+		<imprint>
+			<biblScope unit="volume">61</biblScope>
+			<biblScope unit="page" from="281" to="288" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lilienfeld, S. O., &amp; Strother, A. N. (2020). Psychological measurement and the replication crisis: Four sacred cows. Canadian Psychology / Psychologie Canadienne, 61, 281-288. https://doi.org/10.1037/cap0000236</note>
+</biblStruct>
+
+<biblStruct xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Replications in Psychology Research: How Often Do They Really Occur?</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Magnusson</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691612460688</idno>
+		<ptr target="https://doi.org/10.1177/1745691612460688" />
+	</analytic>
+	<monogr>
+		<title level="m">Understanding Statistical Power and Significance Testing-An Interactive Visualization</title>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">C</forename><surname>Plucker</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Hegarty</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">B</forename></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2012">2023. 2012</date>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="537" to="542" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Magnusson, K. (2023). Understanding Statistical Power and Significance Testing-An Interactive Visualization. https://rpsychologist.com/d3/nhst/ Makel, M. C., Plucker, J. A., &amp; Hegarty, B. (2012). Replications in Psychology Research: How Often Do They Really Occur? Perspectives on Psychological Science, 7(6), 537-542. https://doi.org/10.1177/1745691612460688</note>
+</biblStruct>
+
+<biblStruct xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Exploring the Behavioral Dynamics of the Implicit Relational Assessment Procedure: The Role of Relational Contextual Cues Versus Relational Coherence Indicators as Response Options</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Maloney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s40732-016-0180-5</idno>
+		<ptr target="https://doi.org/10.1007/s40732-016-0180-5" />
+	</analytic>
+	<monogr>
+		<title level="j">The Psychological Record</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Maloney, E., &amp; Barnes-Holmes, D. (2016). Exploring the Behavioral Dynamics of the Implicit Relational Assessment Procedure: The Role of Relational Contextual Cues Versus Relational Coherence Indicators as Response Options. The Psychological Record. https://doi.org/10.1007/s40732-016-0180-5</note>
+</biblStruct>
+
+<biblStruct xml:id="b68">
+	<analytic>
+		<title level="a" type="main">You Cannot Step Into the Same River Twice: When Power Analyses Are Optimistic</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">B</forename><surname>Mcshane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Böckenholt</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691614548513</idno>
+		<ptr target="https://doi.org/10.1177/1745691614548513" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="612" to="625" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">McShane, B. B., &amp; Böckenholt, U. (2014). You Cannot Step Into the Same River Twice: When Power Analyses Are Optimistic. Perspectives on Psychological Science, 9(6), 612-625. https://doi.org/10.1177/1745691614548513</note>
+</biblStruct>
+
+<biblStruct xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Preferred reporting items for systematic reviews and meta-analyses: The PRISMA statement</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Moher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liberati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tetzlaff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">G</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="DOI">10.1136/bmj.b2535</idno>
+		<ptr target="https://doi.org/10.1136/bmj.b2535" />
+	</analytic>
+	<monogr>
+		<title level="j">BMJ</title>
+		<imprint>
+			<biblScope unit="page" from="339" to="2535" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Moher, D., Liberati, A., Tetzlaff, J., &amp; Altman, D. G. (2009). Preferred reporting items for systematic reviews and meta-analyses: The PRISMA statement. BMJ, 339, b2535. https://doi.org/10.1136/bmj.b2535</note>
+</biblStruct>
+
+<biblStruct xml:id="b70">
+	<analytic>
+		<title level="a" type="main">A manifesto for reproducible science</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Munafò</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">V M</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Chambers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Percie Du Sert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Simonsohn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E.-J</forename><surname>Wagenmakers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Ware</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-016-0021</idno>
+		<ptr target="https://doi.org/10.1038/s41562-016-0021" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">21</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Munafò, M. R., Nosek, B. A., Bishop, D. V. M., Button, K. S., Chambers, C. D., Percie du Sert, N., Simonsohn, U., Wagenmakers, E.-J., Ware, J. J., &amp; Ioannidis, J. P. A. (2017). A manifesto for reproducible science. Nature Human Behaviour, 1(1), 0021. https://doi.org/10.1038/s41562-016- 0021</note>
+</biblStruct>
+
+<biblStruct xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Developing an implicit measure of disgust propensity and disgust sensitivity: Examining the role of implicit disgust propensity and sensitivity in obsessivecompulsive tendencies</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nicholson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jbtep.2012.02.001</idno>
+		<ptr target="https://doi.org/10.1016/j.jbtep.2012.02.001" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Behavior Therapy and Experimental Psychiatry</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="922" to="930" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Nicholson, E., &amp; Barnes-Holmes, D. (2012). Developing an implicit measure of disgust propensity and disgust sensitivity: Examining the role of implicit disgust propensity and sensitivity in obsessive- compulsive tendencies. Journal of Behavior Therapy and Experimental Psychiatry, 43(3), 922- 930. https://doi.org/10.1016/j.jbtep.2012.02.001</note>
+</biblStruct>
+
+<biblStruct xml:id="b72">
+	<analytic>
+		<title level="a" type="main">The preregistration revolution</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Ebersole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Dehaven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">T</forename><surname>Mellor</surname></persName>
+		</author>
+		<idno type="DOI">10.1073/pnas.1708274114</idno>
+		<ptr target="https://doi.org/10.1073/pnas.1708274114" />
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">115</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="2600" to="2606" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Nosek, B. A., Ebersole, C. R., DeHaven, A. C., &amp; Mellor, D. T. (2018). The preregistration revolution. Proceedings of the National Academy of Sciences, 115(11), 2600-2606. https://doi.org/10.1073/pnas.1708274114</note>
+</biblStruct>
+
+<biblStruct xml:id="b73">
+	<analytic>
+		<title level="a" type="main">The Implicit Association Test at age 7: A methodological and conceptual review</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Greenwald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Banaji</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Automatic processes in social thinking and behavior</title>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Bargh</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Psychology Press</publisher>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="265" to="292" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Nosek, B. A., Greenwald, A. G., &amp; Banaji, M. R. (2007). The Implicit Association Test at age 7: A methodological and conceptual review. In JA. Bargh (Ed.), Automatic processes in social thinking and behavior (pp. 265-292). Psychology Press.</note>
+</biblStruct>
+
+<biblStruct xml:id="b74">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nunnally</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Bernstein</surname></persName>
+		</author>
+		<title level="m">Psychometric Theory</title>
+		<imprint>
+			<publisher>McGraw-Hill</publisher>
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+	<note>rd edition</note>
+	<note type="raw_reference">Nunnally, J., &amp; Bernstein, I. (1994). Psychometric Theory (3rd edition). McGraw-Hill.</note>
+</biblStruct>
+
+<biblStruct xml:id="b75">
+	<analytic>
+		<title level="a" type="main">Estimating the reproducibility of psychological science</title>
+		<author>
+			<orgName type="collaboration">Open Science Collaboration</orgName>
+		</author>
+		<idno type="DOI">10.1126/science.aac4716</idno>
+		<ptr target="https://doi.org/10.1126/science.aac4716" />
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">349</biblScope>
+			<biblScope unit="issue">6251</biblScope>
+			<biblScope unit="page">4716</biblScope>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Open Science Collaboration. (2015). Estimating the reproducibility of psychological science. Science, 349(6251), aac4716. https://doi.org/10.1126/science.aac4716</note>
+</biblStruct>
+
+<biblStruct xml:id="b76">
+	<analytic>
+		<title level="a" type="main">The replication crisis, the rise of new research practices and what it means for experimental economics</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Page</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">N</forename><surname>Noussair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Slonim</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s40881-021-00107-7</idno>
+		<ptr target="https://doi.org/10.1007/s40881-021-00107-7" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Economic Science Association</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="210" to="225" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Page, L., Noussair, C. N., &amp; Slonim, R. (2021). The replication crisis, the rise of new research practices and what it means for experimental economics. Journal of the Economic Science Association, 7(2), 210-225. https://doi.org/10.1007/s40881-021- 00107-7</note>
+</biblStruct>
+
+<biblStruct xml:id="b77">
+	<analytic>
+		<title level="a" type="main">Using the Implicit Relational Assessment Procedure to Compare Implicit Pro-Thin/Anti-Fat Attitudes of Patients With Anorexia Nervosa and Non-Clinical Controls</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Parling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cernvall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stewart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ghaderi</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/10640266.2012.654056</idno>
+		<ptr target="https://doi.org/10.1080/10640266.2012.654056" />
+	</analytic>
+	<monogr>
+		<title level="j">Eating Disorders</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="127" to="143" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Parling, T., Cernvall, M., Stewart, I., Barnes-Holmes, D., &amp; Ghaderi, A. (2012). Using the Implicit Relational Assessment Procedure to Compare Implicit Pro-Thin/Anti-Fat Attitudes of Patients With Anorexia Nervosa and Non-Clinical Controls. Eating Disorders, 20(2), 127-143. https://doi.org/10.1080/10640266.2012.654056</note>
+</biblStruct>
+
+<biblStruct xml:id="b78">
+	<analytic>
+		<title level="a" type="main">An inkblot for attitudes: Affect misattribution as implicit measurement</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Payne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Govorun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">D</forename><surname>Stewart</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0022-3514.89.3.277</idno>
+		<ptr target="https://doi.org/10.1037/0022-3514.89.3.277" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Personality and Social Psychology</title>
+		<imprint>
+			<biblScope unit="volume">89</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="277" to="293" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Payne, K., Cheng, C. M., Govorun, O., &amp; Stewart, B. D. (2005). An inkblot for attitudes: Affect misattribution as implicit measurement. Journal of Personality and Social Psychology, 89(3), 277-293. https://doi.org/10.1037/0022-3514.89.3.277</note>
+</biblStruct>
+
+<biblStruct xml:id="b79">
+	<analytic>
+		<title level="a" type="main">Four self-related IRAPs: Analyzing and interpreting effects in light of the DAARRE model</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pidgeon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mcenteggart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Harte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s40732-020-00428-9</idno>
+		<ptr target="https://doi.org/10.1007/s40732-020-00428-9" />
+	</analytic>
+	<monogr>
+		<title level="j">The Psychological Record</title>
+		<imprint>
+			<biblScope unit="volume">71</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="397" to="409" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Pidgeon, A., McEnteggart, C., Harte, C., Barnes- Holmes, D., &amp; Barnes-Holmes, Y. (2021). Four self-related IRAPs: Analyzing and interpreting effects in light of the DAARRE model. The Psychological Record, 71(3), 397-409. https://doi.org/10.1007/s40732-020-00428-9</note>
+</biblStruct>
+
+<biblStruct xml:id="b80">
+	<analytic>
+		<title level="a" type="main">Assessing the effects of motivative augmentals, pay-for-performance, and implicit verbal responding on cooperation</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">D</forename><surname>Rafacz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Houmanfar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">S</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Levin</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s40732-018-0324-xRevelle</idno>
+		<ptr target="https://personality-project.org/r/book/Chapter7.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">An introduction to psychometric theory with applications in R</title>
+		<imprint>
+			<date type="published" when="2009">2019. 2009</date>
+			<biblScope unit="volume">69</biblScope>
+			<biblScope unit="page" from="49" to="66" />
+		</imprint>
+	</monogr>
+	<note>Classical Test Theory and the Measurement of Reliability</note>
+	<note type="raw_reference">Rafacz, S. D., Houmanfar, R. A., Smith, G. S., &amp; Levin, M. E. (2019). Assessing the effects of motivative augmentals, pay-for-performance, and implicit verbal responding on cooperation. The Psychological Record, 69(1), 49-66. https://doi.org/10.1007/s40732-018-0324-x Revelle, W. (2009). Chapter 7: Classical Test Theory and the Measurement of Reliability. In An introduction to psychometric theory with applications in R. https://personality- project.org/r/book/Chapter7.pdf</note>
+</biblStruct>
+
+<biblStruct xml:id="b81">
+	<analytic>
+		<title level="a" type="main">One Hundred Years of Social Psychology Quantitatively Described</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">D</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">F</forename><surname>Bond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Stokes-Zoota</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/1089-2680.7.4.331</idno>
+		<ptr target="https://doi.org/10.1037/1089-2680.7.4.331" />
+	</analytic>
+	<monogr>
+		<title level="j">Review of General Psychology</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="331" to="363" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Richard, F. D., Bond, C. F., &amp; Stokes-Zoota, J. J. (2003). One Hundred Years of Social Psychology Quantitatively Described. Review of General Psychology, 7(4), 331-363. https://doi.org/10.1037/1089-2680.7.4.331</note>
+</biblStruct>
+
+<biblStruct xml:id="b82">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Rohrer</surname></persName>
+		</author>
+		<ptr target="https://www.the100.ci/2023/03/07/non-representative-samples-what-could-possibly-go-wrong/" />
+		<title level="m">Non-representative samples! What could possibly go wrong? The 100% CI</title>
+		<imprint>
+			<date type="published" when="2023-03-07">2023. March 7</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rohrer, J. M. (2023, March 7). Non-representative samples! What could possibly go wrong? The 100% CI. https://www.the100.ci/2023/03/07/non- representative-samples-what-could-possibly-go- wrong/</note>
+</biblStruct>
+
+<biblStruct xml:id="b83">
+	<analytic>
+		<title level="a" type="main">Minimizing the influence of recoding in the Implicit Association Test: The Recoding-Free Implicit Association Test (IAT-RF)</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rothermund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Teige-Mocigemba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gast</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wentura</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/17470210701822975</idno>
+		<ptr target="https://doi.org/10.1080/17470210701822975" />
+	</analytic>
+	<monogr>
+		<title level="j">Quarterly Journal of Experimental Psychology</title>
+		<imprint>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="84" to="98" />
+			<date type="published" when="2006">2009. 2006</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rothermund, K., Teige-Mocigemba, S., Gast, A., &amp; Wentura, D. (2009). Minimizing the influence of recoding in the Implicit Association Test: The Recoding-Free Implicit Association Test (IAT- RF). Quarterly Journal of Experimental Psychology (2006), 62(1), 84-98. https://doi.org/10.1080/17470210701822975</note>
+</biblStruct>
+
+<biblStruct xml:id="b84">
+	<analytic>
+		<title level="a" type="main">The Implicit Association Test: A Method in Search of a Construct</title>
+		<author>
+			<persName><forename type="first">U</forename><surname>Schimmack</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691619863798</idno>
+		<ptr target="https://doi.org/10.1177/1745691619863798" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="396" to="414" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schimmack, U. (2021). The Implicit Association Test: A Method in Search of a Construct. Perspectives on Psychological Science, 16(2), 396-414. https://doi.org/10.1177/1745691619863798</note>
+</biblStruct>
+
+<biblStruct xml:id="b85">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sidman</surname></persName>
+		</author>
+		<title level="m">Tactics of scientific research</title>
+		<imprint>
+			<date type="published" when="1960">1960</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Sidman, M. (1960). Tactics of scientific research.</note>
+</biblStruct>
+
+<biblStruct xml:id="b86">
+	<analytic>
+		<title level="a" type="main">False-positive psychology: Undisclosed flexibility in data collection and analysis allows presenting anything as significant</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Simmons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Nelson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Simonsohn</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/0956797611417632</idno>
+		<ptr target="https://doi.org/10.1177/0956797611417632" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1359" to="1366" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Simmons, J. P., Nelson, L. D., &amp; Simonsohn, U. (2011). False-positive psychology: Undisclosed flexibility in data collection and analysis allows presenting anything as significant. Psychological Science, 22(11), 1359-1366. https://doi.org/10.1177/0956797611417632</note>
+</biblStruct>
+
+<biblStruct xml:id="b87">
+	<analytic>
+		<title level="a" type="main">False-Positive Citations</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Simmons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Nelson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Simonsohn</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691617698146</idno>
+		<ptr target="https://doi.org/10.1177/1745691617698146" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="255" to="259" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Simmons, J. P., Nelson, L. D., &amp; Simonsohn, U. (2018). False-Positive Citations. Perspectives on Psychological Science, 13(2), 255-259. https://doi.org/10.1177/1745691617698146</note>
+</biblStruct>
+
+<biblStruct xml:id="b88">
+	<analytic>
+		<title level="a" type="main">How many participants do I need to test an interaction? Conducting an appropriate power analysis and achieving sufficient power to detect an interaction</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sommet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Weissman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cheutin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Elliot</surname></persName>
+		</author>
+		<idno type="DOI">10.31219/osf.io/xhe3u</idno>
+		<ptr target="https://doi.org/10.31219/osf.io/xhe3u" />
+	</analytic>
+	<monogr>
+		<title level="j">OSF Preprints</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Sommet, N., Weissman, D., Cheutin, N., &amp; Elliot, A. J. (2022). How many participants do I need to test an interaction? Conducting an appropriate power analysis and achieving sufficient power to detect an interaction. OSF Preprints. https://doi.org/10.31219/osf.io/xhe3u</note>
+</biblStruct>
+
+<biblStruct xml:id="b89">
+	<analytic>
+		<title level="a" type="main">A short (personal) future history of revolution 2.0</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Spellman</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691615609918</idno>
+		<ptr target="https://doi.org/10.1177/1745691615609918" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="886" to="899" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Spellman, B. A. (2015). A short (personal) future history of revolution 2.0. Perspectives on Psychological Science, 10(6), 886-899. https://doi.org/10.1177/1745691615609918</note>
+</biblStruct>
+
+<biblStruct xml:id="b90">
+	<analytic>
+		<title level="a" type="main">Psychology&apos;s Replication Crisis and Clinical Psychological Science</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Tackett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Brandes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>King</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">E</forename><surname>Markon</surname></persName>
+		</author>
+		<idno type="DOI">10.1146/annurev-clinpsy-050718-095710</idno>
+		<ptr target="https://doi.org/10.1146/annurev-clinpsy-050718-095710" />
+	</analytic>
+	<monogr>
+		<title level="j">Annual Review of Clinical Psychology</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="579" to="604" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Tackett, J. L., Brandes, C. M., King, K. M., &amp; Markon, K. E. (2019). Psychology&apos;s Replication Crisis and Clinical Psychological Science. Annual Review of Clinical Psychology, 15(1), 579-604. https://doi.org/10.1146/annurev-clinpsy-050718- 095710</note>
+</biblStruct>
+
+<biblStruct xml:id="b91">
+	<analytic>
+		<title level="a" type="main">Task Force on the Strategies and Tactics of Contextual Behavioral Science Research</title>
+		<ptr target="https://contextualscience.org/news/adoption_of_open_science_recommendations" />
+	</analytic>
+	<monogr>
+		<title level="m">Adoption of Open Science Recommendations | Association for Contextual Behavioral Science</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Task Force on the Strategies and Tactics of Contextual Behavioral Science Research. (2021). Adoption of Open Science Recommendations | Association for Contextual Behavioral Science. https://contextualscience.org/news/adoption_of_ open_science_recommendations</note>
+</biblStruct>
+
+<biblStruct xml:id="b92">
+	<analytic>
+		<title level="a" type="main">A meta-analysis of criterion effects for the Implicit Relational Assessment Procedure (IRAP) in the clinical domain</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Vahey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nicholson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barnes-Holmes</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jbtep.2015.01.004</idno>
+		<ptr target="https://doi.org/10.1016/j.jbtep.2015.01.004" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Behavior Therapy and Experimental Psychiatry</title>
+		<imprint>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="page" from="59" to="65" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Vahey, N. A., Nicholson, E., &amp; Barnes-Holmes, D. (2015). A meta-analysis of criterion effects for the Implicit Relational Assessment Procedure (IRAP) in the clinical domain. Journal of Behavior Therapy and Experimental Psychiatry, 48, 59-65. https://doi.org/10.1016/j.jbtep.2015.01.004</note>
+</biblStruct>
+
+<biblStruct xml:id="b93">
+	<analytic>
+		<title level="a" type="main">An agenda for purely confirmatory research</title>
+		<author>
+			<persName><forename type="first">E.-J</forename><surname>Wagenmakers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wetzels</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Borsboom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">L J</forename><surname>Van Der Maas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Kievit</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691612463078</idno>
+		<ptr target="https://doi.org/10.1177/1745691612463078" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="632" to="638" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wagenmakers, E.-J., Wetzels, R., Borsboom, D., van der Maas, H. L. J., &amp; Kievit, R. A. (2012). An agenda for purely confirmatory research. Perspectives on Psychological Science, 7(6), 632- 638. https://doi.org/10.1177/1745691612463078</note>
+</biblStruct>
+
+<biblStruct xml:id="b94">
+	<analytic>
+		<title level="a" type="main">Psychology data from the Race Implicit Association Test on the Project Implicit Demo website</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">K</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Greenwald</surname></persName>
+		</author>
+		<idno type="DOI">10.5334/jopd.ac</idno>
+		<ptr target="https://doi.org/10.5334/jopd.ac" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Open Psychology Data</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Xu, F. K., Nosek, B. A., &amp; Greenwald, A. G. (2014). Psychology data from the Race Implicit Association Test on the Project Implicit Demo website. Journal of Open Psychology Data, 2(1). https://doi.org/10.5334/jopd.ac</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

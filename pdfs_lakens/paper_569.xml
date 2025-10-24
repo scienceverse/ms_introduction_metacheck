@@ -1,0 +1,1260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Inconsistent Multiple Testing Corrections: The Fallacy of Using Family-Based Error Rates to Make Inferences About Individual Hypotheses</title>
+				<funder ref="#_qjES2cv">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-03">th March 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Mark</forename><surname>Rubin</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Durham University</orgName>
+								<address>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Inconsistent Multiple Testing Corrections: The Fallacy of Using Family-Based Error Rates to Make Inferences About Individual Hypotheses</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-03">th March 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">AA4E0B7FBAC5547BF9E43DC9BFCD48D3</idno>
+					<idno type="DOI">10.1016/j.metip.2024.100140</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:04+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>familywise error rate</term>
+					<term>multiplicity</term>
+					<term>multiple testing</term>
+					<term>multiple comparisons</term>
+					<term>per family error rate</term>
+					<term>Type I error rate</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Inconsistent multiple testing corrections: The fallacy of using family-based error rates to make inferences about individual hypotheses. Methods in Psychology, 10, Article 100140.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The subject of multiple testing has received additional attention in the wake of the replication crisis. The concern is that uncorrected multiple testing is a major cause of false positive results (i.e., Type I errors) and unexpectedly low replication rates. Consequently, there is a renewed emphasis on researchers "doing the right thing" and correcting their significance thresholds (alpha levels) in order to account for inflated Type I error rates during multiple testing.</p><p>In this article, I caution that an unqualified push for multiple testing corrections may have negative consequences. In particular, I argue that it may encourage what I call inconsistent multiple testing corrections: adjustments to alpha levels that are inconsistent with the specific statistical inferences that are being made. To illustrate this problem, I draw attention to cases in which researchers adjust their alpha level to control family-based Type I error rates (e.g., familywise error rates) but then do not make any inferences about associated family-based hypotheses. Instead, they only make inferences about individual hypotheses, which do not require an alpha adjustment. I argue that inconsistent corrections are problematic not only logically, but also because they result in an unnecessary loss of statistical power.</p><p>To be clear, I am not opposed to an alpha adjustment for multiple testing under the appropriate circumstances. Hence, this is not an "anti-adjustment article" <ref type="bibr">(Frane, 2019, p. 3)</ref>. It is a pro-consistency article! My key point is that researchers should be logically consistent in their use of multiple testing corrections. If researchers use multiple testing corrections, then they should make corresponding statistical inferences about family-based joint hypotheses. They should not correct their alpha level and then only proceed to make statistical inferences about individual hypotheses because, as I explain later, such inferences do not require an alpha adjustment.</p><p>I begin by introducing the multiple testing problem and the alpha adjustment solution. I consider two common family-based error rates (the familywise error rate and the per family error rate), and I explain how associated alpha adjustments control these error rates. I then describe and illustrate inconsistent multiple testing corrections, in which a researcher adjusts their alpha level to control the error rate for a statistical inference about a family-based joint hypothesis but then only makes statistical inferences about individual hypotheses. I consider two reasons for inconsistent corrections: (a) error rate confusions and (b) conformity to an alpha adjustment ritual. I highlight recent evidence from <ref type="bibr" target="#b10">García-Pérez (2023)</ref> showing that inconsistent corrections are likely to be common. I also explain how inconsistent corrections lead to a loss of statistical power. Finally, I illustrate my argument with three examples from recent psychology studies. I conclude that inconsistent corrections represent a symptom of the broader problem of statisticism, and I call for a more nuanced, inference-based approach to multiple testing corrections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The Multiple Testing Problem</head><p>The multiple testing problem occurs when a researcher uses more than one significance test to make a statistical inference. In this case, their Type I error rate for that inference may exceed the conventional nominal alpha level of 0.050. For example, consider a researcher who uses three significance tests to make a statistical inference about a single joint null hypothesis. Here, each of the three tests refers to a separate constituent null hypothesis: H0,1, H0,2, and H0,3. These three constituent hypotheses comprise a joint hypothesis. The alpha level for determining significance with respect to each constituent hypothesis can be described as the constituent alpha level or αConstituent, and the alpha level for the final decision about rejecting or not rejecting the joint null hypothesis can be described as the joint alpha level or αJoint <ref type="bibr" target="#b41">(Rubin, 2021b)</ref>.</p><p>If the researcher is prepared to accept a significant result on at least one of their three tests as sufficient grounds to reject the joint null hypothesis, then the joint null hypothesis is represented as the intersection of each of the three constituent null hypotheses: "H0,1 and H0,2 and H0,3." The hypotheses are related to one another by the logical operator "and" because a significant result in relation to any one of them (i.e., p &lt; αConstituent) would be sufficient to provisionally reject the entire intersection null hypothesis and make an inference about the corresponding union alternative hypothesis: "H1,1 or H1,2 or H1,3." Hence, formally, this test is called a union-intersection test (e.g., <ref type="bibr">Hochberg &amp; Tamrane, 1987, p. 28;</ref><ref type="bibr" target="#b21">Kim et al., 2004;</ref><ref type="bibr">Parker &amp; Weir, 2020, p. 563;</ref><ref type="bibr" target="#b36">Roy, 1953)</ref>.</p><p>To provide a more concrete example, imagine that the three constituent alternative hypotheses refer to gender differences in attitudes towards biology (H1,1), chemistry (H1,2), and physics (H1,3) and that the researcher is interested in making a statistical inference about a gender difference in attitudes towards these science subjects. In this case, a significant result in relation to any one of the three constituent hypotheses, in either direction (i.e., men &gt; women or women &gt; men), would be sufficient to reject the entire intersection null hypothesis that there is no gender difference in attitudes towards biology, chemistry, and physics and make an inference about the union alternative hypothesis that there is a gender difference in either biology, chemistry, or physics.</p><p>Note that, logically, the results of a union-intersection test only warrant a statistical inference about the associated joint hypothesis. They do not warrant statistical inferences about each of the individual constituent hypotheses <ref type="bibr">(García-Pérez, 2023, p. 2;</ref><ref type="bibr" target="#b30">Perneger, 1998</ref><ref type="bibr">Perneger, , p. 1236))</ref>. For example, if the researcher obtained union-intersection test results for biology t(326) = 2.54, p = 0.011; chemistry t(326) = 0.030, p = .979; and physics t(326) = 1.44, p = 0.150, then they could only make the statistical inference that there is a significant gender difference in attitudes towards either biology, chemistry, or physics (i.e., the union alternative hypothesis). The fact that a significant gender difference is observed for biology and not for either chemistry or physics is irrelevant in the context of a union-intersection test because the test treats the three hypotheses as theoretically interchangeable constituents of the same joint hypothesis rather than as separate individual hypotheses. The principle is the same as that for a one-way ANOVA (García-Pérez, 2023): A significant result entitles us to claim that there is a significant difference between at least one pair of means, but it does not allow us to specify which pair. Of course, researchers can go on to make statistical inferences about each of the three hypotheses separately. However, these individual inferences are not based on the union-intersection test. They are based on individual tests of individual null hypotheses and, as such, they do not require an alpha adjustment <ref type="bibr" target="#b10">(García-Pérez, 2023;</ref><ref type="bibr" target="#b41">Rubin, 2021b)</ref>.</p><p>This last point may be a little confronting to some readers. Surely, if you conduct three individual tests, then you have a greater probability of making at least one Type I error among your set of results. Yes, you do! However, (a) this inflated familywise error rate applies to the family of tests, not to any individual test within the family; (b) you continue to have the same probability of making a Type I error in relation to each one of your tests; and (c) it is this latter individual error rate -αIndividualthat underwrites statistical inferences about each individual hypothesis.</p><p>To illustrate, imagine that a researcher conducts three individual tests of gender differences in attitudes towards biology, chemistry, and physics using an αIndividual of 0.050 and then concludes that there is a gender difference in relation to biology, t(326) = 2.54, p = 0.011, but not in relation to either chemistry, t(326) = 0.030, p = .979, or physics, t(326) = 1.44, p = .150. In this case, experts agree that the Type I error rate for each of these three tests is not inflated above the αIndividual of 0.050 because only one test is used to make a statistical inference (decision) about each hypothesis <ref type="bibr">(Armstrong, 2014, p. 505;</ref><ref type="bibr">Cook &amp; Farewell, 1996, pp. 96-97;</ref><ref type="bibr">Fisher, 1971, p. 206;</ref><ref type="bibr">García-Pérez, 2023, p. 15;</ref><ref type="bibr">Greenland, 2021, p. 5;</ref><ref type="bibr">Hewes, 2003, p. 450;</ref><ref type="bibr">Hitchcock &amp; Sober, 2004, pp. 24-25;</ref><ref type="bibr">Hurlbert &amp; Lombardi, 2012, p. 30;</ref><ref type="bibr">Matsunaga, 2007, p. 255;</ref><ref type="bibr">Molloy et al., 2022, p. 2;</ref><ref type="bibr">Parker &amp; Weir, 2020, p. 564;</ref><ref type="bibr">Parker &amp; Weir, 2022, p. 2;</ref><ref type="bibr">Rothman, 1990, p. 45;</ref><ref type="bibr">Rubin, 2017, pp. 271-272;</ref><ref type="bibr">Rubin, 2020a, p. 380;</ref><ref type="bibr">Rubin, 2021a</ref><ref type="bibr">Rubin, , 2021b, pp. 10978-10983;, pp. 10978-10983;</ref><ref type="bibr" target="#b43">Rubin, 2024;</ref><ref type="bibr">Savitz &amp; Olshan, 1995, p. 906;</ref><ref type="bibr">Senn, 2007, pp. 150-151;</ref><ref type="bibr">Sinclair et al., 2013, p. 19;</ref><ref type="bibr">Tukey, 1953, p. 82;</ref><ref type="bibr">Turkheimer et al., 2004, p. 727;</ref><ref type="bibr">Veazie, 2006, p. 809;</ref><ref type="bibr">Wilson, 1962, p. 299)</ref>. In short, if a researcher uses a single test to make a statistical inference about a single null hypothesis, then their alpha level for that inference does not become inflated and no multiple testing correction is necessary. Importantly, this principle applies even if the researcher makes millions of such individual inferences side-by-side within the same study and/or using the same dataset.</p><p>In contrast, in the case of union-intersection testing, the probability of making a Type I error about the intersection null hypothesis will always be greater than the nominal alpha level for each test (αConstituent) because the researcher has multiple opportunities to incorrectly reject the intersection null hypothesis. For example, if the intersection null hypothesis consists of three constituent null hypotheses, then the researcher will have three opportunities to make a Type I error about the intersection null hypothesis based on the three tests that they conduct using αConstituent. Hence, a multiple testing correction is necessary in this case in order to control the familywise error rate at the nominal level of αJoint.</p><p>In summary, multiple testing increases the probability that at least one of your significant results is a false positive, but it doesn't increase the probability that each one of your significant results is a false positive, and so if you make an inference about a joint null hypothesis that can be rejected following at least one significant result, then an alpha adjustment is necessary, and if you don't, then it isn't! Hence, a multiple testing correction is necessary when undertaking multiple tests of an intersection null hypothesis, but not when undertaking single tests of multiple individual null hypotheses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The Alpha Adjustment Solution</head><p>During union-intersection testing, the alpha adjustment solution involves lowering αConstituent until the associated family-based error rate is less than or equal to αJoint. There are several different ways of computing the degree to which αConstituent should be lowered, and they depend on the type of family-based error rate that is being controlled. For illustrative purposes, I consider two simple approaches that refer to the familywise error rate and the per family error rate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The Familywise Error Rate</head><p>The familywise error rate is the probability that at least one of the constituent test results is a Type I error (i.e., a false positive). The probability that a single constituent test yields a true negative (i.e., a nonsignificant result when the constituent null hypothesis is true) is 1 -αConstituent. The probability that a family (collection) of k constituent tests all yield true negatives is equal to the product of the probabilities that each yields a true negative, assuming that test results are independent of one another: (1 -αConstituent) k . Hence, the familywise error rate that at least one of k tests yields a false positive result is 1 -(1 -αConstituent) k .</p><p>Hence, if three constituent hypotheses are tested, each with an αConstituent of 0.050, then the familywise Type I error rate will be 1 -(1 -0.050) 3 , which equals 0.143. In this case, the familywise error rate will be greater than a nominal conventional αJoint level of 0.050. Consequently, to control the familywise error rate at the level of αJoint, the Dunn-Šidák correction may be used to reduce αConstituent from 0.050 to 1 -(1 -αConstituent) 1/3 , which equals 0.0167. In this case, the familywise error rate will be equal to 1 -(1 -0.0167) 3 , which equals the αJoint level of 0.050.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The Per Family Error Rate</head><p>The per family error rate represents another family-based error rate. It is the number of constituent Type I errors that are expected to occur within a family of k tests, and it is calculated as the sum of the αConstituent values for each of the constituent hypotheses that are tested <ref type="bibr" target="#b8">(Frane, 2015)</ref>. Hence, if the αConstituent values are the same for all constituent hypotheses, then the per family error rate is equal to αConstituent × k.</p><p>For small values of k, the per family error rate is almost the same as the familywise error rate. However, as k increases, the per family error rate becomes larger than the familywise error rate and, unlike the familywise error rate, it can become larger than 1.00. For example, if 100 constituent tests are conducted, and each has an αConstituent of 0.050, then the familywise error rate will be 0.99 but the per family error rate will be 5.00. In other words, there will almost certainly be one or more false positive results within the family, and we should expect there to be five false positive results in total.</p><p>The Bonferroni correction may be used to control the per family error rate using the formula αConstituent/k. Hence, if k = 3, then the Bonferroni correction would reduce αConstituent to 0.0169 in order to control the per family error rate at the αJoint level of 0.050 (i.e., 0.0169 × 3). Note that, because the familywise error rate is the same as or smaller than the per family error rate, the Bonferroni correction may also be used to provide conservative control over the familywise error rate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inconsistent Corrections</head><p>An inconsistent multiple testing correction occurs when a researcher corrects their alpha level for a union-intersection test of a joint hypothesis but then only makes statistical inferences about individual hypotheses. For example, they might correct αConstituent in order to control a familybased error rate at the nominal conventional αJoint of 0.050 but then only make statistical inferences about individual hypotheses, which can be made using an unadjusted conventional αIndividual of 0.050. In this case, their alpha adjustment is inconsistent with their statistical inferences about individual hypotheses, which are the only inferences that are made.</p><p>Why do researchers adjust their alpha level to control family-based error rates for familybased joint hypotheses and then fail to make statistical inferences about those hypotheses? I think there are two reasons for these inconsistent corrections: error rate confusions and the alpha adjustment ritual.</p><p>(</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>1) Error Rate Confusions</head><p>Four error rate confusions may lead to inconsistent multiple testing corrections. Confusion I occurs when researchers incorrectly assume that multiple instances of individual testing somehow inflate individual Type I error rates for each individual inference. As previously explained, they don't! During individual testing, αIndividual refers to the probability that a single test will incorrectly reject a single hypothesis. There is no union-intersection testing in this situation, no multiple opportunities to make each Type I error, and so no error rate inflation for each statistical inference. As discussed in Confusion III below, it is true that multiple testing increases the probability of making at least one Type I error in a collection of individual tests, but it is also true that multiple testing does not increase the probability of making a Type I error with respect to each test and, during individual testing, it is only this individual Type I error rate that is relevant to researchers' statistical inferences.</p><p>Confusion II occurs when researchers incorrectly assume that multiple instances of individual testing inflate family-based Type I error rates for each individual inference. Again, they don't! During individual testing, k = 1 for each inference and so the familywise and per family error rates for each inference have the same value as the individual error rate (i.e., αIndividual = 1 -[1 -αConstituent] 1 = αConstituent × 1).</p><p>Confusion III occurs when researchers assume that multiple instances of individual testing inflate family-based error rates for families of separate statistical inferences. They do! However, these family-based error rates are irrelevant to each statistical inference! To illustrate, consider a researcher who computes the familywise error rate for 20 separate individual statistical inferences that each use an αIndividual of 0.050. In this case, the researcher assumes that k = 20 instead of k = 1 because they count the number of statistical inferences that are made (20) rather than the number of tests that are used to make each inference (1). The resulting familywise error rate (0.642) does not refer to the incorrect rejection of any specific null hypothesis (individual or joint) and so, by definition, it does not represent a Type I error rate. Nonetheless, the researcher may make the mistake of using this hypothesis-free familywise error rate to judge the stringency of each of their statistical inferences. This approach is flawed because the probability that at least one of 20 statistical inferences represents a Type I error (0.642) is irrelevant to the probability of incorrectly rejecting each individual null hypothesis (0.050). Indeed, the probability that at least one inference represents a Type I error can be astronomically high in large groups of inferences (e.g., in genomewide association studies) without it affecting the probability of incorrectly rejecting each null hypothesis, which remains steadfast at a conventional unadjusted αIndividual of 0.050.</p><p>Finally, Confusion IV occurs when researchers assume that individual and family-based Type I error rates apply to substantive inferences rather than just statistical inferences <ref type="bibr" target="#b25">(Meehl, 1997)</ref>. They don't! In the frequentist framework, a statistical inference assumes that random sampling error is the only source of error, and a Type I error rate indicates the frequency with which this sampling error would lead to the incorrect rejection of a statistical null hypothesis during a long run of random sampling from the null population. In contrast, a substantive inference assumes that additional theoretical, methodological, and analytical errors may lead to the incorrect rejection of a substantive null hypothesis. Type I error rates do not account for these nonstatistical forms of error. Nonetheless, researchers may confuse substantive hypotheses with statistical hypotheses and erroneously apply Type I error rates and associated multiple testing corrections to their decisions about substantive hypotheses <ref type="bibr" target="#b25">(Meehl, 1997)</ref>.</p><p>These four error rate confusions may be exacerbated by the ambiguous phrasing that is sometimes used in explanations of the multiple testing problem (see also <ref type="bibr">García-Pérez, 2023, pp. 2-4)</ref>. For example, it is true that "multiple testing inflates the Type I error rate," but it is important to clarify what kind of "multiple testing," what kind of "Type I error rate," and what kind of hypothesis. Hence, it is more accurate to say that union-intersection testing inflates the familywise error rate for statistical inferences about intersection null hypotheses. Multiple individual tests do not inflate individual Type I error rates for inferences about individual null hypotheses. Nonetheless, the vague dictum that "multiple testing inflates the Type I error rate" may lead some researchers to incorrectly assume that (a) multiple testing inflates individual Type I error rates and (b) family-based error rates indicate the extent of this inflation.</p><p>Given their subtle and seductive nature, it is worth considering error rate confusions in relation to both the familywise error rate and the per family error rate. Taking the familywise error rate first, Confusion III may lead researchers to calculate a hypothesis-free familywise error rate for a collection of individual statistical inferences about individual hypotheses with a view to controlling the (uninflated) individual Type I error rate. Hence, a researcher who makes 20 statistical inferences about 20 individual hypotheses using an αIndividual of 0.050 may erroneously conclude that their Type I error rate for each inference is inflated because their familywise error rate for this collection of inferences is 0.642. In fact, their Type I error rate for each inference remains at the αIndividual level of 0.050. The researcher's erroneous conclusion is due to an inappropriate application of the familywise error rate to a collection of single tests of individual hypotheses.</p><p>Similarly, multiple testing inflates the per family error rate and not the individual Type I error rate. Again, failure to appreciate this point may lead to a misapplication of the per family error rate to statistical inferences about individual hypotheses. For example, a researcher might conduct 20 significance tests using an alpha level of 0.050 and obtain only one significant result. Given that this number of significant results matches the per family error rate, the researcher might then be tempted to assume that their significant result is more likely to be a Type I error. Again, however, this reasoning is flawed because it confuses Type I errors about individual null hypotheses with Type I errors about joint null hypotheses. The per family error rate is a familybased error rate and, as such, it is only appropriate when making inferences about family-based joint hypotheses. It is inappropriate to apply it to inferences about individual hypotheses.</p><p>In summary, family-based error rates tell us nothing about the probability of making a Type I error with respect to an individual null hypothesis. To believe that they do is to succumb to a type of ecological fallacy in which the Type I error rate for a decision about a family of hypotheses is misapplied to decisions about the individual hypotheses within that family. Family-based error rates only tell us the probability of making a Type I error with respect to family-based intersection null hypotheses.</p><p>(2) The Alpha Adjustment Ritual It is possible to resolve error rate confusions through logical reasoning. However, researchers do not select statistical approaches on the basis of logical reasoning per se. Sociocultural fashions and conventions are also influential, and it is here that an alpha adjustment ritual may come into play.</p><p>In his article Mindless Statistics, <ref type="bibr" target="#b12">Gigerenzer (2004)</ref> noted that the "null ritual" of null hypothesis significance testing "has sophisticated aspects…such as alpha adjustment" (p. 588). He did not go into this issue any further. However, in my view, the alpha adjustment ritual involves the automatic adjustment of alpha levels whenever multiple testing occurs, regardless of whether statistical inferences are made about individual null hypotheses or intersection null hypotheses. This social ritual is supported by colleagues, peer reviewers, editors, journals, and so on, some of whom consider failure to conform to the ritual as one of the "seven deadly sins" of statistical practice <ref type="bibr">(Kuzon et al., 1996;</ref><ref type="bibr" target="#b26">Millis, 2003;</ref><ref type="bibr" target="#b32">Popp et al., 2012)</ref>.</p><p>Again, to be clear, an alpha adjustment is appropriate when making a statistical inference about an intersection null hypothesis on the basis of a union-intersection test. However, an alpha adjustment is not appropriate when making statistical inferences about multiple individual hypotheses on the basis of multiple individual tests. Hence, the problem with the alpha adjustment ritual is that it lacks nuance and sensitivity to the type of inferences that are made. In particular, it does not allow for the possibility that researchers make multiple individual statistical inferences about multiple individual hypotheses based on multiple individual tests. Researchers who follow the alpha adjustment ritual in this situation will end up making inconsistent multiple testing corrections because an alpha adjustment is in appropriate for the specific statistical inferences that they make.</p><p>In summary, statistical inferences about intersection null hypotheses require an alpha adjustment, but statistical inferences about individual null hypotheses do not, even if multiple such inferences are made within the same study and/or on the same data set. Contrary to the alpha adjustment ritual then, there are some cases of multiple testing that do not require an alpha adjustment, and unthinking adherence to the ritual may result in inconsistent multiple testing corrections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inconsistent Corrections are Common</head><p>How common are inconsistent multiple testing corrections? In his recent review, García-Pérez ( <ref type="formula">2023</ref>) checked 109 research articles that had used multiple testing corrections and that were published in the journals Behavior Research Methods and Psychological Science between 2021 and June 2022. He found that "an invariable feature of all papers was that each and all of the individual tests for which a p value was reported (whether with or without corrections) was interpreted individually, that is, there was an inference per test and the tests were never regarded as collectively addressing a joint intersection null hypothesis" (p. 4). Hence, researchers used multiple testing corrections when they made statistical inferences about individual null hypotheses and not about the intersection null hypotheses to which their corrections would apply. We can conclude that, at least in García-Pérez's (2023) sample of articles, inconsistent multiple testing corrections are very common.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inconsistent Corrections Reduce Statistical Power</head><p>Inconsistent corrections also lead to an unjustifiable loss of statistical power. If a researcher adjusts their alpha level below its nominal level to account for multiple testing but only makes statistical inferences about individual hypotheses and not about a joint hypothesis, then they will have lowered the power of their individual tests for no good reason. Consequently, their Type I error rate will be unnecessarily low, and their Type II error rate will be unnecessarily high <ref type="bibr">(García-Pérez, 2023, p. 11)</ref>.</p><p>For example, imagine that a researcher wanted to make two statistical inferences about two individual hypotheses. Logically, they could use an unadjusted conventional αIndividual of 0.050 in each case. However, further imagine that the researcher followed the alpha adjustment ritual and used a Bonferroni correction to reduce their αIndividual level from 0.050 to 0.025 (i.e., αIndividual/k). If they obtained p values of 0.010 and 0.040, then they could only reject the first null hypothesis. They would not be able to reject the second null hypothesis because their p value of 0.040 would be higher than their adjusted alpha level of 0.025. Of course, if they had not made this alpha adjustment, then they could have rejected their second hypothesis at the conventional alpha level of 0.050. Hence, the researcher's inconsistent correction caused a loss of statistical power and, assuming false null hypotheses, this loss of power would explain their nonsignificant result.</p><p>It is important to clarify here that researchers can set αIndividual to be lower than the conventional level of 0.050 if they wish to provide more stringent tests of their individual hypotheses <ref type="bibr">(Parker &amp; Weir, 2020, p. 564;</ref><ref type="bibr">Rubin, 2021b, p. 10984)</ref>. However, this approach represents stringent alpha specification rather than an adjustment to a previously specified alpha level. Once αIndividual has been set at a specified level (e.g., 0.050, 0.010, etc.), it should not be adjusted to account for multiple testing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Three Examples of Inconsistent Corrections</head><p>To better appreciate the implications of inconsistent corrections, it is helpful to consider three examples from recent research studies. To obtain these examples, I searched Google Scholar at the end of December 2023 for recent articles <ref type="bibr">(2021 -2023)</ref> in journals that had the word "psychology" in the title and that included the terms "0.025" and "0.05/2" or "0.050/2." I used the period 2021 to 2023 to demonstrate the contemporary nature of inconsistent corrections over the past three years. I used the term "psychology" in the journal title to try to restrict articles to psychology journals, although there is no reason to believe that the same issue does not occur in other disciplines. Finally, I used the terms "0.025" "0.05(0)/2" because they are likely to be used when discussing a relatively simple Bonferroni correction to a conventional alpha level of 0.050 when k = 2. In this case, statistical inferences about the two individual hypotheses can be made using an αIndividual of 0.050, and a statistical inference about the joint hypothesis can be made using an αConstituent of 0.025, which maintains the associated αJoint at 0.050. Hence, if researchers use this Bonferroni correction in a logically consistent manner, then they should make a statistical inference about a joint alternative hypothesis that encompasses the two constituent hypotheses that they test (e.g., "H1,1 or H1,2"). However, if they use it in a logically inconsistent manner, then they will not make a statistical inference about the joint hypothesis, and they will instead make two separate statistical inferences about two separate individual hypotheses (e.g., H1,1 and H1,2).</p><p>My search returned 62 results. In screening these results, I selected cases in which (a) the statistical analysis was relatively simple, (b) one of the two test results was significant at the 0.025 level (i.e., p &lt; 0.025), and (c) the other test result was significant at the 0.050 level but nonsignificant at the 0.025 level (i.e., 0.025 &lt; p &lt; 0.050). This third criterion allowed me to illustrate nonsignificant results that may be attributed to a loss of statistical power caused by inconsistent corrections on the assumption that the associated null hypotheses are false.</p><p>Using these criteria, I chose three examples: <ref type="bibr">Prem et al. (2021, Study 1)</ref>, <ref type="bibr" target="#b3">Clemens and</ref><ref type="bibr" target="#b3">Grolig (2023), and</ref><ref type="bibr">Janssen et al. (2023, Experiment 2)</ref>. I selected these studies because they provided relatively clear illustrations of inconsistent multiple testing corrections. Nonetheless, their selection does not imply that they are any less rigorous or credible than other studies. Indeed, given that the researchers restricted their statistical inferences to individual hypotheses, the selected studies can be viewed as providing more stringent tests than other studies because their alpha levels are lower than the conventional level of 0.050. My point here is only to highlight (a) the logical inconsistency in lowering the alpha level to control the familywise error rate and then only making claims about individual hypotheses and not about joint, family-based, hypotheses and (b) the potential implications arising from an associated loss in statistical power. The researchers explained that, "when testing Hypotheses 2 through 5, the Bonferroni-corrected α was 0.05/2 = 0.025 because Hypotheses 2 through 5 each included 2 correlations" (p. 7). For example, Hypothesis 4 was that "the subscale for the planning of working places would be positively related to the availability of telework possibilities to work from home and the availability of telework possibilities to [work] from other locations outside the employer's premises" (p. 4).</p><p>The researchers found that, "in line with Hypotheses 2 through 5, structuring of work tasks showed significant positive associations with decision-making autonomy and work methods autonomy; planning of working times showed significant positive associations with work scheduling autonomy and the availability of flextime; planning of working places showed significant positive associations with the availability of working from home and the availability of telework from other locations; and coordinating with others showed significant positive associations with initiated interdependence and received interdependence (compare Table <ref type="table">1</ref>). All of these correlations remained significant after Bonferroni correction, with the exception of the correlation between planning of working places and the availability of working from home. Thus, Hypotheses 2, 3, and 5 were fully supported, and Hypothesis 4 was partly supported" <ref type="bibr">(Prem et al., 2021, p. 7</ref>). Hence, the researchers tested four hypotheses, each referring to two correlations, and they adjusted αConstituent to 0.025 (i.e., 0.050/2) in each case. Following this Bonferroni correction, they found support for three of the four hypotheses and partial support for Hypothesis 4, because only one of the two correlations was significant at the 0.025 level in this case.</p><p>The conclusion that Hypothesis 4 was only "partially supported" is the result of an inconsistent correction. The use of the Bonferroni correction implies that Hypothesis 4 is a union alternative hypothesis that can be fully supported following at least one significant result using an adjusted αConstituent of 0.025. The researchers met this criterion, finding that planning of working places was significantly positively correlated with the availability of telework possibilities from other locations. Hence, logically, the researchers could have concluded that there was full support for Hypothesis 4. Instead, they concluded that Hypothesis 4 was only "partially supported." This conclusion suggests that they construed Hypothesis 4 as being composed of two individual hypotheses, and they would conclude that there was "full support" for Hypothesis 4 if both individual hypotheses were supported, "partial support" if only one hypothesis was supported, and "no support" if neither hypothesis was supported. However, in this case, no alpha adjustment is required because separate statistical inferences are made about each individual hypothesis, and a nonstatistical summary of these two inferences is then provided in relation to "Hypothesis 4" (i.e., "full support," "partial support," or "no support"). Hence, the researchers should have reported two significant results at the 0.050 level and then claimed full support for Hypothesis 4. Instead, they only reported one significant result at the 0.025 level and claimed partial support for Hypothesis 4. Assuming the null hypotheses were false, this substantive claim of partial support may be attributed to a lack of statistical power caused by the inconsistent correction.</p><p>I should note that correspondence with the first author of this study revealed that the decision to use a Bonferroni correction was made in response to a request from a peer reviewer (R. <ref type="bibr">Prem, personal communication, January 03, 2024)</ref>. Hence, at least in this case, a peer reviewer encouraged the researchers to follow the alpha adjustment ritual.</p><p>Example 2: Clemens and Grolig (2023) <ref type="bibr" target="#b3">Clemens and Grolig (2023)</ref> investigated how people would respond when they imagined that they were being interviewed by the police under either suspicion or no suspicion that they had committed an illegal act at a crime scene, but an act that was unrelated to the crime being investigated. Participants were asked to imagine that they had performed either a lawful act or an unlawful act at a bookstore in which a theft had taken place. In the lawful condition, participants looked at a book, and in an unlawful condition, they made an illegal purchase of a mobile phone. The researchers hypothesised "that unlawful act participants (vs. lawful act participants) would report…evasive strategies more frequently (hypothesis 1b)." The researchers considered two evasive strategies: (a) deception and (b) reluctant information sharing. They reported that, "as two evasive categories of strategies were identified, we applied a Bonferroni corrected significance level (0.05/2) of 0.025 for hypothesis 1b. The results show that unlawful (vs. lawful) act participants reported the evasive strategy to be deceptive (χ2(1, N = 128) = 28.038, p &lt; 0.001, ϕ = 0.47) significantly more often, whereas no significant result was found for the evasive strategy of reluctant information sharing (χ2(1, N = 128) = 4.137, p = 0.042, ϕ = 0.18. These results are only partially in line with hypothesis 1b" <ref type="bibr">(Clemens &amp; Grolig, 2023, pp. 386-387)</ref>. Again, the researchers' conclusion that their results are "only partially in line" with their hypothesis is inconsistent with their analytical approach. The use of a Bonferroni correction implies that only one of the two tests needs to yield a significant result in order to reject the intersection null hypothesis that unlawful act participants would report neither of the evasive strategies more frequently than lawful act participants. Consistent with this criterion, the researchers found one significant result using an adjusted αConstituent level of 0.025 (p &lt; 0.001). However, instead of claiming full support for the union alternative hypothesis, they only claimed partial support. Again, this conclusion implies that the two tests were construed as single tests of two individual null hypotheses. In this case, however, both null hypotheses could be provisionally rejected using a conventional αIndividual at the unadjusted level of 0.050 (p &lt; 0.001 &amp; p = 0.042), and a substantive conclusion of "full support" could be reached.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Example 3: Janssen et al. (2023, Experiment 2)</head><p>Finally, <ref type="bibr">Janssen et al. (2023, Experiment 2)</ref> investigated the effectiveness of different study strategies, focusing on the differences between blocked study (studying one topic at a time; e.g., AAA BBB CCC) and interleaved study (mixing up different topics across time; e.g., ACB BAC CBA). These researchers used a Bonferroni correction to adjust their alpha level to 0.025 during an independent samples t-test in which study strategy (blocked vs. interleaved) was the independent variable and (a) prospective judgments of learning and (b) actual learning outcomes were the two dependent variables. As they explained, "to test for significant differences, we used independent t-tests with a Bonferroni corrected significance level of p &lt; 0.025 (i.e., 0.05/2). As expected and again consistent with Experiment 1, students who had used blocked studying made higher prospective judgments of learning (M = 5.83, SD = 1.60) than students who had used interleaved studying (M = 5.24, SD = 1.82), t(297) = 2.95, p = 0.003, Cohen's d = 0.34. Numerically, the actual learning outcomes were higher for the interleaved study condition (M = 6.92, SD = 2.06) than for the blocked study condition (M = 5.83, SD = 1.60). However, in contrast to our expectations, this difference was not statistically significant, t(297) = -1.99, p = 0.048, Cohen's d = -0.23" <ref type="bibr">(Janssen et al., 2023, p. 24)</ref>. Hence, using an αConstituent of 0.025, the researchers found a significant effect of study strategy (blocked vs. interleaved) on prospective judgments of learning (p = 0.003) but not on actual learning outcomes (p = 0.048). Following the logic of the Bonferroni correction, they could have then rejected the associated intersection null hypothesis and claimed full support for the union alternative hypothesis that study strategy affected either prospective judgments of learning or actual learning outcomes. Instead, they proceeded to make statistical and substantive inferences about each outcome variable separately. For example, they concluded that "both experiments replicated findings from prior research that, overall, at the group level, students reported higher effort investment and made lower judgments of learning during interleaved studying than during blocked studying <ref type="bibr">(Kirk-Johnson et al., 2019;</ref><ref type="bibr">Onan et al., 2022)</ref>. Yet, we only replicated the finding that students actually learned significantly more from interleaved studying than from blocked studying (as evidenced by their test performance) in Experiment 1. In Experiment 2, the difference in learning outcome, although numerically in the hypothesized direction, was not statistically significant…" <ref type="bibr">(Janssen et al., 2023, p. 28)</ref>.</p><p>If the authors wanted to control their Type I error rate for each decision about each individual hypothesis at 0.050, then they could have used an unadjusted αIndividual of 0.050, rather than an adjusted αConstituent of 0.025. In this case, they would have decided that both of their test results were significant (ps = 0.003 &amp; 0.048) rather than only their first result (p = 0.003). An αConstituent of 0.025 would only be required if the authors wanted to make a decision about the intersection null hypothesis using an αJoint of 0.050. However, they did not consider this intersection null hypothesis. Hence, once again, this example illustrates an inconsistent multiple testing correction and a nonsignificant result that, assuming a false null hypothesis, may be attributed to a loss of statistical power.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Summary</head><p>In summary, in all three examples, the researchers applied a Bonferroni correction to adjust αConstituent from 0.050 to 0.025 in order to control αJoint at 0.050. In all three studies, the researchers found a significant result in which p &lt; 0.025 and a nonsignificant result in which 0.025 &lt; p &lt; 0.050. This pattern of results would allow the researchers to either (a) reject the intersection null hypothesis on the grounds that at least one test was significant using an adjusted αConstituent of 0.025 or (b) reject both individual null hypotheses on the grounds that both tests were significant using an unadjusted αIndividual of 0.050. Instead, in all three cases, the researchers followed a fallacious hybrid approach in which they used an αConstituent of 0.025 to (a) reject one of the two individual null hypotheses and (b) fail to reject the other one. This hybrid approach is logically inconsistent with the use of a multiple testing correction. Furthermore, assuming that the null hypotheses were false, the researcher's nonsignificant results can be attributed to a loss of statistical power caused by their inconsistent corrections: If they had used an unadjusted αIndividual of 0.050, then they would have decided that both of their tests yielded significant results. Their nonsignificant results also had implications for their substantive conclusions. In two of the three cases, the researchers described their results as providing only partial support for their hypotheses <ref type="bibr" target="#b3">(Clemens &amp; Grolig, 2023;</ref><ref type="bibr">Prem et al., 2021, Study 1)</ref>. In fact, whichever way the results are interpreted, they provided full support for the hypotheses: The single significant result at the 0.025 αConstituent level was sufficient to reject the entire intersection null hypothesis, and the two significant results at the 0.050 αIndividual level were sufficient to reject each of the two individual null hypotheses.</p><p>I restricted my three examples to studies published in psychology journals that used a Bonferroni correction involving two simple tests in which one test yielded a significant result at the corrected alpha level and the other yielded a nonsignificant result. Nonetheless, inconsistent corrections may also be observed among nonpsychology studies that use other family-based alpha correction approaches and larger families of tests.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Moving Away from Statisticism</head><p>In my view, statisticism refers to an overgeneralization of abstract statistical principles at the expense of context-specific nuance and caveats (e.g., <ref type="bibr" target="#b1">Boring, 1919;</ref><ref type="bibr" target="#b2">Brower, 1949)</ref>. Statisticism may help to explain the unthinking statistical ritualism that has been noted by some commentators <ref type="bibr" target="#b5">(Davidson, 2018;</ref><ref type="bibr" target="#b12">Gigerenzer, 2004</ref><ref type="bibr" target="#b13">Gigerenzer, , 2018;;</ref><ref type="bibr" target="#b34">Proulx &amp; Morey, 2021)</ref>. In the area of significance testing, this ritualism may lead researchers to (a) preregister analyses and demote exploratory analyses as "tentative," even when significance tests retain their validity in non-preregistered, exploratory situations <ref type="bibr" target="#b6">(Devezer et al., 2021;</ref><ref type="bibr" target="#b37">Rubin, 2017</ref><ref type="bibr">Rubin, , 2020a))</ref>; (b) use a conventional alpha level when an alternative unconventional alpha level is more appropriate <ref type="bibr" target="#b22">(Lakens et al., 2018)</ref>; (c) use a two-sided test when a one-sided test is more consistent with one's statistical inference <ref type="bibr" target="#b11">(Georgiev, 2018;</ref><ref type="bibr" target="#b42">Rubin, 2022)</ref>; (d) conduct an a priori power analysis when there is no clear basis for an effect size estimate and a sensitivity power analysis is more appropriate <ref type="bibr" target="#b23">(Lakens, 2022;</ref><ref type="bibr" target="#b31">Perugini et al., 2018)</ref>; and (e) follow a Neyman-Pearson interpretation when a Fisherian interpretation is more appropriate <ref type="bibr" target="#b18">(Hurlbert &amp; Lombardi, 2009;</ref><ref type="bibr" target="#b39">Rubin, 2020b)</ref>.</p><p>Perhaps fuelled by concerns about statistical rigour following the replication crisis, statisticism may also help to explain a renewed promulgation of the alpha adjustment ritual. Inconsistent multiple testing corrections then follow as an overgeneralized response to a fairly limited problem.</p><p>To move away from statisticism, we need to adopt a more nuanced, context-sensitive approach that pays closer attention to the specific statistical inferences that researchers actually make. In the case of multiple testing corrections, this more nuanced approach includes the abandonment of the alpha adjustment ritual and the adoption of an inference-based perspective that advocates an alpha adjustment in the case of inferences about intersection null hypotheses but not in the case of inferences about individual null hypotheses.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Example 1 :</head><label>1</label><figDesc>Prem et al. (2021, Study 1)Prem et al. (2021, Study 1) conducted a study to develop and validate a scale to measure the cognitive demands of planning, structuring, and coordinating flexible working arrangements.</figDesc></figure>
+		</body>
+		<back>
+
+			<div type="funding">
+<div><p>Funding: I declare no funding sources. Conflict of interest: I declare no conflict of interest. Biography: I am a professor of psychology at <rs type="affiliation">Durham University, UK</rs>. For further information about my work in this area, please visit <ref type="url" target="https://sites.google.com/site/markrubinsocialpsychresearch/replication-crisis">https://sites.google.com/site/markrubinsocialpsychresearch/replication-crisis</ref> Correspondence: Correspondence should be addressed to <rs type="person">Mark Rubin</rs> at the <rs type="affiliation">Department of Psychology, Durham University, South Road, Durham</rs>, <rs type="grantNumber">DH1 3LE</rs>, UK. E-mail: <rs type="person">Mark-Rubin</rs>@outlook.com</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_qjES2cv">
+					<idno type="grant-number">DH1 3LE</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">When to use the Bonferroni correction</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Armstrong</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/opo.12131</idno>
+		<ptr target="https://doi.org/10.1111/opo.12131" />
+	</analytic>
+	<monogr>
+		<title level="j">Ophthalmic and Physiological Optics</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="502" to="508" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Armstrong, R. A. (2014). When to use the Bonferroni correction. Ophthalmic and Physiological Optics, 34, 502-508. https://doi.org/10.1111/opo.12131</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Mathematical vs. scientific significance</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">G</forename><surname>Boring</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/h0074554</idno>
+		<ptr target="https://doi.org/10.1037/h0074554" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Bulletin</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="335" to="338" />
+			<date type="published" when="1919">1919</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Boring, E. G. (1919). Mathematical vs. scientific significance. Psychological Bulletin, 16(10), 335-338. https://doi.org/10.1037/h0074554</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">The problem of quantification in psychological science</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Brower</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/h0061802</idno>
+		<ptr target="https://doi.org/10.1037/h0061802" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Review</title>
+		<imprint>
+			<biblScope unit="volume">56</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="325" to="333" />
+			<date type="published" when="1949">1949</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Brower, D. (1949). The problem of quantification in psychological science. Psychological Review, 56(6), 325-333. https://doi.org/10.1037/h0061802</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">What will you do when they think it was you? Counterinterrogation strategies of innocent interviewees under suspicion vs. no suspicion</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Clemens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Grolig</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s11896-022-09525-7</idno>
+		<ptr target="https://doi.org/10.1007/s11896-022-09525-7" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Police and Criminal Psychology</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="381" to="394" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Clemens, F., &amp; Grolig, T. (2023). What will you do when they think it was you? Counter- interrogation strategies of innocent interviewees under suspicion vs. no suspicion. Journal of Police and Criminal Psychology, 38(2), 381-394. https://doi.org/10.1007/s11896-022- 09525-7</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Multiplicity considerations in the design and analysis of clinical trials</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Cook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">T</forename><surname>Farewell</surname></persName>
+		</author>
+		<idno type="DOI">10.2307/2983471</idno>
+		<ptr target="http://dx.doi.org/10.2307/2983471" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Royal Statistical Society: Series A (Statistics in Society)</title>
+		<imprint>
+			<biblScope unit="volume">159</biblScope>
+			<biblScope unit="page" from="93" to="110" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cook, R. J., &amp; Farewell, V. T. (1996). Multiplicity considerations in the design and analysis of clinical trials. Journal of the Royal Statistical Society: Series A (Statistics in Society), 159, 93-110. http://dx.doi.org/10.2307/2983471</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">The ouroboros of psychological methodology: The case of effect sizes (mechanical objectivity vs. expertise)</title>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">J</forename><surname>Davidson</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/gpr0000154</idno>
+		<ptr target="https://doi.org/10.1037/gpr0000154" />
+	</analytic>
+	<monogr>
+		<title level="j">Review of General Psychology</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="469" to="476" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Davidson, I. J. (2018). The ouroboros of psychological methodology: The case of effect sizes (mechanical objectivity vs. expertise). Review of General Psychology, 22(4), 469-476. https://doi.org/10.1037/gpr0000154</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">The case for formal methodology in scientific reform</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Devezer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Navarro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Vandekerckhove</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">O</forename><surname>Buzbas</surname></persName>
+		</author>
+		<idno type="DOI">10.1098/rsos.200805</idno>
+		<ptr target="https://doi.org/10.1098/rsos.200805" />
+	</analytic>
+	<monogr>
+		<title level="j">Royal Society Open Science</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2021">2021. 200805</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Devezer, B., Navarro, D. J., Vandekerckhove, J., &amp; Buzbas, E. O. (2021). The case for formal methodology in scientific reform. Royal Society Open Science, 8(3), Article 200805. https://doi.org/10.1098/rsos.200805</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<title level="m" type="main">The design of experiments</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Fisher</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1971">1971</date>
+			<publisher>Hafner Press</publisher>
+		</imprint>
+	</monogr>
+	<note>th ed.</note>
+	<note type="raw_reference">Fisher, R. A. (1971). The design of experiments (9 th ed.). Hafner Press.</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Are per-family type I error rates relevant in social and behavioral science</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">V</forename><surname>Frane</surname></persName>
+		</author>
+		<idno type="DOI">10.22237/jmasm/1430453040</idno>
+		<ptr target="http://dx.doi.org/10.22237/jmasm/1430453040" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Modern Applied Statistical Methods</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Frane, A. V. (2015). Are per-family type I error rates relevant in social and behavioral science? Journal of Modern Applied Statistical Methods, 14(1), Article 5. http://dx.doi.org/10.22237/jmasm/1430453040</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Misguided opposition to multiplicity adjustment remains a problem</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">V</forename><surname>Frane</surname></persName>
+		</author>
+		<idno type="DOI">10.22237/jmasm/1556669400</idno>
+		<ptr target="http://dx.doi.org/10.22237/jmasm/1556669400" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Modern Applied Statistical Methods</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">2836</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Frane, A. V. (2019). Misguided opposition to multiplicity adjustment remains a problem. Journal of Modern Applied Statistical Methods, 18(2), eP2836. http://dx.doi.org/10.22237/jmasm/1556669400</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Use and misuse of corrections for multiple testing</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>García-Pérez</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.metip.2023.100120</idno>
+		<ptr target="https://doi.org/10.1016/j.metip.2023.100120" />
+	</analytic>
+	<monogr>
+		<title level="j">Methods in Psychology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<date type="published" when="2023">2023. Article 100120</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">García-Pérez, M. A. (2023). Use and misuse of corrections for multiple testing. Methods in Psychology, 8, Article 100120. https://doi.org/10.1016/j.metip.2023.100120</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Directional claims require directional (statistical) hypotheses. One-sided</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">Z</forename><surname>Georgiev</surname></persName>
+		</author>
+		<ptr target="https://www.onesided.org/articles/directional-claims-require-directional-hypotheses.php" />
+		<imprint>
+			<date type="published" when="2018-08-06">2018. August 6</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Georgiev, G. Z. (2018, August 6). Directional claims require directional (statistical) hypotheses. One-sided.org. https://www.onesided.org/articles/directional-claims-require-directional- hypotheses.php</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Mindless statistics</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gigerenzer</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.socec.2004.09.033</idno>
+		<ptr target="https://doi.org/10.1016/j.socec.2004.09.033" />
+	</analytic>
+	<monogr>
+		<title level="j">The Journal of Socio-Economics</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="587" to="606" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gigerenzer, G. (2004). Mindless statistics. The Journal of Socio-Economics, 33(5), 587-606. https://doi.org/10.1016/j.socec.2004.09.033</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Statistical rituals: The replication delusion and how we got there</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gigerenzer</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245918771329</idno>
+		<ptr target="https://doi.org/10.1177/2515245918771329" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="198" to="218" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gigerenzer, G. (2018). Statistical rituals: The replication delusion and how we got there. Advances in Methods and Practices in Psychological Science, 1(2), 198-218. https://doi.org/10.1177/2515245918771329</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Analysis goals, error-cost sensitivity, and analysis hacking: Essential considerations in hypothesis testing and multiple comparisons</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Greenland</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/ppe.12711</idno>
+		<ptr target="https://doi.org/10.1111/ppe.12711" />
+	</analytic>
+	<monogr>
+		<title level="j">Paediatric and Perinatal Epidemiology</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="8" to="23" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Greenland, S. (2021). Analysis goals, error-cost sensitivity, and analysis hacking: Essential considerations in hypothesis testing and multiple comparisons. Paediatric and Perinatal Epidemiology, 35, 8-23. https://doi.org/10.1111/ppe.12711</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Methods as tools</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E</forename><surname>Hewes</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/j.1468-2958.2003.tb00847.x</idno>
+		<ptr target="https://doi.org/10.1111/j.1468-2958.2003.tb00847.x" />
+	</analytic>
+	<monogr>
+		<title level="j">Human Communication Research</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="page" from="448" to="454" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hewes, D. E. (2003). Methods as tools. Human Communication Research, 29, 448-454. https://doi.org/10.1111/j.1468-2958.2003.tb00847.x</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Prediction versus accommodation and the risk of overfitting</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hitchcock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Sober</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/bjps/55.1.1</idno>
+		<ptr target="https://doi.org/10.1093/bjps/55.1.1" />
+	</analytic>
+	<monogr>
+		<title level="j">British Journal for the Philosophy of Science</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="34" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hitchcock, C., &amp; Sober, E. (2004). Prediction versus accommodation and the risk of overfitting. British Journal for the Philosophy of Science, 55(1), 1-34. https://doi.org/10.1093/bjps/55.1.1</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Multiple comparison procedures</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hochberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Tamrane</surname></persName>
+		</author>
+		<ptr target="https://www.nature.com/srep/author-instructions/submission-guidelines" />
+		<imprint>
+			<date type="published" when="1987">1987</date>
+			<publisher>Wiley</publisher>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hochberg, Y., &amp; Tamrane, A. C. (1987). Multiple comparison procedures. Wiley. https://www.nature.com/srep/author-instructions/submission-guidelines</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Final collapse of the Neyman-Pearson decision theoretic framework and rise of the neoFisherian</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Hurlbert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Lombardi</surname></persName>
+		</author>
+		<idno type="DOI">10.5735/086.046.0501</idno>
+		<ptr target="https://doi.org/10.5735/086.046.0501" />
+	</analytic>
+	<monogr>
+		<title level="j">Annales Zoologici Fennici</title>
+		<imprint>
+			<biblScope unit="volume">46</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="311" to="349" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hurlbert, S. H., &amp; Lombardi, C. M. (2009). Final collapse of the Neyman-Pearson decision theoretic framework and rise of the neoFisherian. Annales Zoologici Fennici, 46(5), 311- 349. https://doi.org/10.5735/086.046.0501</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Lopsided reasoning on lopsided tests and multiple comparisons</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Hurlbert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Lombardi</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/j.1467-842X.2012.00652.x</idno>
+		<ptr target="https://doi.org/10.1111/j.1467-842X.2012.00652.x" />
+	</analytic>
+	<monogr>
+		<title level="j">Australian &amp; New Zealand Journal of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">54</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="23" to="42" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hurlbert, S. H., &amp; Lombardi, C. M. (2012). Lopsided reasoning on lopsided tests and multiple comparisons. Australian &amp; New Zealand Journal of Statistics, 54(1), 23-42. https://doi.org/10.1111/j.1467-842X.2012.00652.x</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">The role of mental effort in students&apos; perceptions of the effectiveness of interleaved and blocked study strategies and their willingness to use them</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Janssen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Van Gog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Van De Groep</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>De Lange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Knopper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Onan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">.</forename><forename type="middle">.</forename><surname>De Bruin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">B</forename></persName>
+		</author>
+		<idno type="DOI">10.1007/s10648-023-09797-3</idno>
+		<ptr target="https://doi.org/10.1007/s10648-023-09797-3" />
+	</analytic>
+	<monogr>
+		<title level="j">Educational Psychology Review</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page">85</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Janssen, E. M., van Gog, T., van de Groep, L., de Lange, A. J., Knopper, R. L., Onan, E., ... &amp; de Bruin, A. B. (2023). The role of mental effort in students&apos; perceptions of the effectiveness of interleaved and blocked study strategies and their willingness to use them. Educational Psychology Review, 35(3), Article 85. https://doi.org/10.1007/s10648-023-09797-3</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Picking the most likely candidates for further development: Novel intersection-union tests for addressing multi-component hypotheses in comparative genomics</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">O</forename><surname>Zakharkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Loraine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">B</forename><surname>Allison</surname></persName>
+		</author>
+		<ptr target="http://dx.doi.org/10.1016%2FS0278-2391" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the American Statistical Association, ASA Section on ENAR Spring Meeting</title>
+		<editor>
+			<persName><forename type="first">W</forename><surname>Urbanchek</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Mccabe</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename></persName>
+		</editor>
+		<meeting>the American Statistical Association, ASA Section on ENAR Spring Meeting</meeting>
+		<imprint>
+			<date type="published" when="1996">2004. 1996</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="90377" to="90380" />
+		</imprint>
+	</monogr>
+	<note>IUTs%20Kim%20et%20al.pdf Kuzon The seven deadly sins of statistical analysis</note>
+	<note type="raw_reference">Kim, K., Zakharkin, S. O., Loraine, A., &amp; Allison, D. B. (2004). Picking the most likely candidates for further development: Novel intersection-union tests for addressing multi-component hypotheses in comparative genomics. Proceedings of the American Statistical Association, ASA Section on ENAR Spring Meeting (pp. 1396-1402). http://www.uab.edu/cngi/pdf/2004/JSM%202004%20-IUTs%20Kim%20et%20al.pdf Kuzon, W., Urbanchek, M., &amp; McCabe, S. (1996). The seven deadly sins of statistical analysis. Annals of Plastic Surgery, 37, 265-272. http://dx.doi.org/10.1016%2FS0278- 2391(97)90377-3</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Justify your alpha</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">G</forename><surname>Adolfi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Albers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Anvari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Apps</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">E</forename><surname>Argamon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">.</forename><forename type="middle">.</forename><surname>Zwaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-018-0311-x</idno>
+		<ptr target="https://doi.org/10.1038/s41562-018-0311-x" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature human behaviour</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="168" to="171" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D., Adolfi, F. G., Albers, C. J., Anvari, F., Apps, M. A., Argamon, S. E., ... &amp; Zwaan, R. A. (2018). Justify your alpha. Nature human behaviour, 2(3), 168-171. https://doi.org/10.1038/s41562-018-0311-x</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Sample size justification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1525/collabra.33267</idno>
+		<ptr target="https://doi.org/10.1525/collabra.33267" />
+	</analytic>
+	<monogr>
+		<title level="j">Collabra: Psychology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">33267</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2022). Sample size justification. Collabra: Psychology, 8(1), Article 33267. https://doi.org/10.1525/collabra.33267</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Familywise error in multiple comparisons: Disentangling a knot through a critique of O&apos;Keefe&apos;s arguments against alpha adjustment</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Matsunaga</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/19312450701641409</idno>
+		<ptr target="https://doi.org/10.1080/19312450701641409" />
+	</analytic>
+	<monogr>
+		<title level="j">Communication Methods and Measures</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="243" to="265" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Matsunaga, M. (2007). Familywise error in multiple comparisons: Disentangling a knot through a critique of O&apos;Keefe&apos;s arguments against alpha adjustment. Communication Methods and Measures, 1, 243-265. https://doi.org/10.1080/19312450701641409</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">The problem is epistemology, not statistics: Replace significance tests by confidence intervals and quantify accuracy of risky numerical predictions</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">E</forename><surname>Meehl</surname></persName>
+		</author>
+		<editor>L. L. Harlow, S. A. Mulaik, &amp; J. H. Steiger</editor>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+			<publisher>Erlbaum</publisher>
+			<biblScope unit="page" from="393" to="425" />
+		</imprint>
+	</monogr>
+	<note>What if there were no significance tests?</note>
+	<note type="raw_reference">Meehl, P. E. (1997). The problem is epistemology, not statistics: Replace significance tests by confidence intervals and quantify accuracy of risky numerical predictions. In L. L. Harlow, S. A. Mulaik, &amp; J. H. Steiger (Eds.), What if there were no significance tests? (pp. 393- 425). Erlbaum.</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Statistical practices: The seven deadly sins</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Millis</surname></persName>
+		</author>
+		<idno type="DOI">10.1076/chin.9.3.221.16455</idno>
+		<ptr target="https://doi.org/10.1076/chin.9.3.221.16455" />
+	</analytic>
+	<monogr>
+		<title level="j">Child Neuropsychology</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="221" to="233" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Millis, S. R. (2003). Statistical practices: The seven deadly sins. Child Neuropsychology, 9(3), 221-233. https://doi.org/10.1076/chin.9.3.221.16455</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Multiplicity adjustments in parallel-group multi-arm trials sharing a control group: Clear guidance is needed</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">F</forename><surname>Molloy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">R</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Nunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">S</forename><surname>Harrison</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.cct.2021.106656</idno>
+		<ptr target="https://doi.org/10.1016/j.cct.2021.106656" />
+	</analytic>
+	<monogr>
+		<title level="j">Contemporary Clinical Trials</title>
+		<imprint>
+			<biblScope unit="page" from="113" to="106656" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Molloy, S. F., White, I. R., Nunn, A. J., Hayes, R., Wang, D., &amp; Harrison, T. S. (2022). Multiplicity adjustments in parallel-group multi-arm trials sharing a control group: Clear guidance is needed. Contemporary Clinical Trials, 113, Article 106656. https://doi.org/10.1016/j.cct.2021.106656</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Non-adjustment for multiple testing in multi-arm trials of distinct treatments: Rationale and justification</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Parker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Weir</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1740774520941419</idno>
+		<ptr target="https://doi.org/10.1177/1740774520941419" />
+	</analytic>
+	<monogr>
+		<title level="j">Clinical Trials</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="562" to="566" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Parker, R. A., &amp; Weir, C. J. (2020). Non-adjustment for multiple testing in multi-arm trials of distinct treatments: Rationale and justification. Clinical Trials, 17(5), 562-566. https://doi.org/10.1177/1740774520941419</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Multiple secondary outcome analyses: Precise interpretation is important</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Parker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Weir</surname></persName>
+		</author>
+		<idno type="DOI">10.1186/s13063-021-05975-2</idno>
+		<ptr target="https://doi.org/10.1186/s13063-021-05975-2" />
+	</analytic>
+	<monogr>
+		<title level="j">Trials</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">27</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Parker, R. A., &amp; Weir, C. J. (2022). Multiple secondary outcome analyses: Precise interpretation is important. Trials, 23(1), Article 27. https://doi.org/10.1186/s13063-021-05975-2</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">What&apos;s wrong with Bonferroni adjustments</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">V</forename><surname>Perneger</surname></persName>
+		</author>
+		<idno type="DOI">10.1136/bmj.316.7139.1236</idno>
+		<ptr target="https://doi.org/10.1136/bmj.316.7139.1236" />
+	</analytic>
+	<monogr>
+		<title level="j">BMJ</title>
+		<imprint>
+			<biblScope unit="volume">316</biblScope>
+			<date type="published" when="1236">1998. 1236</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Perneger, T. V. (1998). What&apos;s wrong with Bonferroni adjustments. BMJ, 316, 1236 https://doi.org/10.1136/bmj.316.7139.1236</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">A practical primer to power analysis for simple experimental designs</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Perugini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gallucci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Costantini</surname></persName>
+		</author>
+		<idno type="DOI">10.5334/IRSP.181</idno>
+		<ptr target="https://dx.doi.org/10.5334/IRSP.181" />
+	</analytic>
+	<monogr>
+		<title level="j">Revue Internationale de Psychologie Sociale</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="23" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Perugini, M., Gallucci, M., &amp; Costantini, G. (2018). A practical primer to power analysis for simple experimental designs. Revue Internationale de Psychologie Sociale, 31(1), 1-23. https://dx.doi.org/10.5334/IRSP.181</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">P2-304: Guidelines for reporting clinical trial methodology research: The seven deadly sins</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Popp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sorantin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Detke</surname></persName>
+		</author>
+		<ptr target="http://dx.doi.org/10.1016%2Fj.jalz.2012.05.1013" />
+	</analytic>
+	<monogr>
+		<title level="j">Alzheimer&apos;s &amp; Dementia</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">4S_Part_10</biblScope>
+			<biblScope unit="page" from="369" to="P370" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Popp, D., Williams, J. B., Sorantin, P., &amp; Detke, M. (2012). P2-304: Guidelines for reporting clinical trial methodology research: The seven deadly sins. Alzheimer&apos;s &amp; Dementia, 8(4S_Part_10), P369-P370. http://dx.doi.org/10.1016%2Fj.jalz.2012.05.1013</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Development and initial validation of a scale to measure cognitive demands of flexible work</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Prem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kubicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Uhlig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Baumgartner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Korunka</surname></persName>
+		</author>
+		<idno type="DOI">10.3389/fpsyg.2021.679471</idno>
+		<ptr target="https://doi.org/10.3389/fpsyg.2021.679471" />
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers in Psychology</title>
+		<imprint>
+			<biblScope unit="page" from="12" to="679471" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Prem, R., Kubicek, B., Uhlig, L., Baumgartner, V., &amp; Korunka, C. (2021). Development and initial validation of a scale to measure cognitive demands of flexible work. Frontiers in Psychology, 12, Article 679471. https://doi.org/10.3389/fpsyg.2021.679471</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Beyond statistical ritual: Theory in psychological science</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Proulx</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">D</forename><surname>Morey</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/17456916211017098</idno>
+		<ptr target="https://doi.org/10.1177/17456916211017098" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="671" to="681" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Proulx, T., &amp; Morey, R. D. (2021). Beyond statistical ritual: Theory in psychological science. Perspectives on Psychological Science, 16(4), 671-681. https://doi.org/10.1177/17456916211017098</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">No adjustments are needed for multiple comparisons</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">J</forename><surname>Rothman</surname></persName>
+		</author>
+		<ptr target="https://www.jstor.org/stable/20065622" />
+	</analytic>
+	<monogr>
+		<title level="j">Epidemiology</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="43" to="46" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rothman, K. J. (1990). No adjustments are needed for multiple comparisons. Epidemiology, 1, 43- 46. https://www.jstor.org/stable/20065622</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">On a heuristic method of test construction and its use in multivariate analysis</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">N</forename><surname>Roy</surname></persName>
+		</author>
+		<idno type="DOI">10.1214/aoms/1177729029</idno>
+		<ptr target="https://doi.org/10.1214/aoms/1177729029" />
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Mathematical Statistics</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="page" from="220" to="238" />
+			<date type="published" when="1953">1953</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Roy, S. N. (1953). On a heuristic method of test construction and its use in multivariate analysis. The Annals of Mathematical Statistics, 24, 220-238. https://doi.org/10.1214/aoms/1177729029</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Do p values lose their meaning in exploratory analyses? It depends how you define the familywise error rate</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rubin</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/gpr0000123</idno>
+		<ptr target="https://doi.org/10.1037/gpr0000123" />
+	</analytic>
+	<monogr>
+		<title level="j">Review of General Psychology</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="269" to="275" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rubin, M. (2017). Do p values lose their meaning in exploratory analyses? It depends how you define the familywise error rate. Review of General Psychology, 21(3), 269-275. https://doi.org/10.1037/gpr0000123</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Does preregistration improve the credibility of research findings?</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rubin</surname></persName>
+		</author>
+		<idno type="DOI">10.20982/tqmp.16.4.p376</idno>
+		<ptr target="https://doi.org/10.20982/tqmp.16.4.p376" />
+	</analytic>
+	<monogr>
+		<title level="j">The Quantitative Methods for Psychology</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="376" to="390" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rubin, M. (2020a). Does preregistration improve the credibility of research findings? The Quantitative Methods for Psychology, 16(4), 376-390. https://doi.org/10.20982/tqmp.16.4.p376</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">A critique of Neyman and Pearson&apos;s responses to Fisher</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rubin</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s13194-020-00309-6</idno>
+		<ptr target="https://doi.org/10.1007/s13194-020-00309-6" />
+	</analytic>
+	<monogr>
+		<title level="j">European Journal for Philosophy of Science</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="1" to="15" />
+			<date type="published" when="2020">2020b</date>
+		</imprint>
+	</monogr>
+	<note>Repeated sampling from the same population?</note>
+	<note type="raw_reference">Rubin, M. (2020b). &quot;Repeated sampling from the same population?&quot; A critique of Neyman and Pearson&apos;s responses to Fisher. European Journal for Philosophy of Science, 10, Article 42, 1-15. https://doi.org/10.1007/s13194-020-00309-6</note>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">There&apos;s no need to lower the significance threshold when conducting single tests of multiple individual hypotheses</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rubin</surname></persName>
+		</author>
+		<idno type="DOI">10.20935/AL610</idno>
+		<ptr target="https://doi.org/10.20935/AL610" />
+	</analytic>
+	<monogr>
+		<title level="j">Academia Letters, Article</title>
+		<imprint>
+			<biblScope unit="volume">610</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rubin, M. (2021a). There&apos;s no need to lower the significance threshold when conducting single tests of multiple individual hypotheses. Academia Letters, Article 610. https://doi.org/10.20935/AL610</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">When to adjust alpha during multiple testing: A consideration of disjunction, conjunction, and individual testing</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rubin</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s11229-021-03276-4</idno>
+		<ptr target="https://doi.org/10.1007/s11229-021-03276-4" />
+	</analytic>
+	<monogr>
+		<title level="j">Synthese</title>
+		<imprint>
+			<biblScope unit="volume">199</biblScope>
+			<biblScope unit="page" from="10969" to="11000" />
+			<date type="published" when="2021">2021b</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rubin, M. (2021b). When to adjust alpha during multiple testing: A consideration of disjunction, conjunction, and individual testing. Synthese, 199, 10969-11000. https://doi.org/10.1007/s11229-021-03276-4</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<monogr>
+		<title level="m" type="main">That&apos;s not a two-sided test! It&apos;s two one-sided tests! Significance</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rubin</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/1740-9713.01619</idno>
+		<ptr target="https://doi.org/10.1111/1740-9713.01619" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="page" from="50" to="53" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rubin, M. (2022). That&apos;s not a two-sided test! It&apos;s two one-sided tests! Significance, 19(2), 50-53. https://doi.org/10.1111/1740-9713.01619</note>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Type I error rates are not usually inflated</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rubin</surname></persName>
+		</author>
+		<idno type="DOI">10.31222/osf.io/3kv2b</idno>
+		<ptr target="https://doi.org/10.31222/osf.io/3kv2b" />
+		<imprint>
+			<date type="published" when="2024-01-03">2024. January 3</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rubin, M. (2024, January 3). Type I error rates are not usually inflated. MetaArXiv https://doi.org/10.31222/osf.io/3kv2b</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Multiple comparisons and related issues in the interpretation of epidemiologic data</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Savitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">F</forename><surname>Olshan</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/oxfordjournals.aje.a117737</idno>
+		<ptr target="https://doi.org/10.1093/oxfordjournals.aje.a117737" />
+	</analytic>
+	<monogr>
+		<title level="j">American Journal of Epidemiology</title>
+		<imprint>
+			<biblScope unit="volume">142</biblScope>
+			<biblScope unit="page" from="904" to="908" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Savitz, D. A., &amp; Olshan, A. F. (1995). Multiple comparisons and related issues in the interpretation of epidemiologic data. American Journal of Epidemiology, 142, 904-908. https://doi.org/10.1093/oxfordjournals.aje.a117737</note>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Senn</surname></persName>
+		</author>
+		<title level="m">Statistical issues in drug development</title>
+		<imprint>
+			<publisher>Wiley</publisher>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+	<note>nd ed.</note>
+	<note type="raw_reference">Senn, S. (2007). Statistical issues in drug development (2nd ed.). Wiley.</note>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Alpha level adjustments for multiple dependent variable analyses and their applicability-A review</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sinclair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Hobbs</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Sports Science Engineering</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="17" to="20" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Sinclair, J., Taylor, P. J., &amp; Hobbs, S. J. (2013). Alpha level adjustments for multiple dependent variable analyses and their applicability-A review. International Journal of Sports Science Engineering, 7, 17-20.</note>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<monogr>
+		<title level="m" type="main">The problem of multiple comparisons</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Tukey</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1953">1953</date>
+			<pubPlace>Princeton University</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Tukey, J. W. (1953). The problem of multiple comparisons. Princeton University.</note>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">On the logic of hypothesis testing in functional imaging</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">E</forename><surname>Turkheimer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Aston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">J</forename><surname>Cunningham</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s00259-003-1387-7</idno>
+		<ptr target="https://doi.org/10.1007/s00259-003-1387-7" />
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Nuclear Medicine and Molecular Imaging</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="page" from="725" to="732" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Turkheimer, F. E., Aston, J. A., &amp; Cunningham, V. J. (2004). On the logic of hypothesis testing in functional imaging. European Journal of Nuclear Medicine and Molecular Imaging, 31, 725-732. https://doi.org/10.1007/s00259-003-1387-7</note>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">When to combine hypotheses and adjust for multiple tests</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Veazie</surname></persName>
+		</author>
+		<ptr target="https://dx.doi.org10.1111%2Fj.1475-6773.2006.00512.x" />
+	</analytic>
+	<monogr>
+		<title level="j">Health Services Research</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">3p1</biblScope>
+			<biblScope unit="page" from="804" to="818" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Veazie, P. J. (2006). When to combine hypotheses and adjust for multiple tests. Health Services Research, 41(3p1), 804-818. https://dx.doi.org10.1111%2Fj.1475-6773.2006.00512.x</note>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">A note on the inconsistency inherent in the necessity to perform multiple comparisons</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wilson</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/h0040447</idno>
+		<ptr target="https://doi.org/10.1037/h0040447" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Bulletin</title>
+		<imprint>
+			<biblScope unit="volume">59</biblScope>
+			<biblScope unit="page" from="296" to="300" />
+			<date type="published" when="1962">1962</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wilson, W. (1962). A note on the inconsistency inherent in the necessity to perform multiple comparisons. Psychological Bulletin, 59, 296-300. https://doi.org/10.1037/h0040447</note>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Peer review: This article been peer reviewed at Methods in Psychology. Acknowledgements: I am grateful to Vinay Tummarakota for discussions that led to my explanation of Confusion IV</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">Peer review: This article been peer reviewed at Methods in Psychology. Acknowledgements: I am grateful to Vinay Tummarakota for discussions that led to my explanation of Confusion IV.</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 1 A Tutorial on Tailored Simulation-Based Sample-Size Planning for Experimental Designs with Generalized Linear Mixed Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Florian</forename><surname>Pargent</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">LMU Munich</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Timo</forename><forename type="middle">K</forename><surname>Koch</surname></persName>
+							<email>timo.koch@unisg.ch</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">LMU Munich</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Institute of Behavioral Science &amp; Technology</orgName>
+								<orgName type="institution">University of St</orgName>
+								<address>
+									<settlement>Gallen</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Anne-Kathrin</forename><surname>Kleine</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">LMU Munich</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Eva</forename><surname>Lermer</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">LMU Munich</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="department">Department of Business Psychology</orgName>
+								<orgName type="institution">Technical University of Applied Sciences Augsburg</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Susanne</forename><surname>Gaube</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">LMU Munich</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="department">Institute of Behavioral Science &amp; Technology</orgName>
+								<orgName type="institution" key="instit1">UCL Global Business School for Health</orgName>
+								<orgName type="institution" key="instit2">University College London</orgName>
+								<orgName type="institution" key="instit3">University of St</orgName>
+								<address>
+									<addrLine>Torstrasse 25</addrLine>
+									<postCode>9000</postCode>
+									<settlement>Gallen St. Gallen</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 1 A Tutorial on Tailored Simulation-Based Sample-Size Planning for Experimental Designs with Generalized Linear Mixed Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">2A312641583339569F354A5D9FC5C9B5</idno>
+					<idno type="DOI">10.31234/osf.io/rpjem</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>formal analysis, methodology, visualization, writing, editing</term>
+					<term>Timo K. Koch: conceptualization, formal analysis, writing, editing</term>
+					<term>Anne-Kathrin Kleine: formal analysis, editing</term>
+					<term>Eva Lermer: conceptualization, funding acquisition, editing</term>
+					<term>Susanne Gaube: conceptualization, supervision, editing tutorial, sample size planning, generalized linear mixed model, power analysis, precision, data simulation</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>rpjem. All materials (reproducible manuscript, including R code and all simulation results) are available in the project's repository on the Open Science Framework (OSF) at <ref type="url" target="https://osf.io/dhwf4/">https://osf.io/dhwf4/</ref>. A Quarto Manuscripts website is hosted at <ref type="url" target="https://Timo-Ko.github.io/glmm_simulation_tutorial/">https://Timo-Ko.github.io/glmm_simulation_tutorial/</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>When planning experimental research, it is essential to determine an appropriate sample size and use appropriate statistical models to analyze the data to ensure that the results are robust and informative <ref type="bibr">(Lakens, 2022a)</ref>. The recent replication crisis in Psychology and other disciplines has illustrated many challenges surrounding the reproducibility and reliability of study findings <ref type="bibr" target="#b72">(Yarkoni, 2022)</ref>. As a result, there is a growing need for more rigorous statistical methodology and the adoption of adequately powered experimental designs.</p><p>Multiple easy-to-use software solutions exist for simple statistical models and experimental designs <ref type="bibr" target="#b16">(Champely, 2020;</ref><ref type="bibr" target="#b44">Lakens &amp; Caldwell, 2021)</ref>. A priori sample size planning for more complex research designs such as flexible generalized linear mixed models (GLMM) is not covered by standard software solutions. Researchers willing to use this framework will need to use data simulation. In the present work, we provide a tutorial on how to determine adequate sample sizes by performing tailored simulation-based sample size planning for GLMMs. After introducing some theoretical background on sample size planning, we review existing software solutions in R and discuss under which circumstances tailored data simulations are necessary.</p><p>We proceed by describing the relevant steps and decisions involved in tailored data simulation, illustrated in a case study where we focus on a binomial GLMM with two random intercepts and discrete predictor variables.</p><p>To benefit most of this tutorial paper, we recommend readers to familiarize themselves with basic statistical concepts like hypothesis tests (HTs) and their statistical power as well as confidence intervals (CIs) and their precision <ref type="bibr" target="#b38">(Kumle et al., 2021;</ref><ref type="bibr" target="#b41">Lakens, 2022b;</ref><ref type="bibr" target="#b61">Riesthuis, 2024)</ref>. Some knowledge of causal inference is beneficial but not necessary <ref type="bibr" target="#b21">(Deffner et al., 2022;</ref><ref type="bibr" target="#b50">Lundberg et al., 2021)</ref>. In addition, readers should have an understanding of how to conduct statistical analyses with R <ref type="bibr" target="#b71">(Wickham et al., 2023)</ref> and how to simulate data <ref type="bibr" target="#b20">(DeBruine &amp; Barr, 2021;</ref><ref type="bibr" target="#b29">Hallgren, 2013;</ref><ref type="bibr" target="#b48">Lee et al., 2020)</ref>. For data simulation, we use functions from the tidyverse <ref type="bibr" target="#b70">(Wickham et al., 2019)</ref> and the faux package <ref type="bibr" target="#b19">(DeBruine, 2023)</ref>. Finally, readers should have a basic understanding of regression modeling and GLMMs <ref type="bibr" target="#b9">(Brown, 2021)</ref>. In this tutorial, we simulate data by manually specifying the model equation of a GLMM that represents our assumed data-generating process <ref type="bibr" target="#b20">(DeBruine &amp; Barr, 2021)</ref>. It is not necessary to understand the technical details of how GLMMs are estimated. However, it is crucial to understand the structure of a basic GLMM (e.g., logistic regression with random intercepts) and how the model assumes that the dependent variable's values are determined by the predictor variables and the random effects.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Theoretical background</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Planning for statistical power or precision</head><p>Conducting research with insufficiently large sample sizes can have many negative consequences <ref type="bibr" target="#b13">(Button et al., 2013)</ref>. First, experiments may yield inconclusive or misleading results, hindering the accumulation of knowledge. Second, studies that are doomed never to find a postulated effect waste resources by consuming time, effort, and funding. For these reasons, many journals and funding bodies now require a sample size justification in study protocols and grant proposals, recognizing its relevance in ensuring robust and meaningful findings. While sample sizes can be justified with resource constraints or general heuristics, statistical arguments based on power or precision are the gold standard <ref type="bibr">(Lakens, 2022a)</ref>.</p><p>Most empirical studies in psychology and other social sciences apply hypothesis testing. Consequently, the dominant approach for determining an adequate sample size is based on power analysis (i.e., planning for power) <ref type="bibr">(Lakens, 2022a;</ref><ref type="bibr" target="#b54">Maxwell et al., 2008)</ref>.</p><p>Statistical power is defined as the probability that a HT has a significant p-value when analyzing repeated samples from a population with a true effect of some pre-specified size <ref type="bibr" target="#b17">(Cohen, 1992)</ref>. Less formally, power is described as the probability that a HT correctly rejects the null hypothesis when the alternative hypothesis is true. If the sample size (i.e., the number of participants and/or stimuli) is insufficient to detect the effects or relationships being investigated with high probability, the study is considered "underpowered". When planning for power, a target is set for the statistical power of a HT of interest. Assuming an effect size of interest and a desired significance level, a minimum sample size can be determined that, on average, would guarantee reaching this target. The most prominent heuristic is to target a power of 1 -𝛽 = 0.8 in combination with a type I error rate of 𝛼 = 0.05 <ref type="bibr">(Lakens, 2022a)</ref>.</p><p>However, depending on the research goals or resource constraints, there are often good reasons to move away from this standard <ref type="bibr" target="#b5">(Benjamin et al., 2017;</ref><ref type="bibr">Lakens, Adolfi, et al., 2018)</ref>. <ref type="foot" target="#foot_0">1</ref>In contrast to power analysis, sample size planning can also be based on the precision of parameter estimates (i.e., planning for precision or planning for accuracy) <ref type="bibr">(Lakens, 2022a;</ref><ref type="bibr" target="#b54">Maxwell et al., 2008)</ref>. Not all research questions are best answered by hypothesis testing. It has been argued that basic research rarely requires discrete decisions on whether some effect has been "discovered" and should thus shift from hypothesis testing towards an estimation framework <ref type="bibr" target="#b18">(Cumming, 2014;</ref><ref type="bibr" target="#b37">Kruschke &amp; Liddell, 2018;</ref><ref type="bibr" target="#b55">McElreath, 2020)</ref>, although this view is not without critique <ref type="bibr" target="#b66">(Uygun Tunç et al., 2023)</ref>. When no HTs are conducted, power analysis is not relevant for sample size planning. In the precision framework, the target quantity commonly used for sample size planning is the expected width of a CI <ref type="bibr" target="#b35">(Kelley &amp; Rausch, 2006;</ref><ref type="bibr">Lakens, 2022a;</ref><ref type="bibr" target="#b54">Maxwell et al., 2008)</ref>. A CI with a confidence level of 0.95 provides the smallest interval with the property that 95% of individual CIs would include the true quantity of interest upon repeated sampling. Thus, a narrow CI with fewer plausible values for the quantity of interest is more informative about the size of the true effect than a wide CI. Apart from the confidence level, the width of a CI depends on the sample size. Because bigger samples carry more information, they lead to smaller CIs. When planning for precision, a target can be set for the expected width of a CI of interest. Assuming some effect size of interest and a certain confidence level, a minimum sample size can be determined that would guarantee reaching the targeted expected width. Because planning for precision is still rare, there are no common heuristics for choosing the desired width of the CI <ref type="bibr">(Lakens, 2022a)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generalized linear mixed models (GLMMs)</head><p>As study designs become more complex, psychological researchers require more sophisticated statistical models to capture their nuanced relationships and grouping structures <ref type="bibr" target="#b72">(Yarkoni, 2022)</ref>. GLMMs (also called multilevel models) are gaining popularity because they offer great flexibility when applied carefully <ref type="bibr" target="#b9">(Brown, 2021;</ref><ref type="bibr" target="#b53">Matuschek et al., 2017;</ref><ref type="bibr" target="#b56">Meteyard &amp; Davies, 2020)</ref>. GLMMs are an extension of LMMs (Linear Mixed Models), which are, in turn, extensions of linear regression models that account for correlated data, including hierarchical structures <ref type="bibr" target="#b7">(Bolker, 2015;</ref><ref type="bibr" target="#b25">Fahrmeir et al., 2021)</ref>. In this context, correlated data means that the value in the outcome variable for one observation may be related to the value of another observation in a systematic way that is not already accounted for by the usual (fixed) predictor variables (e.g., the age of participants). This correlation can arise for various reasons: For instance, responses to some stimuli from some participants might be more similar because the same person was measured multiple times (repeated measurements), participants belong to the same group (clustering), or participants responded to the same stimulus (stimulus effects). Thus, modeling such correlations is important whenever the data has a clear structure, while the grouping variables can be hierarchically nested (e.g., grouping variables students and schools: each student belongs to exactly one school) or cross-classified (e.g., grouping variables students and math exercises: each student is presented with several math exercises).</p><p>LMMs are used when the outcome variable is continuous and follows a normal distribution (after conditioning on all predictor variables). They allow for the modeling of fixed effects, which capture the relationships between the usual predictors and the outcome, as well as random effects, which account for the different types of correlation structure and grouping effects. Random effects are typically assumed to follow a normal distribution with a mean of zero and a variance that quantifies the heterogeneity across groups. Correlated random effects can be assumed in models that contain both random intercepts and random slopes. GLMMs extend the LMM framework to accommodate non-normally distributed continuous and categorical outcome variables. GLMMs involve a link function that connects the linear combination of predictor variables to the expected value of the outcome variable. The link function allows for modeling the relationship between predictors and the outcome in a non-linear way that is appropriate for the specific distribution family of the outcome variable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Simulation-based sample size planning with GLMMs</head><p>To our knowledge, existing approaches for sample size planning for GLMMs have exclusively focused on planning for power. In Table <ref type="table">1</ref>, we review available software packages that can be used to perform power analysis for multilevel models in R <ref type="bibr">[Version 4.3.3;</ref><ref type="bibr">R Core Team (2024)</ref>]. Power analysis methods can be categorized into formula-based, summary-statistics-based and simulation-based methods <ref type="bibr" target="#b58">(Murayama et al., 2022)</ref>.</p><p>Formula-based methods rely on exact formulas to calculate power directly. Summary-statistics-based methods use statistical theory to approximate power based on formula-based methods developed for simple t-tests. Simulation-based methods rely on repeatedly simulating data with a known true effect size and estimating power empirically, that is what percentage of simulated datasets produces a significant p-value. Available formula-based and summary-statistics-based software packages for multilevel models often do not include GLMMs or are limited to simple designs <ref type="bibr" target="#b58">(Murayama et al., 2022;</ref><ref type="bibr" target="#b69">Westfall et al., 2014)</ref>, making it necessary to build data simulations tailored specifically to the study design.</p><p>A number of tutorials have been published describing how to perform such simulation-based power analysis for multilevel models <ref type="bibr" target="#b2">(Arend &amp; Schäfer, 2019;</ref><ref type="bibr" target="#b10">Brysbaert &amp; Stevens, 2018;</ref><ref type="bibr" target="#b20">DeBruine &amp; Barr, 2021;</ref><ref type="bibr" target="#b28">Green &amp; MacLeod, 2016;</ref><ref type="bibr" target="#b33">Johnson et al., 2015;</ref><ref type="bibr" target="#b34">Kain et al., 2015;</ref><ref type="bibr" target="#b38">Kumle et al., 2021;</ref><ref type="bibr" target="#b39">Lafit et al., 2021;</ref><ref type="bibr" target="#b75">Zimmer et al., 2023)</ref>. However, many of these tutorials focus on LMMs and the most common study designs (see <ref type="bibr" target="#b38">Kumle et al., 2021</ref> for a tutorial that also covers more advanced settings). This narrow focus provides limited guidance for researchers using more complex study designs, especially when little prior knowledge about plausible effect sizes is available (see the discussion in <ref type="bibr" target="#b38">Kumle et al., 2021)</ref>. Simulation-based power analysis with GLMMs requires making a range of assumptions about the model structure that should align with the characteristics of the data being analyzed. Existing tutorials often rely on heuristics for specifying variance components (e.g., the standard SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 9 deviation of random intercepts) or assume that results from meta-analyses or data from pilot studies are available to determine plausible values for all model parameters. However, in practice, knowledge about those parameters from prior studies is often limited, which makes specifying assumptions a practical challenge (see the discussion in <ref type="bibr" target="#b54">Maxwell et al. (2008)</ref> and <ref type="bibr" target="#b38">Kumle et al. (2021)</ref>). We will discuss a number of strategies on how to specify model parameters for application-specific, tailored data simulations in a later section.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 1</head><p>Overview of software packages for power analysis for (generalized) linear mixed models in R.</p><p>Package name Summary GUI available GLMM support Design limitations Reference glmmrBase Formula-and simulation-based power analysis; non-linear fixed effects and flexible covariance functions no yes none Watson (2023) longpower Formula-based power analysis; focus on longitudinal data yes no limited set of study designs with two levels Iddi &amp; Donohue (2022) mixedpower Simulation-based power analysis; based on 'lme4' package no yes none Kumle et al. (2021) mlmpower Simulation-based power analysis; missing data mechanisms no no limited to two levels Enders et al. (2023) Package name Summary GUI available GLMM support Design limitations Reference pamm Simulation-based power analysis; based on 'lme4' package no no none Martin et al. (2011) pass.lme Formula-based power analysis; limited documentation no no none Yu (2019) PowerAnalysisIL Simulation-based power analysis; focus on longitudinal data yes no limited set of study designs with two levels Lafit et al. (2021) powerlmm Simulation-based power analysis; missing data mechanisms; focus on longitudinal data yes no limited set of study designs with two or three levels Magnusson et al. (2018) simglm Simulation-based power analysis; missing data mechanisms yes yes limited to two or three levels LeBeau (2019) simr Simulation-based power analysis; based on 'lme4' package no yes none Green &amp; MacLeod (2016) summary_statistics based_power Summary-statistics-based power analysis; based on 'pwr' package yes yes limited set of study designs with two levels Murayama et al. (2022) Package name Summary GUI available GLMM support Design limitations Reference WebPower Formula-based power analysis; based on 'longpower' package; focus on longitudinal data yes no limited set of study designs with two levels Zhang &amp; Yuan (2018)</p><p>Note. GUI available = whether a graphical user interface is provided (usually a Shiny app that is available online or can be downloaded to run locally), GLMM support = whether power analysis can be performed for generalized linear mixed model (otherwise only linear mixed models are supported), Design limitations = whether only a limited selection of study designs can be specified (otherwise arbitrary designs within the model class are supported).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reasons to use tailored data simulation</head><p>Performing tailored simulation-based sample size planning is more complicated and time-consuming than using the existing software tools outlined in Table <ref type="table">1</ref>. Circumstances under which tailored simulation-based sample size planning is necessary include 1) complex study designs, 2) complex statistical hypotheses, 3) planning for precision, and 4) lack of prior studies or pilot data.</p><p>First, requirements of real-world studies are often more complex than the simplified designs assumed by many user-friendly software packages for sample size planning. One frequent issue in applied data analysis is missing data <ref type="bibr" target="#b49">(Little &amp; Rubin, 2014)</ref>. Missings can be completely random (e.g., an electronic measurement device randomly failed for technical reasons), depend on some attributes also measured in the dataset (e.g., older subjects refuse answering a question on income), or be caused by the measured attribute itself (e.g., wealthy people refuse to report their income). Moreover, many experimental designs contain conditions in which values of the predictor variables are missing by design. This can make data analysis more complicated because predictors have to be coded in specific ways that prevent the estimated GLMM from becoming unidentified. Whether missing data has an effect on the sample size planning depends on our theoretical assumptions on how the missingness is caused. However, it is often challenging to decide whether missing data can be safely ignored in the data analysis and sample size planning process based on a merely theoretical approach <ref type="bibr" target="#b27">(Gomila &amp; Clark, 2022)</ref>. Tailored simulation-based approaches offer the possibility to include the assumed process of how data become missing in the data simulation, thereby determining the required sample size based on simulated datasets that contain missing values (for example, see <ref type="bibr" target="#b46">Lane &amp; Hennes, 2018)</ref>. As a by-product, the simulated datasets can also be used to test whether the intended data analysis provides the expected (unbiased) results, despite the missing data. Although GLMMs can handle a large variety of outcome variables, researchers are becoming increasingly aware that many datasets might profit from even more sophisticated models. Common examples are zero-inflated outcomes, censoring, and nonlinear predictor effects that can be modeled with the R packages glmmTMB <ref type="bibr" target="#b8">(Brooks et al., 2017)</ref> or brms <ref type="bibr" target="#b12">(Bürkner, 2018)</ref>. Tailored simulation-based approaches do not share the same limitations as the existing software solutions for power analysis that focus exclusively on GLMMs. As long as there is a software package available to estimate the model of interest, it is always possible to perform tailored simulation-based sample size planning.</p><p>Second, the most common hypotheses tested in psychological research are of the type 𝐻 0 : 𝛽 = 0, where 𝛽 is a slope or intercept of a regression model. However, many research questions in psychology actually require testing more complex statistical hypotheses. In the new era of preregistration and registered reports <ref type="bibr" target="#b15">(Chambers &amp; Tzavella, 2022)</ref>, most research questions should be tested with directed hypotheses because good theories at least postulate whether some psychological effect of interest is positive or negative. Even better theories should be able to specify the smallest effect sizes of interest (SESOI) that must be exceeded if the effect has any practical relevance <ref type="bibr" target="#b45">(Lakens, Scheel, et al., 2018)</ref>. This might require a test such as 𝐻 0 : 𝛽 ≤ 0.1. More elaborate research questions often require testing hypotheses that consist of a combination of model parameters, for example, testing simple slopes <ref type="bibr" target="#b59">(Preacher et al., 2006)</ref> with a hypothesis such as 𝐻 0 : 𝛽 0 + 𝛽 1 ≤ 0. If the research question consists only of a single hypothesis of this sort, it might be possible to reduce the hypothesis to a single regression coefficient by clever coding and/or centering of predictor variables. However, research questions often consist of combined hypotheses that consist of more than one separate statistical hypothesis (for a tutorial on contrast analysis in GLMMs, see <ref type="bibr" target="#b64">Schad et al., 2020)</ref>.</p><p>For example, a combined null hypothesis 𝐻 0 might consist of two single null hypotheses</p><formula xml:id="formula_0">𝐻 01 : 𝛽 1 ≤</formula><p>0 and 𝐻 02 : 𝛽 0 + 𝛽 1 ≤ 0. For some research questions, the combined null hypothesis 𝐻 0 would be rejected if both 𝐻 01 AND 𝐻 02 are rejected. For other research questions, the combined null hypothesis 𝐻 0 would be rejected if 𝐻 01 OR 𝐻 02 OR both are rejected. If the global hypothesis 𝐻 0 is combined with a logical OR, the p-values of the single hypotheses must be corrected for multiple testing to avoid 𝛼-inflation for the global hypothesis (Dmitrienko &amp; D'Agostino, 2013). However, if the global hypothesis 𝐻 0 is combined with a logical AND, a correction for multiple testing is not necessary but rather a mistake that unnecessarily reduces the power of the global HT. None of the software packages for sample size planning in Table 1 can handle combined hypotheses and only some can handle directed hypotheses. In contrast, our case study will demonstrate how we can test directed combined hypotheses with tailored simulation-based sample size planning.</p><p>Third, all available software packages for sample size planning with GLMMs are based on power analysis and do not support planning for precision. Thus, researchers that want to apply an estimation strategy instead of testing statistical hypotheses <ref type="bibr" target="#b18">(Cumming, 2014)</ref>, currently cannot use the software packages outlined in Table <ref type="table">1</ref>. However, tailored simulation-based sample size planning can easily handle the planning for precision approach <ref type="bibr" target="#b54">(Maxwell et al., 2008)</ref>. The only change in procedure is that instead of computing HTs for each simulated dataset and estimating statistical power across repetitions, CIs are computed for each simulated dataset, and their expected width is estimated.</p><p>Fourth, all frameworks for sample size planning require the user to make assumptions about the expected effect size. Assuming the true effect is of this size (or greater), one can compute the (minimum) power of a HT or the (maximum) expected width of a CI. Existing software packages for sample size planning for GLMMs usually require to provide the assumed effect in the unit of some standardized measure of effect size. When the researcher has access to similar studies or pilot data, providing such standardized effect sizes is feasible.</p><p>However, choosing effect sizes based on small pilot studies is generally not recommended, as those estimates can be heavily biased <ref type="bibr" target="#b0">(Albers &amp; Lakens, 2018;</ref><ref type="bibr">Lakens, 2022a)</ref>. Providing an informed standardized effect size can be an almost impossible challenge when no prior studies or pilot data are available. This problem is further exacerbated by the fact that GLMMs are so flexible that general heuristics of what should be considered a small effect do not exist or are difficult to defend. In the absence of prior evidence, using domain knowledge to construct a tailored data simulation is considered the best solution to determine plausible effect sizes (see scenario 3 in <ref type="bibr" target="#b38">Kumle et al., 2021)</ref>. It would be possible to use these tailored simulations to compute standardized effect sizes that could then be inserted in existing software packages for sample size planning. However, we would argue that when tailored data simulations are necessary to determine effect sizes anyway, performing the whole sample size planning in a customized way is preferred over using the existing software packages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>General steps in tailored simulation-based sample size planning</head><p>Although the details differ for each study, every tailored simulation-based sample size planning requires a series of steps and decisions. We will introduce each step in a theoretical section, followed by the practical application based on a case study. To keep the tutorial manageable, we focus on a binomial GLMM with two random intercepts and discrete predictor variables. All code in this manuscript and simulation results are available on the Open Science Framework (<ref type="url" target="https://osf.io/dhwf4/">https://osf.io/dhwf4/</ref>) and on our tutorial website (<ref type="url" target="https://timo-ko.github.io/glmm_simulation_tutorial/">https://timo-ko.github.io/glmm_simulation_tutorial/</ref>).</p><p>Step 1: Define the estimand</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>THEORY</head><p>The first step in every research process is a clear definition of the theoretical estimand <ref type="bibr" target="#b50">(Lundberg et al., 2021)</ref>, i.e. the theoretical quantity which is necessary to answer a specific research question. The estimand consists of a quantity that can be described for each unit under investigation and a clear definition of the target population, for which the quantity is of interest. For example, an estimand might be the probability that a clinical psychologist makes the correct diagnosis for a psychiatric patient with major depression, averaged across all clinical psychologists and depressed patients in psychiatric institutions in a given country.</p><p>The estimand should always be defined outside of any statistical model, because there are usually a range of statistical methods that can be used to estimate the same estimand, depending on the study design (e.g., a randomized experiment) that will produce the observed data in the planned study. For many common research questions in psychology, it is possible to express the estimand as a statistical quantity that can be estimated with a regression model, for example a single 𝛽 coefficient. However, this is not possible for all estimands, which is why the literature discusses many estimation strategies beyond regression <ref type="bibr" target="#b21">(Deffner et al., 2022;</ref><ref type="bibr" target="#b50">Lundberg et al., 2021)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PRACTICE</head><p>In the present case study, we consider the effectiveness of feedback provided by an artificial intelligence (AI) embedded in a clinical decision support system. The context is a clinical setting, where task experts (i.e., radiologists), and non-expert (i.e., medical students) must detect bleedings based on head scans from computer tomography (CT). The AI model can provide initial diagnostic advice, which can be used as guidance by the humans who are required to make the final diagnostic decision. The research goal is to validate the effectiveness of the AI-enabled advice. We consider the AI-enabled advice effective, if the following pattern holds:</p><p>We expect that for BOTH radiologists and medical students, correct AI advice leads to a higher probability of accurately diagnosing a CT scan compared to no AI advice presented, AND, we expect that for BOTH task experts and non-experts, incorrect advice leads to a lower probability of accurately diagnosing a CT scan compared to no advice presented.</p><p>It becomes clear that our estimand consists of four comparisons between experimental conditions <ref type="bibr" target="#b50">(Lundberg et al., 2021)</ref>. However, the verbal description is still somewhat vague, which is why we try to give a more precise expression for each comparison:</p><p>𝑃(correct diagnosis|correct advice, average expert, average scan)</p><p>-𝑃(correct diagnosis|no advice, average expert, average scan)</p><p>𝑃(correct diagnosis|no advice, average expert, average scan)</p><p>-𝑃(correct diagnosis|incorrect advice, average expert, average scan)</p><p>𝑃(correct diagnosis|correct advice, average student, average scan)</p><p>-𝑃(correct diagnosis|no advice, average student, average scan)</p><p>𝑃(correct diagnosis|no advice, average student, average scan)</p><p>-𝑃(correct diagnosis|incorrect advice, average student, average scan)</p><p>For example, the first expression is concerned with the difference between the probability that a correct diagnosis is made if correct AI advice is presented and the probability that a correct diagnosis is made if no AI advice is presented. This contrast is quantified for a hypothetical typical expert and a typical scan, where typical is usually defined as an average score on all attributes of the expert or scan.<ref type="foot" target="#foot_2">foot_2</ref> To complete our definition of the estimand, we have to define our target population that consists of persons, stimuli, and AI advice: With respect to persons, we are only interested in experts (i.e., radiologists) and non-experts (i.e., medical students).</p><p>With respect to stimuli, we are only interested in the head CT scans made from subjects that do or do not suffer from intracerebral hemorrhage. Lastly, we are only interested in AI advice</p><p>given by a specific AI-enabled system.</p><p>Although the estimand is initially defined outside of a statistical model, it is only useful if we find a way to estimate it based on observed data. For our exemplary research question, it is possible to construct an experimental study where all participants are confronted with the same set of head CT scans, but the kind of AI advice given for each scan is randomly assigned within participants. This random intervention allows us to produce an empirical estimate of our estimand, although, in reality, each person receives only one kind of AI advice (correct advice, incorrect advice, no advice at all) for each scan. We will see later how each of the probability expressions in our estimand can be modeled with the same GLMM. Estimating this GLMM based on the data observed in our planned study will produce an estimate for each probability, and these estimates can then be combined to compute an estimate for each of the four probability contrasts. For pedagogical reasons, we will skip the concrete definition of our estimate until we have discussed how to simulate data based on a concrete GLMM in the next section.</p><p>Step 2: Simulate the data-generating process</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>THEORY</head><p>When the estimand has been defined, the next step in the research process is to write code that simulates the data-generating process of the planned study. This requires specifying a generative process for all predictor variables used in the final data analysis. Realistic assumptions can be quite challenging for observational studies or continuous predictor variables, which is beyond the scope of this tutorial. However, this step is much easier for experimental studies with only categorical predictor variables because the distribution of predictors is fixed by the study design. When all predictor variables have been simulated, one can use the structure of a suitable GLMM to simulate the dependent variable. To simulate the GLMM, one requires plausible values for all model parameters. We will discuss strategies on how these values can be obtained later. Because we have full control over the data-generating process in a tailored simulation, it is possible to model specific aspects of the planned study, like data missing by design or assuming that some subjects might drop out. The quality of the results of the sample size planning crucially depends on the plausibility of the simulated data-generating process. If the simulated data generating process is less complex than the true process, one can expect that sample size planning underestimates the required sample size and the planned analysis has inflated type I error rates <ref type="bibr" target="#b53">(Matuschek et al., 2017)</ref>. However, <ref type="bibr" target="#b53">Matuschek et al. (2017)</ref> have also shown in simulations with LMMs that while fitting maximal models (i.e. that include all possible random effects) safeguards against inflated type I error rates, this can lead to a great loss in power if the variance in the random effects is actually small. Thus, we argue that even a simplified data-generating process (e.g., only a small number of interaction effects; only random intercepts, and no random slopes; assuming that data is missing completely at random) that is only plausible under idealized circumstances, can yield informative results and is preferred over performing no systematic sample size planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PRACTICE</head><p>In our case study, radiologists and students review a series of head CT scans to assess the presence of a bleeding. An AI model provides initial diagnostic advice to assist their decision-making. In the control condition, no AI advice is presented. When AI advice is given, this advice can be either correct or incorrect. The type of advice (no advice, incorrect advice, correct advice) is randomized within subjects across CT scans. After reviewing a CT scan, participants deliver a diagnosis (bleeding or no bleeding), which may be either accurate or inaccurate. This experimental design introduces some missing values by design since the advice is neither correct nor incorrect when no advice is present, which must be taken into account when simulating and analyzing the data. In this example, recruiting task experts (i.e., radiologists) is more challenging due to their limited availability, while non-experts (i.e., students) are more readily accessible. The goal of simulation-based sample size planning is to determine how many task experts and non-experts must be recruited to achieve sufficient statistical power or precision in the planned experiment.</p><p>Our specific GLMM. In a GLMM, the expected value of the dependent variable 𝑌 conditioned on the vector of predictor variables X and random effects U, transformed by a link function 𝑔() is modeled as a linear combination 𝜂 of the predictor variables X, the random effects U, and the model parameters 𝛽 <ref type="bibr" target="#b25">(Fahrmeir et al., 2021)</ref>:</p><formula xml:id="formula_1">𝑔(𝐸 (𝑌 |X = x, U = u)) = 𝜂</formula><p>Equivalently, the conditional expected value is modeled as the linear combination 𝜂, transformed by the inverse link function 𝑔 -1 ():</p><formula xml:id="formula_2">𝐸 (𝑌 |X = x, U = u) = 𝑔 -1 (𝜂)</formula><p>If the dependent variable (i.e., diagnostic decision) 𝑌 is a binary variable with values 0 (i.e., inaccurate), or 1 (i.e., accurate), the conditional expected value is equivalent to the probability:</p><formula xml:id="formula_3">𝑃 𝑠𝑖 := 𝑃(𝑌 = 1|X = x, U = u)</formula><p>In our case study, 𝑃 𝑠𝑖 is the conditional probability that subject 𝑠 gives the correct response to item (i.e., CT scan) 𝑖.</p><p>In such a setting, we model this probability as</p><formula xml:id="formula_4">𝑃 𝑠𝑖 = inverse_logit(𝜂 𝑠𝑖 ) with the inverse-logit link 𝑔 -1 (𝜂 𝑠𝑖 ) = inverse_logit(𝜂 𝑠𝑖 ) = exp(𝜂 𝑠𝑖 ) 1+exp(𝜂 𝑠𝑖 ) or equivalently logit(𝑃 𝑠𝑖 ) = 𝜂 𝑠𝑖 with the logit link 𝑔(𝑃 𝑠𝑖 ) = logit(𝑃 𝑠𝑖 ) = ln( 𝑃 𝑠𝑖 1-𝑃 𝑠𝑖 ).</formula><p>In our case study, the probability of making an accurate diagnostic decision is assumed to depend on the predictors:</p><p>• 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 𝑠𝑖 : whether subject 𝑠 was presented with AI advice (1) or not (0) when asked to assess item 𝑖</p><p>• 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 𝑠𝑖 : whether this advice was correct (1) or not (0)</p><p>• 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 : whether subject 𝑠 was a task expert (1) or not (0) and the random effects:</p><p>• 𝑢 0𝑠 : the deviation of subject 𝑠 from the average ability to solve an item (i.e., CT scan) with average difficulty; assumed to be distributed as 𝑢 0𝑠 ∼ 𝑁 (0, 𝜎 2 𝑆 ) • 𝑢 0𝑖 : the deviation of item (i.e., CT scan) 𝑖 from the average difficulty to be solved by a person with average ability; assumed to be distributed as 𝑢 0𝑖 ∼ 𝑁 (0, 𝜎 2 𝐼 )</p><p>In total, we assume the model</p><formula xml:id="formula_5">logit[𝑃 𝑠𝑖 ] = (𝛽 0 + 𝑢 0𝑠 + 𝑢 0𝑖 ) + 𝛽 𝑎 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 𝑠𝑖 + 𝛽 𝑐 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 𝑠𝑖 + 𝛽 𝑒 • 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 + 𝛽 𝑒𝑎 • 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 𝑠𝑖 + 𝛽 𝑒𝑐 • 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 𝑠𝑖</formula><p>or equivalently</p><formula xml:id="formula_6">𝑃 𝑠𝑖 = inverse_logit[(𝛽 0 + 𝑢 0𝑠 + 𝑢 0𝑖 ) + 𝛽 𝑎 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 𝑠𝑖 + 𝛽 𝑐 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 𝑠𝑖 + 𝛽 𝑒 • 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 + 𝛽 𝑒𝑎 • 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 𝑠𝑖 + 𝛽 𝑒𝑐 • 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 𝑠𝑖 ] SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 20</formula><p>with model parameters 𝛽 0 , 𝛽 𝑒 , 𝛽 𝑎 , 𝛽 𝑐 , 𝛽 𝑒𝑎 , 𝛽 𝑒𝑐 , 𝜎 𝑆 , and 𝜎 𝐼 .</p><p>In the GLMM literature, this would be called a binomial GLMM with two random intercepts (for subjects and items), two level-1 predictors (𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡), one level-2 predictor (𝑒𝑥 𝑝𝑒𝑟𝑡) and two cross-level interactions (𝑒𝑥 𝑝𝑒𝑟𝑡 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡, 𝑒𝑥 𝑝𝑒𝑟𝑡 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡). To limit complexity, we do not consider random slopes, additional predictors, or higher-level interactions.</p><p>Simulation function in R. The following R function simulates a full dataset structured according to the design of our case study. (which we will explain in the next section) and load the packages we use to manipulate and simulate data. <ref type="foot" target="#foot_3">3</ref> In our case study, each subject (n_subjects in total) is assumed to respond to each item (i.e., CT scan; n_items in total). Thus, the add_random command creates a fully-crossed data.frame with n_subjects × n_items rows. We add a between-subject effect with the add_between command, simulating that about 25% of subjects are experts.</p><p>The next two lines simulate that in 2 3 of trials, subjects will be presented with AI advice, and if advice is presented, the advice will be correct in about 80% of cases (the variable advice_correct is always 0 when no advice is presented). Next, we simulate one random effect for each subject (u0s) and for each item (u0i). As assumed by standard GLMMs, the add_ranef function draws the random effects from a normal distribution with a mean 0 and a standard deviation specified by the user. With all design variables done, we are ready to simulate our model equation outlined in the last section. The linear predictor variable linpred (𝜂 in the GLMM model equations) combines the predictor variables, random effects, and model parameters as assumed by our model. We then transform the linear predictor with the inverse-link function to compute y_prob, the probability that the subject correctly solved the item (in R, the inverse-logit link is computed with plogis and the logit link with qlogis).</p><p>In the final step, we simulate the binary dependent variable y_bin (i.e., whether the subject makes an accurate diagnostic decision for the CT scan) by -for each trial -drawing from a Bernoulli distribution with success probability y_prob.</p><p>Step 3: Specify the population parameters</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>THEORY</head><p>Population parameters are all model parameters estimated in a GLMM, in particular the regression coefficients of the fixed effects and the standard deviation of the random effects (and the correlation between random effects in more complicated models). In the absence of previous studies with the same design or pilot data, strategies to specify population parameters will always require access to some domain knowledge. In our experience, research teams for projects where tailored simulation-based sample size planning is necessary typically consist of analysts (who are primarily responsible for study design and statistical analysis), and domain experts (who often provide the original research question and are responsible for data collection). In smaller projects, analysts and domain experts might be the same persons. In these research settings, a broad review of the available literature typically plays a more important role. Because most domain knowledge can only be expressed in unstandardized measurement units of a specific application, we argue that unstandardized effect sizes are usually preferable over standardized effect sizes for tailored simulation-based sample size planning. The basic idea of all strategies is to quantify or visualize the data-generating process implied by certain values of population parameters in an intuitive way that enables calibration of population parameters based on the available domain knowledge. Although we use frequentist model estimation in our tutorial, many strategies demonstrated in this chapter are inspired by research on monitoring the plausibility of model assumptions <ref type="bibr" target="#b26">(Gelman et al., 2020;</ref><ref type="bibr" target="#b62">Schad et al., 2021)</ref> and eliciting prior information <ref type="bibr" target="#b6">(Bockting et al., 2024;</ref><ref type="bibr" target="#b30">Hartmann et al., 2020;</ref><ref type="bibr" target="#b57">Mikkola et al., 2023;</ref><ref type="bibr" target="#b65">Stefan et al., 2022)</ref> in applied Bayesian statistics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PRACTICE</head><p>When introducing the simulation function for our case study, we have used theoretically plausible values as defaults for all model parameters (𝛽 0 , 𝛽 𝑒 , 𝛽 𝑎 , 𝛽 𝑐 , 𝛽 𝑒𝑎 , 𝛽 𝑒𝑐 , 𝜎 𝑆 , and 𝜎 𝐼 ) but have not talked about where these numbers came from. The starting point for all parameter values was based on results from distantly related study designs in the literature. Additionally, we had repeated discussions with our affiliated domain experts in radiology to check whether our assumptions regarding participants' diagnostic performance seemed plausible.</p><p>We now outline our main strategy to determine plausible parameter values for the fixed effects (𝛽 parameters): Unfortunately, the model parameters in a binomial GLMM are hard to interpret in isolation because first, the parameters are connected to the modeled probability via the non-linear inverse-logit link, and second, we also have to consider the random effects. The most simple interpretation, which allows us to ignore the random effects for now, works by imagining a subject with average ability (𝑢 0𝑠 = 0) responding to an item (i.e., CT scan) with average difficulty (𝑢 0𝑖 = 0). Then the model-implied probability that such a person solves such an item accurately is given by:</p><formula xml:id="formula_7">𝑃(𝑌 = 1|X = x, U = 0) = inverse_logit[𝛽 0 + 𝛽 𝑎 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 𝑠𝑖 + 𝛽 𝑐 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 𝑠𝑖 + 𝛽 𝑒 • 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 + 𝛽 𝑒𝑎 • 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 𝑠𝑖 + 𝛽 𝑒𝑐 • 𝑒𝑥 𝑝𝑒𝑟𝑡 𝑠 • 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 𝑠𝑖 ]</formula><p>In fact, we would only need the full equation if the subject is an expert and correct advice is presented. In all other experimental conditions, some terms drop from the equation because they are multiplied by 0. For example, the probability that a student with average ability solves an item with average difficulty when no advice is presented only requires the intercept:</p><formula xml:id="formula_8">𝑃(𝑌 = 1|𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 0, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 0, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 0, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0) = inverse_logit[𝛽 0 ]</formula><p>We can revert this perspective by choosing plausible probability values based on domain knowledge and deriving the parameter values implied by these probabilities for each experimental condition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 2</head><p>Assumed probabilities that an average subject solves an average item in each experimental condition. Table 2 shows our set of assumptions concerning the probability that an average subject solves an average item for each experimental condition, as well as the corresponding equations implied by the model. The table can be used to compute the implied values for the 𝛽 parameters, starting with the first equation and reinserting the computed 𝛽 values in all</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experimental</head><p>following equations (b_0 stands for the intercept 𝛽 0 , b_e for the slope 𝛽 𝑒 , and so on):</p><p>b_0 &lt;-qlogis(0.7) b_e &lt;-qlogis(0.9) -b_0 b_a &lt;-qlogis(0.4) -b_0 b_ea &lt;-qlogis(0.85) -b_0 -b_e -b_a b_c &lt;-qlogis(0.9) -b_0 -b_a b_ec &lt;-qlogis(0.95) -b_0 -b_e -b_a -b_c -b_ea c(b_0 = b_0, b_e = b_e, b_a = b_a, b_c = b_c, b_ea = b_ea, b_ec = b_ec) b_0 b_e b_a b_c b_ea b_ec 0.8472979 1.3499267 -1.2527630 2.6026897 0.7901394 -1.3928518</p><p>It is always possible to double-check these computations by transforming the parameter values back to probabilities, e.g.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>𝑃(𝑌</head><formula xml:id="formula_9">= 1|𝑒𝑥 𝑝𝑒𝑟𝑡 = 1, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 1, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 1, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0) = inverse_logit[𝛽 0 + 𝛽 𝑒 + 𝛽 𝑎 + 𝛽 𝑐 + 𝛽 𝑒𝑎 + 𝛽 𝑒𝑐 ]</formula><p>which we compute in R as:</p><p>plogis(b_0 + b_e + b_a + b_c + b_ea + b_ec)</p><p>[1] 0.95</p><p>This leaves us with the question on how to determine plausible values for the two remaining model parameters (𝜎 𝑆 , and 𝜎 𝐼 ) that are the standard deviations for the random intercepts. For this, we introduce two more strategies in the following sections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Examine insightful descriptive statistics THEORY</head><p>The mathematical structure of GLMMs determines which patterns in data would be produced by the model, if a specific set of values for the population parameters is specified.</p><p>The knowledge of how to simulate from a GLMM enables us to compute insightful descriptive statistics that can be compared to available domain knowledge much more easily than the opaque values of model parameters. For example, domain experts might not be able to directly choose plausible values for the coefficients in a logistic regression model (which are measured on the log-odds scale). However, they should be able to reason about the expected ratio of the binary dependent variable in different experimental conditions, i.e., which relative frequency they expect to observe. The job of the analyst who is familiar with the mathematical structure of the GLMM is to produce the model-implied value of the insightful descriptive statistic that is expected by the domain expert. Although insightful descriptive statistics usually depend on the model parameters in a non-linear way, it is not necessary to solve the exact relationship mathematically. Instead, one can simply adjust the population parameters by trial and error until the model-implied quantities produce the desired result.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PRACTICE</head><p>In the last section, we showed how we can derive the model-implied probability that a subject with average ability solves an item with average difficulty for each experimental condition. Although these derivations are straightforward, it is important not to misinterpret their implications: In binomial GLMMs, the average probability to solve an item (averaged across persons of varying ability and items of varying difficulty) is not equal to the probability that a person with average ability solves an item with average difficulty <ref type="bibr" target="#b25">(Fahrmeir et al., 2021)</ref>.</p><p>The first perspective implies a so-called marginal interpretation, while the second one implies a conditional interpretation.</p><p>For example, we determined the 𝛽 parameters in a way that corresponds to a desired conditional probability of 0.95, that an expert with average ability solves an item with average difficulty when presented with correct advice (the conditional perspective). However, even if the model assumptions were true, the relative frequency of experts that solve items presented with correct advice would not be 0.95 in a large sample of subjects drawn from their natural distribution of ability and items drawn from their natural distribution of difficulty (the marginal perspective). How much the two probabilities differ depends on the standard deviations of the random intercepts (the two probabilities are only equal if both standard deviations are be zero).</p><p>We want to use the model-implied observed proportion of correct diagnoses in each experimental condition as an insightful descriptive statistic to determine plausible values for the random effect standard deviations. We will simulate a large dataset (for which the observed values of the descriptive statistic will be close to their model-implied true values) and simply compute the relative frequency of correct diagnoses for each experimental condition. "student, no advice" = "0:0:0", "expert, no advice" = "1:0:0", "student, incorrect advice" = "0:1:0", "expert, incorrect advice" = "1:1:0", "student, correct advice" = "0:1:1", "expert, correct advice" = "1:1:1")</p><p>) %&gt;% group_by(condition) %&gt;% summarize(relative_frequency = sum(y_bin) / n()) # A tibble: 6 x 2 condition relative_frequency &lt;fct&gt; &lt;dbl&gt; 1 student, no advice 0.683 2 expert, no advice 0.881 3 student, incorrect advice 0.409 4 expert, incorrect advice 0.828 5 student, correct advice 0.883 6 expert, correct advice 0.938</p><p>We tried using these descriptive statistics to judge together with domain experts whether our chosen values for the random effect standard deviations would produce data that aligned with their expectations. Although the result was deemed plausible, these statistics were not informative enough to determine a final set of plausible parameter values (e.g., doubling the standard deviations from 0.5 to 1 produces only minor changes in relative frequency). For this reason, we will additionally look at insightful model-based quantities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Examine insightful model-based quantities THEORY</head><p>Because GLMMs are complicated models, descriptive statistics alone are usually not enough to specify plausible values for all model parameters. This is especially true for the standard deviation of random effects that have non-linear (and often unexpected) effects on the model-implied results. An important advantage of data simulation (where one has full control over parameter values and sample sizes) is that one can produce insightful model-based quantities that can never be directly observed in an actual empirical dataset. For example, in a logistic model with random intercepts for participants, one can produce a visualization of the implied distribution of the probability that a participant, on average, solves a cognitive task.</p><p>Although domain knowledge will probably not suffice to specify this distribution completely, it should be possible to rule out implausible boundary conditions. For example, the domain expert might deem it implausible that the 5% most able participants have a probability of more than 0.99 to solve the difficult cognitive task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PRACTICE</head><p>The discussed inequality of conditional and marginal effects in GLMMs <ref type="bibr" target="#b25">(Fahrmeir et al., 2021)</ref> makes their interpretation more difficult. One must be careful when specifying parameter values based on previous studies or pilot data that use the marginal interpretation (e.g., a pilot study providing an estimate of how often radiologists make an accurate diagnosis based on brain scans). However, this does not mean that we cannot use the marginal "student, no advice" = "0:0:0", "expert, no advice" = "1:0:0", "student, incorrect advice" = "0:1:0", "expert, incorrect advice" = "1:1:0", "student, correct advice" = "0:1:1", "expert, correct advice" = "1:1:1")) %&gt;% ggplot(aes(x = y_prob, y = condition)) + stat_histinterval(point_interval = "mean_qi", slab_color = "gray45", breaks = "Sturges") + scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0, 1))</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 1</head><p>Marginal distributions including means, 66% and 95% confidence intervals for all experimental conditions.</p><p>student, no advice expert, no advice student, incorrect advice expert, incorrect advice student, correct advice expert, correct advice 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 y_prob condition</p><p>Figure <ref type="figure">1</ref> shows the model-implied marginal distributions, including the mean, 66% and 95% intervals. We can see that, indeed, the average probabilities (black dots) slightly differ from the probabilities of average subjects and items considered previously. This difference increases with the variability of the random effects. We can use plots like Figure <ref type="figure">1</ref> as a useful tool to determine whether the specified standard deviations of the subject and item random intercepts (𝜎 𝑆 and 𝜎 𝐼 ) are reasonable by comparing the ranges and overlap between conditions to domain knowledge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 2</head><p>Marginal distributions including means, 66% and 95% confidence intervals for all experimental conditions while setting the standard deviation of item random intercepts to 0.01.</p><p>student, no advice expert, no advice student, incorrect advice expert, incorrect advice student, correct advice expert, correct advice 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 y_prob condition</p><p>For the next plot, we have set the item standard deviation to almost zero (𝜎 𝐼 = 0.01).</p><p>This gives us a better way to see the variability between persons. As an example, Figure <ref type="figure">2</ref> reveals a number of implicit assumptions about the comparison between experts and students:</p><p>With incorrect advice, virtually all experts have a higher probability of making a correct diagnosis compared to students when considering only items with average difficulty. In contrast, there is considerable overlap in probability between experts and students with no advice and even higher overlap with correct advice. Patterns like these should be considered carefully and discussed with the domain experts. Parameter values (𝛽 parameters, and 𝜎 𝑆 ) should be adjusted if the implications do not seem reasonable.</p><p>The final plot demonstrates that these plots are also useful for spotting standard deviations that were specified too high. For Figure <ref type="figure">3</ref> we have set 𝜎 𝑆 = 3 and 𝜎 𝐼 = 3. This implies that in each experimental condition, the probabilities that a subject solves an item are overwhelmingly close to either 0 or 1 and nothing in between, which is not a plausible assumption. These high standard deviations do not account for the inherent variability and complexity of human performance. For example, the expectation that an expert with low ability and incorrect advice would solve a difficult item with a probability close to zero is not convincing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 3</head><p>Marginal distributions including means, 66% and 95% confidence intervals for all experimental conditions while setting the standard deviation of subject and item random intercepts to 3.</p><p>student, no advice expert, no advice student, incorrect advice expert, incorrect advice student, correct advice expert, correct advice 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 y_prob condition Iterate with domain expertise THEORY Tailored simulation-based sample size planning always requires access to domain knowledge. However, gathering domain knowledge and the specification of population parameter values is not always straightforward and can be better described as an iterative SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 34 process, in which the plausibility of simulated data is repeatedly compared with the available domain expertise. As a first step, dedicated domain experts (if available) can be interviewed to elicit their domain knowledge about how the data of the planned study is expected to look.</p><p>Because most domain experts are no experts in statistical modeling and GLMMs, they often struggle without further guidance to communicate their knowledge in a way that is useful when specifying the parameters for data simulation. For this reason, we suggest that after an initial interview, the analyst who is familiar with the structure of the GLMM selects an initial </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PRACTICE</head><p>All parameter values in our present case study have been determined based on repeated discussions with domain experts in radiology to validate our assumptions. Initially, we reviewed the literature to establish a reasonable baseline performance rate for examining head CT scans for intracranial hemorrhage. Existing studies indicate that radiologists typically demonstrate high accuracies around 90%, while interns have been shown to perform below 80%, and medical students fall even shorter. For simplicity, we assumed plausible probability 4 Developing more effective strategies on how to elicit and visualize domain knowledge is currently an active area of research, primarily in the context of Bayesian modeling <ref type="bibr" target="#b6">(Bockting et al., 2024;</ref><ref type="bibr" target="#b30">Hartmann et al., 2020;</ref><ref type="bibr" target="#b57">Mikkola et al., 2023;</ref><ref type="bibr" target="#b65">Stefan et al., 2022)</ref>. We expect that future advances in this field will also be highly relevant for tailored simulation-based sample size planning with frequentist models.</p><p>values of .90 for experts and .70 for students, respectively. Our experts confirmed that these values are realistic baselines for reviewing diverse head CT images without AI assistance.</p><p>Subsequently, we consulted several published papers investigating the effect of correct and incorrect advice on decision-making performance in other settings. From their findings, we inferred that both experts and students should benefit from correct and suffer losses from incorrect advice. However, the magnitude of these effects should be substantially greater for students, given their stronger reliance on advice compared to experts. We further validated the plausibility of our estimated gains and losses with the collaborating radiologists until we settled on the probabilities shown in Table <ref type="table">2</ref>.</p><p>Step 4: Estimate the statistical model THEORY At this point, the researcher is capable of producing a simulated dataset that is comparable to the actual dataset to be collected in the planned study. The next step is to specify how the statistical model shall be estimated in the actual study collected later. This requires the selection of a statistical framework, a software package that is capable of estimating the model class of interest, an estimation algorithm, and the specific model structure including all fixed effects, random effects, and the model family of the dependent variable.</p><p>Note that this does not always mean that one will specify the same GLMM that was used when specifying the data-generating process. On the one hand, using a simpler model for data simulation than for model estimation can be a useful strategy in scenarios where making plausible assumptions for complicated random effect structures and interactions is not feasible, or the omitted components are expected to have small effects <ref type="bibr" target="#b53">(Matuschek et al., 2017)</ref>. On the other hand, using a more complex model for data simulation than for model estimation can be a useful strategy in scenarios where one has specific domain knowledge about aspects of the data-generating process that are still difficult to estimate with the current state-of-the-art in multilevel modeling. In fact, applying models that are more parsimonious than the true data generating process can provide a better trade-off between type I error rates (or bias) and power (or precision) in many scenarios <ref type="bibr" target="#b53">(Matuschek et al., 2017)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PRACTICE</head><p>In our case study, we use the lme4 R package <ref type="bibr" target="#b3">(Bates et al., 2015)</ref>, which is a state-of-the-art tool for fitting frequentist GLMMs.<ref type="foot" target="#foot_4">foot_4</ref> For the current example, we simulate data according to our model, in which 100 subjects respond to 50 items (we use set.seed to make the simulation reproducible). However, for the sake of the exercise, we can imagine that this would be real data resulting from our future experiment and think about how we would analyze this data. The first two lines look similar to any linear model in R (general intercept indicated by 1; main effects indicated by variable names in the dataset; interactions indicated by variable1:variable2). The third line specifies a random intercept for each subject (1|subject) and for each item (1|item). The complete set of rules for the syntax is outlined in <ref type="bibr" target="#b3">Bates et al. (2015)</ref> and in the documentation of the lme4 package.</p><p>In lme4, a GLMM is fitted with the glmer function. By setting family = "binomial", we request a binomial GLMM appropriate for our binary dependent variable y_bin (the binomial GLMM uses the canonical logit link by default), which is defined as an accurate (1) vs. inaccurate (0) diagnosis. We use the default estimation algorithm (see ?glmerControl for a list of alternative options).</p><p>fit &lt;-glmer(f, data = dat, family = "binomial")</p><p>We can inspect the estimates for all model parameters with the summary command:</p><formula xml:id="formula_10">summary(fit)</formula><p>Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) [glmerMod] Family: binomial ( logit ) Formula: y_bin ~1 + expert + advice_present + advice_correct + expert:advice_present + expert:advice_correct + (1 | subject) + (1 | item) Data: dat AIC BIC logLik deviance df.resid 4149.4 4201.6 -2066.7 4133.4 4992 Scaled residuals: Min 1Q Median 3Q Max -5.7669 0.2125 0.3046 0.4317 2.1056 Random effects: Groups Name Variance Std.Dev. subject (Intercept) 0.3148 0.5611 item (Intercept) 0.1624 0.4029 Number of obs: 5000, groups: subject, 100; item, 50 Fixed effects: Estimate Std. Error z value Pr(&gt;|z|) (Intercept) 1.0339 0.1103 9.374 &lt; 2e-16 *** expert 1.1849 0.2096 5.654 1.57e-08 *** advice_present -1.3436 0.1206 -11.143 &lt; 2e-16 *** advice_correct 2.6154 0.1273 20.540 &lt; 2e-16 *** expert:advice_present 1.0589 0.2940 3.601 0.000317 *** expert:advice_correct -1.8104 0.2915 -6.210 5.28e-10 *** ---Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 Correlation of Fixed Effects: (Intr) expert advc_p advc_c exprt:dvc_p expert -0.377 advic_prsnt -0.349 0.176 advic_crrct 0.023 0.001 -0.668 exprt:dvc_p 0.143 -0.448 -0.412 0.276 exprt:dvc_c -0.008 0.004 0.292 -0.435 -0.686 In the model output, the Estimate column in the Fixed effects table contains the estimates for the 𝛽 parameters, while the Std.Dev. column in the Random effects table contains the estimates for 𝜎 𝑆 and 𝜎 𝐼 .</p><p>Step 5: Compute the estimate</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>THEORY</head><p>In previous steps, we have defined the theoretical estimand, written a data simulation function and specified how to estimate a GLMM using simulated data. The next step is to specify how to compute a concrete point estimate of the theoretical estimand within the framework of the fitted GLMM. For some research questions, the estimate corresponds with a single regression coefficient. In more complicated scenarios, the estimate is computed from a combination of coefficients. Beyond computing the point estimate, we have already discussed that both hypothesis testing and interval estimation could be used to answer the research question. The decision on testing or estimating is then followed by selecting the specific statistical method that shall be applied to compute the HTs or CIs (e.g., compute HTs and CIs</p><p>library(tidyverse) library(marginaleffects) library(tinytable) grid2 &lt;-expand_grid(advice_present = 0:1, advice_correct = 0:1, expert = 0:1) grid2 # A tibble: 8 x 3 advice_present advice_correct expert &lt;int&gt; &lt;int&gt; &lt;int&gt; 1 0 0 0 2 0 0 1 3 0 1 0 4 0 1 1 5 1 0 0 6 1 0 1 7 1 1 0 8 1 1 1</p><p>preds &lt;-predictions(fit, newdata = grid2, type = "response", re.form = NA) print(preds, style = "tinytable") %&gt;% theme_tt(theme = "resize")</p><p>The point estimates for all experimental conditions are reported in the Estimate column. Note that the output also contains the two missing by design conditions that will never be observed in the actual study (𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 0, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 1, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 1 and 𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 0, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 1, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 0). This is no problem as long as we never interpret those estimates. Next, we use the estimated probabilities to compute the four specific contrasts that are part of our estimand. For this, we must specify which rows in preds have to be subtracted from each other. We will use the hypotheses function to compute our</p><p>Estimate Std. Error z Pr(&gt;|z|) S 2.5 % 97.5 % advice_present advice_correct expert 0.738 0.02134 34.6 &lt;0.001 867.2 0.696 0.779 0 0 0 0.902 0.01739 51.9 &lt;0.001 Inf 0.868 0.936 0 0 1 0.975 0.00421 231.6 &lt;0.001 Inf 0.966 0.983 0 1 0 0.954 0.01454 65.6 &lt;0.001 Inf 0.925 0.982 0 1 1 0.423 0.03221 13.1 &lt;0.001 128.6 0.360 0.486 1 0 0 0.874 0.02793 31.3 &lt;0.001 711.4 0.819 0.928 1 0 1 0.909 0.00967 94.1 &lt;0.001 Inf 0.890 0.928 1 1 0 0.939 0.01091 86.1 &lt;0.001 Inf 0.918 0.961 1 1 1 Type: response Columns: rowid, estimate, std.error, statistic, p.value, s.value, conf.low, conf.high, advice_present, ad-vice_correct, expert, y_bin four contrasts of interest together with HTs and CIs. We use the default inference options of the marginaleffects package that compute HTs and CIs based on the approximate delta method. print(contrasts, style = "tinytable") %&gt;% theme_tt(theme = "resize")</p><p>The expression "b8 = b2" is special syntax to subtract the estimate in row number 8 from the estimate in row number 2 in the preds-output. The argument equivalence = c(0, 0) can be used to compute one-sided p-values, testing whether the contrast in the population is smaller than 0 (p (NonSub) column) or greater than 0 (p (NonInf) column). The point estimates for four contrasts are reported in the Estimate column. Note that to facilitate interpretation, we arranged the contrasts in a way that we theoretically expect positive values</p><p>Term Estimate Std. Error z Pr(&gt;|z|) S 2.5 % 97.5 % p (NonSup) p (NonInf) p (Equiv) b8=b2 0.0374 0.0162 2.31 0.021 5.6 0.00563 0.0691 0.989 0.0105 0.989 b2=b6 0.0282 0.0279 1.01 0.312 1.7 -0.02653 0.0830 0.844 0.1562 0.844 b7=b1 0.1717 0.0173 9.93 &lt;0.001 74.8 0.13780 0.2056 1.000 &lt;0.001 1.000 b1=b5 0.3145 0.0280 11.24 &lt;0.001 95.0 0.25965 0.3693 1.000 &lt;0.001 1.000 Type: response Columns: term, estimate, <ref type="bibr">std.error, statistic, p.value, s.value, conf.low, conf.high, statistic.noninf, statistic.nonsup, p.value.noninf, p.value.nonsup, p.value.equiv</ref> for all four of them.</p><p>Hypothesis testing. If we chose hypothesis testing for our case study, we would test a combined null hypothesis 𝐻 0 that consists of four separate null hypotheses:</p><formula xml:id="formula_11">𝐻 01 : 𝑃(𝑌 = 1|𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 1, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 1, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 1, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0) ≤ 𝑃(𝑌 = 1|𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 0, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 0, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 1, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0) 𝐻 02 : 𝑃(𝑌 = 1|𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 0, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 0, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 1, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0) ≤ 𝑃(𝑌 = 1|𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 1, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 0, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 1, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0) 𝐻 03 : 𝑃(𝑌 = 1|𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 1, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 1, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 0, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0) ≤ 𝑃(𝑌 = 1|𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 0, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 0, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 0, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0) 𝐻 04 : 𝑃(𝑌 = 1|𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 0, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 0, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 0, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0) ≤ 𝑃(𝑌 = 1|𝑎𝑑𝑣𝑖𝑐𝑒_𝑝𝑟𝑒𝑠𝑒𝑛𝑡 = 1, 𝑎𝑑𝑣𝑖𝑐𝑒_𝑐𝑜𝑟𝑟𝑒𝑐𝑡 = 0, 𝑒𝑥 𝑝𝑒𝑟𝑡 = 0, 𝑢 0𝑠 = 0, 𝑢 0𝑖 = 0)</formula><p>The combined null hypothesis 𝐻 0 should only be rejected if all individual null hypotheses are rejected (i.e., intersection-union setting; <ref type="bibr" target="#b22">Dmitrienko &amp; D'Agostino, 2013)</ref>. In such cases, the error probabilities do not accumulate, and we would waste power when correcting for multiple tests.</p><p>With a standard significance level of 𝛼 = 0.05, we would not reject all four null hypotheses (the p-value in the p (NonInf) column for the second hypothesis is not significant) and therefore also not reject the combined null hypothesis for this particular (simulated) dataset. Note that this decision would be wrong because we have simulated the data such that the combined alternative hypothesis 𝐻 1 is actually true in the population.</p><p>Interval estimation. If we chose parameter estimation for our case study, we would focus on the two-sided CIs of the four contrasts of interest. With a standard confidence level of 1 -𝛼 = 0.95 plausible values are clearly in the positive range for the first, third, and fourth contrast, while both negative and positive values seem plausible for the second contrast. Note that due to the constrained range of the probability scale, the width of the CI differs between the four contrasts (which is the expected behavior for binomial GLMMs). The smallest width is observed for the first contrast (expert with correct advice vs. expert without advice), where both underlying probabilities are close to 1. The largest width is observed for the fourth contrast (student with incorrect advice vs. student without advice), where both underlying probabilities are closer to 0.5.</p><p>Step 6: Perform repeated simulations</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>THEORY</head><p>Conducting all previous steps enables the analyst to 1) simulate a dataset, 2) estimate a GLMM, and 3) compute HTs or CIs for estimands of interest, mirroring the analysis that will later be conducted on the actual dataset of the planned study. To produce an estimate of power or precision, the last step is to perform these previous steps repeatedly. On a conceptual level, we first require a function that takes a sample size and a full set of population parameter values as input. When planning for power, the function should return the p-value(s) of the HT(s) of interest when conducted on the simulated dataset. When planning for precision, the function should return the width of the CI(s) of interest. Second, we run this function repeatedly with the same sample size and population parameters. Because fitting GLMMs can quickly become time-consuming, it is recommended to use parallel computing, that is running simulations on multiple cores of the computer at the same time to reduce total run time. Third, the results of the repeated simulation are collected and aggregated. When planning for power, we compute the relative frequency of (a) significant p-value(s) across repeated simulations. When planning for precision, we compute the average width of the CI(s). Finally, we repeat the complete simulation for different sample sizes to determine how big the sample must be in order to achieve the targeted power or precision. The result of this computation is a data frame that contains the p-values and CIs of all specified contrasts for each simulated dataset. In some iterations (predominantly in conditions with small sample sizes), model estimation did not converge with the lme4 package. When the model fails to converge, it means that the statistical model being fitted to the data failed to reach a stable or valid solution during the estimation process. We do not remove these results because non-convergence can also happen when analyzing the real data we plan to collect, thus, we want to factor in this possibility to keep our simulation more realistic.</p><p>Power results. For our exemplary combined hypothesis, power is defined as the (long-run) percentage of simulations in which all four p-values of our individual hypotheses are significant at the 𝛼 = 0.05 level. Based on our simulation outcomes, we compute a power estimate for each combination of n_subjects × n_items (including 95% CIs) and visualize the results with the following code. 6 library(binom) alpha &lt;-0.05 power &lt;-sim_result %&gt;% pivot_wider(names_from = term, names_sep = "_", values_from = estimate:p.value.equiv) %&gt;% group_by(n_subjects, n_items) %&gt;% summarise( power = mean(`p.value.noninf_b1=b5`&lt; alpha &amp; `p.value.noninf_b8=b2`&lt; alpha &amp; `p.value.noninf_b2=b6`&lt; alpha &amp; `p.value.noninf_b7=b1`&lt; alpha), n_sig = sum(`p.value.noninf_b1=b5`&lt; alpha &amp; `p.value.noninf_b8=b2`&lt; alpha &amp; `p.value.noninf_b2=b6`&lt; alpha &amp; `p.value.noninf_b7=b1`&lt; alpha), n = n(), ci.lwr = binom.confint(n_sig, n, method = "wilson")$lower, ci.upr = binom.confint(n_sig, n, method = "wilson")$upper, .groups = "drop") power %&gt;% mutate(across(c(n_subjects, n_items), factor)) %&gt;% ggplot(aes(n_subjects, n_items, fill = power)) + geom_tile() + geom_text(aes(label = sprintf("%.2f \n [%.2f; %.2f]", power, ci.lwr, ci.upr)), color = "white", size = 4) + scale_fill_viridis_c(limits = c(0, 1)) + xlab("number of subjects") + ylab("number of items") Figure 4 Simulation-based power estimates including 95% confidence interval of the case study for different numbers of subjects and items, based on a significance level of 0.05. 0.05 [0.04; 0.08] 0.21 [0.18; 0.25] 0.43 [0.39; 0.47] 0.61 [0.57; 0.66] 0.08 [0.06; 0.11] 0.33 [0.29; 0.37] 0.61 [0.56; 0.65] 0.77 [0.73; 0.80] 0.12 [0.09; 0.15] 0.53 [0.49; 0.58] 0.76 [0.72; 0.80] 0.87 [0.84; 0.90] 0.16 [0.13; 0.19] 0.69 [0.65; 0.73] 0.82 [0.79; 0.85] 0.90 [0.88; 0.93] 10 30 50 70 100 150 200 250 number of subjects number of items power 0.00 0.25 0.50 0.75 1.00</p><p>As should be the case, power estimates in Figure <ref type="figure">4</ref> increase with both the number of subjects and the number of items. The CIs reported here indicate how precisely power was</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 5</head><p>Simulation-based precision estimates (expected width of confidence intervals) including 95% confidence interval of the case study for different numbers of subjects and items, based on a confidence level of 0.95.</p><p>0.14 [0.14; 0.14] 0.09 [0.08; 0.09] 0.07 [0.07; 0.07] 0.06 [0.06; 0.06] 0.12 [0.11; 0.12] 0.07 [0.07; 0.07] 0.06 [0.05; 0.06] 0.05 [0.05; 0.05] 0.10 [0.10; 0.11] 0.06 [0.06; 0.06] 0.05 [0.05; 0.05] 0.04 [0.04; 0.04] 0.09 [0.09; 0.10] 0.06 [0.05; 0.06] 0.04 [0.04; 0.04] 0.04 [0.04; 0.04] 10 30 50 70 100 150 200 250 number of subjects number of items precision 0.00 0.05 0.10 0.15 0.20</p><p>As should be the case, precision estimates in Figure <ref type="figure">5</ref> increase (i.e., average width of CI decreases) with the number of included subjects and items. The CIs reported here indicate how precisely the expected width of the CI for our focal contrast was estimated by our simulation. Applying our simple heuristic of targeting an expected CI width that is smaller than 0.1, we see the same trade-off between the number of subjects and the number of items as with planning for power. We could either choose 100 subjects and 30 items or 250 subjects and 10 items. Note that our simple heuristic for determining sample size in the planning for precision scenario was quite liberal. This is reflected in the result that we would need a smaller sample size than in the planning for power scenario. With a more conservative precision target, the result is generally the opposite: As a rule, precise parameter estimates usually require bigger samples than null hypothesis testing.</p><p>Step 7 (optional): Conduct sensitivity analysis</p><p>In our case study, we have performed simulation-based sample size planning from a single set of parameter values that reflect our assumptions of an expected effect size. Instead of extracting this expected effect size from meta-analyses or pilot data, which has been the main focus of previous tutorials (e.g., <ref type="bibr" target="#b38">Kumle et al., 2021)</ref>, we have demonstrated some strategies to determine plausible parameter values in GLMMs based on domain knowledge.</p><p>When sample sizes are chosen based on the results of our simulation-based power analysis, a future study will be informative to reject the null hypothesis if an effect of our expected size is present (or estimate the effect with satisfying precision). However, if the true effect is indeed smaller, power (or precision) will be lower, and the study might not be sufficiently informative.</p><p>A common, more conservative strategy for sample size justification is to perform sample size planning for the smallest effect size of interest (SESOI). An effect smaller than the SESOI would be considered too small to be interesting or practically meaningful, even if the effect is not actually zero <ref type="bibr" target="#b36">(King, 2011;</ref><ref type="bibr" target="#b45">Lakens, Scheel, et al., 2018)</ref>. Unfortunately, specifying a plausible SESOI is a challenging task (for strategies on how to specify a SESOI, see Lakens (2022a), <ref type="bibr" target="#b61">Riesthuis (2024)</ref>, or Lakens (2022b)). When domain knowledge or formal theories about the research topic of interest are too vague to specify a meaningful SESOI, it is still recommended to demonstrate power or precision for different effect sizes in a sensitivity power analysis <ref type="bibr">(Lakens, 2022a)</ref>. By simulating power (or precision) for different effect sizes (in addition to the different number of subjects and items), one can make sure that power (or precision) would still be sufficient to detect smaller effect sizes than our expected effect or at least get an impression of how strongly power (or precision) depends on the size of the true effect. For our case study that investigates combined hypotheses in a GLMM modeling framework, sensitivity analysis would require manually specifying additional sets of plausible parameter values that reflect scenarios with smaller or larger differences between groups with respect to our specific research question. Power (or precision) could then be simulated for several of these scenarios (across different numbers of subjects and items, as considered earlier). In steps 2 and 4 of the tutorial, we have briefly discussed scenarios where the applied statistical model is more (or less) parsimonious than the data-generating process. Sensitivity analysis can be used to assess the consequences of a mismatch by investigating different combinations of data-generating processes and statistical models. Such extended simulations can be a great resource to make an informed decision about the concrete model to estimate for the planned study where the true data-generating process is unknown. Although recommended, we do not present a sensitivity analysis for our case study to keep the length of the tutorial manageable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conclusion and outlook</head><p>In this tutorial, we provided a step-by-step guide on how to perform tailored simulation-based sample size planning for GLMMs based on a concrete case study. To conclude, we want to give an outlook on five developments regarding the future role of simulation-based sample size planning in experimental research:</p><p>1. As experimental designs become more complex and the appropriate flexible statistical frameworks, like GLMMs, become more popular, there is an ever growing need for simulation-based sample size planning in experimental research. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>simulate &lt;-function(n_subjects = 100, n_items = 50, b_0 = 0.847, b_e = 1.350, b_a = -1.253, b_c = 2.603, b_ea = 0.790, b_ec = -1add_random(subject = n_subjects, item = n_items) %&gt;% add_between("subject", expert = c(1, 0), .prob = c(0.25, 0.75)) %&gt;% mutate(advice_present = rbinom(n(), 1, prob = 2/3)) %&gt;% mutate(advice_correct = if_else(advice_present == 1L, rbinom(n(), 1L, prob = 0.8), 0L)) %&gt;% # add random effects add_ranef("subject", u0s = sd_u0s) %&gt;% add_ranef("item", u0i = sd_u0i) %&gt;% # compute dependent variable mutate(linpred = b_0 + u0i + u0s + b_e * expert + b_a * advice_present + b_c * advice_correct + b_ea * expert * advice_present + b_ec * expert * advice_correct) %&gt;% mutate(y_prob = plogis(linpred)) %&gt;% mutate(y_bin = rbinom(n = n(), size = 1, prob = y_prob)) dat } In the first four lines of the function definition, we set some default parameter values</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>85) = 𝛽 0 + 𝛽 𝑒 + 𝛽 𝑎 + 𝛽 𝑒𝑎 95) = 𝛽 0 + 𝛽 𝑒 + 𝛽 𝑎 + 𝛽 𝑐 + 𝛽 𝑒𝑎 + 𝛽 𝑒𝑐</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>), factor(advice_present), factor(advice_correct))) %&gt;% mutate(condition = fct_recode(condition,</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>interpretation (average probability across persons and items) to inform plausible parameter values: When parameter values have been selected, we can compute the implied marginal distributions and compare this information to our domain knowledge. Then, we can iteratively adjust the parameter values until we are satisfied with the implied distributions. In the last section, we simulated a large dataset and computed descriptive statistics, the relative frequencies of correct diagnoses, for each experimental condition. We will now use the model-implied probability of each simulated data point (stored in the variable y_prob) to visualize the whole model-implied marginal distribution of correct diagnoses for each experimental condition.), factor(advice_present), factor(advice_correct))) %&gt;% mutate(condition = fct_recode(condition,</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>set of insightful descriptive statistics and model-based quantities. Then, they reenter into an iterative discussion with the domain experts where some set of population values are selected, and the plausibility of resulting implied quantities is evaluated. The population parameters are updated until the domain experts are satisfied with the result. During this process, the monitored descriptive statistics and model-based quantities can be updated or extended to capture as much available domain knowledge as possible. Even if no dedicated domain experts are available, the basic principles stay the same except that initial parameter values are often derived from a more extensive literature review. Descriptive statistics and model-based quantities are still used to evaluate whether the implied assumptions about the data generating process are plausible. Often, this judgment evolves over several iterations as the analyst becomes more familiar with the model and the study design.4   </figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>simulate(n_subjects = 100, n_items = 50) The lme4 package uses a special syntax for model specification. Our specific GLMM is represented by the formula: library(lme4) f &lt;-y_bin ~1 + expert + advice_present + advice_correct + expert:advice_present + expert:advice_correct + (1|subject) + (1|item)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>b2", # (correct advice, expert) -(no advice, expert) "b2 = b6", # (no advice, expert) -(incorrect advice, expert) "b7 = b1", # (correct advice, student) -(no advice, student) "b1 = b5"), # (no advice, student) -(incorrect advice, student) equivalence = c(0, 0))</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><figDesc>The next code chunk specifies a simulation grid with different settings for both the number of subjects (n_subjects) and the number of items (n_items), each combination being repeated rep times. The more repetitions, the more accurately power and precision can be estimated. We chose 300 repetitions for the data simulation at hand to strike a balance between achieving a robust estimate and remaining computationally feasible. With the current settings, this simulation takes several hours on a MacBook Pro from 2020 with M1 chip and 16 GB working memory. If you want to quickly experiment with the code yourself, a setting with workers = 4 and rep = 5 should finish in less than 5 minutes, even on smaller machines. = future_pmap(., sim_and_analyse, .options = furrr_options(seed = TRUE))) %&gt;% unnest(col = res)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>2.</head><figDesc>The ability to conduct simulation-based sample size planning becomes an increasingly valuable skill that should be taught to experimental researchers. By incorporating such training into research methods courses and workshops, researchers can improve the quality of their experimental designs and enhance the rigor of their studies. The need to reason about how to simulate plausible data that is in line with the research hypothesis, while not violating domain expertise on how plausible data should look, might also contribute to planning more insightful studies that can answer more precise research questions<ref type="bibr" target="#b72">(Yarkoni, 2022)</ref>. SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 55 3. Given the significant disconnect between the amount of effort required to perform tailored simulation-based sample size planning and the perceived effort estimated by researchers and collaborators in experimental research, there is a need to address the mismatch in effort perception. Many researchers request simulation-based power analyses from statisticians or methodological experts without fully comprehending the complexity and time-consuming nature of these tailored simulations. Therefore, it is crucial to raise awareness about the effort involved to ensure realistic expectations and effective collaboration with methodological experts. 4. Tailored data simulations and power analyses are not mere technicalities; they are valuable research contributions that deserve adequate recognition in experimental research. Their importance can be reflected by highlighting the simulation work in a publication or even allocating them a separate publication, or incorporating them as a significant component of stage 1 preregistered reports (Chambers &amp; Tzavella, 2022). 5. Simulation-based sample size planning aligns well with the principles of Open Science and preregistration and could be further integrated. When researchers have access to simulated data based on their pre-specified model, analyzing the collected dataset becomes straightforward and unambiguous. By preregistering their simulation-based sample size plan, researchers enhance the transparency and accountability of their experimental procedures, contributing to the credibility and reproducibility of research.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>For example, the Social Sciences Replication Project targeted a power of 0.90 to safeguard against biased effect sizes in the original studies(Camerer et al.,  </p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>2018), and Many Labs 5 even targeted a power of 0.95<ref type="bibr" target="#b23">(Ebersole et al., 2020)</ref>.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>Note that a different estimand would be the so-called average treatment effect (ATE). For the ATE, the probability contrast is defined for each combination of expert and scan, and then these contrasts are averaged across all experts and scans from the target population<ref type="bibr" target="#b50">(Lundberg et al., 2021)</ref>.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_3"><p>The faux package (DeBruine, 2023) contains useful functions when simulating factorial designs, including random effects.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>For Bayesian GLMMs, the brms R package is currently the most prominent option<ref type="bibr" target="#b11">(Bürkner, 2017)</ref>.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>This code was inspired by the "Mixed Design Simulation" vignette of the faux package at https://debruine.github.io/faux/articles/sim_mixed.html.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>with the marginaleffects R package using the delta method).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PRACTICE</head><p>In the estimand section, we have translated a verbal description of our research question into four probability statements that are specified outside of any specific statistical model. For a concrete estimate within the context of our specified GLMM, we must compute the following probability contrasts:</p><p>We have already discussed how to compute the involved probabilities in the section on specifying population parameters. Plugging in the GLMM model equation produces an equation for computing each contrast if all model parameters were known. When we want to estimate the above contrasts based on observed data, the only difference is that model parameters are not known and we instead use the corresponding parameter estimates.</p><p>We could use our knowledge of the structure of the GLMM to determine the exact formula needed to compute the contrasts of interest and then plug in the parameter estimates manually from the summary(fit) output. However, this would be tedious and we can use R to compute this contrast without doing the math. Using the first contrast (correct advice, expert) -(no advice, expert) as our example, we could apply the predict function of the lme4 The argument type = "response" specifies that predictions are made on the probability scale (instead of the log-odds scale of the 𝛽 parameters), while re.form = NA sets all random effects to 0. We could use this method to compute point estimates for all four contrasts that are part of our estimand. However, depending on whether we are interested in hypothesis testing or parameter estimation, we also need a method to compute HTs or CIs. The </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>}</head><p>We use the future <ref type="bibr" target="#b4">(Bengtsson, 2021)</ref> and furrr <ref type="bibr" target="#b67">(Vaughan &amp; Dancho, 2022)</ref> packages to perform computations in parallel. First, we enable parallelization with the plan function and specify how many parallel cores ("workers") of our computer to use (users can find out the maximum number of cores on their computer with the command parallel::detectCores()), and set a seed to make the simulation reproducible.</p><p>estimated by our simulation. Higher precision (which would be reflected in narrower CIs) could be obtained by increasing the number of repetitions (rep) in the simulation. In practice, data simulations are often run multiple times with adjusted combinations of sample sizes.</p><p>When running for the first time, it might be revealed that power is way too low (or much higher than required) for some combinations of n_subjects and n_items. When narrowing down the best combination that achieves sufficient power while at the same time striking a good balance of how many subjects and items are practically feasible, later rounds of data simulation will typically include a smaller grid of sample sizes combined with a higher number of repetitions. This will assure high precision for the final power estimates, which are then used for the sample size justification of the planned study.</p><p>When target power has been specified, the number of subjects and the number of items in our study design can be traded against each other based on practical considerations.</p><p>Although it is recommended to justify the power <ref type="bibr">(Lakens, 2022a)</ref>, we adopt the common heuristic to target a power of 0.8 to detect an effect of the expected size implied by our data simulation. This could be achieved by collecting data from 250 subjects (about 25% of which will be experts), each completing the same 50 items (with advice present in about 67% of cases, which is correct in about 80% of cases with present advice). If collecting data from 250 subjects is not feasible, an alternative would be to recruit 200 subjects but increase the length of the experiment to 70 items. However, 70 items might take too long to complete for the radiologists participating in the study, who have a busy schedule. The simulation suggests that it might also be possible to plan a shorter experiment with only 30 items if it is feasible to recruit an even higher number of subjects (to be determined by additional rounds of power analysis). Design parameters that also affect power, and which could be investigated in the simulation to find a more optimal trade-off, are the ratio of experts to students, the frequency of whether advice is presented at all, and whether it is correct or incorrect. 7</p><p>7 An advanced alternative to our heuristic trade-off between subjects and items would be to explicitly optimize for cost-efficient study designs using the mlpwr package <ref type="bibr" target="#b75">(Zimmer et al., 2023)</ref>. The package performs simulation-based power analysis in a surrogate modeling framework that can evaluate power for a large grid of design combinations more efficiently. The framework also requires users to write their own sim_and_analyse function and can be considered a great extension on what we cover in our tutorial.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 50</head><p>Precision results. When planning for precision, one could monitor the width of all four CIs at the same time. However, because the CIs of the four contrasts strongly differ in width, it is not trivial to decide which width one should target when deciding on the appropriate sample size. In contrast to planning for power, there are no common standards on how to specify the targeted precision <ref type="bibr">(Lakens, 2022a)</ref>. For our example, we use a simple heuristic but we strongly encourage readers to think about better alternatives that are appropriate in their own applications. Our simulations show that the smallest CI can be expected for the first contrast (expert with correct advice vs. expert without advice). The true contrast in probability for an average expert and an average item in this condition is plogis(b_0 + b_e + b_a + b_c + b_ea + b_ec) -plogis(b_0 + b_e) = 0.05. We want the width of this CI to be smaller than 0.1. This would mean that if the point estimate happens to be close to the true value, the plausible values inside of a 95% CI would all be positive.</p><p>Thus in our example, precision is defined as the (long-run) average width of a 95% CI for the probability contrast between experts with correct advice and experts without advice. Of course, a lower width implies better precision. Based on our simulation outcomes, we compute the precision estimate for each combination of n_subjects × n_items (including 95% CIs) and visualize the results with the following code. </p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">When power analyses based on pilot data are biased: Inaccurate effect size estimators and follow-up bias</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Albers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jesp.2017.09.004</idno>
+		<ptr target="https://doi.org/10.1016/j.jesp.2017.09.004" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Experimental Social Psychology</title>
+		<imprint>
+			<biblScope unit="volume">74</biblScope>
+			<biblScope unit="page" from="187" to="195" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Albers, C., &amp; Lakens, D. (2018). When power analyses based on pilot data are biased: Inaccurate effect size estimators and follow-up bias. Journal of Experimental Social Psychology, 74, 187-195. https://doi.org/10.1016/j.jesp.2017.09.004</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">How to interpret statistical models using marginaleffects in R and Python</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Arel-Bundock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Greifer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Heiss</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Statistical Software</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">Arel-Bundock, V., Greifer, N., &amp; Heiss, A. (Forthcoming). How to interpret statistical models using marginaleffects in R and Python. Journal of Statistical Software.</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Statistical power in two-level models: A tutorial based on Monte Carlo simulation</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Arend</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schäfer</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/met0000195</idno>
+		<ptr target="https://doi.org/10.1037/met0000195" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Methods</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="19" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Arend, M. G., &amp; Schäfer, T. (2019). Statistical power in two-level models: A tutorial based on Monte Carlo simulation. Psychological Methods, 24(1), 1-19. https://doi.org/10.1037/met0000195</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Fitting Linear Mixed-Effects Models Using Lme4</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mächler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bolker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Walker</surname></persName>
+		</author>
+		<idno type="DOI">10.18637/jss.v067.i01</idno>
+		<ptr target="https://doi.org/10.18637/jss.v067.i01" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Statistical Software</title>
+		<imprint>
+			<biblScope unit="volume">67</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bates, D., Mächler, M., Bolker, B., &amp; Walker, S. (2015). Fitting Linear Mixed-Effects Models Using Lme4. Journal of Statistical Software, 67(1). https://doi.org/10.18637/jss.v067.i01</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">A unifying framework for parallel and distributed processing in r using futures</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bengtsson</surname></persName>
+		</author>
+		<idno type="DOI">10.32614/RJ-2021-048</idno>
+		<ptr target="https://doi.org/10.32614/RJ-2021-048" />
+	</analytic>
+	<monogr>
+		<title level="j">The R Journal</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="208" to="227" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bengtsson, H. (2021). A unifying framework for parallel and distributed processing in r using futures. The R Journal, 13(2), 208-227. https://doi.org/10.32614/RJ-2021-048</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Redefine statistical significance</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Benjamin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">O</forename><surname>Berger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Johannesson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E.-J</forename><surname>Wagenmakers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Berk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Bollen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Brembs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Camerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cesarini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Chambers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Clyde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Cook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>De Boeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dienes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dreber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Easwaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Efferson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">E</forename><surname>Johnson</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-017-0189-z</idno>
+		<ptr target="https://doi.org/10.1038/s41562-017-0189-z" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="6" to="10" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Benjamin, D. J., Berger, J. O., Johannesson, M., Nosek, B. A., Wagenmakers, E.-J., Berk, R., Bollen, K. A., Brembs, B., Brown, L., Camerer, C., Cesarini, D., Chambers, C. D., Clyde, M., Cook, T. D., De Boeck, P., Dienes, Z., Dreber, A., Easwaran, K., Efferson, C., … Johnson, V. E. (2017). Redefine statistical significance. Nature Human Behaviour, 2(1), 6-10. https://doi.org/10.1038/s41562-017-0189-z</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Simulation-based prior knowledge elicitation for parametric Bayesian models</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bockting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">T</forename><surname>Radev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-C</forename><surname>Bürkner</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41598-024-68090-7</idno>
+		<ptr target="https://doi.org/10.1038/s41598-024-68090-7" />
+	</analytic>
+	<monogr>
+		<title level="j">Scientific Reports</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">17330</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bockting, F., Radev, S. T., &amp; Bürkner, P.-C. (2024). Simulation-based prior knowledge elicitation for parametric Bayesian models. Scientific Reports, 14(1), 17330. https://doi.org/10.1038/s41598-024-68090-7</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Linear and generalized linear mixed models</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M</forename><surname>Bolker</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/acprof:oso/9780199672547.003.0014</idno>
+		<ptr target="https://doi.org/10.1093/acprof:oso/9780199672547.003.0014" />
+	</analytic>
+	<monogr>
+		<title level="m">Ecological Statistics</title>
+		<editor>
+			<persName><forename type="first">G</forename><forename type="middle">A</forename><surname>Fox</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Negrete-Yankelevich</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><forename type="middle">J</forename><surname>Sosa</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="309" to="333" />
+		</imprint>
+		<respStmt>
+			<orgName>Oxford University PressOxford</orgName>
+		</respStmt>
+	</monogr>
+	<note>st ed.</note>
+	<note type="raw_reference">Bolker, B. M. (2015). Linear and generalized linear mixed models. In G. A. Fox, S. Negrete-Yankelevich, &amp; V. J. Sosa (Eds.), Ecological Statistics (1st ed., pp. 309-333). Oxford University PressOxford. https://doi.org/10.1093/acprof:oso/9780199672547.003.0014</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">glmmTMB Balances Speed and Flexibility Among Packages for Zero-inflated Generalized Linear Mixed Modeling</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brooks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kristensen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Benthem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Van</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Magnusson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Nielsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Skaug</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mächler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bolker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename></persName>
+		</author>
+		<idno type="DOI">10.32614/RJ-2017-066</idno>
+		<ptr target="https://doi.org/10.32614/RJ-2017-066" />
+	</analytic>
+	<monogr>
+		<title level="j">The R Journal</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">378</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Brooks, M., E., Kristensen, K., Benthem, van, J., Magnusson, A., Berg, C., W., Nielsen, A., Skaug, H., J., Mächler, M., &amp; Bolker, B., M. (2017). glmmTMB Balances Speed and Flexibility Among Packages for Zero-inflated Generalized Linear Mixed Modeling. The R Journal, 9(2), 378. https://doi.org/10.32614/RJ-2017-066</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">An Introduction to Linear Mixed-Effects Modeling in R</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">A</forename><surname>Brown</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245920960351</idno>
+		<ptr target="https://doi.org/10.1177/2515245920960351" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page">2515245920960351</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Brown, V. A. (2021). An Introduction to Linear Mixed-Effects Modeling in R. Advances in Methods and Practices in Psychological Science, 4(1), 2515245920960351. https://doi.org/10.1177/2515245920960351</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Power Analysis and Effect Size in Mixed Effects Models: A Tutorial</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brysbaert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Stevens</surname></persName>
+		</author>
+		<idno type="DOI">10.5334/joc.10</idno>
+		<ptr target="https://doi.org/10.5334/joc.10" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Cognition</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">9</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Brysbaert, M., &amp; Stevens, M. (2018). Power Analysis and Effect Size in Mixed Effects Models: A Tutorial. Journal of Cognition, 1(1), 9. https://doi.org/10.5334/joc.10</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Brms: An R Package for Bayesian Multilevel Models Using Stan</title>
+		<author>
+			<persName><forename type="first">P.-C</forename><surname>Bürkner</surname></persName>
+		</author>
+		<idno type="DOI">10.18637/jss.v080.i01</idno>
+		<ptr target="https://doi.org/10.18637/jss.v080.i01" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Statistical Software</title>
+		<imprint>
+			<biblScope unit="volume">80</biblScope>
+			<biblScope unit="page" from="1" to="28" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bürkner, P.-C. (2017). Brms: An R Package for Bayesian Multilevel Models Using Stan. Journal of Statistical Software, 80, 1-28. https://doi.org/10.18637/jss.v080.i01</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Advanced Bayesian Multilevel Modeling with the R Package brms</title>
+		<author>
+			<persName><forename type="first">P.-C</forename><surname>Bürkner</surname></persName>
+		</author>
+		<idno type="DOI">10.32614/RJ-2018-017</idno>
+		<idno>SAMPLE SIZE PLANNING FOR GLMMS 57</idno>
+		<ptr target="https://doi.org/10.32614/RJ-2018-017" />
+	</analytic>
+	<monogr>
+		<title level="j">The R Journal</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">395</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bürkner, P.-C. (2018). Advanced Bayesian Multilevel Modeling with the R Package brms. The R Journal, 10(1), 395. https://doi.org/10.32614/RJ-2018-017 SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 57</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Power failure: Why small sample size undermines the reliability of neuroscience</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mokrysz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Flint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">S J</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Munafò</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/nrn3475</idno>
+		<ptr target="https://doi.org/10.1038/nrn3475" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Reviews Neuroscience</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="365" to="376" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Button, K. S., Ioannidis, J. P. A., Mokrysz, C., Nosek, B. A., Flint, J., Robinson, E. S. J., &amp; Munafò, M. R. (2013). Power failure: Why small sample size undermines the reliability of neuroscience. Nature Reviews Neuroscience, 14(5), 365-376. https://doi.org/10.1038/nrn3475</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Evaluating the replicability of social science experiments in Nature and Science between 2010 and 2015</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">F</forename><surname>Camerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dreber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Holzmeister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-H</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Johannesson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kirchler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Nave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pfeiffer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Altmejd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Buttrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Forsell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gampa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Heikensten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hummer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Imai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-018-0399-z</idno>
+		<ptr target="https://doi.org/10.1038/s41562-018-0399-z" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="637" to="644" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Camerer, C. F., Dreber, A., Holzmeister, F., Ho, T.-H., Huber, J., Johannesson, M., Kirchler, M., Nave, G., Nosek, B. A., Pfeiffer, T., Altmejd, A., Buttrick, N., Chan, T., Chen, Y., Forsell, E., Gampa, A., Heikensten, E., Hummer, L., Imai, T., … Wu, H. (2018). Evaluating the replicability of social science experiments in Nature and Science between 2010 and 2015. Nature Human Behaviour, 2(9), 637-644. https://doi.org/10.1038/s41562-018-0399-z</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">The past, present and future of Registered Reports</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Chambers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tzavella</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-021-01193-7</idno>
+		<ptr target="https://doi.org/10.1038/s41562-021-01193-7" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="29" to="42" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Chambers, C. D., &amp; Tzavella, L. (2022). The past, present and future of Registered Reports. Nature Human Behaviour, 6(1), 29-42. https://doi.org/10.1038/s41562-021-01193-7</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Pwr: Basic functions for power analysis</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Champely</surname></persName>
+		</author>
+		<ptr target="https://github.com/heliosdrm/pwr" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Champely, S. (2020). Pwr: Basic functions for power analysis. https://github.com/heliosdrm/pwr</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">A power primer</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0033-2909.112.1.155</idno>
+		<ptr target="https://doi.org/10.1037/0033-2909.112.1.155" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Bulletin</title>
+		<imprint>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="155" to="159" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cohen, J. (1992). A power primer. Psychological Bulletin, 112(1), 155-159. https://doi.org/10.1037/0033-2909.112.1.155</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">The New Statistics: Why and How</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cumming</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/0956797613504966</idno>
+		<ptr target="https://doi.org/10.1177/0956797613504966" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="7" to="29" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cumming, G. (2014). The New Statistics: Why and How. Psychological Science, 25(1), 7-29. https://doi.org/10.1177/0956797613504966</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Faux: Simulation for factorial designs</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Debruine</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/zenodo.2669586</idno>
+		<ptr target="https://doi.org/10.5281/zenodo.2669586" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">DeBruine, L. (2023). Faux: Simulation for factorial designs. Zenodo. https://doi.org/10.5281/zenodo.2669586</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Understanding Mixed-Effects Models Through Data Simulation</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Debruine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Barr</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245920965119</idno>
+		<ptr target="https://doi.org/10.1177/2515245920965119" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page">2515245920965119</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">DeBruine, L., &amp; Barr, D. J. (2021). Understanding Mixed-Effects Models Through Data Simulation. Advances in Methods and Practices in Psychological Science, 4(1), 2515245920965119. https://doi.org/10.1177/2515245920965119</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">A Causal Framework for Cross-Cultural Generalizability</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Deffner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Rohrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mcelreath</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/25152459221106366</idno>
+		<ptr target="https://doi.org/10.1177/25152459221106366" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page">251524592211063</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Deffner, D., Rohrer, J. M., &amp; McElreath, R. (2022). A Causal Framework for Cross-Cultural Generalizability. Advances in Methods and Practices in Psychological Science, 5(3), 251524592211063. https://doi.org/10.1177/25152459221106366</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Traditional multiplicity adjustment methods in clinical trials</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dmitrienko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Agostino</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/sim.5990</idno>
+		<ptr target="https://doi.org/10.1002/sim.5990" />
+	</analytic>
+	<monogr>
+		<title level="j">Statistics in Medicine</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">29</biblScope>
+			<biblScope unit="page" from="5172" to="5218" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Dmitrienko, A., &amp; D&apos;Agostino, R. (2013). Traditional multiplicity adjustment methods in clinical trials. Statistics in Medicine, 32(29), 5172-5218. https://doi.org/10.1002/sim.5990</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Many Labs 5: Testing Pre-Data-Collection Peer Review as an Intervention to Increase Replicability</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Ebersole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">B</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Baranski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D.-J</forename><surname>Bart-Plange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">R</forename><surname>Buttrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Chartier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Corker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Corley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">K</forename><surname>Hartshorne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ijzerman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">B</forename><surname>Lazarević</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Rabagliati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Ropovik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Aczel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">F</forename><surname>Aeschbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Andrighetto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Arnal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Arrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Babincak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245920958687</idno>
+		<ptr target="https://doi.org/10.1177/2515245920958687" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="309" to="331" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ebersole, C. R., Mathur, M. B., Baranski, E., Bart-Plange, D.-J., Buttrick, N. R., Chartier, C. R., Corker, K. S., Corley, M., Hartshorne, J. K., IJzerman, H., Lazarević, L. B., Rabagliati, H., Ropovik, I., Aczel, B., Aeschbach, L. F., Andrighetto, L., Arnal, J. D., Arrow, H., Babincak, P., … Nosek, B. A. (2020). Many Labs 5: Testing Pre-Data-Collection Peer Review as an Intervention to Increase Replicability. Advances in Methods and Practices in Psychological Science, 3(3), 309-331. https://doi.org/10.1177/2515245920958687</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">A simple Monte Carlo method for estimating power in multilevel designs</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Enders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">T</forename><surname>Keller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Woller</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/met0000614</idno>
+		<ptr target="https://doi.org/10.1037/met0000614" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Methods</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Enders, C. K., Keller, B. T., &amp; Woller, M. P. (2023). A simple Monte Carlo method for estimating power in multilevel designs. Psychological Methods. https://doi.org/10.1037/met0000614</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Regression: Models, Methods and Applications</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fahrmeir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kneib</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">D</forename><surname>Marx</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-662-63882-8</idno>
+		<ptr target="https://doi.org/10.1007/978-3-662-63882-8" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<publisher>Springer</publisher>
+			<pubPlace>Berlin Heidelberg</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Fahrmeir, L., Kneib, T., Lang, S., &amp; Marx, B. D. (2021). Regression: Models, Methods and Applications. Springer Berlin Heidelberg. https://doi.org/10.1007/978-3-662-63882-8</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vehtari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Simpson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C</forename><surname>Margossian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Carpenter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kennedy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gabry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-C</forename><surname>Bürkner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Modrák</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2011.01808</idno>
+		<ptr target="https://arxiv.org/abs/2011.01808" />
+		<title level="m">Bayesian Workflow</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gelman, A., Vehtari, A., Simpson, D., Margossian, C. C., Carpenter, B., Yao, Y., Kennedy, L., Gabry, J., Bürkner, P.-C., &amp; Modrák, M. (2020). Bayesian Workflow (arXiv:2011.01808). arXiv. https://arxiv.org/abs/2011.01808</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Missing data in experiments: Challenges and solutions</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gomila</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Clark</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/met0000361</idno>
+		<ptr target="https://doi.org/10.1037/met0000361" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Methods</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="143" to="155" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gomila, R., &amp; Clark, C. S. (2022). Missing data in experiments: Challenges and solutions. Psychological Methods, 27(2), 143-155. https://doi.org/10.1037/met0000361</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">SIMR: An R package for power analysis of generalized linear mixed models by simulation</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Macleod</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/2041-210X.12504</idno>
+		<ptr target="https://doi.org/10.1111/2041-210X.12504" />
+	</analytic>
+	<monogr>
+		<title level="j">Methods in Ecology and Evolution</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="493" to="498" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Green, P., &amp; MacLeod, C. J. (2016). SIMR: An R package for power analysis of generalized linear mixed models by simulation. Methods in Ecology and Evolution, 7(4), 493-498. https://doi.org/10.1111/2041-210X.12504</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Conducting Simulation Studies in the R Programming Environment</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Hallgren</surname></persName>
+		</author>
+		<idno type="DOI">10.20982/tqmp.09.2.p043</idno>
+		<ptr target="https://doi.org/10.20982/tqmp.09.2.p043" />
+	</analytic>
+	<monogr>
+		<title level="j">Tutorials in Quantitative Methods for Psychology</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="43" to="60" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hallgren, K. A. (2013). Conducting Simulation Studies in the R Programming Environment. Tutorials in Quantitative Methods for Psychology, 9(2), 43-60. https://doi.org/10.20982/tqmp.09.2.p043</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Flexible prior elicitation via the prior predictive distribution</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hartmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Agiashvili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bürkner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Klami</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th conference on uncertainty in artificial intelligence (UAI)</title>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Peters</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Sontag</surname></persName>
+		</editor>
+		<meeting>the 36th conference on uncertainty in artificial intelligence (UAI)</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">124</biblScope>
+			<biblScope unit="page" from="1129" to="1138" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hartmann, M., Agiashvili, G., Bürkner, P., &amp; Klami, A. (2020). Flexible prior elicitation via the prior predictive distribution. In J. Peters &amp; D. Sontag (Eds.), Proceedings of the 36th conference on uncertainty in artificial intelligence (UAI) (Vol. 124, pp. 1129-1138).</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Pmlr</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">PMLR.</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Power and Sample Size for Longitudinal Models in R -The longpower Package and Shiny App</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Iddi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">C</forename><surname>Donohue</surname></persName>
+		</author>
+		<idno type="DOI">10.32614/RJ-2022-022</idno>
+		<ptr target="https://doi.org/10.32614/RJ-2022-022" />
+	</analytic>
+	<monogr>
+		<title level="j">The R Journal</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="264" to="282" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Iddi, S., &amp; Donohue, M. C. (2022). Power and Sample Size for Longitudinal Models in R - The longpower Package and Shiny App. The R Journal, 14(1), 264-282. https://doi.org/10.32614/RJ-2022-022</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Power analysis for SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 59 generalized linear mixed models in ecology and evolution</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">C D</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J E</forename><surname>Barry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">M</forename><surname>Ferguson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Müller</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/2041-210X.12306</idno>
+		<ptr target="https://doi.org/10.1111/2041-210X.12306" />
+	</analytic>
+	<monogr>
+		<title level="j">Methods in Ecology and Evolution</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="133" to="142" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Johnson, P. C. D., Barry, S. J. E., Ferguson, H. M., &amp; Müller, P. (2015). Power analysis for SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 59 generalized linear mixed models in ecology and evolution. Methods in Ecology and Evolution, 6(2), 133-142. https://doi.org/10.1111/2041-210X.12306</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">A practical guide and power analysis for GLMMs: Detecting among treatment variation in random effects</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Kain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M</forename><surname>Bolker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">W</forename><surname>Mccoy</surname></persName>
+		</author>
+		<idno type="DOI">10.7717/peerj.1226</idno>
+		<ptr target="https://doi.org/10.7717/peerj.1226" />
+	</analytic>
+	<monogr>
+		<title level="j">PeerJ</title>
+		<imprint>
+			<biblScope unit="page" from="3" to="e1226" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kain, M. P., Bolker, B. M., &amp; McCoy, M. W. (2015). A practical guide and power analysis for GLMMs: Detecting among treatment variation in random effects. PeerJ, 3, e1226. https://doi.org/10.7717/peerj.1226</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Sample size planning for the standardized mean difference: Accuracy in parameter estimation via narrow confidence intervals</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kelley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Rausch</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/1082-989X.11.4.363</idno>
+		<ptr target="https://doi.org/10.1037/1082-989X.11.4.363" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Methods</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="363" to="385" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kelley, K., &amp; Rausch, J. R. (2006). Sample size planning for the standardized mean difference: Accuracy in parameter estimation via narrow confidence intervals. Psychological Methods, 11(4), 363-385. https://doi.org/10.1037/1082-989X.11.4.363</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">A point of minimal important difference (MID): A critique of terminology and methods</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>King</surname></persName>
+		</author>
+		<idno type="DOI">10.1586/erp.11.9</idno>
+		<ptr target="https://doi.org/10.1586/erp.11.9" />
+	</analytic>
+	<monogr>
+		<title level="j">Expert Review of Pharmacoeconomics &amp; Outcomes Research</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="171" to="184" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">King, M. T. (2011). A point of minimal important difference (MID): A critique of terminology and methods. Expert Review of Pharmacoeconomics &amp; Outcomes Research, 11(2), 171-184. https://doi.org/10.1586/erp.11.9</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">The Bayesian New Statistics: Hypothesis testing, estimation, meta-analysis, and power analysis from a Bayesian perspective</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">K</forename><surname>Kruschke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">M</forename><surname>Liddell</surname></persName>
+		</author>
+		<idno type="DOI">10.3758/s13423-016-1221-4</idno>
+		<ptr target="https://doi.org/10.3758/s13423-016-1221-4" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychonomic Bulletin &amp; Review</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="178" to="206" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kruschke, J. K., &amp; Liddell, T. M. (2018). The Bayesian New Statistics: Hypothesis testing, estimation, meta-analysis, and power analysis from a Bayesian perspective. Psychonomic Bulletin &amp; Review, 25(1), 178-206. https://doi.org/10.3758/s13423-016-1221-4</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Estimating power in (generalized) linear mixed models: An open introduction and tutorial in R</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kumle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Võ</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-H</forename><surname>Draschkow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename></persName>
+		</author>
+		<idno type="DOI">10.3758/s13428-021-01546-0</idno>
+		<ptr target="https://doi.org/10.3758/s13428-021-01546-0" />
+	</analytic>
+	<monogr>
+		<title level="j">Behavior Research Methods</title>
+		<imprint>
+			<biblScope unit="volume">53</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="2528" to="2543" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kumle, L., Võ, M. L.-H., &amp; Draschkow, D. (2021). Estimating power in (generalized) linear mixed models: An open introduction and tutorial in R. Behavior Research Methods, 53(6), 2528-2543. https://doi.org/10.3758/s13428-021-01546-0</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Selection of the Number of Participants in Intensive Longitudinal Studies: A User-Friendly Shiny App and Tutorial for Performing Power Analysis in Multilevel Regression Models That Account for Temporal Dependencies</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Lafit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">K</forename><surname>Adolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Dejonckheere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Myin-Germeys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Viechtbauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ceulemans</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245920978738</idno>
+		<ptr target="https://doi.org/10.1177/2515245920978738" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">251524592097873</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lafit, G., Adolf, J. K., Dejonckheere, E., Myin-Germeys, I., Viechtbauer, W., &amp; Ceulemans, E. (2021). Selection of the Number of Participants in Intensive Longitudinal Studies: A User-Friendly Shiny App and Tutorial for Performing Power Analysis in Multilevel Regression Models That Account for Temporal Dependencies. Advances in Methods and Practices in Psychological Science, 4(1), 251524592097873. https://doi.org/10.1177/2515245920978738</note>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1525/collabra.33267</idno>
+		<ptr target="https://doi.org/10.1525/collabra.33267" />
+	</analytic>
+	<monogr>
+		<title level="j">Sample Size Justification. Collabra: Psychology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">33267</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2022a). Sample Size Justification. Collabra: Psychology, 8(1), 33267. https://doi.org/10.1525/collabra.33267</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Improving Your Statistical Inferences</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/ZENODO.6409077</idno>
+		<ptr target="https://doi.org/10.5281/ZENODO.6409077" />
+		<imprint>
+			<date type="published" when="2022">2022b</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2022b). Improving Your Statistical Inferences. Zenodo. https://doi.org/10.5281/ZENODO.6409077</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">G</forename><surname>Adolfi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Albers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Anvari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A J</forename><surname>Apps</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">E</forename><surname>Argamon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Baguley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">B</forename><surname>Becker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">D</forename><surname>Benning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E</forename><surname>Bradford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Buchanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Caldwell</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Van</surname></persName>
+		</author>
+		<idno>SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 60</idno>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">Lakens, D., Adolfi, F. G., Albers, C. J., Anvari, F., Apps, M. A. J., Argamon, S. E., Baguley, T., Becker, R. B., Benning, S. D., Bradford, D. E., Buchanan, E. M., Caldwell, A. R., Van SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 60</note>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Justify your alpha</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Calster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Carlsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-C</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">J</forename><surname>Colling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">S</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Crook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Zwaan</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-018-0311-x</idno>
+		<ptr target="https://doi.org/10.1038/s41562-018-0311-x" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="168" to="171" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Calster, B., Carlsson, R., Chen, S.-C., Chung, B., Colling, L. J., Collins, G. S., Crook, Z., … Zwaan, R. A. (2018). Justify your alpha. Nature Human Behaviour, 2(3), 168-171. https://doi.org/10.1038/s41562-018-0311-x</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Simulation-Based Power Analysis for Factorial Analysis of Variance Designs</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Caldwell</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245920951503</idno>
+		<ptr target="https://doi.org/10.1177/2515245920951503" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page">251524592095150</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D., &amp; Caldwell, A. R. (2021). Simulation-Based Power Analysis for Factorial Analysis of Variance Designs. Advances in Methods and Practices in Psychological Science, 4(1), 251524592095150. https://doi.org/10.1177/2515245920951503</note>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Equivalence Testing for Psychological Research: A Tutorial</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Scheel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Isager</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245918770963</idno>
+		<ptr target="https://doi.org/10.1177/2515245918770963" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="259" to="269" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D., Scheel, A. M., &amp; Isager, P. M. (2018). Equivalence Testing for Psychological Research: A Tutorial. Advances in Methods and Practices in Psychological Science, 1(2), 259-269. https://doi.org/10.1177/2515245918770963</note>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Power struggles: Estimating sample size for multilevel relationships research</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">P</forename><surname>Lane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">P</forename><surname>Hennes</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/0265407517710342</idno>
+		<ptr target="https://doi.org/10.1177/0265407517710342" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Social and Personal Relationships</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="7" to="31" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lane, S. P., &amp; Hennes, E. P. (2018). Power struggles: Estimating sample size for multilevel relationships research. Journal of Social and Personal Relationships, 35(1), 7-31. https://doi.org/10.1177/0265407517710342</note>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lebeau</surname></persName>
+		</author>
+		<idno type="DOI">10.17077/f7kk-6w7f</idno>
+		<ptr target="https://doi.org/10.17077/f7kk-6w7f" />
+		<title level="m">Power Analysis by Simulation using R and simglm</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">LeBeau, B. (2019). Power Analysis by Simulation using R and simglm. https://doi.org/10.17077/f7kk-6w7f</note>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Using the Tidyverse Package in R for Simulation Studies in SEM</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sriutaisuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/10705511.2019.1644515</idno>
+		<ptr target="https://doi.org/10.1080/10705511.2019.1644515" />
+	</analytic>
+	<monogr>
+		<title level="j">Structural Equation Modeling: A Multidisciplinary Journal</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="468" to="482" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lee, S., Sriutaisuk, S., &amp; Kim, H. (2020). Using the Tidyverse Package in R for Simulation Studies in SEM. Structural Equation Modeling: A Multidisciplinary Journal, 27(3), 468-482. https://doi.org/10.1080/10705511.2019.1644515</note>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J A</forename><surname>Little</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">B</forename><surname>Rubin</surname></persName>
+		</author>
+		<title level="m">Statistical Analysis with Missing Data</title>
+		<imprint>
+			<publisher>Wiley</publisher>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note>nd ed</note>
+	<note type="raw_reference">Little, R. J. A., &amp; Rubin, D. B. (2014). Statistical Analysis with Missing Data (2nd ed). Wiley.</note>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">What Is Your Estimand? Defining the Target Quantity Connects Statistical Evidence to Theory</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M</forename><surname>Stewart</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/00031224211004187</idno>
+		<ptr target="https://doi.org/10.1177/00031224211004187" />
+	</analytic>
+	<monogr>
+		<title level="j">American Sociological Review</title>
+		<imprint>
+			<biblScope unit="volume">86</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="532" to="565" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lundberg, I., Johnson, R., &amp; Stewart, B. M. (2021). What Is Your Estimand? Defining the Target Quantity Connects Statistical Evidence to Theory. American Sociological Review, 86(3), 532-565. https://doi.org/10.1177/00031224211004187</note>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">The consequences of ignoring therapist effects in trials with longitudinal data: A simulation study</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Magnusson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Andersson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Carlbring</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/ccp0000333</idno>
+		<ptr target="https://doi.org/10.1037/ccp0000333" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Consulting and Clinical Psychology</title>
+		<imprint>
+			<biblScope unit="volume">86</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="711" to="725" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Magnusson, K., Andersson, G., &amp; Carlbring, P. (2018). The consequences of ignoring therapist effects in trials with longitudinal data: A simulation study. Journal of Consulting and Clinical Psychology, 86(9), 711-725. https://doi.org/10.1037/ccp0000333</note>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Measuring individual differences in reaction norms in field and experimental studies: A power analysis of random regression models</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">G A</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">H</forename><surname>Nussey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Wilson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Réale</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/j.2041-210X.2010.00084.x</idno>
+		<ptr target="https://doi.org/10.1111/j.2041-210X.2010.00084.x" />
+	</analytic>
+	<monogr>
+		<title level="j">Methods in Ecology and Evolution</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="362" to="374" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Martin, J. G. A., Nussey, D. H., Wilson, A. J., &amp; Réale, D. (2011). Measuring individual differences in reaction norms in field and experimental studies: A power analysis of random regression models. Methods in Ecology and Evolution, 2(4), 362-374. https://doi.org/10.1111/j.2041-210X.2010.00084.x</note>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Balancing Type I SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 61 error and power in linear mixed models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Matuschek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kliegl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vasishth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Baayen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bates</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jml.2017.01.001</idno>
+		<ptr target="https://doi.org/10.1016/j.jml.2017.01.001" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Memory and Language</title>
+		<imprint>
+			<biblScope unit="volume">94</biblScope>
+			<biblScope unit="page" from="305" to="315" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Matuschek, H., Kliegl, R., Vasishth, S., Baayen, H., &amp; Bates, D. (2017). Balancing Type I SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 61 error and power in linear mixed models. Journal of Memory and Language, 94, 305-315. https://doi.org/10.1016/j.jml.2017.01.001</note>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Sample Size Planning for Statistical Power and Accuracy in Parameter Estimation</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">E</forename><surname>Maxwell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kelley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Rausch</surname></persName>
+		</author>
+		<idno type="DOI">10.1146/annurev.psych.59.103006.093735</idno>
+		<ptr target="https://doi.org/10.1146/annurev.psych.59.103006.093735" />
+	</analytic>
+	<monogr>
+		<title level="j">Annual Review of Psychology</title>
+		<imprint>
+			<biblScope unit="volume">59</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="537" to="563" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Maxwell, S. E., Kelley, K., &amp; Rausch, J. R. (2008). Sample Size Planning for Statistical Power and Accuracy in Parameter Estimation. Annual Review of Psychology, 59(1), 537-563. https://doi.org/10.1146/annurev.psych.59.103006.093735</note>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mcelreath</surname></persName>
+		</author>
+		<idno type="DOI">10.1201/9780429029608</idno>
+		<ptr target="https://doi.org/10.1201/9780429029608" />
+		<title level="m">Statistical Rethinking: A Bayesian Course with Examples in R and Stan</title>
+		<imprint>
+			<publisher>Chapman and Hall/CRC</publisher>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>nd ed.</note>
+	<note type="raw_reference">McElreath, R. (2020). Statistical Rethinking: A Bayesian Course with Examples in R and Stan (2nd ed.). Chapman and Hall/CRC. https://doi.org/10.1201/9780429029608</note>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Best practice guidance for linear mixed-effects models in psychological science</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Meteyard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A I</forename><surname>Davies</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jml.2020.104092</idno>
+		<ptr target="https://doi.org/10.1016/j.jml.2020.104092" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Memory and Language</title>
+		<imprint>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="page">104092</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Meteyard, L., &amp; Davies, R. A. I. (2020). Best practice guidance for linear mixed-effects models in psychological science. Journal of Memory and Language, 112, 104092. https://doi.org/10.1016/j.jml.2020.104092</note>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Prior Knowledge Elicitation: The Past, Present, and Future</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mikkola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">A</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chandramouli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hartmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Abril Pla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pesonen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Corander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vehtari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kaski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-C</forename><surname>Bürkner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Klami</surname></persName>
+		</author>
+		<idno type="DOI">10.1214/23-BA1381</idno>
+		<ptr target="https://doi.org/10.1214/23-BA1381" />
+	</analytic>
+	<monogr>
+		<title level="j">Bayesian Analysis</title>
+		<imprint>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Mikkola, P., Martin, O. A., Chandramouli, S., Hartmann, M., Abril Pla, O., Thomas, O., Pesonen, H., Corander, J., Vehtari, A., Kaski, S., Bürkner, P.-C., &amp; Klami, A. (2023). Prior Knowledge Elicitation: The Past, Present, and Future. Bayesian Analysis, -1(-1). https://doi.org/10.1214/23-BA1381</note>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Summary-statistics-based power analysis: A new and practical method to determine sample size for mixed-effects modeling</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Murayama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Usami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sakaki</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/met0000330</idno>
+		<ptr target="https://doi.org/10.1037/met0000330" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Methods</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Murayama, K., Usami, S., &amp; Sakaki, M. (2022). Summary-statistics-based power analysis: A new and practical method to determine sample size for mixed-effects modeling. Psychological Methods. https://doi.org/10.1037/met0000330</note>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Computational Tools for Probing Interactions in Multiple Linear Regression, Multilevel Modeling, and Latent Curve Analysis</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">J</forename><surname>Preacher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Curran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Bauer</surname></persName>
+		</author>
+		<idno type="DOI">10.3102/10769986031004437</idno>
+		<ptr target="https://doi.org/10.3102/10769986031004437" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Educational and Behavioral Statistics</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="437" to="448" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Preacher, K. J., Curran, P. J., &amp; Bauer, D. J. (2006). Computational Tools for Probing Interactions in Multiple Linear Regression, Multilevel Modeling, and Latent Curve Analysis. Journal of Educational and Behavioral Statistics, 31(4), 437-448. https://doi.org/10.3102/10769986031004437</note>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<analytic>
+		<title level="a" type="main">R: A language and environment for statistical computing</title>
+		<author>
+			<orgName type="collaboration">R Core Team.</orgName>
+		</author>
+		<ptr target="https://www.R-project.org/" />
+	</analytic>
+	<monogr>
+		<title level="m">R Foundation for Statistical Computing</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">R Core Team. (2024). R: A language and environment for statistical computing. R Foundation for Statistical Computing. https://www.R-project.org/</note>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Simulation-Based Power Analyses for the Smallest Effect Size of Interest: A Confidence-Interval Approach for Minimum-Effect and Equivalence Testing</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Riesthuis</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/25152459241240722</idno>
+		<ptr target="https://doi.org/10.1177/25152459241240722" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Methods and Practices in Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">25152459241240722</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Riesthuis, P. (2024). Simulation-Based Power Analyses for the Smallest Effect Size of Interest: A Confidence-Interval Approach for Minimum-Effect and Equivalence Testing. Advances in Methods and Practices in Psychological Science, 7(2), 25152459241240722. https://doi.org/10.1177/25152459241240722</note>
+</biblStruct>
+
+<biblStruct xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Toward a principled Bayesian workflow in cognitive science</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Schad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Betancourt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vasishth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Methods</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="103" to="126" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schad, D. J., Betancourt, M., &amp; Vasishth, S. (2021). Toward a principled Bayesian workflow in cognitive science. Psychological Methods, 26(1), 103-126.</note>
+</biblStruct>
+
+<biblStruct xml:id="b63">
+	<monogr>
+		<idno type="DOI">10.1037/met0000275</idno>
+		<ptr target="https://doi.org/10.1037/met0000275" />
+		<title level="m">SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 62</title>
+		<imprint/>
+	</monogr>
+	<note type="raw_reference">SIMULATION-BASED SAMPLE SIZE PLANNING FOR GLMMS 62 https://doi.org/10.1037/met0000275</note>
+</biblStruct>
+
+<biblStruct xml:id="b64">
+	<analytic>
+		<title level="a" type="main">How to capitalize on a priori contrasts in linear (mixed) models: A tutorial</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Schad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vasishth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hohenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kliegl</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jml.2019.104038</idno>
+		<ptr target="https://doi.org/10.1016/j.jml.2019.104038" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Memory and Language</title>
+		<imprint>
+			<biblScope unit="volume">110</biblScope>
+			<biblScope unit="page">104038</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schad, D. J., Vasishth, S., Hohenstein, S., &amp; Kliegl, R. (2020). How to capitalize on a priori contrasts in linear (mixed) models: A tutorial. Journal of Memory and Language, 110, 104038. https://doi.org/10.1016/j.jml.2019.104038</note>
+</biblStruct>
+
+<biblStruct xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Practical challenges and methodological flexibility in prior elicitation</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Stefan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Evans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E.-J</forename><surname>Wagenmakers</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/met0000354</idno>
+		<ptr target="https://doi.org/10.1037/met0000354" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Methods</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="177" to="197" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Stefan, A. M., Evans, N. J., &amp; Wagenmakers, E.-J. (2022). Practical challenges and methodological flexibility in prior elicitation. Psychological Methods, 27(2), 177-197. https://doi.org/10.1037/met0000354</note>
+</biblStruct>
+
+<biblStruct xml:id="b66">
+	<analytic>
+		<title level="a" type="main">The epistemic and pragmatic function of dichotomous claims based on statistical hypothesis tests</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Uygun Tunç</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Tunç</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/09593543231160112</idno>
+		<ptr target="https://doi.org/10.1177/09593543231160112" />
+	</analytic>
+	<monogr>
+		<title level="j">Theory &amp; Psychology</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="403" to="423" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Uygun Tunç, D., Tunç, M. N., &amp; Lakens, D. (2023). The epistemic and pragmatic function of dichotomous claims based on statistical hypothesis tests. Theory &amp; Psychology, 33(3), 403-423. https://doi.org/10.1177/09593543231160112</note>
+</biblStruct>
+
+<biblStruct xml:id="b67">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Vaughan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dancho</surname></persName>
+		</author>
+		<ptr target="https://CRAN.R-project.org/package=furrr" />
+		<title level="m">Furrr: Apply mapping functions in parallel using futures</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Vaughan, D., &amp; Dancho, M. (2022). Furrr: Apply mapping functions in parallel using futures. https://CRAN.R-project.org/package=furrr</note>
+</biblStruct>
+
+<biblStruct xml:id="b68">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">I</forename><surname>Watson</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2303.12657</idno>
+		<ptr target="https://doi.org/10.48550/ARXIV.2303.12657" />
+		<title level="m">Generalised Linear Mixed Model Specification, Analysis, Fitting, and Optimal Design in R with the glmmr Packages</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Watson, S. I. (2023). Generalised Linear Mixed Model Specification, Analysis, Fitting, and Optimal Design in R with the glmmr Packages. arXiv. https://doi.org/10.48550/ARXIV.2303.12657</note>
+</biblStruct>
+
+<biblStruct xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Statistical power and optimal design in experiments in which samples of participants respond to samples of stimuli</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Westfall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Kenny</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Judd</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/xge0000014</idno>
+		<ptr target="https://doi.org/10.1037/xge0000014" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Experimental Psychology: General</title>
+		<imprint>
+			<biblScope unit="volume">143</biblScope>
+			<biblScope unit="page" from="2020" to="2045" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Westfall, J., Kenny, D. A., &amp; Judd, C. M. (2014). Statistical power and optimal design in experiments in which samples of participants respond to samples of stimuli. Journal of Experimental Psychology: General, 143, 2020-2045. https://doi.org/10.1037/xge0000014</note>
+</biblStruct>
+
+<biblStruct xml:id="b70">
+	<analytic>
+		<title level="a" type="main">Welcome to the Tidyverse</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wickham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Averick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Mcgowan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>François</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Grolemund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Henry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kuhn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pedersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bache</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ooms</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Seidel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Spinu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yutani</surname></persName>
+		</author>
+		<idno type="DOI">10.21105/joss.01686</idno>
+		<ptr target="https://doi.org/10.21105/joss.01686" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Open Source Software</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">43</biblScope>
+			<biblScope unit="page">1686</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wickham, H., Averick, M., Bryan, J., Chang, W., McGowan, L., François, R., Grolemund, G., Hayes, A., Henry, L., Hester, J., Kuhn, M., Pedersen, T., Miller, E., Bache, S., Müller, K., Ooms, J., Robinson, D., Seidel, D., Spinu, V., … Yutani, H. (2019). Welcome to the Tidyverse. Journal of Open Source Software, 4(43), 1686. https://doi.org/10.21105/joss.01686</note>
+</biblStruct>
+
+<biblStruct xml:id="b71">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wickham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Çetinkaya-Rundel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Grolemund</surname></persName>
+		</author>
+		<title level="m">R for data science: Import, tidy, transform, visualize, and model data</title>
+		<meeting><address><addrLine>O&apos;Reilly</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wickham, H., Çetinkaya-Rundel, M., &amp; Grolemund, G. (2023). R for data science: Import, tidy, transform, visualize, and model data (2nd edition). O&apos;Reilly.</note>
+</biblStruct>
+
+<biblStruct xml:id="b72">
+	<analytic>
+		<title level="a" type="main">The generalizability crisis</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yarkoni</surname></persName>
+		</author>
+		<idno type="DOI">10.1017/S0140525X20001685</idno>
+		<ptr target="https://doi.org/10.1017/S0140525X20001685" />
+	</analytic>
+	<monogr>
+		<title level="j">Behavioral and Brain Sciences</title>
+		<imprint>
+			<biblScope unit="page" from="45" to="e46" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Yarkoni, T. (2022). The generalizability crisis. Behavioral and Brain Sciences, 45, e1. https://doi.org/10.1017/S0140525X20001685</note>
+</biblStruct>
+
+<biblStruct xml:id="b73">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.32614/CRAN.package.pass.lme</idno>
+		<ptr target="https://doi.org/10.32614/CRAN.package.pass.lme" />
+		<title level="m">Pass.lme: Power and Sample Size for Linear Mixed Effect Models (p. 0.9.0). Comprehensive R Archive Network</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Yu, M. (2019). Pass.lme: Power and Sample Size for Linear Mixed Effect Models (p. 0.9.0). Comprehensive R Archive Network. https://doi.org/10.32614/CRAN.package.pass.lme</note>
+</biblStruct>
+
+<biblStruct xml:id="b74">
+	<monogr>
+		<title level="m" type="main">Practical statistical power analysis using Webpower and R</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Yuan</surname></persName>
+		</author>
+		<idno type="DOI">10.35566/power</idno>
+		<ptr target="https://doi.org/10.35566/power" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>ISDSA Press</publisher>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Zhang, Z., &amp; Yuan, K.-H. (2018). Practical statistical power analysis using Webpower and R. ISDSA Press. https://doi.org/10.35566/power</note>
+</biblStruct>
+
+<biblStruct xml:id="b75">
+	<analytic>
+		<title level="a" type="main">Sample size planning for complex study designs: A tutorial for the mlpwr package</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zimmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Henninger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Debelak</surname></persName>
+		</author>
+		<idno type="DOI">10.3758/s13428-023-02269-0</idno>
+		<ptr target="https://doi.org/10.3758/s13428-023-02269-0" />
+	</analytic>
+	<monogr>
+		<title level="j">Behavior Research Methods</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Zimmer, F., Henninger, M., &amp; Debelak, R. (2023). Sample size planning for complex study designs: A tutorial for the mlpwr package. Behavior Research Methods. https://doi.org/10.3758/s13428-023-02269-0</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

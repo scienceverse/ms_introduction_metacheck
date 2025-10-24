@@ -1,0 +1,1390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">RESTRICTION OF RDF THROUGH THE PRP-QUANT TEMPLATE 1 Stage 1 Registered Report: Restriction of researcher degrees of freedom through the Psychological Research Preregistration-Quantitative (PRP-QUANT) Template</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Lisa</forename><surname>Spitzer</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Leibniz Institute for Psychology (ZPID)</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Stefanie</forename><surname>Mueller</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Leibniz Institute for Psychology (ZPID)</orgName>
+							</affiliation>
+							<affiliation key="aff0">
+								<orgName type="department">Leibniz Institute for Psychology (ZPID)</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lisa</forename><surname>Spitz</surname></persName>
+							<idno type="ORCID">0000-0001-6905-1832</idno>
+							<affiliation key="aff0">
+								<orgName type="department">Leibniz Institute for Psychology (ZPID)</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">RESTRICTION OF RDF THROUGH THE PRP-QUANT TEMPLATE 1 Stage 1 Registered Report: Restriction of researcher degrees of freedom through the Psychological Research Preregistration-Quantitative (PRP-QUANT) Template</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1969BE93CF992519187478754DD37870</idno>
+					<idno type="DOI">10.23668/psycharchives.14047</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:04+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>preregistration</term>
+					<term>open science</term>
+					<term>meta-research</term>
+					<term>reproducibility</term>
+					<term>replicability</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We are submitting a Stage 1 Registered Report. To maximize transparency in the further process, we have already formulated the results section and a description of the results in the abstract in past tense, but the analyses of this study have yet to be carried out. The results section is based on dummy/blinded data and, thus, values are nonsensical. To facilitate review, we have highlighted text parts that will be edited in brackets and color. In Stage 2, we will change the tense to past and append discussion and conclusion sections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RRs involving existing data at PCI RR:</head><p>For our study, we want to compare a new dataset coded using PRP-QUANT preregistrations with existing data from Bakker et al. ( <ref type="formula">2020</ref>). We assume a bias level of 3: We have already downloaded the data from Bakker et al. ( <ref type="formula">2020</ref>), however, we did not look at them and blinded these datasets to write and test our analysis scripts (the script used for blinding is available in the supplemental material, <ref type="url" target="https://doi.org/10.23668/psycharchives.14107">https://doi.org/10.23668/psycharchives.14107</ref>). In addition, we have already downloaded the PRP-QUANT preregistrations that exist to date but will not begin coding until receiving IPA.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>While conducting studies, researchers hold a substantial degree of flexibility in decisionmaking, often referred to as researcher degrees of freedom (RDF, <ref type="bibr" target="#b29">Simmons et al., 2011;</ref><ref type="bibr">see Huntington-Klein et al., 2021</ref> for an illustration). This flexibility can potentially compromise the validity of findings and drawn conclusions, especially in the event of data-driven decisions or other forms of exploitation <ref type="bibr" target="#b29">(Simmons et al., 2011)</ref>.</p><p>Preregistration, the practice of publishing a time-stamped research plan prior to data collection or analysis (see <ref type="bibr" target="#b24">Parsons et al., 2022)</ref>, helps limit RDF by predetermining and transparently disclosing decisions concerning the research process (as argued by <ref type="bibr" target="#b13">Forstmeier et al., 2017;</ref><ref type="bibr" target="#b17">Hardwicke &amp; Wagenmakers, 2023;</ref><ref type="bibr" target="#b36">Wicherts et al., 2016)</ref> and allows others to evaluate the severity of the hypothesis test <ref type="bibr" target="#b20">(Lakens, 2019)</ref>. In practice, it is not always possible to make all research decisions in advance and thus completely limit RDF, for example, if the focus is on hypothesis generation rather than testing. In these cases, brief preregistrations can already substantially increase transparency by signaling which decisions were made in advance and which were not. Nonetheless, whenever feasible, more extensive and detailed preregistrations may be particularly effective in restricting RDF (as proposed by <ref type="bibr" target="#b36">Wicherts et al., 2016)</ref>.</p><p>Preregistration templates, prompting for information to include in the preregistration, can assist researchers in creating such restrictive preregistrations, but they vary in the level of detail that is requested. In their study, <ref type="bibr" target="#b3">Bakker et al. (2020)</ref> compared preregistrations created using a structured versus unstructured template format regarding their ability to restrict RDF. The inspected unstructured format was the "Standard Pre-Data Collection Registration" (<ref type="url" target="https://osf.io/9j6d7">https://osf.io/9j6d7</ref>), which only inquires about whether data have already been collected or examined, leaving other descriptions open. This was compared to the structured format of the "OSF Preregistration" (formerly "Prereg Challenge Registration", version 4, <ref type="url" target="https://osf.io/jea94">https://osf.io/jea94</ref>) which consists of 26 items more closely assessing the hypotheses, sampling plan, variables, design, and planned analyses. To evaluate the inspected preregistrations' restrictiveness, they devised an extensive coding scheme based on the RDF defined by <ref type="bibr" target="#b36">Wicherts et al. (2016)</ref>. Based on this, they found better, but not yet exhaustive, restriction of RDF with the structured compared to the unstructured template format <ref type="bibr" target="#b3">(Bakker et al., 2020)</ref>. Other studies that compared the OSF Preregistration Template with less extensive templates found similar results <ref type="bibr" target="#b32">(Toth et al., 2021;</ref><ref type="bibr" target="#b34">Van Den Akker et al., 2023)</ref>. These findings suggest that structured templates are associated with higher RDF restriction, while also indicating room for further improvement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Restrictiveness of Preregistrations Created With the PRP-QUANT Template</head><p>In 2022, the "Psychological Research Preregistration-Quantitative (PRP-QUANT)</p><p>Template" was published by a Joint Psychological Societies Preregistration Task Force <ref type="bibr" target="#b7">(Bosnjak et al., 2022)</ref>. It was developed based on the APA's Journal Article Reporting Standards (JARS, <ref type="bibr" target="#b1">Appelbaum et al., 2018)</ref> and previous preregistration templates. In contrast to the OSF Template, whose scope covers various disciplines, the PRP-QUANT Template is specifically tailored to the field of psychology. Compared to previous templates, various items underwent description revisions, some items were divided into smaller sub-questions, and new items were introduced.</p><p>As the PRP-QUANT Template is very extensive (including overall 45 items) and was specifically designed to prompt for many details and enable precise planning (see <ref type="bibr" target="#b7">Bosnjak et al., 2022)</ref>, our objective is to investigate whether it can indeed contribute to achieving higher restrictiveness.</p><p>By inspecting preregistrations created with this template, we aim to investigate the extent to which it restricts RDF and which RDF are more restricted than others (research question 1) and compare its restrictiveness to the OSF Preregistration Template inspected by <ref type="bibr" target="#b3">Bakker et al. (2020;</ref><ref type="bibr">research question 2)</ref>. Because of its level of detail, we predict that preregistrations created with the PRP-QUANT Template restrict RDF more than preregistrations based on the OSF Preregistration Template (hypothesis 1).</p><p>Furthermore, we aim to assess whether peer review of preregistrations further restricts RDF (as suggested by <ref type="bibr" target="#b3">Bakker et al., 2020</ref>; research question 3), for example, by reviewers identifying gaps in the preregistration and recommending that the authors provide additional information. To answer this question, we will inspect PRP-QUANT preregistrations that were submitted to ZPID's service PsychLab in order to apply for a free-of-charge data collection. As PsychLab aimed to promote preregistration by offering this incentive for high-quality preregistrations, the submitted preregistrations underwent evaluation by external reviewers prior to acceptance, assessing their 1) originality and incremental value, 2) relationship to the literature, 3) methodology, 4) quality of the questionnaire and definition of research constructs, and 5) implications of the proposed study. We will compare PRP-QUANT preregistrations that were peer-reviewed as part of this service with PRP-QUANT preregistrations published by authors without any additional review and predict that peer-reviewed preregistrations restrict RDF more than non-peer-reviewed preregistrations (hypothesis 2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Adherence to the Preregistered Plan and Reporting of Deviations</head><p>Deviations from the preregistered plan can be useful and necessary for improving studies, however, it is important that such deviations are transparently reported to ensure interpretability.</p><p>Given the emerging evidence of insufficient disclosure of deviations in research articles (e.g., <ref type="bibr" target="#b9">Chan et al., 2004;</ref><ref type="bibr" target="#b8">Chan et al., 2008;</ref><ref type="bibr" target="#b10">Chen et al., 2019;</ref><ref type="bibr" target="#b11">Claesen et al., 2021;</ref><ref type="bibr" target="#b15">Goldacre et al., 2019;</ref><ref type="bibr" target="#b23">Ofosu &amp; Posner, 2023;</ref><ref type="bibr" target="#b34">Van Den Akker et al., 2023;</ref><ref type="bibr">see TARG Meta-Research Group &amp; Collaborators et al., 2023</ref> for a review), we will inspect the published research articles associated with the sampled PRP-QUANT preregistrations, following the procedure of <ref type="bibr" target="#b18">Heirene et al. (2021)</ref> who investigated the restriction of RDF in gambling studies' preregistrations. We aim to descriptively assess the extent to which researchers that used the PRP-QUANT Template adhered to their preregistered plan and how they reported deviations in their articles (research question 4).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Methods</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Transparency Statement</head><p>We report how we determined our sample size, all data exclusions, all inclusion/exclusion criteria, whether inclusion/exclusion criteria were established prior to data analysis, all manipulations, and all measures in the study. We meet Level 3 of the PCI RR bias control (<ref type="url" target="https://rr.peercommunityin.org/help/guide_for_authors">https://rr.peercommunityin.org/help/guide_for_authors</ref>). Our study design is displayed in Table <ref type="table" target="#tab_0">A1</ref> in the appendix. All study materials, including the RMD file underlying this manuscript (<ref type="url" target="https://doi.org/10.23668/psycharchives.14120">https://doi.org/10.23668/psycharchives.14120</ref>), analysis scripts (<ref type="url" target="https://doi.org/10.23668/psycharchives.14107">https://doi.org/10.23668/psycharchives.14107</ref>), coding schemes (<ref type="url" target="https://doi.org/10.23668/psycharchives.14046">https://doi.org/10.23668/psycharchives.14046</ref>), an overview of the preliminary sample, and dummy/blinded data (<ref type="url" target="https://doi.org/10.23668/psycharchives.14045">https://doi.org/10.23668/psycharchives.14045</ref>), have been published alongside this manuscript (<ref type="url" target="https://doi.org/10.23668/psycharchives.14119">https://doi.org/10.23668/psycharchives.14119</ref>) on PsychArchives. The final data, that is, the list of all included PRP-QUANT preregistrations and coded RDF, will be made available on PsychArchives as a scientific use file after the coding process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sample</head><p>In this observational study, we will consider all existing preregistrations that were created with the PRP-QUANT Template and published in the digital research repository PsychArchives (<ref type="url" target="https://psycharchives.org/">https://psycharchives.org/</ref>). We will conduct a search for PRP-QUANT preregistrations in PsychArchives using the corresponding metadata tag ("zpid.tags.visible:PRP-QUANT"), since the PRP-QUANT Template is made available through and closely linked to this repository (<ref type="url" target="https://doi.org/10.23668/psycharchives.4584">https://doi.org/10.23668/psycharchives.4584</ref>). Additionally, we will inspect all studies conducted via ZPID's service PsychLab by referring to our internal documentation and conducting a search on PsychArchives ("zpid.tags.visible:PsychLab").</p><p>From all identified preregistrations, we will include those in our coding that are based on the PRP-QUANT Template, are written in English or German, are publicly accessible (i.e., not under embargo), and are empirical studies that include at least one testable hypothesis (see <ref type="bibr" target="#b3">Bakker et al., 2020;</ref><ref type="bibr" target="#b18">Heirene et al., 2021)</ref>.</p><p>To inspect researchers' adherence to the preregistered plan and reporting of deviations, we will also search for associated publications for all included preregistrations (e.g., by inspecting the PsychArchives record and conducting a Google search using the preregistration DOI).</p><p>We performed an initial search to assess the feasibility of our search strategy, yielding a total of N = 89 preregistrations, among which n = 74 met the eligibility criteria for coding (with n = 27 being peer-reviewed, and n = 47 non-peer-reviewed). For n = 17, we identified associated publications (see supplemental material for an overview of the preliminary sample, <ref type="url" target="https://doi.org/10.23668/psycharchives.14045">https://doi.org/10.23668/psycharchives.14045</ref>). We will perform a second search before the start of coding to include any eligible preregistrations and associated articles that may have been published by then.</p><p>All included PRP-QUANT preregistrations will be compared to the N = 52 OSF preregistrations sampled by <ref type="bibr" target="#b3">Bakker et al. (2020)</ref> to test hypothesis 1 (accessible at <ref type="bibr">Veldkamp et al., 2020)</ref>. Our sample size of N = 74 PRP-QUANT preregistrations already surpasses that of <ref type="bibr" target="#b3">Bakker et al. (2020)</ref>, which they determined through a power analysis for a Wilcoxon-Mann-Whitney test with ɑ = .05 and a power of .8 to detect a medium effect size of Cohen's d = 0.5 (which corresponds to Cliff's D of approximately 0.33, <ref type="bibr" target="#b26">Romano et al., 2006)</ref>, a difference they defined as practically meaningful between two samples of preregistrations. Since our sample size is already determined by the number of available PRP-QUANT preregistrations, we conducted sensitivity analyses for our hypothesis tests <ref type="bibr" target="#b21">(Lakens, 2022)</ref>. Figure <ref type="figure">1A</ref> shows a sensitivity curve depicting the relationship between effect size and power for testing hypothesis 1 given our current sample sizes, which was created in R (R Core Team, 2023) based on a power simulation with 1000 repetitions that incorporated the variability in the data from <ref type="bibr" target="#b3">Bakker et al. (2020;</ref><ref type="bibr"></ref> see R script in the supplemental material, <ref type="url" target="https://doi.org/10.23668/psycharchives.14107">https://doi.org/10.23668/psycharchives.14107</ref>). This curve suggests that we would have a power of .97 to detect small effects of d = 0.2 for the overall difference in restrictiveness between templates, employing a nested Wilcoxon-Mann-Whitney test and ɑ = .05. Meanwhile, an effect size of d = 0.5 would be detectable with a power above .99. Since the effect size found in <ref type="bibr" target="#b3">Bakker et al. (2020)</ref> was even higher (D = 0.49, which resembles d of about 0.8, <ref type="bibr" target="#b26">Romano et al., 2006)</ref>, an effect of similar size could therefore also be detected with a high power. However, the difference between two structured templates is likely smaller than that between a structured and an unstructured template.</p><p>To test hypothesis 2, we will compare all PRP-QUANT preregistrations that were peerreviewed as part of PsychLab with the remaining PRP-QUANT preregistrations uploaded directly by researchers to PsychArchives without undergoing external review. For this comparison, the group sizes are limited by the number of available (non-)peer-reviewed preregistrations.</p><p>However, the sensitivity curve in Figure <ref type="figure">1B</ref> shows that with the current group sizes of 27 reviewed and 47 non-reviewed preregistrations, we would still have a power of .89 to detect Deleted: <ref type="url" target="https://doi.org/10.23668/psycharchives.14047">https://doi.org/10.23668/psycharchives.14047</ref> small effects of d = 0.2 with ɑ = .05, while an effect size of d = 0.5 could be detected with a 178 power above .99.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 1</head><p>Sensitivity Curves Note. Sensitivity curves are provided for A) hypothesis 1 (PRP-QUANT vs. OSF preregistrations) and B) hypothesis 2 (peer-reviewed vs. non-peer-reviewed PRP-QUANT preregistrations). The calculations are based on the preliminary sample sizes. Power simulations were conducted in R (R Core Team, 2023).</p><p>[NOTE: A paragraph describing the final sample, including the preregistrations identified during the second search, will be added here. We will also code the study type of preregistered studies for PRP-QUANT and OSF preregistrations and report the frequencies of different study types in both samples to assess their comparability.]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Measures and Coding Procedure</head><p>To ensure comparability, we will use the protocols provided by <ref type="bibr" target="#b18">Heirene et al. (2021)</ref> which they adapted from <ref type="bibr" target="#b3">Bakker et al. (2020)</ref>, to code restrictiveness in the PRP-QUANT preregistrations, as well as adherence in their associated articles. These protocols are based on the 34 RDF defined by <ref type="bibr" target="#b36">Wicherts et al. (2016)</ref> which encompass flexibility across five key stages:</p><p>Theorizing, design, collection, analyses, and reporting (see Table <ref type="table" target="#tab_0">1</ref>). Are the hypotheses reported the same as in the preregistration?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>T2</head><p>Studying a vague hypothesis that fails to specify the direction of the effect Is the direction of the hypothesis specified?</p><p>Is the direction of each hypothesis the same?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D1 Creating multiple manipulated independent variables and conditions</head><p>Does the text exclude the possibility that at least one of the manipulated variables will be omitted in the test of the hypothesis?</p><p>Are the manipulated independent variables operationalized in the same way as stated in the protocol?</p><p>Does it specify exactly how the manipulated variable will be used in the analysis to test the hypothesis?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D2</head><p>Measuring additional variables that can later be selected as covariates, independent variables, mediators, or moderators Does it exclude the possibility that at least one other variable (e.g., covariate) is included in the analysis?</p><p>Are all variables included in analyses testing hypotheses, consistent with the preregistered analysis plan?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D3</head><p>Measuring the same dependent variable in several alternative ways Does it specify which measurement instrument will be used as the main outcome variable?</p><p>Are the dependent variables measured in the same way as stated in the preregistration?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D4</head><p>Measuring additional constructs that could potentially act as primary outcomes Does it specify that the confirmatory analysis section of the paper will not include another DV than the ones specified in all hypotheses?</p><p>Are all dependent variables included in analyses reported in the preregistration?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D5</head><p>Measuring additional variables that enable later exclusion of participants from the analysis (e.g., awareness or manipulation checks)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Does the preregistration indicate inclusion and exclusion criteria in selecting data points?</head><p>Are the criteria for including datapoints in analyses consistent?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D6</head><p>Failing to conduct a well-founded power analysis</p><p>Is a power analysis reported? Is the sample size involved in analyses consistent with the outcomes of the power analysis reported in the preregistration?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D7</head><p>Failing to specify the sampling plan and allowing for running (multiple) small studies Is the sampling protocol outlined, including the exact number of participants, recruitment strategy, eligibility criteria, and stopping rules?</p><p>Is the sampling protocol stated in the preregistration followed?</p><p>Code RDF Restrictiveness question Adherence question C1 Failing to randomly assign participants to conditions Is it specified how randomization is implemented? Is the randomization procedure used consistent with that reported in the preregistration? C2 Insufficient blinding of the participants and/or experimenters Does it describe procedures to blind participants to and/or experimenters to conditions? Is the blinding procedure used consistent with that reported in the preregistration? C3 Correcting, coding, or discarding data during data collection in nonblinded manner Does it include protocols concerning coding of data, discarding of cases, or correction of scores during data collection? Are the procedures used to code and manage data during the data collection process consistent? C4 Determining the data collection stopping rule on the basis of desired results or intermediate significance testing Is the sampling protocol outlined, including the exact number of participants, recruitment strategy, eligibility criteria, and stopping rules? (same as D7) Is the sampling protocol stated in the preregistration followed? (same as D7) A1 Choosing between different options of dealing with incomplete or missing data on ad hoc grounds Does it indicate how the study deals with incomplete or missing data? Are the procedures used to deal with missing data consistent with those reported in the preregistration? A2 Specifying pre-processing of data (e.g., cleaning, normalization, smoothing, and motion correction) in an ad hoc manner Does it offer a protocol for preprocessing the data when required (e.g., corrected for motion and other artifacts)? Are the procedures used to preprocess data consistent? A3 Deciding how to deal with violations of statistical assumptions in an ad hoc manner Does it indicate how to test for and deal with violations of statistical assumptions? Are the procedures used to test for statistical assumptions consistent? A4 Deciding on how to deal with outliers in an ad hoc manner Does it indicate how to detect outliers and how they should be dealt with? Are the procedures used to identify and deal with outliers consistent? A5 Selecting the dependent variable out of several alternative measures of the same construct Does it specify which measurement instrument will be used as the main outcome variable? (same as D3) Are the dependent variables measured in the same way as stated in the preregistration? (same as D3) A6 Trying out different ways to score the chosen primary dependent variable Is the method used to measure the primary outcome variable(s) fully described? Are the dependent variables scored in a way that is consistent? A7 Selecting another construct as the primary outcome Does it specify that the confirmatory analysis section of the paper will not include another DV than the ones specified in all hypotheses? (similar to D4) Are the dependent variables used in primary analyses all the same as reported in the preregistration? A8 Selecting independent variables out of the set of manipulated independent variables Does the text exclude the possibility that at least one of the manipulated variables will be omitted in the test of the hypothesis? (similar to D1) Are the independent variables used in primary analyses all the same? Code RDF Restrictiveness question Adherence question A9 Operationalizing manipulated independent variables in different ways (e.g., by discarding or combining levels of factors) Does it specify exactly how the manipulated variable will be used in the analysis to test the hypothesis? (similar to D1) Are the manipulated independent variables operationalized in the same way as stated in the protocol? (same as D1) A10 Choosing to include different measured variables as covariates, independent variables, mediators, or moderators Does it exclude the possibility that at least one other variable (e.g., covariate) is included in the analysis? (same as D2) Are all variables included in analyses testing hypotheses, consistent with the preregistered analysis plan? (same as D2) A11 Operationalizing non-manipulated independent variables in different ways Are the methods to measure nonmanipulated IV(s) fully described? Are non-manipulated IVs operationalized in a way consistent with the preregistration? A12 Using alternative inclusion and exclusion criteria for selecting participants in analyses Does the preregistration indicate inclusion and exclusion criteria in selecting data points? (same as D5) Are the criteria for including datapoints in analyses consistent? (same as D5) A13 Choosing between different statistical models Does it specify the statistical model(s) that will be used to test the hypothesis (e.g., logistic regression)? Are the statistical tests used to test hypotheses consistent? A14 Choosing the estimation method, software package, and computation of SEs Does it indicate details of the estimation technique used to estimate the statistical model and compute standard errors? Are the estimation techniques used to estimate the statistical model(s) consistent? Does it specify which statistical software package and version is used for running the analyses? Is the statistical software used to conduct analyses consistent with the preregistered plan? A15 Choosing inference criteria (e.g., Bayes factors, alpha level) Does it indicate the inference criteria (e.g., Bayes factors, Alpha level)?</p><p>Are the inference criteria used consistent?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>R6</head><p>Presenting exploratory analyses as confirmatory (HARKing) Does it specify that the confirmatory analysis section of the paper will not include another DV than the ones specified in all hypotheses? (same as A7)</p><p>Note. Questions are abbreviated. The full coding scheme is available in the supplemental material. RDF = Researcher degree of freedom. T = Theorizing. D = Design. C = Collection. A = Analyses. R = Reporting.</p><p>For assessing restrictiveness and adherence, we will focus on the RDF that are applicable to preregistrations (cf. Table <ref type="table" target="#tab_0">1</ref>, restrictiveness: T1-A15, R6; adherence: T1-A15). For example, for the RDF "T1: Conducting exploratory research without any hypothesis", restrictiveness will be coded with the question "Is at least one hypothesis specified such that it is clear what are the IV(s) and DV(s)?", while adherence will be coded with "Are the hypotheses reported the same as in the preregistration?".</p><p>Overall, 23 questions will be used to code restrictiveness (i.e., there are dependencies in that some questions inform multiple RDF). The coding will be based on the dimensions outlined in Table <ref type="table" target="#tab_2">2</ref>. As an additional measure of restrictiveness, we will assess the clarity and distinctiveness of preregistered hypotheses, similar to <ref type="bibr" target="#b18">Heirene et al. (2021)</ref>. Specifically, we will examine the number of preregistrations where the number of hypotheses differs depending on whether they are interpreted as single or as several linked but autonomous predictions (e.g., in cases where several predicted effects are mentioned within a single statement).</p><p>Twenty-four questions will be used to code adherence. If an article comprises multiple studies, adherence will be assessed based on the level of preregistrations (i.e., if an article includes two preregistered studies, adherence will be evaluated for each preregistration-article pair). We will distinguish between three types of deviations from preregistration to article:</p><p>Modifying, additive, and omitting (see Table <ref type="table" target="#tab_2">2</ref>). If the methods presented in the article differ from those outlined in the preregistration, deviations are coded as 'modifying'. They are labeled as 'additive' if the article introduces information not included in the preregistration and as 'omitting' if information provided in the preregistration is absent in the associated article. For modifying deviations, we will furthermore examine in more detail whether they were disclosed and justified. The full coding scheme is available in the supplemental material (<ref type="url" target="https://doi.org/10.23668/psycharchives.14046">https://doi.org/10.23668/psycharchives.14046</ref>). Modifying Information about the RDF was given in the preregistration (restrictiveness &gt; 0) and differs between preregistration and article (adherence = 0), for example, different randomization procedures are described in the preregistration and article</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Additive</head><p>No information about an RDF was provided in the preregistration (restrictiveness = 0), but this information appears in the article (adherence = UP), for example, randomization procedure is not described in the preregistration but in the article Omitting Information about an RDF was included in the preregistration (restrictiveness &gt; 0) but was subsequently omitted in the article (adherence = UA), for example, randomization procedure is described in the preregistration, but not mentioned in the article U No information provided in both the preregistration and article (restrictiveness = 0, adherence = UB) NA Not applicable</p><p>Note. Scores adapted from <ref type="bibr" target="#b18">Heirene et al. (2021)</ref>. For some RDF, only a subset of restrictiveness scores are possible (see coding scheme in the supplemental material). * Scores of 3 will be coded for comparability with Bakker et al. ( <ref type="formula">2020</ref>), but will be recoded to 2, because explicit statements that authors will adhere to their planned methods and avoid additional processes are not common in preregistrations.</p><p>Each preregistration will be coded independently by two persons. Inconsistencies will be discussed and solved in pairs. As a measure of inter-coder reliability, a pilot coding phase will be conducted using a randomly selected 10% of the sample. Krippendorff's ɑ will be calculated to assess inter-coder reliability. If ɑ exceeds the threshold of 0.7, the coding process will proceed as planned. If the inter-coder reliability falls below this threshold, the coding protocols and strategies will be revised by discussing ambiguities. [NOTE: This paragraph will be revised to include the results of the pilot.]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data Analysis</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>R Packages and Scripts</head><p>This manuscript is written with the R package papaja (Version 0.1.1.9001, <ref type="bibr" target="#b2">Aust &amp; Barth, 2022)</ref>. We will use R (Version 4.3.1; R Core Team, 2023) and the R-packages effsize (Version</p><p>0.8.1; Torchiano, 2020), irr (Version 0.84.1; Gamer et al., 2019), lme4 (Version 1.1.34; Bates et al., 2015), mice (Version 3.16.0; van Buuren &amp; Groothuis-Oudshoorn, 2011), nestedRanksTest (Version 0.2.9000; Scofield, 2016), pastecs (Version 1.3.21; Grosjean &amp; Ibanez, 2018), psych (Version 2.3.6; William Revelle, 2023), RColorBrewer (Version 1.1.3; Neuwirth, 2022), tidyverse (Version 2.0.0; Wickham et al., 2019), and xfun (Version 0.39; Xie, 2023) for all our analyses. Our analysis scripts are based on the scripts provided by Heirene et al. (2021). To adapt and test these, we used a blinded version of the OSF Preregistration data provided by Bakker et al. (2020), where all numbers were replaced with random values within the coding range, and a dummy data set for the coded PRP-QUANT preregistrations. Our analysis scripts (<ref type="url" target="https://doi.org/10.23668/psycharchives.14107">https://doi.org/10.23668/psycharchives.14107</ref>), the blinded/dummy data employed for testing them (<ref type="url" target="https://doi.org/10.23668/psycharchives.14045">https://doi.org/10.23668/psycharchives.14045</ref>), and the R Markdown file that underlies this Deleted: <ref type="url" target="https://doi.org/10.23668/psycharchives.14047">https://doi.org/10.23668/psycharchives.14047</ref> manuscript -incorporating the code used to generate all outputs displaying the results (<ref type="url" target="https://doi.org/10.23668/psycharchives.14120">https://doi.org/10.23668/psycharchives.14120</ref>) -are accessible in the supplemental material.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Preprocessing</head><p>For each preregistration, the responses to the questions in our coding scheme will be translated into restrictiveness scores for each RDF.</p><p>Subsequently, we will adjust all restrictiveness scores of 3 to 2 for both the PRP-QUANT and OSF preregistrations. A score of 3 requires an explicit statement from authors that they will adhere to their planned methods and avoid additional processes. <ref type="bibr" target="#b18">Heirene et al. (2021)</ref> reported that scores of 3 were rarely achieved due to the scarcity of these explicit statements from the authors and thus suggested this adjustment for future studies. To evaluate the impact of this decision on the results, we will conduct sensitivity analyses by re-running the hypothesis tests with the non-recoded data and reporting differences.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Restrictiveness</head><p>To assess the extent to which the PRP-QUANT Template restricts RDF (research question 1), we will inspect the distribution of restrictiveness scores of PRP-QUANT preregistrations across all RDF. In addition, stacked bar plots of restrictiveness scores for each RDF are displayed for PRP-QUANT and OSF preregistrations in Figure <ref type="figure" target="#fig_1">2</ref>, and for peer-reviewed and non-peer-reviewed PRP-QUANT preregistrations in Figure <ref type="figure" target="#fig_3">3</ref>. We will also examine the number of preregistrations where the minimum and maximum number of hypotheses varies when viewed as single versus interconnected but independent predictions, providing means, standard deviations, medians, minimum, and maximum values for both interpretations.</p><p>Deleted: <ref type="url" target="https://doi.org/10.23668/psycharchives.14056">https://doi.org/10.23668/psycharchives.14056</ref> </p><p>To test our two hypotheses (research question 2/hypothesis 1: higher restrictiveness in PRP-QUANT than OSF preregistrations; research question 3/hypothesis 2: higher restrictiveness in peer-reviewed than non-peer-reviewed preregistrations), we will largely adopt the methods employed by <ref type="bibr" target="#b3">Bakker et al. (2020)</ref> and <ref type="bibr" target="#b18">Heirene et al. (2021)</ref>. Duplicate information (i.e., RDF based on the same questions as others: C4, A5, A10, A12, R6) will be excluded from these analyses.</p><p>First, we will impute missing values using a two-way imputation procedure based on row and column means. Specifically, the overall mean, the mean for each RDF, and the mean for each preregistration will be computed based on available values, and missing values will be imputed using the formula RDF mean + preregistration mean -overall mean <ref type="bibr" target="#b6">(Bernaards &amp; Sijtsma, 2000)</ref>.</p><p>To compare the restrictiveness scores between 1) PRP-QUANT and OSF preregistrations, and 2) peer-reviewed and non-peer-reviewed PRP-QUANT preregistrations, we will perform one-tailed nested Wilcoxon-Mann-Whitney tests, using the R package nestedRanksTest <ref type="bibr" target="#b28">(Scofield, 2016)</ref>. The nested ranks test treats the template (PRP-QUANT vs. OSF) as a fixed effect, and the 24 RDF as a random effect. First, group-specific Z-scores are calculated by comparing the ranks between templates. Additionally, distributions of Z-scores are generated by bootstrapping, for which ranks are assigned without considering the template. The Z-scores are then aggregated across groups. Lastly, the p value is determined by assessing the percentage of cases where the bootstrapped aggregated Z-score is higher than the observed one (for more information, see <ref type="bibr" target="#b27">Scofield, 2015)</ref>. To determine significance, a criterion of ɑ = .05 will be applied. Besides these nested tests, we will assess restrictiveness in individual RDF by conducting 24 additional onetailed Wilcoxon-Mann-Whitney tests for each of the two hypotheses. For these analyses, p values will be corrected for multiple tests using the Benjamini-Hochberg correction technique <ref type="bibr" target="#b5">(Benjamini &amp; Hochberg, 1995)</ref>. As effect size, we will use <ref type="bibr">Cliff's delta (D, Cliff, 1993)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Adherence</head><p>Adherence to the preregistered plans and reporting of deviations (research question 4) will be analyzed descriptively. We will focus on two aspects: The number of preregistration-article pairs with deviations and the total deviations across all pairs. At the level of preregistrationarticle pairs, we will analyze the number of studies that included modifying, additive, or omitting deviations. We will provide the average number of deviations, along with their corresponding standard deviations, minimum, and maximum values. At the level of total deviations across pairs, we will report percentages and frequencies of different deviation types (see Table <ref type="table" target="#tab_7">5</ref>). For modifying deviations, we will also assess the proportion of justified, unjustified, and nondisclosed deviations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head><p>[NOTE: The results section was written based on a generated dummy data set of PRP-QUANT preregistrations and a blinded version of the <ref type="bibr">Bakker et al. (2020) data (i.e., random</ref> numbers were generated for each score, the R script used for this generation is available in the supplemental material). Reported scores will be adjusted accordingly after data collection.]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Restrictiveness</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Overall Restriction of RDF Through the PRP-QUANT Template</head><p>Across all PRP-QUANT preregistrations, 503 of the 2146 coded RDF were not restricted (23.44%), while 222 were partially restricted (10.34%). For 839 RDF, full restriction according Deleted: To determine significance, a criterion of ɑ = .05 305 will be applied. As effect size, we will use Cliff's delta ( to the used coding scheme was achieved (39.10%). In 582 cases (27.12%), RDF were not applicable for the coded preregistrations. Full restrictiveness was particularly prevalent for […],</p><p>while <ref type="bibr">[…]</ref> were often not restricted. The distribution of restrictiveness scores for PRP-QUANT, in comparison with the OSF preregistrations, is displayed in Figure <ref type="figure" target="#fig_1">2</ref>. For 30 preregistrations (40.54%), the hypotheses were not specified clearly. Specifically, the number of hypotheses differed depending on whether they were interpreted as single predictions (Mean = 5.62, SD = 3.01, Median = 5.5, min = 1, max = 10) or multiple linked but autonomous predictions that could be tested separately (Mean = 5.2, SD = 2.86, Median = 5, min = 1, max = 10).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[Higher/No Higher] RDF Restriction in PRP-QUANT Than OSF Preregistrations</head><p>Our first hypothesis was that preregistrations based on the PRP-QUANT Template constrain RDF more than preregistrations based on the OSF Preregistration Template. [In line with/In contrast to] our hypothesis, the PRP-QUANT preregistrations [had/did not have] a</p><p>[significantly] higher restrictiveness than the OSF preregistrations, Z = -0.04, p = .971, Median D = -0.02. For nine of the 24 tested RDF, restrictiveness was descriptively higher in the PRP-QUANT preregistrations. The difference was statistically significant for two RDF based on the sensitivity of our test, and remained significant in zero cases after correcting for multiple tests (see Table <ref type="table" target="#tab_5">3</ref>). [NOTE: A short description of which RDF are more restricted in the PRP-QUANT preregistrations will be added.]</p><p>A sensitivity analysis showed that recoding the restrictiveness scores from 3 to 2 [did not</p><p>affect/affected] the results [in that …]. [NOTE: If the sensitivity analysis shows an influence on the results, it is described in more detail here.] Deleted: two 329 Deleted: flexibility was more restricted in PRP-QUANT Note. W = test statistic of the Wilcoxon-Mann-Whitney test. D = Cliff's delta, for which values can range between -1 (all PRP-QUANT preregistrations score lower than all OSF preregistrations) to 1 (all PRP-QUANT preregistrations score higher than all OSF preregistrations). CIs = 95% confidence intervals of effect sizes. Hypothesis tests were conducted with imputed data. p values were corrected using the Benjamini-Hochberg method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[Higher/No Higher] Restriction of RDF in Peer-Reviewed Than Non-Peer-Reviewed Preregistrations</head><p>Secondly, we predicted that peer-reviewed PRP-QUANT preregistrations restrict RDF more than non-peer-reviewed preregistrations created with the same format.</p><p>[Consistent/Inconsistent] with our hypothesis, restrictiveness was [significantly/not] higher for peer-reviewed preregistrations than non-peer-reviewed preregistrations, Z = -0.05, p = .959, Median D = -0.06. Six of the 24 tested RDF showed a descriptively higher restrictiveness for peer-reviewed preregistrations. For zero RDF, this difference reached statistical significance, which remained significant in zero cases after correcting for multiple tests (see Table <ref type="table">4</ref>). [NOTE:</p><p>A short description of which RDF are more restricted in the peer-reviewed preregistrations will be added.] Figure <ref type="figure" target="#fig_3">3</ref> shows the distribution of restrictiveness scores for peer-reviewed and nonpeer-reviewed PRP-QUANT preregistrations.</p><p>As shown in a sensitivity analysis, recoding the restrictiveness scores from 3 to 2 had Table 4 Comparisons Between Peer-Reviewed and Non-Peer-Reviewed PRP-QUANT Preregistration Restrictiveness Scores for Individual RDF RDF W p Corrected p D 95% CIs T1: Hypothesis 617.00 .589 .966 -0.03 -0.28, 0.22 T2: Direction of hypothesis 679.00 .295 .966 0.07 -0.18, 0.31 D1: Multiple manipulated IVs 548.00 .845 .966 -0.14 -0.39, 0.14 D2: Additional IVs / A10: Adding additional IVs 725.00 .147 .966 0.14 -0.13, 0.39 D3: Multiple DV measures / A5: Selected DV measured 453.50 .992 .992 -0.28 -0.49, -0.05 D4: Additional constructs 625.50 .544 .966 -0.01 -0.28, 0.26 D5: Adding exclusion variables / A12: Eligibility criteria 620.00 .569 .966 -0.02 -0.28, 0.24 D6: Power analysis 735.00 .119 .966 0.16 -0.11, 0.41 D7: Sampling plan / C4: Stopping rule 554.00 .828 .966 -0.13 -0.38, 0.14 C1: Random assignment 561.00 .813 .966 -0.12 -0.37, 0.15 C2: Blinding 521.00 .907 .99 -0.18 -0.42, 0.09 C3: Data handling/collection 562.00 .805 .966 -0.11 -0.36, 0.15 A1: Missing data 556.00 .824 .966 -0.12 -0.38, 0.15 A2: Data pre-processing 732.50 .115 .966 0.15 -0.09, 0.38 A3: Statistical assumptions 631.50 .517 .966 0.00 -0.27, 0.26 A4: Outliers 620.50 .568 .966 -0.02 -0.29, 0.25 A6: DV scoring 636.00 .495 .966 0.00 -0.26, 0.26 A7: Primary outcome selection / R6: HARKing 674.00 .329 .966 0.06 -0.21, 0.33 A8: IV selection 556.00 .825 .966 -0.12 -0.38, 0.15 A9: Defining manipulated IVs 571.00 .777 .966 -0.10 -0.36, 0.18 A11: Defining non-manipulated IVs 469.50 .974 .992 -0.26 -0.5, 0.02 A13: Statistical model selection 581.00 .737 .966 -0.08 -0.34, 0.19 A14: Method and package 716.00 .172 .966 0.13 -0.15, 0.38 A15: Inference criteria 569.00 .785 .966 -0.10 -0.36, 0.16</p><p>Note. W = test statistic of the Wilcoxon-Mann-Whitney test. D = Cliff's delta, for which values can range between -1 (all peer-reviewed preregistrations score lower than all non-peer-reviewed preregistrations) to 1 (all peer-reviewed preregistrations score higher than all non-peer-reviewed preregistrations). CIs = 95% confidence intervals of effect sizes. Hypothesis tests were conducted with imputed data. p values were corrected using the Benjamini-Hochberg method. Adherence [NOTE: Heading might be updated to better present key results]</p><p>In 17 of the preregistration-article pairs (100%), the preregistration, the article, or both were not specified in sufficient detail for completely assessing the adherence between them. For 11.76% of RDF, no information was provided in the preregistration (UP scores per preregistration-article pair: Mean = 3.35, SD = 1.8), and for 16.91%, information was lacking in the article (UA scores: Mean = 5.06, SD = 1.95). In 11.27% of cases, the information was not provided in both (UB scores: Mean = 3.06, SD = 2.25).</p><p>Zero of the 17 inspected research articles adhered to their preregistration (0%), that is, followed exactly the procedure described in the preregistration. Meanwhile, 17 displayed modifying deviations (100%). Within this group, 16 articles contained declared deviations. On average, the articles included 1.53 declared and justified deviations (SD = 1.59, min = 0, max = 7), and 1.53 declared but unjustified deviations (SD = 1.23, min = 0, max = 4). In the case of 14 articles, undeclared deviations were present (82.35%), with an average of 1.35 undeclared deviations per article (SD = 0.93, min = 0, max = 3). In addition, 17 articles included additive deviations (100%), that is, information not pre-specified in the preregistration appeared in the article, and 17 articles comprised omitting deviations (100%), meaning that information provided in the preregistration was absent in the article. On average, articles included 3.35 additive (SD = 1.8, min = 1, max = 8) and 5.06 omitting deviations (SD = 1.95, min = 3, max = 9).</p><p>Examining the adherence scores across preregistration-article pairs at the level of RDF, it was observed that for 73 RDF, no deviations were present (17.89% of the 408 coded RDF).</p><p>Meanwhile, a total of 60 modifying deviations were found (14.71%). Out of these, 20 were justified (33.33%) and 21 were not justified (35%). We identified a total of 19 undeclared deviations, which accounted for 31.67% of all modifying deviations (see Table <ref type="table" target="#tab_7">5</ref>).  <ref type="bibr" target="#b26">Romano et al., 2006)</ref>.</p><p>We will conduct a nested one-tailed Wilcoxon-Mann-Whitney test to compare restrictiveness scores between PRP-QUANT and OSF preregistrations, using the R package nestedRanksTest <ref type="bibr" target="#b28">(Scofield, 2016)</ref>. In this model, template will be treated as a fixed effect and RDF as a random effect. First, group-specific Z-scores are calculated by comparing the ranks between templates. Additionally, distributions of Z-scores are generated by bootstrapping, for which ranks are assigned without considering the template. The Z-scores are then aggregated across groups. Lastly, the p value is determined by assessing the percentage of cases where the bootstrapped aggregated Z-score is higher than the observed one. To determine significance, a criterion of ɑ = .05 will be applied. Additionally, we will conduct 24 more Wilcoxon-Mann-Whitney tests to compare the restrictiveness scores for the individual RDF. For these follow-up tests, p values will be corrected for multiple tests using the Benjamini-Hochberg correction technique. As effect size, we will use Cliff's delta <ref type="bibr">(D, Cliff, 1993)</ref>.</p><p>Bakker et al. (2020) determined their sample size of 53 by conducting a power analysis for a Wilcoxon-Mann-Whitney test with ɑ = .05 and a power of .8 to detect a medium effect size of Cohen's d = 0.5, which they defined to be a practically meaningful difference between two samples of preregistrations (however, since one preregistration was withdrawn, their final group size was n = 52). We will use all PRP-QUANT preregistrations fulfilling our criteria, that is, at least 74. Thus, our sample size already surpasses that of Bakker et al. (2020). Additionally, we will implement a nested Wilcoxon-Mann-Whitney test, resulting in a higher If the preregistrations created with the PRP-QUANT format restrict RDF more (i.e., have an overall higher restrictiveness score) compared to the OSF preregistrations sampled by Bakker et al. (2020, support for hypothesis 1), it will be concluded that the PRP-QUANT format is indeed more effective in reducing RDF than the previous format, in the field of psychology. It therefore appears worthwhile to develop/use highly structured templates in the future. However, if contrary to our predictions, the PRP-QUANT preregistrations do not have significantly higher This test is not grounded in a clearcut theory but is based on the assumption that employing more structured templates is linked to higher restrictiveness, as initially described by Bakker et al (2020). Our objective is to examine whether a template even more structured and detailed than the one previously studied by Bakker et al. (2020) can even better restrict RDF. Deleted: To determine significance, a criterion of ɑ = .05 will be applied. As effect size, we will use Cliff's delta ( Deleted: ¶ ¶ Question Hypothesis Sampling Plan Analysis Plan Rationale for deciding the sensitivity of the hypothesis test Interpretation given different outcomes Theory that could be shown wrong by the outcomes power than in the original study. restrictiveness scores than the OSF ones, we will conclude that there is no evidence that the PRP-QUANT Template achieves a higher level of restrictiveness. We will also further examine for how many of the individual RDF, restrictiveness is higher in PRP-QUANT than OSF preregistrations, and will conclude that the benefit of the PRP-QUANT Template might be most pronounced for all RDF showing significant differences. Research question 3: Can peer review of preregistrations help to restrict RDF? Hypothesis 2 (secondary): Peerreviewed preregistrations created with the PRP-QUANT Template restrict RDF more (i.e., have higher restrictiveness scores) than non-All PRP-QUANT preregistrations that were reviewed will be compared with the remaining nonpeer-reviewed PRP-QUANT preregistrations. A sensitivity analysis shows that with the current group sizes</p><p>Similar to the analysis of hypothesis 1, we will conduct a one-tailed nested Wilcoxon-Mann-Whitney test to compare the restrictiveness scores between peer-reviewed versus non-peerreviewed PRP-QUANT preregistrations (procedure is detailed above). Review status will be treated as a fixed effect and RDF as a random effect. To determine significance, a criterion of ɑ = .05 will be applied. Additionally, we will conduct For this comparison, the group sizes are limited by the number of available (non-)peer-reviewed preregistrations. However, our sensitivity analysis indicates that we will still have high power to detect even</p><p>If our analysis reveals that peerreviewed preregistrations exhibit a higher level of restrictiveness (i.e., have an overall higher restrictiveness score) compared to This test is also not based on a formulated theory, but rather on the observation made by Bakker et al. (2020) that peer review could potentially have a positive effect on the restrictiveness of Question Hypothesis Sampling Plan Analysis Plan Rationale for deciding the sensitivity of the hypothesis test Interpretation given different outcomes Theory that could be shown wrong by the outcomes peer-reviewed preregistrations created with the same format. of 27 reviewed and 47 non-reviewed preregistrations, we would have a power of .89 to detect small effects of d = 0.2 with ɑ = .05, while an effect size of d = 0.5 could be detected with a power above .99. 24 more Wilcoxon-Mann-Whitney tests to compare the restrictiveness scores for the individual RDF. For these follow-up tests, p values will be corrected for multiple tests using the Benjamini-Hochberg correction technique. Cliff's delta ( <ref type="bibr">D, Cliff, 1993)</ref> will be used as effect size.</p><p>small effects (e.g., a power of .89 to detect effects of d = 0.2 with ɑ = .05).</p><p>non-peer-reviewed preregistrations (supporting hypothesis 2), we will conclude that peer review is indeed a valuable tool for enhancing the quality of preregistrations, a potential that is currently underused.</p><p>If we find no significant difference in the overall restrictiveness between peerreviewed and nonpeer-reviewed preregistrations, we will conclude that there is insufficient evidence to support the necessity of peer review for achieving high restrictiveness.</p><p>As for hypothesis 1, we will also inspect for how many of the individual RDF, restrictiveness is higher in peerreviewed than nonpeer-reviewed preregistrations.</p><p>preregistrations.</p><p>Deleted: To determine significance, a criterion of ɑ = .05 will be applied.</p><p>Cliff's delta ( Question Hypothesis Sampling Plan Analysis Plan Rationale for deciding the sensitivity of the hypothesis test Interpretation given different outcomes Theory that could be shown wrong by the outcomes Based on these analyses, we will conclude that the benefit of peer review for increasing restrictiveness might be most evident for RDF exhibiting significant differences. Research question 4: To what degree do researchers that used the PRP-QUANT Template adhere to their preregistered plan, what deviations occur, and how are these reported? None We will search for associated publications for all included preregistrations by examining the PsychArchives record of each preregistration and searching for the preregistration DOI on the Internet (currently identified: N = 17, other publications will be searched for until the coding begins).</p><p>Researchers' adherence to their preregistered plans and reporting of deviations will be analyzed descriptively. We will focus on two aspects: The number of preregistration-article pairs with deviations and the total deviations across all pairs. At the level of preregistration-article pairs, we will analyze the number of studies that include modifying, additive, or omitting deviations. We will provide the average number of deviations, along with their corresponding standard deviations, minimum, and maximum values. At the deviations level, we will calculate percentages and frequencies of different types of deviations for each RDF and overall, across all preregistration-article pairs, presenting the results in a table.</p><p>For modifying deviations, we will also assess the proportion of justified, unjustified, and nondisclosed deviations.</p><p>Descriptive analyses of the PRP-QUANT preregistrations' adherence and deviation type scores will be used to answer this research question. No hypothesis tests will be conducted.</p><p>The results will be reported descriptively.</p><p>N/A</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>Deleted: https://doi.org/10.23668/psycharchives.14056 122 Deleted: https://doi.org/10.23668/psycharchives.14047 123 Deleted: https://doi.org/10.23668/psycharchives.As it is not our intention to judge the quality of 128 individual preregistrations, the list of RDF scores will not 129 include identifying data and its rows will be shuffled (one 130 preregistration corresponds to one row of scores). ¶</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2</head><label>2</label><figDesc>Figure 2 Distribution of Restrictiveness Scores for PRP-QUANT and OSF Preregistrations</figDesc><graphic coords="22,51.46,191.31,360.86,451.19" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>[</head><figDesc>no/an] effect on this analysis [in that …]. [NOTE: If the sensitivity analysis shows an influence on the results, it is described in more detail here.] benefited from peer review, that is, they showed 349 higher restrictiveness in the peer-reviewed preregistrations</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3</head><label>3</label><figDesc>Figure 3 Distribution of Restrictiveness Scores for (Non-)Peer-Reviewed PRP-QUANT Preregistrations</figDesc><graphic coords="27,51.46,191.31,360.86,451.19" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><graphic coords="10,60.07,191.31,343.66,404.81" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1</head><label>1</label><figDesc>Overview of RDF Inspected When Assessing Restrictiveness and Adherence</figDesc><table><row><cell cols="2">Code RDF</cell><cell>Restrictiveness question</cell><cell>Adherence question</cell></row><row><cell>T1</cell><cell>Conducting exploratory research</cell><cell>Is at least one hypothesis specified</cell></row><row><cell></cell><cell>without any hypothesis</cell><cell>such that it is clear what are the</cell></row><row><cell></cell><cell></cell><cell>IV(s) and DV(s)?</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2</head><label>2</label><figDesc>Scoring of Restrictiveness, Adherence, and Deviation Type</figDesc><table><row><cell>Coding</cell><cell>Score</cell><cell>Description</cell></row><row><cell cols="2">Restrictiveness 0</cell><cell>Not specified: opportunistic use of RDF not restricted at all</cell></row><row><cell></cell><cell>1</cell><cell>Some specification but lacking details: opportunistic use of RDF is restricted to some</cell></row><row><cell></cell><cell></cell><cell>extent</cell></row><row><cell></cell><cell>2</cell><cell>Detailed specification: opportunistic use of RDF is completely restricted, but no explicit</cell></row><row><cell></cell><cell></cell><cell>statement confirming that authors will not deviate from this plan by adding additional</cell></row><row><cell></cell><cell></cell><cell>methods/processes</cell></row><row><cell></cell><cell>3*</cell><cell>Detailed specification and statement that authors will not deviate from their plan by adding</cell></row><row><cell></cell><cell></cell><cell>additional methods/processes: opportunistic use of RDF is completely restricted</cell></row><row><cell></cell><cell>NA</cell><cell>RDF item not relevant to preregistration</cell></row><row><cell>Adherence</cell><cell>0</cell><cell>Not consistent with preregistration-deviation</cell></row><row><cell></cell><cell>1</cell><cell>Consistent with preregistration-no deviation</cell></row><row><cell></cell><cell>UP</cell><cell>Unable to conclusively assess deviations because information is not provided in the</cell></row><row><cell></cell><cell></cell><cell>preregistration</cell></row><row><cell></cell><cell>UA</cell><cell>Unable to conclusively assess deviations because information is not provided in the article</cell></row><row><cell></cell><cell>UB</cell><cell>Unable to conclusively assess deviations because information is not provided in both the</cell></row><row><cell></cell><cell></cell><cell>preregistration and article</cell></row><row><cell></cell><cell>NA</cell><cell>Not applicable</cell></row><row><cell>Deviation</cell><cell></cell><cell></cell></row><row><cell>Type</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 3</head><label>3</label><figDesc>Comparisons Between PRP-QUANT and OSF Preregistration Restrictiveness Scores for</figDesc><table><row><cell>Individual RDF</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>RDF</cell><cell>W</cell><cell>p</cell><cell>Corrected p</cell><cell>D</cell><cell>95% CIs</cell></row><row><cell>T1: Hypothesis</cell><cell cols="2">1,867.00 .628</cell><cell>&gt; .999</cell><cell cols="2">-0.03 -0.21, 0.16</cell></row><row><cell>T2: Direction of hypothesis</cell><cell cols="2">1,736.00 .856</cell><cell>&gt; .999</cell><cell cols="2">-0.10 -0.28, 0.09</cell></row><row><cell>D1: Multiple manipulated IVs</cell><cell cols="2">956.50 &gt; .999</cell><cell>&gt; .999</cell><cell cols="2">-0.50 -0.66, -0.3</cell></row><row><cell>D2: Additional IVs / A10: Adding additional IVs</cell><cell cols="2">1,939.50 .468</cell><cell>&gt; .999</cell><cell cols="2">0.01 -0.2, 0.21</cell></row><row><cell cols="3">D3: Multiple DV measures / A5: Selected DV measured 2,280.00 .019</cell><cell>.23</cell><cell cols="2">0.18 0, 0.36</cell></row><row><cell>D4: Additional constructs</cell><cell cols="2">1,386.50 .997</cell><cell>&gt; .999</cell><cell cols="2">-0.28 -0.47, -0.06</cell></row><row><cell cols="3">D5: Adding exclusion variables / A12: Eligibility criteria 1,807.00 .729</cell><cell>&gt; .999</cell><cell cols="2">-0.06 -0.26, 0.14</cell></row><row><cell>D6: Power analysis</cell><cell cols="2">2,176.00 .094</cell><cell>.386</cell><cell cols="2">0.13 -0.08, 0.33</cell></row><row><cell>D7: Sampling plan / C4: Stopping rule</cell><cell cols="2">2,333.50 .017</cell><cell>.23</cell><cell cols="2">0.21 0, 0.4</cell></row><row><cell>C1: Random assignment</cell><cell cols="2">1,992.00 .359</cell><cell>&gt; .999</cell><cell cols="2">0.04 -0.16, 0.23</cell></row><row><cell>C2: Blinding</cell><cell cols="2">1,568.00 .968</cell><cell>&gt; .999</cell><cell cols="2">-0.18 -0.37, 0.01</cell></row><row><cell>C3: Data handling/collection</cell><cell cols="2">2,177.00 .094</cell><cell>.386</cell><cell cols="2">0.13 -0.07, 0.32</cell></row><row><cell>A1: Missing data</cell><cell cols="2">1,697.50 .887</cell><cell>&gt; .999</cell><cell cols="2">-0.12 -0.3, 0.08</cell></row><row><cell>A2: Data pre-processing</cell><cell cols="2">1,822.00 .718</cell><cell>&gt; .999</cell><cell cols="2">-0.05 -0.24, 0.14</cell></row><row><cell>A3: Statistical assumptions</cell><cell cols="2">2,183.50 .088</cell><cell>.386</cell><cell cols="2">0.14 -0.07, 0.33</cell></row><row><cell>A4: Outliers</cell><cell cols="2">1,954.00 .438</cell><cell>&gt; .999</cell><cell cols="2">0.02 -0.18, 0.21</cell></row><row><cell>A6: DV scoring</cell><cell cols="2">1,869.00 .614</cell><cell>&gt; .999</cell><cell cols="2">-0.03 -0.22, 0.17</cell></row><row><cell>A7: Primary outcome selection / R6: HARKing</cell><cell cols="2">1,923.00 .503</cell><cell>&gt; .999</cell><cell cols="2">0.00 -0.22, 0.22</cell></row><row><cell>A8: IV selection</cell><cell cols="2">1,540.00 .982</cell><cell>&gt; .999</cell><cell cols="2">-0.20 -0.38, 0</cell></row><row><cell>A9: Defining manipulated IVs</cell><cell cols="2">1,450.00 .996</cell><cell>&gt; .999</cell><cell cols="2">-0.25 -0.42, -0.06</cell></row><row><cell>A11: Defining non-manipulated IVs</cell><cell cols="2">1,914.50 .521</cell><cell>&gt; .999</cell><cell cols="2">0.00 -0.2, 0.2</cell></row><row><cell>A13: Statistical model selection</cell><cell cols="2">1,931.00 .486</cell><cell>&gt; .999</cell><cell cols="2">0.00 -0.19, 0.2</cell></row><row><cell>A14: Method and package</cell><cell cols="2">1,805.00 .733</cell><cell>&gt; .999</cell><cell cols="2">-0.06 -0.26, 0.14</cell></row><row><cell>A15: Inference criteria</cell><cell cols="2">2,172.00 .097</cell><cell>.386</cell><cell cols="2">0.13 -0.07, 0.32</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 5</head><label>5</label><figDesc>Deviation Types Present in the PRP-QUANT Preregistrations by RDF</figDesc><table><row><cell cols="2">Code Abbreviated question</cell><cell>No deviation</cell><cell>Modifying</cell><cell>Additive</cell><cell>Omitting</cell><cell>U</cell><cell>NA</cell></row><row><cell>T1</cell><cell>Are the hypotheses reported the same as in the</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>preregistration?</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>than in OSF preregistrations (see Table3). [</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>[Declared/Undeclared] deviations were most common for[…]. In addition, we identified 48</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_2"><p>additive (11.76%) and 69 omitting deviations (16.91%).</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Authors' Contributions</head><p>The distribution of restrictiveness scores of PRP-QUANT preregistrations across all RDF will be inspected. In addition, stacked bar plots of restrictiveness scores for each RDF will be displayed for PRP-QUANT and OSF preregistrations, as well as for peer-reviewed and non-peerreviewed PRP-QUANT preregistrations.</p><p>We will also examine the number of preregistrations where the minimum and maximum number of hypotheses varies when viewed as single versus interconnected but independent predictions, providing means, standard deviations, medians, minimum, and maximum values for both interpretations.</p><p>Descriptive analyses of the PRP-QUANT preregistrations' restrictiveness scores will be used to answer this research question.</p><p>No hypothesis tests will be conducted.</p><p>The results will be reported descriptively.</p><p>N/A</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Omitting = RDF was restricted in the preregistration (restrictiveness &gt; 0), but not mentioned in the article (adherence = UA). U = Unable to determine, no information in neither the preregistration nor the article (restrictiveness = 0, adherence = UB)</title>
+		<author>
+			<orgName type="collaboration">Note</orgName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NA = Not applicable. Twenty-four questions were used to code adherence for 29 RDF</title>
+		<imprint/>
+	</monogr>
+	<note>Additive = RDF was not restricted in the preregistration (restrictiveness = 0), but related information was described in the article (adherence = UP) Percentage (frequency) of different deviation types made with respect to each RDF. Modifying = RDF was restricted in the preregistration (restrictiveness &gt; 0) and deviation occurred between preregistration and article (adherence = 0) i.e., there were some dependencies in that the same questions informed multiple RDF Duplicate answers were excluded from analyses</note>
+	<note type="raw_reference">Note. Percentage (frequency) of different deviation types made with respect to each RDF. Modifying = RDF was restricted in the preregistration (restrictiveness &gt; 0) and deviation occurred between preregistration and article (adherence = 0). Additive = RDF was not restricted in the preregistration (restrictiveness = 0), but related information was described in the article (adherence = UP). Omitting = RDF was restricted in the preregistration (restrictiveness &gt; 0), but not mentioned in the article (adherence = UA). U = Unable to determine, no information in neither the preregistration nor the article (restrictiveness = 0, adherence = UB). NA = Not applicable. Twenty-four questions were used to code adherence for 29 RDF (i.e., there were some dependencies in that the same questions informed multiple RDF). Duplicate answers were excluded from analyses.</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<author>
+			<persName><forename type="first">M</forename><surname>Appelbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cooper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">B</forename><surname>Kline</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mayo-Wilson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Nezu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Rao</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/amp0000191</idno>
+		<ptr target="https://doi.org/10.1037/amp0000191" />
+	</analytic>
+	<monogr>
+		<title level="m">Journal article reporting standards for quantitative research in psychology: The APA Publications and Communications Board task force report</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">73</biblScope>
+			<biblScope unit="page" from="3" to="25" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Appelbaum, M., Cooper, H., Kline, R. B., Mayo-Wilson, E., Nezu, A. M., &amp; Rao, S. M. (2018). Journal article reporting standards for quantitative research in psychology: The APA Publications and Communications Board task force report. American Psychologist, 73(1), 3-25. https://doi.org/10.1037/amp0000191</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">F</forename><surname>Aust</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Barth</surname></persName>
+		</author>
+		<ptr target="https://github.com/crsh/papaja" />
+		<title level="m">Papaja: Prepare reproducible APA journal articles with R Markdown</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Aust, F., &amp; Barth, M. (2022). Papaja: Prepare reproducible APA journal articles with R Markdown. https://github.com/crsh/papaja</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Ensuring the quality and specificity of preregistrations</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L S</forename><surname>Veldkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A L M</forename><surname>Assen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Van</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">A V</forename><surname>Crompvoets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">H</forename><surname>Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Soderberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mellor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Wicherts</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pbio.3000937</idno>
+		<ptr target="https://doi.org/10.1371/journal.pbio.3000937" />
+	</analytic>
+	<monogr>
+		<title level="j">PLOS Biology</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page">3000937</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bakker, M., Veldkamp, C. L. S., Assen, M. A. L. M. van, Crompvoets, E. A. V., Ong, H. H., Nosek, B. A., Soderberg, C. K., Mellor, D., &amp; Wicherts, J. M. (2020). Ensuring the quality and specificity of preregistrations. PLOS Biology, 18(12), e3000937. https://doi.org/10.1371/journal.pbio.3000937</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Fitting linear mixed-effects models using lme4</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mächler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bolker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Walker</surname></persName>
+		</author>
+		<idno type="DOI">10.18637/jss.v067.i01</idno>
+		<ptr target="https://doi.org/10.18637/jss.v067.i01" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Statistical Software</title>
+		<imprint>
+			<biblScope unit="volume">67</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="48" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bates, D., Mächler, M., Bolker, B., &amp; Walker, S. (2015). Fitting linear mixed-effects models using lme4. Journal of Statistical Software, 67(1), 1-48. https://doi.org/10.18637/jss.v067.i01</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Controlling the False Discovery Rate: A Practical and Powerful Approach to Multiple Testing</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Benjamini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hochberg</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/j.2517-6161.1995.tb02031.x</idno>
+		<ptr target="https://doi.org/10.1111/j.2517-6161.1995.tb02031.x" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Royal Statistical Society: Series B (Methodological)</title>
+		<imprint>
+			<biblScope unit="volume">57</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="289" to="300" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Benjamini, Y., &amp; Hochberg, Y. (1995). Controlling the False Discovery Rate: A Practical and Powerful Approach to Multiple Testing. Journal of the Royal Statistical Society: Series B (Methodological), 57(1), 289-300. https://doi.org/10.1111/j.2517-6161.1995.tb02031.x</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Influence of Imputation and EM Methods on Factor Analysis when Item Nonresponse in Questionnaire Data is Nonignorable</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">A</forename><surname>Bernaards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sijtsma</surname></persName>
+		</author>
+		<idno type="DOI">10.1207/S15327906MBR3503_03</idno>
+		<ptr target="https://doi.org/10.1207/S15327906MBR3503_03" />
+	</analytic>
+	<monogr>
+		<title level="j">Multivariate Behavioral Research</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="321" to="364" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bernaards, C. A., &amp; Sijtsma, K. (2000). Influence of Imputation and EM Methods on Factor Analysis when Item Nonresponse in Questionnaire Data is Nonignorable. Multivariate Behavioral Research, 35(3), 321-364. https://doi.org/10.1207/S15327906MBR3503_03</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">A template for preregistration of quantitative research in psychology: Report of the joint psychological societies preregistration task force</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosnjak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Fiebach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mellor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mueller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">B</forename><surname>O'connor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">L</forename><surname>Oswald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">I</forename><surname>Sokol</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/amp0000879</idno>
+		<ptr target="https://doi.org/10.1037/amp0000879" />
+	</analytic>
+	<monogr>
+		<title level="j">American Psychologist</title>
+		<imprint>
+			<biblScope unit="volume">77</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="602" to="615" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bosnjak, M., Fiebach, C. J., Mellor, D., Mueller, S., O&apos;Connor, D. B., Oswald, F. L., &amp; Sokol, R. I. (2022). A template for preregistration of quantitative research in psychology: Report of the joint psychological societies preregistration task force. American Psychologist, 77(4), 602-615. https://doi.org/10.1037/amp0000879</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Discrepancies in sample size calculations and data analyses reported in randomised trials: Comparison of publications with protocols</title>
+		<author>
+			<persName><forename type="first">A.-W</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hrobjartsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">J</forename><surname>Jorgensen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">C</forename><surname>Gotzsche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">G</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="DOI">10.1136/bmj.a2299</idno>
+		<ptr target="https://doi.org/10.1136/bmj.a2299" />
+	</analytic>
+	<monogr>
+		<title level="j">BMJ</title>
+		<imprint>
+			<biblScope unit="volume">337</biblScope>
+			<biblScope unit="page" from="2299" to="2299" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Chan, A.-W., Hrobjartsson, A., Jorgensen, K. J., Gotzsche, P. C., &amp; Altman, D. G. (2008). Discrepancies in sample size calculations and data analyses reported in randomised trials: Comparison of publications with protocols. BMJ, 337, a2299-a2299. https://doi.org/10.1136/bmj.a2299</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Empirical Evidence for Selective Reporting of Outcomes in Randomized Trials: Comparison of Protocols to Published Articles</title>
+		<author>
+			<persName><forename type="first">A.-W</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hróbjartsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Haahr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">C</forename><surname>Gøtzsche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">G</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="DOI">10.1001/jama.291.20.2457</idno>
+		<ptr target="https://doi.org/10.1001/jama.291.20.2457" />
+	</analytic>
+	<monogr>
+		<title level="j">JAMA</title>
+		<imprint>
+			<biblScope unit="volume">291</biblScope>
+			<biblScope unit="issue">20</biblScope>
+			<biblScope unit="page" from="2457" to="2465" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Chan, A.-W., Hróbjartsson, A., Haahr, M. T., Gøtzsche, P. C., &amp; Altman, D. G. (2004). Empirical Evidence for Selective Reporting of Outcomes in Randomized Trials: Comparison of Protocols to Published Articles. JAMA, 291(20), 2457-2465. https://doi.org/10.1001/jama.291.20.2457</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Comparison of Clinical Trial Changes in Primary Outcome and Reported Intervention Effect Size Between Trial Registration and Publication</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dodd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Cornelius</surname></persName>
+		</author>
+		<idno type="DOI">10.1001/jamanetworkopen.2019.7242</idno>
+		<ptr target="https://doi.org/10.1001/jamanetworkopen.2019.7242" />
+	</analytic>
+	<monogr>
+		<title level="j">JAMA Network Open</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<date type="published" when="2019">2019. 197242</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Chen, T., Li, C., Qin, R., Wang, Y., Yu, D., Dodd, J., Wang, D., &amp; Cornelius, V. (2019). Comparison of Clinical Trial Changes in Primary Outcome and Reported Intervention Effect Size Between Trial Registration and Publication. JAMA Network Open, 2(7), e197242. https://doi.org/10.1001/jamanetworkopen.2019.7242</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Comparing dream to reality: An assessment of adherence of the first generation of preregistered studies</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Claesen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gomes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tuerlinckx</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Vanpaemel</surname></persName>
+		</author>
+		<idno type="DOI">10.1098/rsos.211037</idno>
+		<ptr target="https://doi.org/10.1098/rsos.211037" />
+	</analytic>
+	<monogr>
+		<title level="j">Royal Society Open Science</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page">211037</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Claesen, A., Gomes, S., Tuerlinckx, F., &amp; Vanpaemel, W. (2021). Comparing dream to reality: An assessment of adherence of the first generation of preregistered studies. Royal Society Open Science, 8(10), 211037. https://doi.org/10.1098/rsos.211037</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Dominance statistics: Ordinal analyses to answer ordinal questions</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cliff</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/0033-2909.114.3.494</idno>
+		<ptr target="https://doi.org/10.1037/0033-2909.114.3.494" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Bulletin</title>
+		<imprint>
+			<biblScope unit="volume">114</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="494" to="509" />
+			<date type="published" when="1993">1993</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cliff, N. (1993). Dominance statistics: Ordinal analyses to answer ordinal questions. Psychological Bulletin, 114(3), 494-509. https://doi.org/10.1037/0033-2909.114.3.494</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Detecting and avoiding likely false-positive findings -a practical guide</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Forstmeier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wagenmakers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Parker</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/brv.12315</idno>
+		<ptr target="https://doi.org/10.1111/brv.12315" />
+	</analytic>
+	<monogr>
+		<title level="j">Biological Reviews</title>
+		<imprint>
+			<biblScope unit="volume">92</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1941" to="1968" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Forstmeier, W., Wagenmakers, E., &amp; Parker, T. H. (2017). Detecting and avoiding likely false-positive findings -a practical guide. Biological Reviews, 92(4), 1941-1968. https://doi.org/10.1111/brv.12315</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gamer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lemon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">F</forename><surname>Singh</surname></persName>
+		</author>
+		<ptr target="https://CRAN.R-project.org/package=irr" />
+		<title level="m">Irr: Various coefficients of interrater reliability and agreement</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gamer, M., Lemon, J., &amp; Singh, I. F. P. (2019). Irr: Various coefficients of interrater reliability and agreement. https://CRAN.R-project.org/package=irr</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">COMPare: A prospective cohort study correcting and monitoring 58 misreported trials in real time</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Goldacre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Drysdale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Milosevic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Slade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Hartley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Marston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Powell-Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Heneghan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Mahtani</surname></persName>
+		</author>
+		<idno type="DOI">10.1186/s13063-019-3173-2</idno>
+		<ptr target="https://doi.org/10.1186/s13063-019-3173-2" />
+	</analytic>
+	<monogr>
+		<title level="j">Trials</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">118</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Goldacre, B., Drysdale, H., Dale, A., Milosevic, I., Slade, E., Hartley, P., Marston, C., Powell- Smith, A., Heneghan, C., &amp; Mahtani, K. R. (2019). COMPare: A prospective cohort study correcting and monitoring 58 misreported trials in real time. Trials, 20(1), 118. https://doi.org/10.1186/s13063-019-3173-2</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Pastecs: Package for analysis of space-time ecological series</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Grosjean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ibanez</surname></persName>
+		</author>
+		<ptr target="https://CRAN.R-project.org/package=pastecs" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Grosjean, P., &amp; Ibanez, F. (2018). Pastecs: Package for analysis of space-time ecological series. https://CRAN.R-project.org/package=pastecs</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Reducing bias, increasing transparency and calibrating confidence with preregistration</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">E</forename><surname>Hardwicke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E.-J</forename><surname>Wagenmakers</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-022-01497-2</idno>
+		<ptr target="https://doi.org/10.1038/s41562-022-01497-2" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="15" to="26" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hardwicke, T. E., &amp; Wagenmakers, E.-J. (2023). Reducing bias, increasing transparency and calibrating confidence with preregistration. Nature Human Behaviour, 7(1), 15-26. https://doi.org/10.1038/s41562-022-01497-2</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Preregistration specificity &amp; adherence: A review of preregistered gambling studies &amp; cross-disciplinary comparison</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Heirene</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Laplante</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">R</forename><surname>Louderback</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Keen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Serafimovska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Gainsbury</surname></persName>
+		</author>
+		<idno type="DOI">10.31234/osf.io/nj4es</idno>
+		<ptr target="https://doi.org/10.31234/osf.io/nj4es" />
+	</analytic>
+	<monogr>
+		<title level="j">PsyArXiv</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>Preprint</note>
+	<note type="raw_reference">Heirene, R., LaPlante, D., Louderback, E. R., Keen, B., Bakker, M., Serafimovska, A., &amp; Gainsbury, S. M. (2021). Preregistration specificity &amp; adherence: A review of preregistered gambling studies &amp; cross-disciplinary comparison [Preprint]. PsyArXiv. https://doi.org/10.31234/osf.io/nj4es</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">The influence of hidden researcher decisions in applied microeconomics</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Huntington-Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Beam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bertoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Bloem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Burli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Grieco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ekpe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pugatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Saavedra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Stopnitzky</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/ecin.12992</idno>
+		<ptr target="https://doi.org/10.1111/ecin.12992" />
+	</analytic>
+	<monogr>
+		<title level="j">Economic Inquiry</title>
+		<imprint>
+			<biblScope unit="volume">59</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="944" to="960" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Huntington-Klein, N., Arenas, A., Beam, E., Bertoni, M., Bloem, J. R., Burli, P., Chen, N., Grieco, P., Ekpe, G., Pugatch, T., Saavedra, M., &amp; Stopnitzky, Y. (2021). The influence of hidden researcher decisions in applied microeconomics. Economic Inquiry, 59(3), 944- 960. https://doi.org/10.1111/ecin.12992</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">The value of preregistration for psychological science: A conceptual analysis</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.24602/sjpr.62.3_221</idno>
+		<ptr target="https://doi.org/10.24602/sjpr.62.3_221" />
+	</analytic>
+	<monogr>
+		<title level="j">心理学評論</title>
+		<imprint>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="221" to="230" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2019). The value of preregistration for psychological science: A conceptual analysis. 心理学評論, 62(3), 221-230. https://doi.org/10.24602/sjpr.62.3_221</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Sample Size Justification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1525/collabra.33267</idno>
+		<ptr target="https://doi.org/10.1525/collabra.33267" />
+	</analytic>
+	<monogr>
+		<title level="j">Collabra: Psychology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">33267</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2022). Sample Size Justification. Collabra: Psychology, 8(1), 33267. https://doi.org/10.1525/collabra.33267</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Neuwirth</surname></persName>
+		</author>
+		<ptr target="https://CRAN.R-project.org/package=RColorBrewer" />
+		<title level="m">RColorBrewer: ColorBrewer palettes</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Neuwirth, E. (2022). RColorBrewer: ColorBrewer palettes. https://CRAN.R- project.org/package=RColorBrewer</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Pre-Analysis Plans: An Early Stocktaking</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">K</forename><surname>Ofosu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">N</forename><surname>Posner</surname></persName>
+		</author>
+		<idno type="DOI">10.1017/S1537592721000931</idno>
+		<ptr target="https://doi.org/10.1017/S1537592721000931" />
+	</analytic>
+	<monogr>
+		<title level="j">Perspectives on Politics</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="174" to="190" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ofosu, G. K., &amp; Posner, D. N. (2023). Pre-Analysis Plans: An Early Stocktaking. Perspectives on Politics, 21(1), 174-190. https://doi.org/10.1017/S1537592721000931</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">A community-sourced glossary of open scholarship terms</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Parsons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azevedo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">M</forename><surname>Elsherif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Guay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">N</forename><surname>Shahim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">H</forename><surname>Govaart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Norris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>O'mahony</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Parker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Todorovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Pennington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Garcia-Pelegrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lazić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">L</forename><surname>Middleton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Valentini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mccuaig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">J</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Aczel</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41562-021-01269-4</idno>
+		<ptr target="https://doi.org/10.1038/s41562-021-01269-4" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="312" to="318" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Parsons, S., Azevedo, F., Elsherif, M. M., Guay, S., Shahim, O. N., Govaart, G. H., Norris, E., O&apos;Mahony, A., Parker, A. J., Todorovic, A., Pennington, C. R., Garcia-Pelegrin, E., Lazić, A., Robertson, O., Middleton, S. L., Valentini, B., McCuaig, J., Baker, B. J., Collins, E., … Aczel, B. (2022). A community-sourced glossary of open scholarship terms. Nature Human Behaviour, 6, 312-318. https://doi.org/10.1038/s41562-021-01269-4</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">R: A language and environment for statistical computing</title>
+		<author>
+			<orgName type="collaboration">R Core Team.</orgName>
+		</author>
+		<ptr target="https://www.R-project.org/" />
+	</analytic>
+	<monogr>
+		<title level="m">R Foundation for Statistical Computing</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">R Core Team. (2023). R: A language and environment for statistical computing. R Foundation for Statistical Computing. https://www.R-project.org/</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Romano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kromrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Coraggio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Skowronek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Devine</surname></persName>
+		</author>
+		<title level="m">Exploring methods for evaluating group differences on the NSSE and other surveys: Are the t-test and Cohen&apos;s d indices the most appropriate choices? Annual Meeting of the Southern Association for Institutional Research</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Romano, J., Kromrey, J. D., Coraggio, J., Skowronek, J., &amp; Devine, L. (2006). Exploring methods for evaluating group differences on the NSSE and other surveys: Are the t-test and Cohen&apos;s d indices the most appropriate choices? Annual Meeting of the Southern Association for Institutional Research.</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Using nestedRanksTest</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">G</forename><surname>Scofield</surname></persName>
+		</author>
+		<ptr target="http://cran.nexr.com/web/packages/nestedRanksTest/vignettes/nestedRanksTest.html" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Scofield, D. G. (2015). Using nestedRanksTest. In http://cran.nexr.com/. http://cran.nexr.com/web/packages/nestedRanksTest/vignettes/nestedRanksTest.html</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Mann-whitney-wilcoxon test for nested ranks</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">G</forename><surname>Scofield</surname></persName>
+		</author>
+		<ptr target="https://github.com/douglasgscofield/nestedRanksTest" />
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Scofield, D. G. (2016). Mann-whitney-wilcoxon test for nested ranks. https://github.com/douglasgscofield/nestedRanksTest</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">False-Positive Psychology: Undisclosed Flexibility in Data Collection and Analysis Allows Presenting Anything as Significant</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Simmons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Nelson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Simonsohn</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/0956797611417632</idno>
+		<ptr target="https://doi.org/10.1177/0956797611417632" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1359" to="1366" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Simmons, J. P., Nelson, L. D., &amp; Simonsohn, U. (2011). False-Positive Psychology: Undisclosed Flexibility in Data Collection and Analysis Allows Presenting Anything as Significant. Psychological Science, 22(11), 1359-1366. https://doi.org/10.1177/0956797611417632</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Estimating the prevalence of discrepancies between study registrations and publications: A systematic review and meta-analyses. medRxiv</title>
+		<author>
+			<persName><forename type="first">Meta-Research</forename><surname>Targ</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Group</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><forename type="middle">T</forename><surname>Collaborators</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robbie</forename><surname>Thibault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olmo</forename><surname>Pedder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Van Den Akker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacqueline</forename><surname>Westwood</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcus</forename><surname>Thompson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Munafo</surname></persName>
+		</author>
+		<idno type="DOI">10.1101/2021.07.07.21259868</idno>
+		<idno>2021.07.07.21259868</idno>
+		<ptr target="https://doi.org/10.1101/2021.07.07.21259868" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">TARG Meta-Research Group &amp; Collaborators, Robert T Thibault, Robbie Clark, Hugo Pedder, Olmo van den Akker, Samuel Westwood, Jacqueline Thompson, &amp; Marcus Munafo. (2023). Estimating the prevalence of discrepancies between study registrations and publications: A systematic review and meta-analyses. medRxiv, 2021.07.07.21259868. https://doi.org/10.1101/2021.07.07.21259868</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Effsize: Efficient effect size computation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Torchiano</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/zenodo.1480624</idno>
+		<ptr target="https://doi.org/10.5281/zenodo.1480624" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Torchiano, M. (2020). Effsize: Efficient effect size computation. https://doi.org/10.5281/zenodo.1480624</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Study Preregistration: An Evaluation of a Method for Transparent Reporting</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Toth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">C</forename><surname>Banks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mellor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>O'boyle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dickson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dehaven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bochantin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Borns</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s10869-020-09695-3</idno>
+		<ptr target="https://doi.org/10.1007/s10869-020-09695-3" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Business and Psychology</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="553" to="571" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Toth, A. A., Banks, G. C., Mellor, D., O&apos;Boyle, E. H., Dickson, A., Davis, D. J., DeHaven, A., Bochantin, J., &amp; Borns, J. (2021). Study Preregistration: An Evaluation of a Method for Transparent Reporting. Journal of Business and Psychology, 36(4), 553-571. https://doi.org/10.1007/s10869-020-09695-3</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">mice: Multivariate imputation by chained equations in R</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Van Buuren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Groothuis-Oudshoorn</surname></persName>
+		</author>
+		<idno type="DOI">10.18637/jss.v045.i03</idno>
+		<ptr target="https://doi.org/10.18637/jss.v045.i03" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Statistical Software</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="67" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">van Buuren, S., &amp; Groothuis-Oudshoorn, K. (2011). mice: Multivariate imputation by chained equations in R. Journal of Statistical Software, 45(3), 1-67. https://doi.org/10.18637/jss.v045.i03</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">The effectiveness of preregistration in psychology: Assessing preregistration strictness and preregistration-study consistency</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Van Den Akker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A L M</forename><surname>Van Assen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Pennington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Verweij</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">M</forename><surname>Elsherif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Claesen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">D M</forename><surname>Gaillard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Yeung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-L</forename><surname>Frankenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Krautter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Cockcroft</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Kreuer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">R</forename><surname>Evans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Heppel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">F</forename><surname>Schoch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Korbmacher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yamada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Albayrak-Aydemir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Wicherts</surname></persName>
+		</author>
+		<idno type="DOI">10.31222/osf.io/h8xjw</idno>
+		<ptr target="https://doi.org/10.31222/osf.io/h8xjw" />
+	</analytic>
+	<monogr>
+		<title level="j">MetaArXiv</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Preprint</note>
+	<note type="raw_reference">Van Den Akker, O., Bakker, M., Van Assen, M. A. L. M., Pennington, C. R., Verweij, L., Elsherif, M. M., Claesen, A., Gaillard, S. D. M., Yeung, S. K., Frankenberger, J.-L., Krautter, K., Cockcroft, J. P., Kreuer, K. S., Evans, T. R., Heppel, F., Schoch, S. F., Korbmacher, M., Yamada, Y., Albayrak-Aydemir, N., … Wicherts, J. M. (2023). The effectiveness of preregistration in psychology: Assessing preregistration strictness and preregistration-study consistency [Preprint]. MetaArXiv. https://doi.org/10.31222/osf.io/h8xjw</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Ensuring the quality and specificity of preregistrations [Data]</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L S</forename><surname>Veldkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">T</forename><surname>Mellor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A L M</forename><surname>Assen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Van</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wicherts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">H</forename><surname>Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">A V</forename><surname>Crompvoets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Soderberg</surname></persName>
+		</author>
+		<ptr target="https://osf.io/hbze5" />
+	</analytic>
+	<monogr>
+		<title level="j">OSF</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Veldkamp, C. L. S., Mellor, D. T., Bakker, M., Assen, M. A. L. M. van, Wicherts, J., Nosek, B. A., Ong, H. H., Crompvoets, E. A. V., &amp; Soderberg, C. K. (2020). Ensuring the quality and specificity of preregistrations [Data]. OSF. https://osf.io/hbze5</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Wicherts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L S</forename><surname>Veldkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">E M</forename><surname>Augusteijn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">C M</forename><surname>Van Aert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A L M</forename><surname>Van Assen</surname></persName>
+		</author>
+		<idno type="DOI">10.3389/fpsyg.2016.01832</idno>
+		<ptr target="https://doi.org/10.3389/fpsyg.2016.01832" />
+	</analytic>
+	<monogr>
+		<title level="m">Degrees of Freedom in Planning, Running, Analyzing, and Reporting Psychological Studies: A Checklist to Avoid p-Hacking</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">7</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wicherts, J. M., Veldkamp, C. L. S., Augusteijn, H. E. M., Bakker, M., Van Aert, R. C. M., &amp; Van Assen, M. A. L. M. (2016). Degrees of Freedom in Planning, Running, Analyzing, and Reporting Psychological Studies: A Checklist to Avoid p-Hacking. Frontiers in Psychology, 7. https://doi.org/10.3389/fpsyg.2016.01832</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Welcome to the tidyverse</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wickham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Averick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Mcgowan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>François</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Grolemund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Henry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kuhn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Pedersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Bache</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ooms</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">P</forename><surname>Seidel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Spinu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yutani</surname></persName>
+		</author>
+		<idno type="DOI">10.21105/joss.01686</idno>
+		<ptr target="https://doi.org/10.21105/joss.01686" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Open Source Software</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">43</biblScope>
+			<biblScope unit="page">1686</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wickham, H., Averick, M., Bryan, J., Chang, W., McGowan, L. D., François, R., Grolemund, G., Hayes, A., Henry, L., Hester, J., Kuhn, M., Pedersen, T. L., Miller, E., Bache, S. M., Müller, K., Ooms, J., Robinson, D., Seidel, D. P., Spinu, V., … Yutani, H. (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686. https://doi.org/10.21105/joss.01686</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Psych: Procedures for psychological, psychometric, and personality research</title>
+		<author>
+			<persName><forename type="first">William</forename><surname>Revelle</surname></persName>
+		</author>
+		<ptr target="https://CRAN.R-project.org/package=psych" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+		<respStmt>
+			<orgName>Northwestern University</orgName>
+		</respStmt>
+	</monogr>
+	<note type="raw_reference">William Revelle. (2023). Psych: Procedures for psychological, psychometric, and personality research. Northwestern University. https://CRAN.R-project.org/package=psych</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Xfun: Supporting functions for packages maintained by &apos;yihui xie</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<ptr target="https://CRAN.R-project.org/package=xfun" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Xie, Y. (2023). Xfun: Supporting functions for packages maintained by &apos;yihui xie&apos;. 511 https://CRAN.R-project.org/package=xfun</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

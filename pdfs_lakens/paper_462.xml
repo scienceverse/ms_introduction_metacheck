@@ -1,0 +1,1016 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Temporal context in paced nger tapping tunes the error-correction mechanism</title>
+				<funder ref="#_f459yjP">
+					<orgName type="full">Universidad Nacional de Quilmes (Argentina</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">CONICET (Argentina)</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Ariel</forename><forename type="middle">D</forename><surname>Silva</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department" key="dep1">Sensorimotor Dynamics Lab</orgName>
+								<orgName type="department" key="dep2">Departamento de Ciencia y Tecnología</orgName>
+								<orgName type="institution">Universidad Nacional de Quilmes</orgName>
+								<address>
+									<settlement>Bernal</settlement>
+									<country key="AR">Argentina</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">CONICET</orgName>
+								<address>
+									<country key="AR">Argentina</country>
+								</address>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Rodrigo</forename><surname>Laje</surname></persName>
+							<email>rlaje@unq.edu.ar</email>
+							<affiliation key="aff1">
+								<orgName type="department" key="dep1">Sensorimotor Dynamics Lab</orgName>
+								<orgName type="department" key="dep2">Departamento de Ciencia y Tecnología</orgName>
+								<orgName type="institution">Universidad Nacional de Quilmes</orgName>
+								<address>
+									<settlement>Bernal</settlement>
+									<country key="AR">Argentina</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">CONICET</orgName>
+								<address>
+									<country key="AR">Argentina</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">National University of Quilmes</orgName>
+								<orgName type="institution" key="instit2">National University of Quilmes</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Temporal context in paced nger tapping tunes the error-correction mechanism</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">628C81EA32D4001628EF77460192EC3C</idno>
+					<idno type="DOI">10.21203/rs.3.rs-4343875/v1</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:02+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>Posted Date: May 10th, 2024</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Sensorimotor synchronization (SMS) is the mainly specifically human ability to move in sync with a periodic external stimulus, as in keeping pace with music. The most common experimental paradigm to study its largely unknown underlying mechanism is the paced finger-tapping task, where a participant taps to a periodic sequence of brief stimuli. Contrary to reaction time, this task involves temporal prediction because the participant needs to trigger the motor action in advance for the tap and the stimulus to occur simultaneously, then an error-correction mechanism takes the past performance as input to adjust the following prediction. In a different task, it has been shown that exposure to a distribution of individual temporal intervals creates a "temporal context" that can bias the estimation/production of a single target interval. As temporal estimation and production are also involved in SMS, we asked whether a paced finger-tapping task with period perturbations would show any temporal context effect. In this work we show that temporal context can indeed be generated during paced finger tapping as in other, simpler temporal tasks, and that the shape and size of the resynchronization curve after a period perturbation depends on temporal context. Response asymmetry is also affected by temporal context, thus evidencing an interplay between context and intrinsic nonlinearities of the correction mechanism. We conclude that temporal context calibrates the underlying error-correction mechanism in SMS.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>In the study of time processing in the scale of hundreds of milliseconds, traditionally known as millisecond timing, the description of behavior and the understanding of its neural mechanisms have shown great advances in the last two decades <ref type="bibr" target="#b0">[1]</ref><ref type="bibr" target="#b1">[2]</ref><ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref> .</p><p>The need for considering the processing of time in the multiple time scales involved in motor planning and control is being recognized as a fundamental step towards understanding the interaction between brain and body <ref type="bibr" target="#b4">5</ref> .</p><p>Sensorimotor synchronization (SMS), the ability to move in sync with a periodic external stimulus, belongs to this time scale and underlies many human-specific activities like music and dance <ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b6">7</ref> . The simplest task to study SMS is paced finger tapping where a participant is instructed to tap in pace with an external metronome (usually a periodic sequence of brief tones).</p><p>The stimulus sequence may be perturbed by an unexpected change of interstimulus period. This task allowed researchers to make the first steps towards identifying the neural correlates of SMS, like finding a perceptual and a sensorimotor component during resynchronization after a period perturbation <ref type="bibr" target="#b7">8</ref> and an asymmetry in the processing of positive vs negative errors that reproduces a known behavioral asymmetry <ref type="bibr" target="#b8">9</ref> . Advances in a related experimental paradigm with monkeys are to be noted, where single-neuron recordings showed clearly temporal profiles <ref type="bibr" target="#b9">10</ref> and metronomical neural activity was found along the whole hierarchy of sensory, associative, and motor areas <ref type="bibr" target="#b10">11</ref> . Despite these recent important advances, many fundamental issues remain unsolved. In this work we focus on the underlying error-correction mechanism that allows a person to recover average synchrony after an unexpected period perturbation in a paced finger-tapping task. In SMS research it is universally accepted that both keeping average synchrony and recovering it after a perturbation are achieved thanks to an error-correction mechanism <ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b12">13</ref> . Despite a long history of using linear models to describe the resynchronization behavior <ref type="bibr" target="#b6">7</ref> , mounting evidence from analyses of the resynchronization time series under different perturbation types and signs suggests that the error-correction mechanism is intrinsically nonlinear <ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref> . Other experimental findings also call for nonlinear models <ref type="bibr" target="#b14">[15]</ref><ref type="bibr" target="#b15">[16]</ref><ref type="bibr" target="#b16">[17]</ref><ref type="bibr" target="#b17">[18]</ref><ref type="bibr" target="#b18">[19]</ref><ref type="bibr" target="#b19">[20]</ref> . This knowledge could influence the way in which we design experiments and analyze the data.</p><p>In temporal experimental paradigms other than paced finger tapping, it has been demonstrated that time estimation and production are biased by many factors <ref type="bibr" target="#b20">21</ref> . We are interested in the effect of temporal context. In a traditional interval timing paradigm where participants are asked to estimate a single time interval demarcated by two flashed stimuli and reproduce it with a key press (a time reproduction task), it was shown that time estimates for a particular duration depended on the distribution of intervals presented to the participant <ref type="bibr" target="#b21">22</ref> , with a bias towards the mean of the distribution. The processing of time in this range is thus "calibrated" by exposure to different time interval distributions that create a temporal context biasing estimations.</p><p>In recent years the effect of temporal context was found also in SMS-related experimental paradigms, as the following examples show. During the synchronization phase in a synchronization-continuation paradigm <ref type="bibr" target="#b16">17</ref> participants showed the "central tendency effect", i.e. a bias towards the mean as in the temporal context effect discussed above. Participants biased their estimation of the interstimulus interval depending on the distribution it was drawn from (towards the mean of the distribution), and the magnitude of the bias decreased along the trial as more stimuli were presented. In a different work, participants in a synchronization-continuation experiment <ref type="bibr" target="#b22">23</ref> showed a similar central tendency effect. The difference between the presented interstimulus interval and the produced interresponse intervals in a trial (i.e. the tempo-matching error) showed a negative slope as a function of the interstimulus interval. That is, participants tapped too slow when stimuli had a fast rate, and too fast when stimuli had a slow rate (although the researchers pooled synchronization and continuation data to compute the tempo-matching error, so the actual result for synchronization specifically may be obscured).</p><p>Although the evidence points to a role of temporal context in time processing both for single time intervals and for synchronization to a periodic sequence, up to our knowledge there is no direct evidence to date that the error-correction mechanism underlying SMS is influenced or calibrated by temporal context. In this work we first analyze a compilation of quantitative evidence from different sources suggesting that the timing of the first tap after a perturbation depends on temporal context, despite having the same timing of previous responses and the same timing of stimuli up to that point. Motivated by this, we then show results from our specific experiment proving the existence of temporal context in SMS and its effect during the resynchronization phase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head><p>Figure <ref type="figure" target="#fig_4">1a</ref> shows a schematic of the task for the two perturbation types considered in this work. The asynchrony at step n is defined as e n = R n -S n , that is the difference between the occurrence times of response R n and stimulus S n . In step-change (SC) perturbations the baseline period T 0 of the sequence is unexpectedly changed at n = 0 by an amount ∆T ; the asynchrony at n = 0 thus shows a forced error equal to -∆T (on average). In phase-shift (PS) perturbations the change at n = 0 is followed by an opposite shift at n = 1, thus making the sequence recover its original period. In both cases resynchronization follows as a convergence of asynchrony values to the post-perturbation baseline <ref type="bibr" target="#b12">13</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prior evidence of temporal context influencing the error-correction mechanism</head><p>In this subsection we compile prior evidence gathered from the paced finger tapping literature to show that exposure to either type of perturbation may generate a temporal context effect that modifies the resynchronization response. The evidence is the following and it is based on comparing the response timing after SC and PS perturbations. We digitized data from published papers with paced finger tapping (Figure <ref type="figure" target="#fig_4">1b</ref>; see Methods, subsection Sample Size Justification) where participants were exposed to either a single perturbation type ("pure") or two different perturbation types at random during the same experiment ("combined").</p><p>In experiments where the perturbations are unexpected (i.e., they occur at a random stimulus in a trial) the asynchrony at the perturbed beep n = 0 represents a forced error and, on average, it equals the time interval by which the corresponding stimulus was shifted, with opposite sign (Figure <ref type="figure" target="#fig_4">1a</ref>). The response at the following beep (n = 1) is already affected by the correction mechanism attempting to decrease the forced error. Comparing asynchrony values from different perturbations, however, should be done carefully because the timing of the post-perturbation stimuli S n is not the same between SC and PS <ref type="bibr" target="#b13">14</ref> -that is, the time references of each asynchrony at n ≥ 1 are different for different perturbations as shown in Figure <ref type="figure" target="#fig_4">1a</ref>. In order to correctly compare and determine whether the post-perturbation response timing differs between different perturbation types, for the SC perturbations we show the "virtual" asynchrony between response and the extrapolated stimulus (as defined in panel a) thus fixing the time reference across perturbation types.</p><p>Let's assume for a moment that there is no temporal context effect; that is, assume that the correction mechanism after a specific perturbation type has the same calibration whether it is a "pure" or a "combined" experiment. In this case, the responses at n = 1 should coincide in absolute time (same virtual asynchrony) because both the past performance and the stimulus sequence were identical up to that point. What is observed in the PS perturbations, instead, is that they differ (Figure <ref type="figure" target="#fig_4">1b</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Isolating the effect of temporal context</head><p>The departure between pure and combined PS at n = 1 shown in Figure <ref type="figure" target="#fig_4">1b</ref> suggests there is an effect of temporal context produced by exposure to either one or the two types of perturbation. However, we gathered data from different papers where the experiments were not designed to specifically test this. In addition, the traditional way of comparing in the literature is one perturbation type against the other which involves a potential confounding because the two perturbation types have an effect by</p><formula xml:id="formula_0">(n=0) Stimuli S n</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Phase shift</head><p>Responses R n Time</p><formula xml:id="formula_1">T 1 ∆T T 0 T 0 Asynchrony e 0 =R 0 -S 0 e 1 (n=1) Stimuli S n</formula><p>Step change</p><p>Responses R n Time As the time of perturbation is unexpected, at n = 0 there is a forced error for both perturbation types and resynchronization ensues. At n = 1 the underlying error-correction mechanism is already at work based on past performance; if there were no effect of temporal context, the occurrence time of the response (in absolute time) should be the same for both perturbation types as shown. (b) Prior evidence from the paced finger tapping literature. Asynchrony after perturbation estimated from published works for the two main types of perturbations (mean ±95% confidence interval). For step-change (SC) perturbations the virtual asynchrony is used as defined in panel a. The phase-shift (PS) perturbations show diverging values at n = 1 for pure versus combined contexts, suggesting a potential effect of temporal context (asterisks indicate significant differences after Bonferroni correction; see Methods). Data digitized from published works as described in Methods, subsection Sample Size Justification.</p><formula xml:id="formula_2">T 1 ∆T T 0 T 1 e 0 (virtual) e 1<label>(</label></formula><p>themselves, both at the perceptual level (different saliencies) and at the behavioral level (different shifting of stimuli from n = 1 on, thus of time references) <ref type="bibr" target="#b5">6</ref> . In order to isolate the potential effect of temporal context and make the correct comparison to determine a causal relationship, in this work we exposed participants to different perturbation types according to the following three groups: Group 1 was exposed to SC perturbations only (17 participants); Group 2 was exposed to PS perturbations only (16 participants); Group 3 was exposed to SC and PS perturbations in random order (18 participants; total 51 participants).</p><p>Groups 1 and 2 belong to the "pure" context while Group 3 belongs to the "combined" context. In this way we can compare responses between different contexts in the same experiment while keeping the perturbation type constant.</p><p>The experiment is paced finger tapping with auditory stimuli and period perturbations to determine whether temporal context has any effect during the resynchronization phase after a perturbation. The participant is instructed to keep average synchrony as well as possible and, in case a perturbation arises, to recover synchrony without stopping tapping. Perturbations can be of two different types: step-change perturbations ("SC", where the stimuli period abruptly changes by an amount ∆T at a random beep in the sequence) or phase-shift perturbations ("PS", where the period changes at two consecutive beeps by opposite amounts ∆T and -∆T such that it goes back to its original value). These perturbation types are two of the most traditionally used in the paced finger tapping literature <ref type="bibr" target="#b12">13</ref> . A perturbation can have two different signs: positive, where the period increases at the perturbed beep (∆T &gt; 0, "pos"), or negative, where the period decreases at the perturbed beep (∆T &lt; 0, "neg"). Importantly, as described above in our experiment the participants are also exposed to either temporal context: "pure"</p><p>(Groups 1 and 2) or "combined" (Group 3). The final experimental design is a fully factorial combination of conditions Context</p><p>x Perturbation Type x Perturbation Sign; see Methods for a detailed description. The number of participants was determined by an a priori statistical power analysis using published data as shown in Figure <ref type="figure" target="#fig_4">1b</ref> (see Methods, subsection Sample Size Justification).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Temporal context affects the resynchronization response</head><p>Figure <ref type="figure" target="#fig_1">2</ref> shows the averaged time series of asynchrony for every condition, as a function of beep number along the trial (renumbered such that the perturbation occurs at n = 0). The resynchronization behavior is qualitatively similar across all conditions. As the perturbations are unexpected due to the actual perturbation occurring at a random beep in the trial, at n = 0 the asynchrony shows a forced error that on average is opposite to the perturbation size. Then the participant gradually recovers synchrony and reaches a new baseline.</p><p>Quantitatively, however, the time series show systematic differences between pure and combined context conditions during the resynchronization phase. Expanding on the findings from prior literature, the differences in our experiment go well beyond n = 1 and consequently differences in SC perturbations also appear that were not evident in the data from the literature. An exploratory analysis reveals that some of the observed differences between contexts remain significant after adjusting for multiple comparisons (asterisks from permutation testing with FDR correction across beeps; see Methods).</p><p>-60 There are systematic differences between contexts (blue and orange curves): switching from combined to pure context shifts the asynchrony curve during resynchronization upwards or downwards depending on the condition, which is represented by a significant triple interaction Context x Perturbation Type x Perturbation Sign. Mean across participants ±95% confidence interval. Asterisks mark significant differences after permutation testing with FDR correction for multiple comparisons (see Methods).</p><formula xml:id="formula_3">-</formula><p>In order to properly test the effect of Context we fitted a Linear Mixed Model (LMM) with Asynchrony as dependent variable (restricted to the resynchronization phase, n = 1 through 6, pooled) and factors Context (levels pure/combined), Perturbation Type (levels PS/SC), and Perturbation Sign (levels pos/neg). As we are interested in the effect of Context-either as a main effect or any of its interactions-we included the two-way interactions of Context and the three-way interaction.</p><p>Participant was included as a random effect; see detailed model specification in Methods. Results indicate that there is a significant three-way interaction effect, meaning that the effect of Context depends on the type and sign of the perturbation (significant three-way interaction: χ 2 (2) = 87.2, p = 2 × 10 -16 ; see full model results in Methods). This can be interpreted by observing Figure <ref type="figure" target="#fig_1">2</ref> where the three-way interaction shows as a neat disordinal, nearly crossover interaction: in the negative PS perturbations, "combined" Context produces lower Asynchrony values than "pure" (difference estimate between combined and pure: -8.8 ms; 95% CI: [-15.7; -1.9] ms, corrected p = 0.025), while in the positive PS perturbations it produces higher Asynchrony values (difference: 14.5 ms, 95% CI: [6.9; 22.1] ms, corrected p = 0.001); while the opposite is true for the SC perturbations (SCneg difference: 4.8 ms, 95% CI: [-2.3; 11.9] ms, corrected p = 0.19; SCpos difference: -7.8 ms, 95% CI:</p><p>[-15.1; -0.6] ms, corrected p = 0.048; see Methods for a summary of post-hoc comparisons).</p><p>An alternative model (the same three factors and all two-way interactions, but no three-way interaction) performs significantly worse, meaning the three-way interaction represents an important aspect of the data (see Methods).</p><p>It is important to note that all comparisons in Figure <ref type="figure" target="#fig_1">2</ref> are made between perturbations of the same type and sign but coming from different contexts. For example, in the upper left panel both time series are the response to a negative PS perturbation-the only difference being that one corresponds to Group 2 (pure context) and the other to Group 3 (combined context). That is, all comparisons involve the same stimuli sequence and thus any observed difference can be unequivocally attributed to different psychological states (context).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Response asymmetry during resynchronization depends on temporal context</head><p>Response asymmetry, a hallmark of nonlinearity, quantifies the degree of mirror-image similarity between time series corresponding to perturbations of opposite signs <ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref> . Figure <ref type="figure" target="#fig_2">3</ref> shows the same data as before but arranged such that now the asymmetry between positive and negative perturbations can be more easily analyzed. In this figure we inverted the sign of the Asynchrony of the positive perturbations, so if the original responses to positive and negative perturbations are symmetric then the two plotted time series will be mostly coincident or overlapping, whereas if they are asymmetric they will show as non-overlapping. An exploratory analysis, again, reveals that some conditions are significantly asymmetric after adjusting for multiple comparisons (asterisks from permutation testing with FDR correction across beeps; see Methods). Asymmetry between responses to perturbations of opposite signs. Same data as above (asynchrony as a function of stimulus number along a trial), here after inverting the sign of the asynchrony from positive perturbations. In this way, any asymmetry will show as a difference between time series within each panel (negative response minus inverted-positive response). Mean across participants ±95% confidence interval. Asterisks mark significant differences after permutation testing with FDR correction for multiple comparisons (see Methods).</p><p>In order to test whether there is significant asymmetry, we fitted an LMM to the data shown in Figure <ref type="figure" target="#fig_2">3</ref>. Thanks to the sign inversion of the positive conditions, any asymmetry would be represented by a difference between negative and inverted-positive conditions, thus appropriate for linear regression and ANOVA. That is, we look for any effect of Perturbation Sign (either main effect or any of its interactions). The LMM is similar as before with Asynchrony as the dependent variable (beeps n = 1 through 6, pooled), factors Context (levels pure/combined), Perturbation Type (levels PS/SC), and Perturbation Sign (levels neg/inv-pos). Participant was included as a random effect; see detailed model specification in Methods.</p><p>Model results reflect what can be seen in Figure <ref type="figure" target="#fig_2">3</ref>: there are varying degrees of asymmetry, i.e., not all conditions show the same difference between negative and inverted-positive series, and it depends on both Context and Perturbation Type levels (significant three-way interaction: χ 2 (2) = 14.5; p = 0.0007).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Gradual increase of asymmetry</head><p>The previous result tells us that some conditions are more asymmetric than others. In this subsection we show that there is a specific ordering that can be interpreted in terms of our novel results regarding the effect of Context and previous literature.</p><p>In Figure <ref type="figure" target="#fig_3">4a</ref> we show the actual asymmetry, that is the difference between the corresponding time series from Figure <ref type="figure" target="#fig_2">3</ref>. In the resynchronization phase (n = 1 through 6) the conditions have different asymmetry time evolutions, with some conditions closer to zero (less asymmetric) and some others farther away from zero (more asymmetric). The specific order is, from less to more asymmetric: PS pure &lt; PS comb &lt; SC comb &lt; SC pure, and it can be seen more clearly in Figure <ref type="figure" target="#fig_3">4b</ref> where we show the average asymmetry across the resynchronization phase. Although the pairwise differences between consecutive conditions in Figure <ref type="figure" target="#fig_3">4b</ref> are not significant after correcting for multiple comparisons (see Methods), their ordering has a very clear interpretation based on two facts. First, it is known that pure SC perturbations are more asymmetric than pure PS perturbations <ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b13">14</ref> , which in this work is additionally supported by a significant difference between them (asymmetry difference estimate between SC and PS: 10.8 ms, 95% CI: [2.3; 19.3] ms, t(718) = 2.49, p = 0.013). Second, note that the "combined" conditions have intermediate asymmetry values-the crossover interaction effect of Context we showed above makes the less asymmetric responses more asymmetric and vice versa. We will interpret this in a broader scope in the Discussion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Discussion</head><p>The</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>error-correction mechanism depends on temporal context</head><p>In this work we showed that exposure to different types of period perturbations in a paced finger-tapping task creates a temporal context that modifies the resynchronization response. In other words, the response after a specific perturbation type is different depending on whether the participant was exposed to that perturbation type only during the experiment or to two perturbation types at random. We interpret this in terms of the underlying error-correction mechanism that produces the resynchronization response, suggesting that the mechanism is calibrated by temporal context. In terms of a potential mathematical model of the correction mechanism <ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b13">14</ref> , calibration by temporal context may be implemented for instance as an adjustment of the values of correction coefficients depending on whether the participant was exposed to a single or multiple perturbation types during an experiment. Once a temporal context is set, the calibrated mechanism produces responses to all perturbation types and signs <ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b13">14</ref> .</p><p>Our results challenge the idea of several different mechanisms, namely the two proposed independent processes of "phase correction" and "period correction" 7 (see discussion in <ref type="bibr">Bavassi et al., 2013 13 )</ref>, where the first one only is active in PS perturbations but both are active in SC perturbations. If the participant doesn't know in advance which perturbation type comes next (combined context), then it is difficult to accommodate the idea of setting the appropriate mechanism beforehand, particularly after considering that PS and SC perturbations are identical up to and including n = 0.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The error-correction mechanism is intrinsically nonlinear</head><p>Our results regarding the symmetry of pure PS and pure SC perturbations are in agreement with previous literature, and also allow us to interpret the behavior after different perturbation types in a broader scope. On one hand, responses to pure PS perturbations of 10% of the period or less like the ones used in this work are mostly symmetric <ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b23">24</ref> (Figure <ref type="figure" target="#fig_3">4b</ref>), leading to mathematical models of behavior that were traditionally linear <ref type="bibr" target="#b24">[25]</ref><ref type="bibr" target="#b25">[26]</ref><ref type="bibr" target="#b26">[27]</ref> . On the other hand, responses to pure SC perturbations are asymmetric <ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b12">13</ref> (Figure <ref type="figure" target="#fig_3">4b</ref>), which lead to nonlinear mathematical models <ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref> . When set in a combined context, however, responses to PS perturbations are more asymmetric than traditionally reported with a degree of asymmetry closer to that of SC perturbations. Thus traditional usage of linear models to represent responses to PS perturbations might not be the best choice.</p><p>We interpret this again in terms of the underlying correction mechanism, adding support to the parsimonious hypothesis of a single, nonlinear correction mechanism across perturbation types and signs. Our results add to mounting evidence supporting an intrinsically nonlinear correction mechanism even for perturbation magnitudes as small as 10% of the period 9, 12-14 --that nonetheless might be calibrated according to temporal context. The combined context is particularly important for this conclusion because participants don't know in advance which perturbation type comes next since at every trial the stimuli sequences up to n = 0 are identical for both perturbation types. We conceptually model the context-dependent calibration of the correction mechanism as an adjustment of the values of the mechanism coefficients <ref type="bibr" target="#b13">14</ref> such that in pure contexts the coefficients are adjusted to the specific perturbation type, but in a combined context a compromise is reached between the two perturbation types because the participant doesn't know which one comes next.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Methodological implications</head><p>We would like to emphasize the importance of measuring and analyzing the full resynchronization phase (n = 1 through 6) instead of either just the first response after perturbation (n = 1, traditionally reported as the phase correction response or PCR in the tapping literature) or just the post-perturbation baseline (average of n = 7 through end of trial). Had we analyzed either n = 1 only or n ≥ 7 only, where the SC perturbations show no effect of temporal context at all (Figures <ref type="figure" target="#fig_4">1b</ref> and <ref type="figure" target="#fig_1">2</ref>), we would have missed their critical role in both the determination of the temporal context effect and the interpretation of asymmetry.</p><p>The existence of a perturbation-generated temporal context effect in paced finger tapping forces us to make more careful comparisons when the data come from experiments with different perturbation types. The response size and its time evolution during resynchronization will depend on the whole set of perturbation types the participants were exposed to, even when the comparison is made between data of a single perturbation type.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A broader scope: temporal context, transients, and dynamical systems</head><p>The effect of temporal context is evident in the resynchronization region only; that is, in the transient, as opposed to stationary or equilibrium measures like the pre-or post-perturbation baselines and single data like the PCR which are some of the most common behavioral measures in SMS <ref type="bibr" target="#b5">6</ref> . This is probably why this effect was hidden in plain sight in the decades-long tapping literature (Figure <ref type="figure" target="#fig_4">1b</ref>).</p><p>The transient vs. stationary argument should be seen instead as mutually complementing pieces of evidence within a broader perspective that is rapidly gaining ground: the dynamical systems perspective on flexible timing <ref type="bibr" target="#b27">28</ref> . According to this framework, the behavioral dynamics results from the interplay among initial conditions, external inputs and internal parameters of the underlying error-correction mechanism. This level of abstraction aims at inferring computational principles with a certain degree of invariance across conditions, that is understanding for example the apparent variety of responses to different perturbation types as particular cases resulting from the rich dynamics of a single mechanism <ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref> . Under this light, temporal context affects the internal parameters of the correction mechanism, usually represented by the coefficient values of a mathematical model <ref type="bibr" target="#b13">14</ref> , where the difference between time series during the transient allows us to access solutions and parameter values that are commonly hidden from analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Methods</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experiment</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethical considerations</head><p>Experimental protocols were designed according to national and international guidelines and were approved by the Ethics Committee of Universidad Nacional de Quilmes. All participants signed a written informed consent. 1b at n = 1 (see for instance Suresh &amp; Chandrashekara 2012 <ref type="bibr" target="#b33">34</ref> , section "Sample size estimation with two means"):</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Condition in</head><note type="other">Figure 1b</note><p>1 -Φ(t 1-α -t) ≥ 1 -β that is</p><formula xml:id="formula_4">Φ(t 1-α -t) ≥ β (<label>1</label></formula><formula xml:id="formula_5">)</formula><p>where Φ is the cumulative distribution function (CDF) of the normal distribution, t 1-α = 1.64 is the critical value of Student's t (upper one-tailed, corresponding to α = 0.05 under the approximation of infinite degrees of freedom), and t is the value of Student's t corresponding to the observed difference:</p><formula xml:id="formula_6">t = SES 2/N estim</formula><p>where SES is the observed standardized effect size, that is the standardized difference between conditions from previous literature:</p><formula xml:id="formula_7">SES = e (n=1)</formula><p>pure -e</p><p>(n=1) comb SD pooled where e (n=1)</p><p>pure,comb is the estimated asynchrony of the response at n = 1 (averaged across experiments with context pure, comb) and SD pooled is the pooled standard deviation of the asynchrony estimates:</p><formula xml:id="formula_8">SD pooled = (SD 2 pure + SD 2 comb ) 2</formula><p>where the standard deviation of each condition is the square root of the average variance across experiments, weighted by the corresponding degrees of freedom df : SD (pure,comb) = df (pure,comb)exp1 SD 2 (pure,comb)exp1 + df (pure,comb)exp2 SD 2 (pure,comb)exp2 + ... df (pure,comb)exp1 + df (pure,comb)exp2 + ...</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. (a)Schematic of a paced finger-tapping task with period perturbations. For simplicity the pre-perturbation asynchrony values are zero. As the time of perturbation is unexpected, at n = 0 there is a forced error for both perturbation types and resynchronization ensues. At n = 1 the underlying error-correction mechanism is already at work based on past performance; if there were no effect of temporal context, the occurrence time of the response (in absolute time) should be the same for both perturbation types as shown. (b) Prior evidence from the paced finger tapping literature. Asynchrony after perturbation estimated from published works for the two main types of perturbations (mean ±95% confidence interval). For step-change (SC) perturbations the virtual asynchrony is used as defined in panel a. The phase-shift (PS) perturbations show diverging values at n = 1 for pure versus combined contexts, suggesting a potential effect of temporal context (asterisks indicate significant differences after Bonferroni correction; see Methods). Data digitized from published works as described in Methods, subsection Sample Size Justification.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2.Effect of Context on resynchronization after a perturbation. Asynchrony as a function of stimulus number along a trial (n = 0 is the perturbation beep). There are systematic differences between contexts (blue and orange curves): switching from combined to pure context shifts the asynchrony curve during resynchronization upwards or downwards depending on the condition, which is represented by a significant triple interaction Context x Perturbation Type x Perturbation Sign. Mean across participants ±95% confidence interval. Asterisks mark significant differences after permutation testing with FDR correction for multiple comparisons (see Methods).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure3. Asymmetry between responses to perturbations of opposite signs. Same data as above (asynchrony as a function of stimulus number along a trial), here after inverting the sign of the asynchrony from positive perturbations. In this way, any asymmetry will show as a difference between time series within each panel (negative response minus inverted-positive response). Mean across participants ±95% confidence interval. Asterisks mark significant differences after permutation testing with FDR correction for multiple comparisons (see Methods).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Asymmetry increases in a specific way depending on both Context and Perturbation Type. (a) Asymmetry between responses from perturbations of opposite signs (negative minus inverted-positive). Difference between corresponding time series from previous figure ±95% confidence interval. (b) Mean asymmetry during the resynchronization phase (beeps n = 1 through 6) from panel a. Mean across beeps ±95% confidence interval.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>ReferenceTable 1 .</head><label>1</label><figDesc>Original figure Original condition Pure SC (pos and neg) (Thaut et al., 1998) Fig. 2A Step change: Fig. 2B ISI = 500 ms, ∆T = ±50 ms (Bavassi et al., 2013) Fig. 5B Step change: ISI = 500 ms, ∆T = ±50 ms Pure PS (pos and neg) (Repp, 2002a) Fig. 9 Phase Correction Response (PCR): ISI = 500 ms, ∆T = ±50 ms (Repp, 2002b) Fig. 2A Phase Correction Response (PCR): ISI = 500 ms, ∆T = ±50 ms (Repp, 2010) Fig. 1A Phase Correction Response (PCR): ISI = 500 ms, ∆T = ±50 ms Combined SC (pos and neg) (Large et al., 2002) Fig. 2A Tempo perturbation: Linear interpolation between ISI = 400 ms, ∆T = ±32 ms and ISI = 600 ms, ∆T = ±48 ms Combined PS (pos and neg) (Large et al., 2002) Fig. 2.A Tempo perturbation: Linear interpolation between ISI = 400 ms, ∆T = ±32 ms and ISI = 600 ms, ∆T = ±48 ms Literature sources for every condition.</figDesc></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was supported by <rs type="funder">Universidad Nacional de Quilmes (Argentina</rs>, grant PUNQ #<rs type="grantNumber">53/1028</rs>) and <rs type="funder">CONICET (Argentina)</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_f459yjP">
+					<idno type="grant-number">53/1028</idno>
+				</org>
+			</listOrg>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data and code availability</head><p>All data and code to reproduce our results (experiment, analysis, figures) are available at the Sensorimotor Dynamics Lab's website <ref type="url" target="http://www.ldsm.web.unq.edu.ar/context2024">http://www.ldsm.web.unq.edu.ar/context2024</ref> and Github repository: <ref type="url" target="https://github.com/SMDynamicsLab/Context2024">https://github.com/     SMDynamicsLab/Context2024</ref>. Reproduction of Figure <ref type="figure">1b</ref>: /analysis/power_analysis.py. Reproduction of Figures <ref type="figure">2</ref>, <ref type="figure">3</ref>,  4: /analysis/analysis.py. Hypothesis testing: /analysis/hypothesis_testing.Rmd.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Participants</head><p>Recruited participants were 59 volunteers; five of them could not complete the experiment due to difficulties in synchronizing and three were excluded according to the outlier criteria (see below). The final number of subjects was N = 51 (ages 18-63 yr, mean 30.1 yr; 17 women; 46 right-handed).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task and perturbations</head><p>The task was auditorily-paced finger tapping with unexpected period perturbations. Participants were instructed to maintain average synchrony as well as possible, using the index finger of the dominant hand. In the event of a perturbation, the participant had to get back to average synchrony without stopping tapping. A single trial consisted of synchronization to a sequence of 35 brief tones with a baseline interstimulus period T 0 = 500 ms and a single perturbation. The perturbations occurred at a beep in the sequence randomly chosen in the range 17-22 (beeps were renumbered afterwards such that n = 0 corresponds to the perturbation). The perturbations could be either a step-change (SC) perturbation where the sequence period T changes once by an amount ∆T , or a phase-shift (PS) perturbation where the period changes twice at consecutive beeps (first by an amount ∆T and then -∆T at the following beep). Each perturbation type could be either positive (∆T = 50 ms, pos) or negative (∆T = -50 ms, neg) or neutral (∆T = 0, isochronous sequence, used as a control, data not included in analysis). A participant exposed to either SC only or PS only perturbations belonged to the "pure" context (Groups 1 and 2, respectively), while a participant exposed to both perturbation types (randomly interspersed) belonged to the "combined" context (Group 3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experimental setup</head><p>The device consisted of an Arduino Mega development board operating as a slave to a master controller program in Python.</p><p>Board-controller communication was performed via the serial port. At each trial the board received parameters from the controller (interstimulus period, number of stimuli in the trial, whether there should be a perturbation, beep number and size of perturbation, etc) and generated the auditory stimuli, registered tapping, and sent the recorded data back to the controller.</p><p>The board was complemented with a custom-made shield for interfacing with the user <ref type="bibr" target="#b28">29</ref> (force sensor to detect taps, audio signals, etc.). Each time the board detected a tap on the force sensor, auditory feedback was sent to the participant. Both stimulus and feedback tones were 50 ms-long sinusoidal sounds of 440 Hz (A4) and 660 Hz (around E5), respectively. To prevent the participant from having visual feedback, a screen was placed to hide the hand. The sound was played diotically through Sennheiser HD419 headphones. Participants were able to adjust the sound volume to a comfortable level. A detailed description of the experimental device with open software and hardware is available <ref type="bibr" target="#b28">29</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experimental design</head><p>We randomly assigned participants to either of the following three groups: Group 1 was exposed to SC perturbations only (18 participants); Group 2 was exposed to PS perturbations only (18 participants); Group 3 was exposed to randomly interspersed SC trials and PS trials (18 participants; total 54 participants before outlier removal). Groups 1 and 2 belong to the "pure" context while Group 3 belongs to the "combined" context. Every perturbation type was presented in three possible sizes: ∆T = 50 ms ("pos"), ∆T = -50 ms ("neg"), and ∆T = 0 ("isochronous", used as control, data not included in analysis but available in the repository). There were 12 trials in every experimental condition; in order to compensate for the longer experiment duration in Group 3 (total 72 trials), participants in Groups 1 and 2 were exposed to additional perturbation sizes (∆T = ±25 ms; data not included in analysis but available in the repository) to reach a total of 60 trials. The final dataset is represented by a fully factorial combination of conditions Context (levels pure/comb) x Perturbation Type (levels PS/SC) x Perturbation Sign (levels pos/neg).</p><p>Every participant performed the experiment in a single session with two stages: Demo and Test. The Demo allowed the participant to become familiar with the task (one trial for every condition). The Test consisted of 12 trials for every experimental condition (60 trials total for Groups 1 and 2, and 72 trials total for Group 3). Trials were equally distributed in three blocks and presented in random order (within-block randomization), with a random intertrial interval between 0.5 and 1 s. Participants moved to the next trial with a key press. Participants were asked to take a short rest between blocks to prevent fatigue.</p><p>Each phase ended when all trials were successfully completed. A trial was considered valid if the participant started tapping before the sixth stimulus, did not miss any response thereafter, and did not produce excess responses (more than one per stimulus). Each invalid trial was repeated at the end of the block, until the subject was able to complete all trials successfully.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Outlier criteria</head><p>We used a robust definition of outliers (Tukey's fences) and applied uniform criteria at the trial, participant, and condition levels.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>• Trial level</head><p>-Trial mean asynchrony. For every participant and condition, we computed the mean asynchrony of every trial, and found the lower (Q1) and upper (Q3) quartiles of the distribution. Any trial with a mean asynchrony outside the interval [Q1-1.5 IQR; Q3+1.5 IQR] (Tukey's fences, where IQR=Q3-Q1 is the interquartile range) was flagged as outlier and removed from the dataset.</p><p>-Trial standard deviation of asynchronies. For every participant and condition, we computed the standard deviation of the asynchronies of every trial, and lower and upper quartiles of the distribution. Any trial with a standard deviation outside Tukey's fences was flagged as outlier and removed from the dataset.</p><p>• Participant level -Participant in a condition. If more than 50% of trials from the same participant were removed as outliers in a given condition, then the whole participant was removed from the condition.</p><p>-Participant mean asynchrony. We computed the mean asynchrony of every participant in a condition, and the lower and upper quartiles of the distribution. Any participant with a mean outside Tukey's fences was flagged as outlier and removed from the condition.</p><p>-Participant standard deviation of asynchronies. We computed the standard deviation of asynchronies of every participant in a condition. Any participant with a standard deviation outside Tukey's fences was flagged as outlier and removed from the condition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>• Condition level</head><p>-Condition in the experiment. If a participant was removed as an outlier in more than 50% of the conditions, then he/she was removed from the whole experiment. One participant was removed from Group 1, and two were removed from Group 2.</p><p>The highest number of outlier trials per participant was 11, representing 15% of his/her total trials (at least 1 outlier trial was detected for every participant). The percentage of outlier trials was 8.5% in Group 1, 9.3% in Group 2, and 8.1% in Group 3, suggesting that the different experiment durations had a negligible effect on performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data preprocessing</head><p>All trials were time-shifted so that they were aligned at the perturbation beep. This beep was renamed n = 0 and an analysis range was defined from n = -6 through n = 11 (range where all subjects responded to all stimuli). For every trial we defined three time regions: pre-perturbation (beeps n = -6 through -1); resynchronization (beeps n = 0 through 6); and post-perturbation (beeps n = 7 through 11); see the regions defined for an exemplary time series in Versaci and Laje, 2021, Figure 1c <ref type="bibr" target="#b29">30</ref> . For every subject and condition, we defined the pre-perturbation baseline as the average of asynchronies across trials during the pre-perturbation region and then subtracted it from every trial.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sample Size Justification</head><p>Based on previous literature, we estimated the number of participants needed to observe a significant difference between pure and combined contexts at the first beep after perturbation (n = 1) for the PS perturbations by power analysis <ref type="bibr" target="#b30">31</ref> . Code for reproducing the estimation and plotting Figure <ref type="figure">1b</ref> can be found in the following GitHub repository: <ref type="url" target="https://github.com/SMDynamicsLab/Context2024">https://github.     com/SMDynamicsLab/Context2024</ref>, file "/analysis/power_analysis.py"</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Search of published data</head><p>As the specific experimental manipulation of context had not been done before, we searched the paced finger tapping literature for data from published experiments with a single perturbation type ("pure" condition) and with two perturbation types in random order ("combined" condition). The inclusion criteria were the following:</p><p>• Paced finger tapping with auditory stimuli;</p><p>• PS and/or SC perturbation types;</p><p>• Perturbation size of ±50 ms, baseline period of 500 ms;</p><p>• Enough statistical information (sample size, standard error / standard deviation, etc);</p><p>• Comparable experimental conditions, e.g. unexpected perturbation.</p><p>The data, shown in Table <ref type="table">1</ref> and plotted in Figure <ref type="figure">1b</ref>, was digitized from the published figures using g3data in Ubuntu.</p><p>Examples of potentially relevant publications that were excluded for specific reasons:</p><p>• (Repp, 2010) <ref type="bibr" target="#b31">32</ref> Very weird and uncommon results from musically trained participants, acknowledged by the author ("...a pattern that has not been observed previously in numerous studies with musically trained participants").</p><p>• (López &amp; Laje, 2019) <ref type="bibr" target="#b11">12</ref> Data available for SC perturbations but ∆T is smaller than 50 ms and not enough data to interpolate.</p><p>• (Repp et al., 2012; Fig. <ref type="figure">1</ref>) <ref type="bibr" target="#b32">33</ref> Data must be interpolated; discarded because the Pure PS condition is well represented by three other papers without interpolation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Power analysis</head><p>We want to estimate the minimum number of participants N estim such that the probability of rejecting the null hypothesis given that the alternative hypothesis is true is greater than or equal to the desired power (1 -β ) for an effect size as shown in Figure <ref type="figure">df</ref> (pure,comb)expn = N (pure,comb)expn -1 Putting all this together, Eq. 1 can be expressed as</p><p>where z β = -1.28 (corresponding to β = 0.1 or a power of 0.9 under the approximation of normal distribution). By applying this to the PSneg and PSpos data, we obtained N estim ≥ 12. We obtained a similar estimation by using the function solve_power from statsmodel/TTestIndPower 35 in Python.</p><p>We obtained a slightly higher estimation by dropping the usual approximations for t 1-α and z β , that is by using instead:</p><p>(where iCDF is Student's inverse CDF or quantile function with 2N estim -2 degrees of freedom) and then finding the value of N estim that fulfills the condition in a consistent way. Without the approximations we obtained N estim ≥ 13, so we kept this larger estimate instead.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Testing of published data</head><p>In order to test for the statistical significance of the differences observed in Figure <ref type="figure">1b</ref> at n = 1, we computed a t-test for every comparison between contexts (PSpos, PSneg, SCpos, SCneg, all at n = 1) and adjusted the p-values via Bonferroni for four comparisons. The adjusted p-values are 0.00023, 1.7 × 10 -6 , 0.059, and 0.59, respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Exploratory analysis: Permutation testing</head><p>Even an exploratory analysis (less statistical power) prior to fitting any statistical model leads to partially significant results. We tested the differences seen in each panel of Figures <ref type="figure">2</ref> and <ref type="figure">3</ref> via permutation testing and correcting for multiple comparisons.</p><p>We first defined the variables DIFF and ASYM. For Figure <ref type="figure">2</ref>, variable DIFF is the difference between contexts for every combination of Perturbation Type and Perturbation Sign (larger DIFF values represent larger effect of context). For Figure <ref type="figure">3</ref>, variable ASYM is the difference between signs for every combination of Context and Perturbation Type (larger ASYM values represent larger degree of asymmetry; responses for positive perturbations have their signs inverted; see main text). Then for DIFF and ASYM separately we computed p-values for every beep n in the resynchronization region (see next) and fed them to the FDR Benjamini/Hochberg (positively correlated) algorithm with α = 0.05. Beeps with significant differences after correction are indicated by asterisks in Figures <ref type="figure">2</ref> and <ref type="figure">3</ref>.</p><p>The p-values to be fed to FDR were estimated via permutation testing as follows. We illustrate the procedure with the PSneg condition in the upper left panel of Figure <ref type="figure">2</ref> where the variable DIFF is the difference between the two curves (analogously for ASYM in Figure <ref type="figure">3</ref>). To generate the distribution of DIFF under the null hypothesis we first pooled the time series from all trials from all participants from the PSneg condition (analogously for the other conditions), then randomly assigned trials to surrogate participants in surrogate contexts "pure" and "combined" according to the number of data in the original dataset, and then performed the same computation that was applied to obtain the actual result, that is average across surrogate trials then across surrogate participants and then take the difference between surrogate contexts, to get a surrogate DIFF time series.</p><p>This procedure was repeated 5000 times to get a null distribution of 5000 surrogate DIFF time series. We finally compared the true DIFF value at each beep n = 0 through 6 to the null distribution at the corresponding beep and computed a p-value as the proportion of null DIFF values above the true DIFF value or below its opposite value (i.e. two-tailed).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hypothesis testing: Effect of Context</head><p>Code for reproducing all statistical hypothesis testing is available in the following GitHub repository: <ref type="url" target="https://github.com/SMDynamicsLab/Context2024">https://github.     com/SMDynamicsLab/Context2024</ref>, file "/analysis/hypothesis_testing.Rmd"</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Linear regression</head><p>Main model: Linear Mixed Model with Asynchrony as dependent variable (from beeps n = 1 through 6), fixed-effect factor Context (levels pure/combined), fixed-effect factor Perturbation Type (levels PS/SC), fixed-effect factor Perturbation Sign (levels pos/neg), two-way interactions Context x Perturbation Type and Context x Perturbation Sign, three-way interaction, and random-effect factor Subject. Functions lmer (from library lme4 36 ) and Anova (from library car 37 ) in R.   <ref type="figure">2</ref> (FDR-corrected p-values and confidence intervals).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Analysis of Deviance</head><p>Post-hoc comparisons: Context differences for every condition in Figure <ref type="figure">2</ref>; see  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hypothesis testing: Effect of Perturbation Sign (asymmetry)</head><p>Code for reproducing all statistical hypothesis testing is available in the following GitHub repository: <ref type="url" target="https://github.com/SMDynamicsLab/Context2024">https://github.     com/SMDynamicsLab/Context2024</ref>, file "/analysis/hypothesis_testing.Rmd"</p><p>We quantify the degree of response asymmetry in a Context x PerturbationType combination as the mirror-image difference between responses to perturbations of opposite signs (Figure <ref type="figure">3</ref>). In order to use linear regression and ANOVA we implemented this by inverting the sign of the asynchrony of the positive perturbations, so that asymmetry can be interpreted as the difference between levels of the factor Perturbation Sign (negative minus inverted-positive).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Linear regression</head><p>Model: Linear Mixed Model with Asynchrony as dependent variable (beeps n = 1 through 6) after inverting sign of the asynchronies from positive perturbations as described above. Fixed-effect factor Context (levels pure/combined), fixed-effect factor Perturbation Type (levels PS/SC), fixed-effect factor Perturbation Sign (levels neg/inv-pos), two-way interactions Perturbation Sign x Context and Perturbation Sign x Perturbation Type, three-way interaction, and random-effect factor Subject.</p><p>Functions lmer (from library lme4) and Anova (from library car) in R.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Analysis of Deviance Table:</head><p>Anova table of model parameters; testing the effect of Perturbation Sign (asymmetry) in Figure <ref type="figure">3</ref>; see Table <ref type="table">5</ref> (Type III Wald χ 2 tests).</p><p>Post-hoc comparisons: Asymmetry differences between consecutive conditions in Figure <ref type="figure">4b</ref>; see Table <ref type="table">6</ref> (Sidak-corrected p-values and confidence intervals; functions emmeans, pairs and test from library emmeans in R).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Color-blind and grayscale friendly plots</head><p>We used the plasma colormap.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Additional information</head><p>The authors declare no competing interests.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">The neural bases for timing of durations</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tsao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename><surname>Yousefzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">H</forename><surname>Meck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">B</forename><surname>Moser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">I</forename><surname>Moser</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat Rev Neurosci</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="page" from="646" to="665" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Tsao, A., Yousefzadeh, S. A., Meck, W. H., Moser, M. B. &amp; Moser, E. I. The neural bases for timing of durations. Nat Rev Neurosci 23, 646-665 (2022).</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Perception in real-time: predicting the present, reconstructing the past</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hogendoorn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trends Cogn Sci</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="page" from="128" to="141" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Hogendoorn, H. Perception in real-time: predicting the present, reconstructing the past. Trends Cogn Sci 26, 128-141 (2022).</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Using temperature to analyze the neural basis of a time-based decision</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Monteiro</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat Neurosci</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="page" from="1407" to="1416" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Monteiro, T. et al. Using temperature to analyze the neural basis of a time-based decision. Nat Neurosci 26, 1407-1416 (2023).</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">The Neural Basis of Timing: Distributed Mechanisms for Diverse Functions</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Paton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">V</forename><surname>Buonomano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neuron</title>
+		<imprint>
+			<biblScope unit="volume">98</biblScope>
+			<biblScope unit="page" from="687" to="705" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Paton, J. J. &amp; Buonomano, D. V. The Neural Basis of Timing: Distributed Mechanisms for Diverse Functions. Neuron 98, 687-705 (2018).</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Neural Algorithms and Circuits for Motor Planning</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">K</forename><surname>Inagaki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annu. Rev Neurosci</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="page" from="249" to="271" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Inagaki, H. K. et al. Neural Algorithms and Circuits for Motor Planning. Annu. Rev Neurosci 45, 249-271 (2022).</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Sensorimotor synchronization: a review of the tapping literature</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">H</forename><surname>Repp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychon Bull Rev</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="969" to="992" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Repp, B. H. Sensorimotor synchronization: a review of the tapping literature. Psychon Bull Rev 12, 969-992 (2005).</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Sensorimotor synchronization: a review of recent research</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">H</forename><surname>Repp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">H</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychon Bull Rev</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="403" to="452" />
+			<date type="published" when="2006">2006-2012. 2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Repp, B. H. &amp; Su, Y. H. Sensorimotor synchronization: a review of recent research (2006-2012). Psychon Bull Rev 20, 403-452 (2013).</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Neural entrainment underpins sensorimotor synchronization to dynamic rhythmic stimuli</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rosso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Moens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Moumdjian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neuroimage</title>
+		<imprint>
+			<biblScope unit="volume">277</biblScope>
+			<biblScope unit="page">120226</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rosso, M., Moens, B., Leman, M. &amp; Moumdjian, L. Neural entrainment underpins sensorimotor synchronization to dynamic rhythmic stimuli. Neuroimage 277, 120226 (2023).</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Sensorimotor synchronization: neurophysiological markers of the asynchrony in a finger-tapping task</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bavassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Kamienkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sigman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Laje</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychol Res</title>
+		<imprint>
+			<biblScope unit="volume">81</biblScope>
+			<biblScope unit="page" from="143" to="156" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bavassi, L., Kamienkowski, J. E., Sigman, M. &amp; Laje, R. Sensorimotor synchronization: neurophysiological markers of the asynchrony in a finger-tapping task. Psychol Res 81, 143-156 (2017).</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Measuring time with different neural chronometers during a synchronization-continuation task</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Merchant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zarco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Rez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Prado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bartolo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc Natl Acad Sci U S A</title>
+		<imprint>
+			<biblScope unit="volume">108</biblScope>
+			<biblScope unit="page" from="19784" to="19789" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Merchant, H., Zarco, W., rez, O., Prado, L. &amp; Bartolo, R. Measuring time with different neural chronometers during a synchronization-continuation task. Proc Natl Acad Sci U S A 108, 19784-19789 (2011).</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Keeping time and rhythm by internal simulation of sensory stimuli and behavioral actions</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>De Lafuente</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Sci Adv</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page">8185</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">de Lafuente, V. et al. Keeping time and rhythm by internal simulation of sensory stimuli and behavioral actions. Sci Adv 10, eadh8185 (2024).</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Spatiotemporal perturbations in paced finger tapping suggest a common mechanism for the processing of time errors</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">L</forename><surname>López</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Laje</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Sci Rep</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page">17814</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">López, S. L. &amp; Laje, R. Spatiotemporal perturbations in paced finger tapping suggest a common mechanism for the processing of time errors. Sci Rep 9, 17814 (2019).</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Small perturbations in a finger-tapping task reveal inherent nonlinearities of the underlying error correction mechanism</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Bavassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tagliazucchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Laje</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Hum Mov Sci</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="page" from="21" to="47" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bavassi, M. L., Tagliazucchi, E. &amp; Laje, R. Small perturbations in a finger-tapping task reveal inherent nonlinearities of the underlying error correction mechanism. Hum Mov Sci 32, 21-47 (2013).</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Response to perturbations as a built-in feature in a mathematical model for paced finger tapping</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>González</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Bavassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Laje</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Phys Rev E</title>
+		<imprint>
+			<biblScope unit="volume">100</biblScope>
+			<biblScope unit="page">62412</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">González, C. R., Bavassi, M. L. &amp; Laje, R. Response to perturbations as a built-in feature in a mathematical model for paced finger tapping. Phys Rev E 100, 062412 (2019).</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">A theoretical model of phase transitions in human hand movements</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Haken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Kelso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bunz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Biol Cybern</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="page" from="347" to="356" />
+			<date type="published" when="1985">1985</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Haken, H., Kelso, J. A. &amp; Bunz, H. A theoretical model of phase transitions in human hand movements. Biol Cybern 51, 347-356 (1985).</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Temporal coordination and adaptation to rate change in music performance</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Loehr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">W</forename><surname>Large</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Palmer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J Exp Psychol Hum Percept Perform</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="1292" to="1309" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Loehr, J. D., Large, E. W. &amp; Palmer, C. Temporal coordination and adaptation to rate change in music performance. J Exp Psychol Hum Percept Perform 37, 1292-1309 (2011).</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">A neural circuit model for human sensorimotor timing</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">W</forename><surname>Egger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">M</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jazayeri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat Commun</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page">3933</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Egger, S. W., Le, N. M. &amp; Jazayeri, M. A neural circuit model for human sensorimotor timing. Nat Commun 11, 3933 (2020).</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Dynamic models for musical rhythm perception and coordination</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">W</forename><surname>Large</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Front Comput. Neurosci</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="page">1151895</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Large, E. W. et al. Dynamic models for musical rhythm perception and coordination. Front Comput. Neurosci 17, 1151895 (2023).</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Finger tapping movements of Parkinson&apos;s disease patients automatically rated using nonlinear delay differential equations</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lainscsek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Chaos</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="page">13119</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lainscsek, C. et al. Finger tapping movements of Parkinson&apos;s disease patients automatically rated using nonlinear delay differential equations. Chaos 22, 013119 (2012).</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Delayed feedback embedded in perception-action coordination cycles results in anticipation behavior during synchronized rhythmic action: A dynamical systems approach</title>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">R</forename><surname>Roman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Washburn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">W</forename><surname>Large</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chafe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Fujioka</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PLoS Comput. Biol</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page">1007371</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Roman, I. R., Washburn, A., Large, E. W., Chafe, C. &amp; Fujioka, T. Delayed feedback embedded in perception-action coordination cycles results in anticipation behavior during synchronized rhythmic action: A dynamical systems approach. PLoS Comput. Biol 15, e1007371 (2019).</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">On the Distinction Between Perceived Duration and Event Timing: Towards a Unified Model of Time Perception</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rhodes</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Timing &amp; Time Percept</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="90" to="123" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rhodes, D. On the Distinction Between Perceived Duration and Event Timing: Towards a Unified Model of Time Perception. Timing &amp; Time Percept. 6, 90-123 (2018).</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Temporal context calibrates interval timing</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jazayeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Shadlen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat Neurosci</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="1020" to="1026" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Jazayeri, M. &amp; Shadlen, M. N. Temporal context calibrates interval timing. Nat Neurosci 13, 1020-1026 (2010).</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Reliable estimation of internal oscillator properties from a novel, fast-paced tapping paradigm</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Henry</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Sci Rep</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page">20466</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kaya, E. &amp; Henry, M. J. Reliable estimation of internal oscillator properties from a novel, fast-paced tapping paradigm. Sci Rep 12, 20466 (2022).</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Phase correction in sensorimotor synchronization: nonlinearities in voluntary and involuntary responses to perturbations</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">H</forename><surname>Repp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Hum Mov Sci</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="page" from="1" to="37" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Repp, B. H. Phase correction in sensorimotor synchronization: nonlinearities in voluntary and involuntary responses to perturbations. Hum Mov Sci 21, 1-37 (2002).</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Adaptation to tempo changes in sensorimotor synchronization: effects of intention, attention, and awareness</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">H</forename><surname>Repp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">E</forename><surname>Keller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Q J Exp Psychol A</title>
+		<imprint>
+			<biblScope unit="volume">57</biblScope>
+			<biblScope unit="page" from="499" to="521" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Repp, B. H. &amp; Keller, P. E. Adaptation to tempo changes in sensorimotor synchronization: effects of intention, attention, and awareness. Q J Exp Psychol A 57, 499-521 (2004).</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Keeping Synchrony While Tempo Changes: Accelerando and Ritardando</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Schulze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cordes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Vorberg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Music. Percept</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="page" from="461" to="477" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schulze, H., Cordes, A. &amp; Vorberg, D. Keeping Synchrony While Tempo Changes: Accelerando and Ritardando. Music. Percept. 22, 461-477 (2005).</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">The ADaptation and Anticipation Model (ADAM) of sensorimotor synchronization</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">C</forename><surname>Van Der Steen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">E</forename><surname>Keller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Front Hum Neurosci</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page">253</biblScope>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Van der Steen, M. C. &amp; Keller, P. E. The ADaptation and Anticipation Model (ADAM) of sensorimotor synchronization. Front Hum Neurosci 7, 253 (2013).</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">A Dynamical Systems Perspective on Flexible Motor Timing</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">D</forename><surname>Remington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">W</forename><surname>Egger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Narain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jazayeri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trends Cogn Sci</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="page" from="938" to="952" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Remington, E. D., Egger, S. W., Narain, D., Wang, J. &amp; Jazayeri, M. A Dynamical Systems Perspective on Flexible Motor Timing. Trends Cogn Sci 22, 938-952 (2018).</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Tappingduino: A versatile shield for paced finger tapping experiments with arduino</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Caral</surname></persName>
+		</author>
+		<idno type="DOI">10.31234/osf.io/wa9j3</idno>
+		<ptr target="https://doi.org/10.31234/osf.io/wa" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Caral, P. et al. Tappingduino: A versatile shield for paced finger tapping experiments with arduino. OSF https://doi.org/10. 31234/osf.io/wa9j3 (2023).</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Time-oriented attention improves accuracy in a paced finger-tapping task</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Versaci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Laje</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Eur J Neurosci</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Versaci, L. &amp; Laje, R. Time-oriented attention improves accuracy in a paced finger-tapping task. Eur J Neurosci (2021).</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Sample size justification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Collabra: Psychol</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page">33267</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. Sample size justification. Collabra: Psychol. 8, 33267 (2022).</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Sensorimotor synchronization and perception of timing: effects of music training and task experience</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">H</forename><surname>Repp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Hum Mov Sci</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="page" from="200" to="213" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Repp, B. H. Sensorimotor synchronization and perception of timing: effects of music training and task experience. Hum Mov Sci 29, 200-213 (2010).</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Quantifying phase correction in sensorimotor synchronization: empirical comparison of three paradigms</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">H</forename><surname>Repp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">E</forename><surname>Keller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jacoby</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Acta Psychol (Amst)</title>
+		<imprint>
+			<biblScope unit="volume">139</biblScope>
+			<biblScope unit="page" from="281" to="290" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Repp, B. H., Keller, P. E. &amp; Jacoby, N. Quantifying phase correction in sensorimotor synchronization: empirical comparison of three paradigms. Acta Psychol (Amst) 139, 281-290 (2012).</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Sample size estimation and power analysis for clinical research studies</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Suresh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chandrashekara</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J Hum Reprod Sci</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="7" to="13" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Suresh, K. &amp; Chandrashekara, S. Sample size estimation and power analysis for clinical research studies. J Hum Reprod Sci 5, 7-13 (2012).</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Econometric and statistical modeling with python</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Seabold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Perktold</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Statsmodels</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">th Python in Science Conference</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Seabold, S. &amp; Perktold, J. Statsmodels: Econometric and statistical modeling with python. In 9th Python in Science Conference (2010).</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Fitting linear mixed-effects models using lme4</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mächler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bolker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Walker</surname></persName>
+		</author>
+		<idno type="DOI">10.18637/jss.v067.i01</idno>
+	</analytic>
+	<monogr>
+		<title level="j">J. Stat. Softw</title>
+		<imprint>
+			<biblScope unit="volume">67</biblScope>
+			<biblScope unit="page" from="1" to="48" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bates, D., Mächler, M., Bolker, B. &amp; Walker, S. Fitting linear mixed-effects models using lme4. J. Stat. Softw. 67, 1-48, DOI: 10.18637/jss.v067.i01 (2015).</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Weisberg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">An R Companion to Applied Regression</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<pubPlace>Sage, Thousand Oaks CA</pubPlace>
+		</imprint>
+	</monogr>
+	<note>third edn</note>
+	<note type="raw_reference">Fox, J. &amp; Weisberg, S. An R Companion to Applied Regression (Sage, Thousand Oaks CA, 2019), third edn.</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">V</forename><surname>Lenth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Emmeans</surname></persName>
+		</author>
+		<title level="m">Estimated Marginal Means, aka Least-Squares Means</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>R package version 1.8.7</note>
+	<note type="raw_reference">Lenth, R. V. emmeans: Estimated Marginal Means, aka Least-Squares Means (2023). R package version 1.8.7.</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">R: A Language and Environment for Statistical Computing</title>
+		<author>
+			<persName><forename type="first">Team</forename><surname>Core</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">R Foundation for Statistical Computing</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">R Core Team. R: A Language and Environment for Statistical Computing. R Foundation for Statistical Computing, Vienna, Austria (2024).</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1554 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A tutorial for calculating field-specific effect size distributions</title>
+				<funder ref="#_QxQqyXD #_27wufch">
+					<orgName type="full">South-Eastern Norway Regional Health Authority</orgName>
+				</funder>
+				<funder ref="#_AaG2Dka #_T3aF7c8">
+					<orgName type="full">Research Council of Norway</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Kavli Trust</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Bernt</forename><forename type="middle">D</forename><surname>Glaser</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">University of Oslo</orgName>
+								<address>
+									<settlement>Oslo</settlement>
+									<country key="NO">Norway</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">PsychGen Centre for Genetic Epidemiology and Mental Health</orgName>
+								<orgName type="institution" key="instit2">Norwegian Institute of Public Health</orgName>
+								<address>
+									<settlement>Oslo</settlement>
+									<country key="NO">Norway</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Heemin</forename><surname>Kang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">University of Oslo</orgName>
+								<address>
+									<settlement>Oslo</settlement>
+									<country key="NO">Norway</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kristin</forename><surname>Audunsdottir</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">University of Oslo</orgName>
+								<address>
+									<settlement>Oslo</settlement>
+									<country key="NO">Norway</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alina</forename><forename type="middle">I</forename><surname>Sartorius</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">University of Oslo</orgName>
+								<address>
+									<settlement>Oslo</settlement>
+									<country key="NO">Norway</country>
+								</address>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Daniel</forename><forename type="middle">S</forename><surname>Quintana</surname></persName>
+							<email>daniel.quintana@psykologi.uio.no.</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Psychology</orgName>
+								<orgName type="institution">University of Oslo</orgName>
+								<address>
+									<settlement>Oslo</settlement>
+									<country key="NO">Norway</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="department">K.G. Jebsen Centre for Neurodevelopmental Disorders</orgName>
+								<orgName type="institution">University of Oslo</orgName>
+								<address>
+									<settlement>Oslo</settlement>
+									<country key="NO">Norway</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="department">Department of Rare Disorders</orgName>
+								<orgName type="institution" key="instit1">NevSom</orgName>
+								<orgName type="institution" key="instit2">Oslo University Hospital</orgName>
+								<address>
+									<settlement>Oslo</settlement>
+									<country key="NO">Norway</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A tutorial for calculating field-specific effect size distributions</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">25F8D7C6E1FE9AFE0C82131CA0D34F57</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.2" ident="GROBID" when="2025-08-21T10:06+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">a91ee48</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=true, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], sentenceSegmentation=false, flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>R</term>
+					<term>Effect size</term>
+					<term>Effect size distribution</term>
+					<term>Study design</term>
+					<term>Power analysis</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Effect sizes are useful for understanding the magnitude of study results and for planning new studies using power analysis. But despite their wide usage, effect sizes are often misinterpreted. This is mostly due to an over-reliance on general effect size benchmarks that were not intended for broad application across a range of different research fields. Inaccurate effect size interpretations can consequently lead to incorrect conclusions regarding the magnitude of study results, as well as incorrect sample size estimates, which can increase the likelihood of false positive results. This article introduces the ESDist R package, which is designed to calculate empirically derived effect size benchmarks or a range of reliably detectable empirical effect sizes for a specific research question or field of interest by the calculation of effect size distributions (ESDs). This package can be used on data that can be easily extracted from pre-existing meta-analyses to help researchers more accurately plan new studies or to better understand how an individual study might relate to other studies in their field of interest. ESDist includes a set of features that make it easy to use in a priori power analysis. Moreover, the package includes a feature for estimating effect size benchmarks that account for publication bias and are weighted by effect sizes variances, which addresses existing limitations of using ESDs for study planning or interpretation.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduc=on</head><p>Effect sizes are important empirical study outcomes <ref type="bibr" target="#b19">(Lakens, 2013)</ref> which, unlike p-values, can describe the magnitude of an effect, rather than only indica`ng the presence of an effect. This means that effect sizes can be used to make inferences about the practical importance of an observed effect <ref type="bibr" target="#b8">(Cohen, 1988)</ref>. Unlike an unstandardised effect size, which describes an effect size on the same scale as the effect was detected (e.g., weight in kilograms), standardised effect sizes (e.g., <ref type="bibr">Cohen's d)</ref> describe the magnitude of an association or difference between groups in a way that does not refer to the original measurement scale. As such, standardized effect sizes can facilitate comparisons between studies, regardless of differences in study design, population sample, or methods.</p><p>Despite the benefits of standardised effect sizes, their magnitudes can be difficult to interpret as they do not refer to their original measurement scale. The use of <ref type="bibr" target="#b8">Cohen's (1988)</ref> heuristics for small, medium, and large effect sizes for various standardized effect sizes (e.g., Cohen's d, Pearson's r) has become ubiquitous in the psychological and biomedical sciences for both interpreting study results and planning new studies via a priori power analysis. But this was never Cohen's inten`on <ref type="bibr" target="#b11">(Funder &amp; Ozer, 2019)</ref>, as he suggested these heuristics as a last resort for a priori power analysis <ref type="bibr" target="#b8">(Cohen, 1988)</ref>. That is, researchers should only use these heuristics when effect size estimates from previous research are not available. These heuristics have no empirical basis, and therefore do not describe effect sizes as small, medium, or large compared to anything in particular <ref type="bibr" target="#b11">(Funder &amp; Ozer, 2019)</ref>. The use of imprecise heuristics can lead to issues with understanding the magnitude of individual study results, as well as problems with planning appropriately powered studies <ref type="bibr" target="#b11">(Funder &amp; Ozer, 2019)</ref>.</p><p>The aim of this article is to introduce the ESDist package for the statistical software R (R Core Team, 2023) as an empirical approach for calculating effect size benchmarks for use in a priori power analysis or for the interpretation of observed effects. We will begin by discussing the limitations of using Cohen's heuristics to interpret study results or to plan new studies.</p><p>Subsequently, we will argue that the use of field-specific Effect Size Distributions (ESDs) could be a useful alternative to the use of Cohen's benchmarks. We then discuss how publication bias can influence the calculation of ESDs, consequently inflating effect size benchmarks. Finally, the ESDist package for R will be introduced. We demonstrate how ESDist can be used for visualising ESDs using various approaches. We also exhibit how to calculate field-specific effect size benchmarks that can also account for publication bias.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.1.">Issues with general effect size heuristics</head><p>The use of Cohen's heuris`c benchmarks for the interpreta`on of results and planning new studies is common across many research fields. A "medium" effect size is supposed to approximate the average effect size in a research field (or for a research ques`on), with "small" and "large" effects equidistant from a medium-sized effect. While Cohen's benchmarks may happen to align with the distribu`on of effects of some fields, they cannot be accurate for all research fields as they vary in terms of methods, measures and populations. Consequently, some researchers have developed field-specific effect size benchmarks from effect size distributions (typically based on the 25 th , 50 th , and 75 th percentiles), which suggest that there is considerable variability between fields when it comes to effect size benchmarks. For example, <ref type="bibr" target="#b12">Gignac and Szodorai (2016)</ref> suggested Pearson's r values of 0.11, 0.19, and 0.29 to correspond to relatively small, typical, and relatively large effect sizes respectively in the individual differences (i.e., trait psychology) literature. <ref type="bibr" target="#b27">Lovakov and Agadullina (2021)</ref> suggested Pearson's r values of 0.12, 0.24, and 0.41, and Cohen's d values of 0.15, 0.36, and 0.65 to correspond to small, medium, and large effect sizes, respectively, in social psychology literature. An overview of some existing effect size benchmarks is presented in figures 1A and 1B. Figure <ref type="figure" target="#fig_3">1A</ref> includes six studies that report effect size benchmarks using Cohen's d <ref type="bibr" target="#b7">(Cherubini &amp; MacDonald, 2021;</ref><ref type="bibr" target="#b27">Lovakov &amp; Agadullina, 2021;</ref><ref type="bibr" target="#b28">Nordahl-Hansen et al., 2022;</ref><ref type="bibr" target="#b33">Plonsky &amp; Oswald, 2014;</ref><ref type="bibr" target="#b35">Quintana, 2017;</ref><ref type="bibr" target="#b43">Szucs &amp; Ioannidis, 2017)</ref>. Figure <ref type="figure" target="#fig_3">1B</ref> includes seven studies that report effect size benchmarks using Pearson's r <ref type="bibr" target="#b2">(Bosco et al., 2015;</ref><ref type="bibr" target="#b4">Brydges, 2019;</ref><ref type="bibr" target="#b12">Gignac &amp; Szodorai, 2016;</ref><ref type="bibr" target="#b27">Lovakov &amp; Agadullina, 2021;</ref><ref type="bibr" target="#b31">Paterson et al., 2016;</ref><ref type="bibr" target="#b33">Plonsky &amp; Oswald, 2014;</ref><ref type="bibr" target="#b42">Schäfer &amp; Schwarz, 2019)</ref>. The corresponding tables can be found in the supplementary materials (Supplementary Tables <ref type="table">S1</ref> and <ref type="table">S2</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.2.">Implications for using general effect size benchmarks for study interpretation and planning</head><p>Given this variability of effect size benchmarks across different fields, the use of Cohen's general effect size heuristics can lead to potential misinterpretations of observed effect sizes, and, in a priori power analysis, this can lead to study test and design combinations that are statistically underpowered to reliably answer specific research questions <ref type="bibr" target="#b20">(Lakens, 2022)</ref>. Statistical power, the probability of correctly rejecting the null hypothesis if there is a true effect, is a function of study design, hypothesized effect size, sample size, and alpha level. Sta`s`cal power increases as either the sample size or the hypothesized effect size increases. When designing a study, researchers should decide on a sample size that ensures sufficient statistical power, which is typically 80%, although some researchers suggest 90%-95% power instead (e.g., <ref type="bibr" target="#b20">Lakens, 2022)</ref>. Inaccurate justification of the effect size parameter in a priori power analysis can lead to studies that cannot reliably detect a wide range of plausible effect sizes <ref type="bibr" target="#b4">(Brydges, 2019)</ref>. For example, if a researcher expects to find a 'medium-sized' effect, they might plan for a one-tailed paired-samples t-test using Cohen's suggestion for a medium effect size (d = 0.5) with 80% power, which would require a sample size of N = 27. However, if the 'true' medium effect size (i.e., the 50 th percentile effect size) for their specific field is d = 0.4, the study would only have 64.8% power, meaning that there would be a considerable chance of not detecting an effect even though it exists.</p><p>There are several ways in which effect sizes can be selected more accurately when performing an a priori power analysis. <ref type="bibr" target="#b8">Cohen (1988)</ref> originally proposed that the effect size parameter in a priori power analysis should be treated as an expected population effect size. However, since the population effect size is almost always unknown, authors have more recently suggested that researchers should treat this parameter as a smallest effect size of interest (SESOI) instead <ref type="bibr" target="#b21">(Lakens &amp; Evers, 2014)</ref>. With this approach, the researcher decides on the smallest effect size that is deemed 'worthwhile' and designs a study that is adequately powered to detect this effect size. Consequently, the power level is sufficiently high to detect this smallest effect size of interest, and power only increases for larger effect sizes. A different, yet related, approach is sensitivity power analysis, where the researcher uses a given sample size as a starting point instead of an effect size of interest <ref type="bibr" target="#b20">(Lakens, 2022)</ref>. This approach is useful when data is already collected, or there is a known limit to the number of participants that can be tested, for example due to resource constraints. In this case, the goal is to gain insight into what range of effect sizes can be detected for a range of acceptable power levels. Consequently, the researcher aims to strike a balance between which effect sizes are meaningful to detect or reject and with what level of accuracy the researcher wishes to detect or reject these effects. However, even with these more sensible approaches to power, researchers need to have a good understanding of what effect sizes are interesting for their research question in order to justify the effect size parameter in their power analysis <ref type="bibr" target="#b20">(Lakens, 2022)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.3.">The calculation of field-specific benchmarks using ESDs</head><p>Although field-specific benchmarks like those presented in Figures <ref type="figure" target="#fig_3">1A</ref> and <ref type="figure" target="#fig_3">1B</ref> are likely to outperform Cohen's more general heuristics, the fields for which these heuristics have been developed are still very broad (e.g., "Psychology" or "Medical Science"). Moreover, such benchmarks are not widely available, especially for more specific fields. In many cases, researchers would benefit from having access to an ESD that is specific to their field, sub-field, or even to a particular research question. A field-specific ESD would allow researchers to better understand the magnitude of their observed effect compared to previous research within the field, either by calculating field-specific benchmarks, or by calculating the percentile that corresponds to their observed effect size.</p><p>Having access to an ESD might be even more useful when planning new studies. For example, researchers might have specific reasons for setting their SESOI to correspond to a particular percentile in their ESD, such as any of the quartiles that conventionally correspond to small, medium, or large effect size benchmarks. Alternatively, if a researcher knows their sample size parameter, they can perform a sensitivity power analysis which creates a range of reliably detectable effect sizes. Subsequently, they can use an ESD to calculate the proportion of empirical effect sizes in the ESD that fall within this range for each level of power. Knowing the range of empirical effect sizes that can be reliably detected given a particular study design is useful in several cases. For example, if the SESOI is so high that the percentage of effect sizes that can be detected by the study is close to 0%, it is unlikely that the study will provide any new information to the field (e.g., <ref type="bibr" target="#b22">Lakens et al., 2018)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.4.">Existing limitations of field-specific ESDs</head><p>Because field-specific ESDs largely consist of effect sizes reported in published studies, it is likely that they are influenced by publica`on bias <ref type="bibr" target="#b5">(Bupon et al., 2013;</ref><ref type="bibr" target="#b20">Lakens, 2022)</ref>. Publica`on bias refers to the phenomenon where studies with sta`s`cally significant results are more likely to be published than studies without a significant result, which, in turn, leads to an overall infla`on of effect sizes <ref type="bibr" target="#b18">(Kvarven et al., 2020;</ref><ref type="bibr" target="#b42">Schäfer &amp; Schwarz, 2019)</ref>. This is an issue that mainly affects small studies <ref type="bibr" target="#b9">(Dwan et al., 2008)</ref>. Non-significant effects in small studies are oqen apributed to low power and are therefore deemed inconclusive or uninforma`ve <ref type="bibr" target="#b10">(Evangelou et al., 2012)</ref>. The publica`on of small sample studies with non-significant results is decided against (either by journal editorial teams or the authors not submirng the study for publica`on in the first place) more frequently than large studies with non-significant results, since non-significant results in studies with a large sample size are more difficult to explain on the basis of low power <ref type="bibr" target="#b5">(Bupon et al., 2013)</ref>. Meanwhile, small studies that do find effects are more likely to be published, despite the higher likelihood that they greatly overes`mate the true effect size <ref type="bibr" target="#b38">(Rochefort-Maranda, 2021)</ref>. Aside from publica`on bias, small studies are more sensi`ve to other biases, such as vibra`on effects (i.e., the variability in a study's effect size es`mate based on the selec`on of analysis method), selec`ve data analysis and selec`ve repor`ng, and reduced quality of other aspects of the study design <ref type="bibr" target="#b5">(Bupon et al., 2013)</ref>. Given these various biases, any es`mate of the popula`on effect size that is based on previous literature is likely to be an overes`ma`on in most cases <ref type="bibr" target="#b20">(Lakens, 2022)</ref>. Therefore, it is essen`al to address these biases when interpre`ng individual study results or planning a new study using an ESD.</p><p>Another poten`al issue with ESDs is that effect sizes are not equally informa`ve. The effect size of each study is merely an es`mate of the "true" effect size. As such, each effect size also has a standard error, which is a measure of the precision of the effect size es`mate. ESDs are not currently calculated with a considera`on of effect size precision. This means that effect sizes influence an ESD calcula`on equally, regardless of their precision. Because more precise es`mates are more informa`ve than less precise es`mates, it can be desirable to assign more weight to these es`mates.</p><p>While the weigh`ng of effect sizes is commonplace in meta-analysis via inverse variance weigh`ng, this is not a considera`on when ESDs are typically calculated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">The ESDist package for R</head><p>Although ESDs are useful for interpreting effect sizes and for planning studies, they are not widely available. One reason for the low availability of ESDs might be the amount of effort required for gathering effect size estimates of individual studies within a specific field of interest. Moreover, even if many effect size estimates are readily available, researchers might find it difficult or time consuming to gather all relevant information from their ESD, such as effect size benchmarks, the range of reliably detectable effect sizes, or the weighted distribution of empirical effect sizes.</p><p>Furthermore, even if researchers can obtain field-specific ESDs, publication bias in the ESD might render any information gained from the ESD inaccurate.</p><p>To this end, the aim of this paper is to introduce the ESDist package for the R statistical software suite (R Core Team, 2023). The ESDist package was designed to facilitate the calculation and visualisation of field-specific ESDs based on data that can easily be retrieved from metaanalyses, for the purpose of interpreting individual effect sizes and planning new studies. Moreover, by combining the ESDist package with the meta <ref type="bibr" target="#b1">(Balduzzi et al., 2019)</ref> and metasens <ref type="bibr" target="#b41">(Schwarzer et al., 2015)</ref> packages, users can justify their SESOI based on an ESD that is adjusted for publication bias. In the following sections we will explore the ESDist package by demonstrating its functions accompanied by their respective outputs. Moreover, reasons for why the use of the ESDist package may be preferential over other benchmark-based methods, as well as potential limitations and areas of future investigation and development, will be discussed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Package overview</head><p>The ESDist package contains functions for visualising ESDs, as well as a function for calculating effect size benchmarks. The ESDist package requires R version 2.10 or higher and can be loaded using the following commands:</p><formula xml:id="formula_0">R&gt; library(devtools) install_github("berntgl/ESDist") library(ESDist)</formula><p>These commands first load the devtools package <ref type="bibr" target="#b45">(Wickham et al., 2022)</ref>, which is necessary to download and install packages from GitHub. The ESDist package is then downloaded from GitHub and loaded into the user's R environment. An overview of all uses and functionalities of each main function can be found in Figure <ref type="figure">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Data files</head><p>The package contains two example data files: ot_dat_raw and ot_dat. The data file ot_dat_raw contains 616 effect sizes from 15 meta-analyses on oxytocin intervention studies <ref type="bibr" target="#b0">(Bakermans-Kranenburg &amp; van IJzendoorn, 2013;</ref><ref type="bibr" target="#b6">Chen et al., 2021;</ref><ref type="bibr" target="#b14">Huang et al., 2021;</ref><ref type="bibr" target="#b16">Kang et al., 2022;</ref><ref type="bibr" target="#b17">Keech et al., 2018;</ref><ref type="bibr" target="#b24">Leppanen et al., 2017</ref><ref type="bibr" target="#b23">Leppanen et al., , 2018;;</ref><ref type="bibr" target="#b25">Leslie et al., 2018;</ref><ref type="bibr" target="#b29">Ooi et al., 2017;</ref><ref type="bibr" target="#b32">Peled-Avron et al., 2020;</ref><ref type="bibr" target="#b40">Sabe et al., 2021;</ref><ref type="bibr" target="#b44">Wang et al., 2019;</ref><ref type="bibr" target="#b46">Yang et al., 2021;</ref><ref type="bibr" target="#b47">Zheng et al., 2019;</ref><ref type="bibr" target="#b48">Zhou et al., 2021)</ref>. Oxytocin is a hormone and neuromodulator that is primarily produced in the hypothalamus, which has been reported to have a role in social and non-social behaviour and cognition. It has been the subject of comprehensive research interest due to its role in social behaviour, cognitive regulation, and metabolic homeostasis <ref type="bibr" target="#b15">(Jurek &amp; Neumann, 2018;</ref><ref type="bibr" target="#b36">Quintana &amp; Guastella, 2020)</ref>.</p><p>Some studies have been included multiple times in the dataset, as they reported multiple effect sizes. Thus, the package contains a second, processed data file, ot_dat, where duplicates have been removed, and all effect sizes have been converted to the same metric (Hedges' g). In cases where a study was included twice or more in the original dataset, only the effect size with the smallest standard error was considered. In the unlikely case that the standard error was the same between two effect sizes of the same study, only the smallest effect size (i.e., the one closest to 0, regardless of the direction) was considered. As a result, the updated dataset contains 183 effect sizes. Both datasets contain a column with effect sizes, yi. All effect sizes in this column are reported as Hedges' g in the ot_dat dataframe, or as the original effect size in the ot_dat_raw dataframe. The dataset also contains a column, sei, that contains the standard error of the effect size. The dataset includes information on each study, such as sample size (n_total), study year (study_year), study design (design), oxytocin dosage (doses), the clinical diagnosis of the subsample (group), and details about the meta-analysis from which the study originated (meta_analysis, meta_analysis_doi, meta_analysis_year).</p><p>Users can get an overview of all the included columns and the data they contain by using the following command:</p><p>R&gt; head(ESDist::ot_dat)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Analysis script and data filtering script</head><p>To aid users in using the ESDist package, an example analysis script (analysis_script.R) is included in the package, which contains examples of all functions and their features. This script, as well as a script (data_filtering.R) for processing the raw data (ot_dat_raw) to obtain the filtered dataset (ot_dat) are included in the supplementary materials can be accessed through <ref type="url" target="https://github.com/berntgl/ESDist">https://github.com/berntgl/ESDist</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4.">Publication bias adjustment</head><p>The ESDist package contains two functions, esd_plot_pba() and esd_table_pba(), that allow users to adjust their ESD for publication bias. These functions make use of limit meta-analysis <ref type="bibr" target="#b39">(Rücker et al., 2011;</ref><ref type="bibr" target="#b41">Schwarzer et al., 2015)</ref>. Limit meta-analysis uses a random-effects model that includes a parameter that accounts for small-study effects for the potential adjustment of individual effect sizes, which makes it a suitable adjustment method for ESDs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.5.">Basic plotting function</head><p>The most basic plotting function in the ESDist package, esd_plot(), takes three basic arguments to create an ESD plot: a data frame (df), the column within that data frame that contains all the effect sizes (es), and a string that describes the type of effect size (es_type). The esd_plot() function takes these arguments and outputs a ggplot object. The code below demonstrates the function using the ot_dat data frame to generate the plot in Figure <ref type="figure" target="#fig_4">3</ref>. The column in the ot_dat dataset that contains all effect sizes is entitled yi, and the effect size measure is Hedges' g.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>R&gt; esd_plot(</head><p>df = ot_dat, es = yi, es_type = "Hedges' g")</p><p>In order to plot the weighted distribution, which is calculated using inverse variance weighting, the user needs to add a se argument, which corresponds to the column in the dataset which contains all the standard errors and set the weighted argument to TRUE in order to generate the plot in Figure <ref type="figure" target="#fig_5">4</ref>.</p><p>R&gt; esd_plot( df = ot_dat, es = yi, se = sei, weighted = TRUE, es_type = "Hedges' g")</p><p>Either the weighted or the regular ESD can be used with additional functionality. By setting the method argument to "quads", the user can plot the small, medium, and large effect size benchmarks based on the 25 th , 50 th , and 75 th percentiles, respectively (or on the 16.65 th , 50 th , and 83.35 th percentiles if set to "thirds"). Alternatively, if the user wants to plot the range of empirical effect sizes that falls above or below an effect size of interest, the user can provide the sesoi argument with a numerical value. For example, if the user finds that the smallest effect size they can reliably detect with a given level of power is g = 0.3, the user may set the sesoi argument to 0.3. The returned plot will then visualise what percentage of the ESD is smaller than the 0.3, and which percentage is equal to or greater than the given value. This can be done by using the following code:</p><p>R&gt; esd_plot( df = ot_dat, es = yi, sesoi = 0.3, es_type = "Hedges' g")</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.6.">Other plotting functions</head><p>The other plotting functions, esd_plot_group() and esd_plot_pba(), work similarly to the basic The esd_plot_pba() function allows users to plot an "iceberg" plot, which shows the unadjusted ESD with the ESD adjusted for publication bias in the negative direction. For this function, users need to provide an additional se argument (see above). The publication bias adjustment is done using limit meta-analysis <ref type="bibr" target="#b39">(Rücker et al., 2011)</ref>, which assesses the relationship between effect size and study size and corrects for this potential correlation. An example of an iceberg plot is shown in Figure <ref type="figure" target="#fig_7">6</ref>, which is generated using the following code:</p><p>R&gt; esd_plot_pba( df = ot_dat, es = yi, se = sei, es_type = "Hedges' g")</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.7.">Calculating effect size benchmarks in tables</head><p>The esd_table() function is the primary table function in the ESDist package and can be used to calculate field-specific effect size benchmarks. In its most basic form, it takes two arguments: a data frame (df) and the column within that dataset which contains effect sizes (es). Like the plotting functions, the esd_table() function also takes a method argument which can be set to either "quads"</p><p>or "thirds". However, unlike the plotting functions, the method argument does not have to be specified by the user, as it defaults to "quads". The code below sets the df argument equal to the ot_dat data frame and the es argument equal to the column within that data frame which contains effect sizes, yi. The output of this function is presented in Table <ref type="table">1</ref>.</p><formula xml:id="formula_1">R&gt; esd_table( df = ot_dat, es = yi)</formula><p>Like the plotting functions, the table functions can base their benchmark estimates on the weighted distribution by providing the se argument with the name of the column containing the standard errors and by setting the weighted argument to TRUE. The resulting table is reported in Table <ref type="table">2</ref>.</p><p>Another feature of the esd_table() function is that it can calculate benchmarks per group.</p><p>The code below specifies that benchmarks should be calculated for each diagnosis group in the ot_dat dataset with at least three effect sizes (the minimum number of effect sizes necessary to calculate three benchmarks), by setting grouping_var to group. The resulting table is reported in </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.8.">Calculating publication bias-adjusted effect size benchmarks</head><p>The second table function is the esd_table_pba() function, which calculates the raw benchmarks, as well as the publication bias-adjusted benchmarks (using limit meta-analysis; <ref type="bibr" target="#b39">Rücker et al., 2011)</ref>. As with the esd_table() function, the esd_table_pba() function takes the standard df and es arguments, but takes an additional se argument, which corresponds to the column of the dataset that contains the standard errors. The code below generates Table <ref type="table">4</ref>. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>R&gt;</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Summary</head><p>The ESDist package for R is a tool that facilitates the straightforward calculation of field-specific effect size benchmarks and ESD visualisations. Importantly, the package allows users to create ESDs using data that can easily be obtained from meta-analyses, as well as facilitating the adjustment of the effect size distribution for publication bias and effect size precision.</p><p>There are two primary use cases for the ESDist package. The first is to help plan new studies based on information gained from a field-specific ESD. The ESDist package allows researchers to calculate field-specific effect size benchmarks based on a set of percentiles (e.g., the 25 th , 50 th , and 75 th percentiles) that correspond to 'small', 'medium', and 'large' effect sizes, respectively. These benchmarks can be used in place of more general effect size benchmarks or heuristics (such as those proposed by <ref type="bibr" target="#b8">Cohen, 1988)</ref> to calculate the sample size required to detect a given effect size with a specified level of certainty. Alternatively, researchers can use the ESDist package to calculate the range of effect sizes that can be reliably detected with a given study test and design combination. This is particularly useful for situations in which there is a known limit to the number of participants that can be tested in a study, as it allows researchers to gauge whether the planned study could make a valuable contribution to its field.</p><p>The second use case for the ESDist package is for interpreting new study results. For example, researchers can use the ESDist package to calculate effect size benchmarks for their specific field of interest to compare new study results against. Alternatively, researchers can avoid using descriptive effect size benchmark labels altogether and report the percentile of the ESD their study result corresponds to. In other words, instead of making statements such as "we found an effect that was small-to-medium in size", researchers can state the specific percentile of the ESD which corresponds to the effect size (e.g., "we found an effect that was larger than 34% of effect sizes reported in the field"). Although this is a more precise approach, it should be noted that situating an individual study within an ESD is by no means a complete interpretation of a study result in and of itself <ref type="bibr" target="#b30">(Panzarella et al., 2021;</ref><ref type="bibr" target="#b34">Pogrow, 2019)</ref>. Researchers should therefore aim to explain their study results within the context of their study design, as well as describe the position of their study within their respective ESD by comparing their study to other studies within the field.</p><p>Publication bias is a pressing issue in the psychological sciences, in which some studies are more likely to be published than others <ref type="bibr" target="#b5">(Bupon et al., 2013;</ref><ref type="bibr" target="#b20">Lakens, 2022)</ref>. Consequently, effect size estimates drawn from empirical studies may be inflated. The ESDist package allows users to account for publication bias by incorporating limit meta-analysis <ref type="bibr" target="#b39">(Rücker et al., 2011;</ref><ref type="bibr" target="#b41">Schwarzer et al., 2015)</ref>.</p><p>The ESDist package can be used to visualise the adjusted ESD against the original ESD via an iceberg plot, or to calculate adjusted effect size benchmarks. Using a publication bias-adjusted ESD will give the user a more accurate representation of how effect sizes are distributed and will subsequently lead to more accurate estimations of sample size.</p><p>The ESDist package can be a useful tool for justifying the parameters of a power analysis or for interpreting new study results. Nevertheless, there are some limitations that are worth mentioning. The package was designed for use with data that can easily be obtained from meta-</p><p>analyses, but there are potential drawbacks to this method. This approach assumes that metaanalyses are available for the field of interest, that these meta-analyses are of sufficient size to create an informative ESD, and that these meta-analyses have reported error-free data. It is recommended that users double-check any unrealistically large values when extracting data from existing meta-analyses.</p><p>While ESDs with larger samples are desirable, researchers need to be aware that adding studies with too much heterogeneity (e.g., studies using different methods, populations, etc.) can reduce the specificity of the ESD for a particular study. Heterogeneity, in this case, refers to the variety in results obtained from studies that are conceptual or close replications, which makes it difficult to obtain relevant effect size benchmarks or empirical effect size ranges for any particular study <ref type="bibr" target="#b26">(Linden &amp; Hönekopp, 2021)</ref>. Given that research methods, populations, and measurements might differ substantially between (or even within) scientific fields, there is a good chance that including too many effect sizes could lead to a very heterogeneous pool of empirical effect sizes <ref type="bibr" target="#b3">(Bryan et al., 2021;</ref><ref type="bibr" target="#b13">Higgins &amp; Thompson, 2002;</ref><ref type="bibr" target="#b26">Linden &amp; Hönekopp, 2021)</ref>. Heterogeneity can be addressed by using the grouping feature included in several functions within the package. It is recommended that users take note of reported heterogeneity of the meta-analyses they retrieved their data from or perform their own test of heterogeneity <ref type="bibr" target="#b26">(Linden &amp; Hönekopp, 2021)</ref>.</p><p>Altogether, the overall goal of this tutorial is to instruct readers on how to generate fieldspecific effect size distributions for the calculation and visualisation of effect size benchmarks or ranges of detectable empirical effect sizes to aid researchers in planning new studies using the ESDist package. The package can be used with data that can be extracted from pre-existing metaanalyses and can help researchers plan informative new studies a priori and gain information about how an individual study might relate to other studies in their field of interest by using conventional effect size benchmark percentiles for small, medium, or large effects (i.e., the 25 th , 50 th , and 75 th percentiles), or by using more precise percentage values.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 1</head><p>The output of the esd_table() function for all effect sizes in the ot_dat dataset</p><p>25 % 50 % 75 % Number of effects Raw effect size 0.06 0.23 0.50 182</p><p>Note. These are the benchmarks for small, medium, and large effect sizes based on the ot_dat dataset. The benchmarks are based on the 25 th , 50 th , and 75 th percentiles, which corresponds to the 'quads' method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 2</head><p>The output of the esd_table() function for all weighted effect sizes in the ot_dat dataset</p><p>25 % 50 % 75 % Number of effects Raw effect size 0.05 0.20 0.43 182</p><p>Note. These are the benchmarks for small, medium, and large effect sizes based on the weighted effect sizes in the ot_dat dataset. The benchmarks are based on the 25 th , 50 th , and 75 th percentiles, which corresponds to the 'quads' method. Note. These are the benchmarks for small, medium, and large effect sizes for each group in the ot_dat dataset with at least 4 effect sizes. The benchmarks are based on the 25 th , 50 th , and 75 th percentiles, which corresponds to the 'quads' method. AN = Anorexia nervosa; BPD = Bipolar disorder; OCD = Obsessive compulsive disorder; PTSD = Post-traumatic stress disorder; SCZ = Schizophrenia.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 4</head><p>The output of the esd_table_pba() function for all effect sizes in the ot_dat dataset</p><p>25 % 50 % 75 % Number of effects Raw effect size 0.06 0.24 0.50 182 Adjusted effect size 0.08 0.20 0.39 182</p><p>Note. These are the benchmarks for small, medium, and large effect sizes for each group in the ot_dat dataset with at least 4 effect sizes, as well as the benchmarks adjusted for publication bias.</p><p>The benchmarks are based on the 25 th , 50 th , and 75 th percentiles, which corresponds to the 'quads' method. Effect size benchmarks for several fields in the biomedical sciences compared to Cohen's suggested benchmarks Note. A) Effect size benchmarks for several fields in Cohen's d. Each bar represents an interquartile range (i.e., all effect sizes between the 25 th to 75 th percentiles). Each dot represents the median, if reported. The red dashed lines represent Cohen's (1988) heuristics for small, medium, and large effect size, which are d = 0.2, 0.5, and 0.8, respectively. B) Effect size benchmarks for several fields in Pearson's r. Each bar represents an interquartile range (i.e., all effect sizes between the 25 th to 75 th percentiles), except the bars for the field of psychology (taken from Schäfer and Schwarz, 2019), where the bars represent the range from the 16.65 th to the 83.35 th percentiles. Each dot represents the median. The red dashed lines represent <ref type="bibr" target="#b8">Cohen's (1988)</ref> heuristics for small, medium, and large effect size, which are r = 0.1, 0.3, and 0.5, Studies with an asterisk (*) have been adjusted for publication bias. Studies with a section sign ( §) did not report a median value.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 2</head><p>An overview of all main functions in the ESDist package.</p><p>Note. An overview of the ESDist package for R. The dataset that is to be used with the ESDist package should contain at least columns for effect size, standard error, and a grouping variable to make use of all functions in the package. The functions in the package can be divided into tow categories:</p><p>plotting functions and table functions. The plotting functions are primarily useful for visualising ESDs, as well as for calculating the range of detectable empirical effect sizes, whereas table functions are primarily useful for calculating estimates for effect size benchmarks. Finally, all functions allow for inverse weighting by standard error to make more precise estimates in the dataset more informative. Functions with an asterisk (*) also allow for publication bias adjustment, and functions with a section sign ( §) allow for grouping by a categorical variable. Output of the esd_plot() function showing the distribution of effect sizes from the ot_dat dataframe Note. The outcome of the esd_plot() function. This histogram shows the distribution of effect sizes for the ot_dat dataset. Each bin represents the number of effect sizes within an interval of g = 0.1. Output of the esd_plot() function showing the weighted distribution of effect sizes for effect sizes in the ot_dat dataframe Note. The outcome of the esd_plot() function. This histogram shows the weighted distribution of effect sizes for the ot_dat dataset. Each bin represents the number of effect sizes within an interval of g = 0.1. Output of the esd_plot_group() function showing ESDs per group Note. The outcome of the esd_plot_group() function. This figure contains plots for the distribution of effect sizes for each group in the ot_dat dataset which contains at least 20 effect sizes. In the case of the ot_dat dataset, these are only the autism spectrum disorder, neurotypical and schizophrenia groups. Each bin represents the number of effect sizes within an interval of g = 0.1. ASD = Autism spectrum disorder, SCZ = Schizophrenia. Output of the esd_plot_pba() function showing an iceberg plot Note. The outcome of the esd_plot_pba() function. This iceberg plot shows the distribution of unadjusted effect sizes (top distribution in light blue) as well as the distribution of effect sizes adjusted for publication bias according to the limit meta-analysis (bottom distribution in dark blue). The summary effect sizes with the 95% CI are shown in the black diamonds in each distribution. Each bin represents the number of effect sizes within an interval of g = 0.1. CI = Confidence interval.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>esd_plot() function by taking the df, es, and es_type arguments. The esd_plot_group() function allows users to plot ESDs for each group, and therefore requires an extra argument, grouping_var, which corresponds to the column in the dataset on which the data should be grouped. By default, it will only plot groups with at least 20 effect sizes. An example is showed in Figure5, which is generated by the following code:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>The esd_table_pba() function allows users to calculate the publication bias adjusted benchmarks per group by providing a grouping_var argument to the function, like in the esd_table() function. It also allows users to retrieve benchmarks based on the weighted unadjusted and adjusted ESDs by adding weighted = TRUE.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 1</head><label>1</label><figDesc>Figure 1</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 3</head><label>3</label><figDesc>Figure 3</figDesc><graphic coords="33,72.00,125.71,450.75,263.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4</head><label>4</label><figDesc>Figure 4</figDesc><graphic coords="34,72.00,152.57,450.75,263.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5</head><label>5</label><figDesc>Figure 5</figDesc><graphic coords="35,72.00,125.71,450.75,263.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6</head><label>6</label><figDesc>Figure 6</figDesc><graphic coords="36,72.00,125.71,450.75,263.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><graphic coords="32,59.36,126.01,475.53,266.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 .</head><label>3</label><figDesc>Note that the last row of the table summarises the benchmarks for all effect sizes included in the dataset.</figDesc><table><row><cell>R&gt;</cell><cell>esd_table(</cell></row><row><cell></cell><cell>df = ot_dat,</cell></row><row><cell></cell><cell>es = yi,</cell></row><row><cell></cell><cell>grouping_var = group)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 3</head><label>3</label><figDesc>The output of the esd_table() function for all effect sizes in the ot_dat dataframe per group</figDesc><table><row><cell>Group</cell><cell>25%</cell><cell>50%</cell><cell>75%</cell><cell>Number of effects</cell></row><row><cell>AN</cell><cell>0.02</cell><cell>0.05</cell><cell>0.06</cell><cell>6</cell></row><row><cell>Autism</cell><cell>0.11</cell><cell>0.31</cell><cell>0.55</cell><cell>32</cell></row><row><cell>BPD</cell><cell>0.16</cell><cell>1.22</cell><cell>2.29</cell><cell>5</cell></row><row><cell>PTSD</cell><cell>0.2</cell><cell>0.32</cell><cell>0.38</cell><cell>6</cell></row><row><cell>SCZ</cell><cell>0.05</cell><cell>0.13</cell><cell>0.24</cell><cell>20</cell></row><row><cell>Anxiety</cell><cell>0.19</cell><cell>0.31</cell><cell>0.41</cell><cell>4</cell></row><row><cell>Depression</cell><cell>0.21</cell><cell>0.45</cell><cell>0.91</cell><cell>6</cell></row><row><cell>Neurotypical</cell><cell>0.05</cell><cell>0.25</cell><cell>0.66</cell><cell>89</cell></row><row><cell>All</cell><cell>0.06</cell><cell>0.23</cell><cell>0.5</cell><cell>182</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="funding">
+<div><p>This work was supported by the <rs type="funder">Research Council of Norway</rs> (PI DQ: 301767; 324783, BDG: <rs type="grantNumber">336085</rs>), <rs type="funder">South-Eastern Norway Regional Health Authority</rs> (PI DQ: <rs type="grantNumber">2022059</rs>), and the <rs type="funder">Kavli Trust</rs> (PI DQ).</p></div>
+			</div>
+			<div type="funding">
+<div><head>Funding statement</head><p>This work was supported by the <rs type="funder">Research Council of Norway</rs> (PI DQ: 301767; 324783, BDG: <rs type="grantNumber">336085</rs>), <rs type="funder">South-Eastern Norway Regional Health Authority</rs> (PI DQ: <rs type="grantNumber">2022059</rs>), and the <rs type="funder">Kavli Trust</rs> (PI DQ).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_AaG2Dka">
+					<idno type="grant-number">336085</idno>
+				</org>
+				<org type="funding" xml:id="_QxQqyXD">
+					<idno type="grant-number">2022059</idno>
+				</org>
+				<org type="funding" xml:id="_T3aF7c8">
+					<idno type="grant-number">336085</idno>
+				</org>
+				<org type="funding" xml:id="_27wufch">
+					<idno type="grant-number">2022059</idno>
+				</org>
+			</listOrg>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Data to reproduce the analysis in the manuscript is available at <ref type="url" target="https://github.com/berntgl/ESDist">https://github.com/berntgl/ESDist</ref> </p></div>
+			</div>
+
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data availability statement</head><p>The data can be accessed as a part of the R package code, which is located at <ref type="url" target="https://github.com/berntgl/ESDist">https://github.com/berntgl/ESDist</ref>.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Competing interests</head><p>The authors declare no potential competing interests.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Sniffing around oxytocin: Review and meta-analyses of trials in healthy and clinical groups with implica`ons for pharmacotherapy</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Bakermans-Kranenburg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Van Ijzendoorn</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/tp.2013.34</idno>
+		<ptr target="hpps://doi.org/10.1038/tp.2013.34" />
+	</analytic>
+	<monogr>
+		<title level="m">Ar`kkel 5</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bakermans-Kranenburg, M. J., &amp; van IJzendoorn, M. H. (2013). Sniffing around oxytocin: Review and meta-analyses of trials in healthy and clinical groups with implica`ons for pharmacotherapy. TranslaJonal Psychiatry, 3(5), Ar`kkel 5. hpps://doi.org/10.1038/tp.2013.34</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">How to perform a meta-analysis with R: A prac`cal tutorial</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Balduzzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Rücker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Schwarzer</surname></persName>
+		</author>
+		<idno type="DOI">10.1136/ebmental-2019-300117</idno>
+		<ptr target="hpps://doi.org/10.1136/ebmental-2019-300117" />
+	</analytic>
+	<monogr>
+		<title level="j">BMJ Ment Health</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="153" to="160" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Balduzzi, S., Rücker, G., &amp; Schwarzer, G. (2019). How to perform a meta-analysis with R: A prac`cal tutorial. BMJ Ment Health, 22(4), 153-160. hpps://doi.org/10.1136/ebmental-2019-300117</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Correla`onal effect size benchmarks</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">A</forename><surname>Bosco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Aguinis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">G</forename><surname>Field</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">A</forename><surname>Pierce</surname></persName>
+		</author>
+		<idno type="DOI">10.1037/a0038047</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Applied Psychology</title>
+		<imprint>
+			<biblScope unit="volume">100</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="431" to="449" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bosco, F. A., Aguinis, H., Singh, K., Field, J. G., &amp; Pierce, C. A. (2015). Correla`onal effect size benchmarks. Journal of Applied Psychology, 100(2), 431-449. hpps://doi.org/10.1037/a0038047</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Behavioural science is unlikely to change the world without a heterogeneity revolu`on</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Bryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tipton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Yeager</surname></persName>
+		</author>
+		<idno type="DOI">org/10.1038/s41562-021-01143-3</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Bryan, C. J., Tipton, E., &amp; Yeager, D. S. (2021). Behavioural science is unlikely to change the world without a heterogeneity revolu`on. Nature Human Behaviour, 5(8), Ar`kkel 8. hpps://doi.org/10.1038/s41562-021-01143-3</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Effect Size Guidelines, Sample Size Calcula`ons, and Sta`s`cal Power in</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Brydges</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/geroni/igz036</idno>
+		<ptr target="hpps://doi.org/10.1093/geroni/igz036" />
+	</analytic>
+	<monogr>
+		<title level="j">Gerontology. InnovaJon in Aging</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note>igz036</note>
+	<note type="raw_reference">Brydges, C. R. (2019). Effect Size Guidelines, Sample Size Calcula`ons, and Sta`s`cal Power in Gerontology. InnovaJon in Aging, 3(4), igz036. hpps://doi.org/10.1093/geroni/igz036</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Power failure: Why small sample size undermines the reliability of neuroscience</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Bupon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mokrysz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Nosek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Flint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">S J</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Munafò</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/nrn3475</idno>
+		<ptr target="hpps://doi.org/10.1038/nrn3475" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature Reviews Neuroscience</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note>Ar`kkel 5</note>
+	<note type="raw_reference">Bupon, K. S., Ioannidis, J. P. A., Mokrysz, C., Nosek, B. A., Flint, J., Robinson, E. S. J., &amp; Munafò, M. R. (2013). Power failure: Why small sample size undermines the reliability of neuroscience. Nature Reviews Neuroscience, 14(5), Ar`kkel 5. hpps://doi.org/10.1038/nrn3475</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Effects of intranasal oxytocin in food intake and craving: A meta-analysis of clinical trials</title>
+		<author>
+			<persName><forename type="first">C.-Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-C</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-C</forename><surname>Kuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-W</forename><surname>Tam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E.-W</forename><surname>Loh</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.clnu.2021.08.011</idno>
+		<ptr target="hpps://doi.org/10.1016/j.clnu.2021.08.011" />
+	</analytic>
+	<monogr>
+		<title level="j">Clinical NutriJon</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="5407" to="5416" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Chen, C.-Y., Chiang, Y.-C., Kuo, T.-C., Tam, K.-W., &amp; Loh, E.-W. (2021). Effects of intranasal oxytocin in food intake and craving: A meta-analysis of clinical trials. Clinical NutriJon, 40(10), 5407- 5416. hpps://doi.org/10.1016/j.clnu.2021.08.011</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Sta`s`cal Inferences Using Effect Sizes in Human Endothelial Func`on Research</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Cherubini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Macdonald</surname></persName>
+		</author>
+		<idno type="DOI">org/10.1007/s44200-021-00006-6</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Artery Research</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Cherubini, J. M., &amp; MacDonald, M. J. (2021). Sta`s`cal Inferences Using Effect Sizes in Human Endothelial Func`on Research. Artery Research, 27(4), Ar`kkel 4. hpps://doi.org/10.1007/s44200-021-00006-6</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cohen</surname></persName>
+		</author>
+		<title level="m">StaJsJcal power analysis for the behavioral sciences</title>
+		<imprint>
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+	<note>nd ed L. Erlbaum Associates</note>
+	<note type="raw_reference">Cohen, J. (1988). StaJsJcal power analysis for the behavioral sciences (2nd ed). L. Erlbaum Associates.</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Systema`c Review of the Empirical Evidence of Study Publica`on Bias and Outcome Repor`ng Bias</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dwan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">G</forename><surname>Altman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Arnaiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bloom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A.-W</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Cronin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Decullier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Easterbrook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">V</forename><surname>Elm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gamble</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ghersi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Simes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">R</forename><surname>Williamson</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pone.0003081</idno>
+		<ptr target="hpps://doi.org/10.1371/journal.pone.0003081" />
+	</analytic>
+	<monogr>
+		<title level="j">PLOS ONE</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">3081</biblScope>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Dwan, K., Altman, D. G., Arnaiz, J. A., Bloom, J., Chan, A.-W., Cronin, E., Decullier, E., Easterbrook, P. J., Elm, E. V., Gamble, C., Ghersi, D., Ioannidis, J. P. A., Simes, J., &amp; Williamson, P. R. (2008). Systema`c Review of the Empirical Evidence of Study Publica`on Bias and Outcome Repor`ng Bias. PLOS ONE, 3(8), e3081. hpps://doi.org/10.1371/journal.pone.0003081</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Perceived informa`on gain from randomized trials correlates with publica`on in high-impact factor journals</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Evangelou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">C</forename><surname>Sion`s</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pfeiffer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jclinepi.2012.06.009</idno>
+		<ptr target="hpps://doi.org/10.1016/j.jclinepi.2012.06.009" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Clinical Epidemiology</title>
+		<imprint>
+			<biblScope unit="volume">65</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1274" to="1281" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Evangelou, E., Sion`s, K. C., Pfeiffer, T., &amp; Ioannidis, J. P. A. (2012). Perceived informa`on gain from randomized trials correlates with publica`on in high-impact factor journals. Journal of Clinical Epidemiology, 65(12), 1274-1281. hpps://doi.org/10.1016/j.jclinepi.2012.06.009</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Evalua`ng Effect Size in Psychological Research: Sense and Nonsense</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">C</forename><surname>Funder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Ozer</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245919847202</idno>
+		<ptr target="hpps://doi.org/10.1177/2515245919847202" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Methods and PracJces in Psychological Science</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="156" to="168" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Funder, D. C., &amp; Ozer, D. J. (2019). Evalua`ng Effect Size in Psychological Research: Sense and Nonsense. Advances in Methods and PracJces in Psychological Science, 2(2), 156-168. hpps://doi.org/10.1177/2515245919847202</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Effect size guidelines for individual differences researchers</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">E</forename><surname>Gignac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">T</forename><surname>Szodorai</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.paid.2016.06.069</idno>
+		<ptr target="hpps://doi.org/10.1016/j.paid.2016.06.069" />
+	</analytic>
+	<monogr>
+		<title level="j">Personality and Individual Differences</title>
+		<imprint>
+			<biblScope unit="volume">102</biblScope>
+			<biblScope unit="page" from="74" to="78" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Gignac, G. E., &amp; Szodorai, E. T. (2016). Effect size guidelines for individual differences researchers. Personality and Individual Differences, 102, 74-78. hpps://doi.org/10.1016/j.paid.2016.06.069</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Quan`fying heterogeneity in a meta-analysis</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P T</forename><surname>Higgins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">G</forename><surname>Thompson</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/sim.1186</idno>
+		<ptr target="hpps://doi.org/10.1002/sim.1186" />
+	</analytic>
+	<monogr>
+		<title level="j">StaJsJcs in Medicine</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1539" to="1558" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Higgins, J. P. T., &amp; Thompson, S. G. (2002). Quan`fying heterogeneity in a meta-analysis. StaJsJcs in Medicine, 21(11), 1539-1558. hpps://doi.org/10.1002/sim.1186</note>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Intranasal oxytocin in the treatment of au`sm spectrum disorders: A mul`level meta-analysis</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">P</forename><surname>Ebstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.neubiorev.2020.12.028</idno>
+		<ptr target="hpps://doi.org/10.1016/j.neubiorev.2020.12.028" />
+	</analytic>
+	<monogr>
+		<title level="j">Neuroscience &amp; Biobehavioral Reviews</title>
+		<imprint>
+			<biblScope unit="volume">122</biblScope>
+			<biblScope unit="page" from="18" to="27" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Huang, Y., Huang, X., Ebstein, R. P., &amp; Yu, R. (2021). Intranasal oxytocin in the treatment of au`sm spectrum disorders: A mul`level meta-analysis. Neuroscience &amp; Biobehavioral Reviews, 122, 18-27. hpps://doi.org/10.1016/j.neubiorev.2020.12.028</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">The Oxytocin Receptor: From Intracellular Signaling to Behavior</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jurek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">D</forename><surname>Neumann</surname></persName>
+		</author>
+		<idno type="DOI">10.1152/physrev.00031.2017</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Physiological Reviews</title>
+		<imprint>
+			<biblScope unit="volume">98</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1805" to="1908" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Jurek, B., &amp; Neumann, I. D. (2018). The Oxytocin Receptor: From Intracellular Signaling to Behavior. Physiological Reviews, 98(3), 1805-1908. hpps://doi.org/10.1152/physrev.00031.2017</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Effects of exogenous oxytocin administraJon on non-social execuJve funcJon in humans: A preregistered systemaJc review and meta-analysis protocol</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">D</forename><surname>Glaser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Sartorius</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Audunsdorr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Naerland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">A</forename><surname>Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">T</forename><surname>Westlye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Quintana</surname></persName>
+		</author>
+		<idno type="DOI">10.31219/osf.io/8fzdy</idno>
+		<ptr target="hpps://doi.org/10.31219/osf.io/8fzdy" />
+	</analytic>
+	<monogr>
+		<title level="j">OSF Preprints</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kang, H., Glaser, B. D., Sartorius, A. M., Audunsdorr, K., Naerland, T., Andreassen, O. A., Westlye, L. T., &amp; Quintana, D. (2022). Effects of exogenous oxytocin administraJon on non-social execuJve funcJon in humans: A preregistered systemaJc review and meta-analysis protocol. OSF Preprints. hpps://doi.org/10.31219/osf.io/8fzdy</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Intranasal oxytocin, social cogni`on and neurodevelopmental disorders: A meta-analysis</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Keech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Crowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">R</forename><surname>Hocking</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.psyneuen.2017.09.022</idno>
+		<ptr target="hpps://doi.org/10.1016/j.psyneuen.2017.09.022" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychoneuroendocrinology</title>
+		<imprint>
+			<biblScope unit="volume">87</biblScope>
+			<biblScope unit="page" from="9" to="19" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Keech, B., Crowe, S., &amp; Hocking, D. R. (2018). Intranasal oxytocin, social cogni`on and neurodevelopmental disorders: A meta-analysis. Psychoneuroendocrinology, 87, 9-19. hpps://doi.org/10.1016/j.psyneuen.2017.09.022</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Comparing meta-analyses and preregistered mul`ple-laboratory replica`on projects</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kvarven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Strømland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Johannesson</surname></persName>
+		</author>
+		<idno type="DOI">org/10.1038/s41562-019-0787-z</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Kvarven, A., Strømland, E., &amp; Johannesson, M. (2020). Comparing meta-analyses and preregistered mul`ple-laboratory replica`on projects. Nature Human Behaviour, 4(4), Ar`kkel 4. hpps://doi.org/10.1038/s41562-019-0787-z</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Calcula`ng and repor`ng effect sizes to facilitate cumula`ve science: A prac`cal primer for t-tests and ANOVAs</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.3389/fpsyg.2013.00863</idno>
+		<ptr target="hpps://www.fron`ersin.org/ar`cles/10.3389/fpsyg.2013.00863" />
+	</analytic>
+	<monogr>
+		<title level="m">FronJers in Psychology</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="volume">4</biblScope>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2013). Calcula`ng and repor`ng effect sizes to facilitate cumula`ve science: A prac`cal primer for t-tests and ANOVAs. FronJers in Psychology, 4. hpps://www.fron`ersin.org/ar`cles/10.3389/fpsyg.2013.00863</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Sample Size Jus</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<idno type="DOI">10.1525/collabra.33267</idno>
+		<ptr target="hpps://doi.org/10.1525/collabra.33267" />
+	</analytic>
+	<monogr>
+		<title level="j">fica`on. Collabra: Psychology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">33267</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D. (2022). Sample Size Jus`fica`on. Collabra: Psychology, 8(1), 33267. hpps://doi.org/10.1525/collabra.33267</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Sailing From the Seas of Chaos Into the Corridor of Stability: Prac`cal Recommenda`ons to Increase the Informa`onal Value of Studies</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">R K</forename><surname>Evers</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691614528520</idno>
+		<ptr target="hpps://doi.org/10.1177/1745691614528520" />
+	</analytic>
+	<monogr>
+		<title level="j">PerspecJves on Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="278" to="292" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D., &amp; Evers, E. R. K. (2014). Sailing From the Seas of Chaos Into the Corridor of Stability: Prac`cal Recommenda`ons to Increase the Informa`onal Value of Studies. PerspecJves on Psychological Science, 9(3), 278-292. hpps://doi.org/10.1177/1745691614528520</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Equivalence Tes`ng for Psychological Research: A Tutorial</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lakens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Scheel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Isager</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/2515245918770963</idno>
+		<ptr target="hpps://doi.org/10.1177/2515245918770963" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Methods and PracJces in Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="259" to="269" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lakens, D., Scheel, A. M., &amp; Isager, P. M. (2018). Equivalence Tes`ng for Psychological Research: A Tutorial. Advances in Methods and PracJces in Psychological Science, 1(2), 259-269. hpps://doi.org/10.1177/2515245918770963</note>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Meta-analy`c review of the effects of a single dose of intranasal oxytocin on threat processing in humans</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leppanen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">W</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-R</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tchanturia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Treasure</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jad.2017.08.041</idno>
+		<ptr target="hpps://doi.org/10.1016/j.jad.2017.08.041" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of AffecJve Disorders</title>
+		<imprint>
+			<biblScope unit="volume">225</biblScope>
+			<biblScope unit="page" from="167" to="179" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Leppanen, J., Ng, K. W., Kim, Y.-R., Tchanturia, K., &amp; Treasure, J. (2018). Meta-analy`c review of the effects of a single dose of intranasal oxytocin on threat processing in humans. Journal of AffecJve Disorders, 225, 167-179. hpps://doi.org/10.1016/j.jad.2017.08.041</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Meta-analysis of the effects of intranasal oxytocin on interpreta`on and expression of emo`ons</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leppanen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">W</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tchanturia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Treasure</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.neubiorev.2017.04.010</idno>
+		<ptr target="hpps://doi.org/10.1016/j.neubiorev.2017.04.010" />
+	</analytic>
+	<monogr>
+		<title level="j">Neuroscience &amp; Biobehavioral Reviews</title>
+		<imprint>
+			<biblScope unit="volume">78</biblScope>
+			<biblScope unit="page" from="125" to="144" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Leppanen, J., Ng, K. W., Tchanturia, K., &amp; Treasure, J. (2017). Meta-analysis of the effects of intranasal oxytocin on interpreta`on and expression of emo`ons. Neuroscience &amp; Biobehavioral Reviews, 78, 125-144. hpps://doi.org/10.1016/j.neubiorev.2017.04.010</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">A systema`c review and quan`ta`ve meta-analysis of the effects of oxytocin on feeding</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leslie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Paloyelis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Blevins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Treasure</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/jne.12584</idno>
+		<ptr target="hpps://doi.org/10.1111/jne.12584" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Neuroendocrinology</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">12584</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Leslie, M., Silva, P., Paloyelis, Y., Blevins, J., &amp; Treasure, J. (2018). A systema`c review and quan`ta`ve meta-analysis of the effects of oxytocin on feeding. Journal of Neuroendocrinology, 30(8), e12584. hpps://doi.org/10.1111/jne.12584</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Heterogeneity of Research Results: A New Perspec`ve From Which to Assess and Promote Progress in Psychological Science</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">H</forename><surname>Linden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hönekopp</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1745691620964193</idno>
+		<ptr target="hpps://doi.org/10.1177/1745691620964193" />
+	</analytic>
+	<monogr>
+		<title level="j">PerspecJves on Psychological Science</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="358" to="376" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Linden, A. H., &amp; Hönekopp, J. (2021). Heterogeneity of Research Results: A New Perspec`ve From Which to Assess and Promote Progress in Psychological Science. PerspecJves on Psychological Science, 16(2), 358-376. hpps://doi.org/10.1177/1745691620964193</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Empirically derived guidelines for effect size interpreta`on in social psychology</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lovakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">R</forename><surname>Agadullina</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/ejsp.2752</idno>
+		<ptr target="hpps://doi.org/10.1002/ejsp.2752" />
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Social Psychology</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="485" to="504" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Lovakov, A., &amp; Agadullina, E. R. (2021). Empirically derived guidelines for effect size interpreta`on in social psychology. European Journal of Social Psychology, 51(3), 485-504. hpps://doi.org/10.1002/ejsp.2752</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Redefining Effect Size InterpretaJons for Psychotherapy RCTs in Depression</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nordahl-Hansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cogo-Moreira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Panjeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Quintana</surname></persName>
+		</author>
+		<idno type="DOI">10.31219/osf.io/erhmw</idno>
+		<ptr target="hpps://doi.org/10.31219/osf.io/erhmw" />
+	</analytic>
+	<monogr>
+		<title level="j">OSF Preprints</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Nordahl-Hansen, A., Cogo-Moreira, H., Panjeh, S., &amp; Quintana, D. (2022). Redefining Effect Size InterpretaJons for Psychotherapy RCTs in Depression. OSF Preprints. hpps://doi.org/10.31219/osf.io/erhmw</note>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Oxytocin and Au`sm Spectrum Disorders: A Systema`c Review and Meta-Analysis of Randomized Controlled Trials</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">P</forename><surname>Ooi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-J</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kossowsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Gerger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sung</surname></persName>
+		</author>
+		<idno type="DOI">10.1055/s-0042-109400</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Pharmacopsychiatry</title>
+		<imprint>
+			<biblScope unit="volume">50</biblScope>
+			<biblScope unit="issue">01</biblScope>
+			<biblScope unit="page" from="5" to="13" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Ooi, Y. P., Weng, S.-J., Kossowsky, J., Gerger, H., &amp; Sung, M. (2017). Oxytocin and Au`sm Spectrum Disorders: A Systema`c Review and Meta-Analysis of Randomized Controlled Trials. Pharmacopsychiatry, 50(01), 5-13. hpps://doi.org/10.1055/s-0042-109400</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Denouncing the use of field-specific effect size distribu`ons to inform magnitude</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Panzarella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Beribisky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Cribbie</surname></persName>
+		</author>
+		<idno type="DOI">10.7717/peerj.11383</idno>
+		<ptr target="hpps://doi.org/10.7717/peerj.11383" />
+	</analytic>
+	<monogr>
+		<title level="j">PeerJ</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page">11383</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Panzarella, E., Beribisky, N., &amp; Cribbie, R. A. (2021). Denouncing the use of field-specific effect size distribu`ons to inform magnitude. PeerJ, 9, e11383. hpps://doi.org/10.7717/peerj.11383</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">An Assessment of the Magnitude of Effect Sizes: Evidence From 30 Years of Meta-Analysis in Management</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">A</forename><surname>Paterson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">D</forename><surname>Harms</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Steel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Credé</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/1548051815614321</idno>
+		<ptr target="hpps://doi.org/10.1177/1548051815614321" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Leadership &amp; OrganizaJonal Studies</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="66" to="81" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Paterson, T. A., Harms, P. D., Steel, P., &amp; Credé, M. (2016). An Assessment of the Magnitude of Effect Sizes: Evidence From 30 Years of Meta-Analysis in Management. Journal of Leadership &amp; OrganizaJonal Studies, 23(1), 66-81. hpps://doi.org/10.1177/1548051815614321</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Exogenous effects of oxytocin in five psychiatric disorders: A systema`c review, meta-analyses and a personalized approach through the lens of the social salience hypothesis</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Peled-Avron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Abu-Akel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shamay-Tsoory</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.neubiorev.2020.04.023</idno>
+		<ptr target="hpps://doi.org/10.1016/j.neubiorev.2020.04.023" />
+	</analytic>
+	<monogr>
+		<title level="j">Neuroscience &amp; Biobehavioral Reviews</title>
+		<imprint>
+			<biblScope unit="volume">114</biblScope>
+			<biblScope unit="page" from="70" to="95" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Peled-Avron, L., Abu-Akel, A., &amp; Shamay-Tsoory, S. (2020). Exogenous effects of oxytocin in five psychiatric disorders: A systema`c review, meta-analyses and a personalized approach through the lens of the social salience hypothesis. Neuroscience &amp; Biobehavioral Reviews, 114, 70-95. hpps://doi.org/10.1016/j.neubiorev.2020.04.023</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<author>
+			<persName><forename type="first">L</forename><surname>Plonsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">L</forename><surname>Oswald</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/lang.12079</idno>
+		<ptr target="hpps://doi.org/10.1111/lang.12079" />
+	</analytic>
+	<monogr>
+		<title level="m">How Big Is &quot;Big&quot;? Interpre`ng Effect Sizes in L2 Research</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="page" from="878" to="912" />
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Plonsky, L., &amp; Oswald, F. L. (2014). How Big Is &quot;Big&quot;? Interpre`ng Effect Sizes in L2 Research. Language Learning, 64(4), 878-912. hpps://doi.org/10.1111/lang.12079</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">How Effect Size (Prac`cal Significance) Misleads Clinical Prac`ce: The Case for Switching to Prac</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pogrow</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/00031305.2018.1549101</idno>
+	</analytic>
+	<monogr>
+		<title level="j">cal Benefit to Assess Applied Research Findings. The American StaJsJcian</title>
+		<imprint>
+			<biblScope unit="volume">73</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="223" to="234" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Pogrow, S. (2019). How Effect Size (Prac`cal Significance) Misleads Clinical Prac`ce: The Case for Switching to Prac`cal Benefit to Assess Applied Research Findings. The American StaJsJcian, 73(sup1), 223-234. hpps://doi.org/10.1080/00031305.2018.1549101</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Sta`s`cal considera`ons for repor`ng and planning heart rate variability casecontrol studies</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Quintana</surname></persName>
+		</author>
+		<idno type="DOI">10.1111/psyp.12798</idno>
+		<ptr target="hpps://doi.org/10.1111/psyp.12798" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychophysiology</title>
+		<imprint>
+			<biblScope unit="volume">54</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="344" to="349" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Quintana, D. S. (2017). Sta`s`cal considera`ons for repor`ng and planning heart rate variability case- control studies. Psychophysiology, 54(3), 344-349. hpps://doi.org/10.1111/psyp.12798</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">An Allosta`c Theory of Oxytocin</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Quintana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Guastella</surname></persName>
+		</author>
+		<idno>1016/j.`cs.2020.03.008</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Trends in CogniJve Sciences</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="515" to="528" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Quintana, D. S., &amp; Guastella, A. J. (2020). An Allosta`c Theory of Oxytocin. Trends in CogniJve Sciences, 24(7), 515-528. hpps://doi.org/10.1016/j.`cs.2020.03.008</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">R: A Language and Environment for StaJsJcal CompuJng</title>
+		<author>
+			<orgName type="collaboration">R Core Team.</orgName>
+		</author>
+		<ptr target="hpps://www.R-project.org/" />
+	</analytic>
+	<monogr>
+		<title level="m">R Founda`on for Sta`s`cal Compu`ng</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">R Core Team. (2023). R: A Language and Environment for StaJsJcal CompuJng. R Founda`on for Sta`s`cal Compu`ng. hpps://www.R-project.org/</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Inflated effect sizes and underpowered tests: How the severity measure of evidence is affected by the winner&apos;s curse</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Rochefort-Maranda</surname></persName>
+		</author>
+		<idno type="DOI">org/10.1007/s11098-020-01424-z</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Philosophical Studies</title>
+		<imprint>
+			<biblScope unit="volume">178</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="133" to="145" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rochefort-Maranda, G. (2021). Inflated effect sizes and underpowered tests: How the severity measure of evidence is affected by the winner&apos;s curse. Philosophical Studies, 178(1), 133- 145. hpps://doi.org/10.1007/s11098-020-01424-z</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Treatment-effect es`mates adjusted for small-study effects via a limit meta-analysis</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Rücker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Schwarzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Carpenter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Binder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schumacher</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/biosta`s`cs/kxq046</idno>
+		<ptr target="hpps://doi.org/10.1093/biosta`s`cs/kxq046" />
+	</analytic>
+	<monogr>
+		<title level="j">BiostaJsJcs</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="122" to="142" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Rücker, G., Schwarzer, G., Carpenter, J. R., Binder, H., &amp; Schumacher, M. (2011). Treatment-effect es`mates adjusted for small-study effects via a limit meta-analysis. BiostaJsJcs, 12(1), 122- 142. hpps://doi.org/10.1093/biosta`s`cs/kxq046</note>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Intranasal Oxytocin for Nega`ve Symptoms of Schizophrenia: Systema`c Review, Meta-Analysis, and Dose-Response Meta-Analysis of Randomized Controlled Trials</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sabe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Crippa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">P</forename><surname>Strauss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kaiser</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/ijnp/pyab020</idno>
+		<ptr target="hpps://doi.org/10.1093/ijnp/pyab020" />
+	</analytic>
+	<monogr>
+		<title level="j">InternaJonal Journal of Neuropsychopharmacology</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="601" to="614" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Sabe, M., Zhao, N., Crippa, A., Strauss, G. P., &amp; Kaiser, S. (2021). Intranasal Oxytocin for Nega`ve Symptoms of Schizophrenia: Systema`c Review, Meta-Analysis, and Dose-Response Meta- Analysis of Randomized Controlled Trials. InternaJonal Journal of Neuropsychopharmacology, 24(8), 601-614. hpps://doi.org/10.1093/ijnp/pyab020</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Schwarzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Carpenter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Rücker</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-319-21416-0</idno>
+		<ptr target="hpps://doi.org/10.1007/978-3-319-21416-0" />
+		<title level="m">Meta-Analysis with R</title>
+		<imprint>
+			<publisher>Springer Interna`onal Publishing</publisher>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schwarzer, G., Carpenter, J. R., &amp; Rücker, G. (2015). Meta-Analysis with R. Springer Interna`onal Publishing. hpps://doi.org/10.1007/978-3-319-21416-0</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">The Meaningfulness of Effect Sizes in Psychological Research: Differences Between Sub-Disciplines and the Impact of Poten`al Biases</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schäfer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Schwarz</surname></persName>
+		</author>
+		<idno type="DOI">10.3389/fpsyg.2019.00813</idno>
+		<ptr target="hpps://www.fron`ersin.org/ar`cles/10.3389/fpsyg.2019.00813" />
+	</analytic>
+	<monogr>
+		<title level="j">FronJers in Psychology</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Schäfer, T., &amp; Schwarz, M. A. (2019). The Meaningfulness of Effect Sizes in Psychological Research: Differences Between Sub-Disciplines and the Impact of Poten`al Biases. FronJers in Psychology, 10. hpps://www.fron`ersin.org/ar`cles/10.3389/fpsyg.2019.00813</note>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Empirical assessment of published effect sizes and power in the recent cogni`ve neuroscience and psychology literature</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Szucs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P A</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pbio.2000797</idno>
+		<ptr target="hpps://doi.org/10.1371/journal.pbio.2000797" />
+	</analytic>
+	<monogr>
+		<title level="j">PLOS Biology</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2017">2017. 2000797</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Szucs, D., &amp; Ioannidis, J. P. A. (2017). Empirical assessment of published effect sizes and power in the recent cogni`ve neuroscience and psychology literature. PLOS Biology, 15(3), e2000797. hpps://doi.org/10.1371/journal.pbio.2000797</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Oxytocin therapy for core symptoms in au`sm spectrum disorder: An updated meta-analysis of randomized controlled trials</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Rong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-Z</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-J</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.rasd.2019.03.007</idno>
+		<ptr target="hpps://doi.org/10.1016/j.rasd.2019.03.007" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="page" from="63" to="75" />
+		</imprint>
+	</monogr>
+	<note>Research in AuJsm Spectrum Disorders</note>
+	<note type="raw_reference">Wang, Y., Wang, M.-J., Rong, Y., He, H.-Z., &amp; Yang, C.-J. (2019). Oxytocin therapy for core symptoms in au`sm spectrum disorder: An updated meta-analysis of randomized controlled trials. Research in AuJsm Spectrum Disorders, 64, 63-75. hpps://doi.org/10.1016/j.rasd.2019.03.007</note>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wickham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bryan</surname></persName>
+		</author>
+		<ptr target="hpps://devtools.r-lib.org/authors.html#cita`on" />
+		<title level="m">devtools: Tools to Make Developing R Packages Easier</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Wickham, H., Hester, J., Chang, W., &amp; Bryan, J. (2022). devtools: Tools to Make Developing R Packages Easier. hpps://devtools.r-lib.org/authors.html#cita`on</note>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">A meta-analysis of hormone administra`on effects on coopera`ve behaviours: Oxytocin, vasopressin, and testosterone</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">W</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.neubiorev.2021.03.033</idno>
+		<ptr target="hpps://doi.org/10.1016/j.neubiorev.2021.03.033" />
+	</analytic>
+	<monogr>
+		<title level="j">Neuroscience &amp; Biobehavioral Reviews</title>
+		<imprint>
+			<biblScope unit="volume">126</biblScope>
+			<biblScope unit="page" from="430" to="443" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Yang, X., Wang, W., Wang, X. T., &amp; Wang, Y. W. (2021). A meta-analysis of hormone administra`on effects on coopera`ve behaviours: Oxytocin, vasopressin, and testosterone. Neuroscience &amp; Biobehavioral Reviews, 126, 430-443. hpps://doi.org/10.1016/j.neubiorev.2021.03.033</note>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Adjunc`ve intranasal oxytocin for schizophrenia: A meta-analysis of randomized, double-blind, placebo-controlled trials</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X.-M</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q.-E</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X.-H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D.-B</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X.-B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">S</forename><surname>Ungvari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-P</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-T</forename><surname>Xiang</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.schres.2018.12.007</idno>
+		<ptr target="hpps://doi.org/10.1016/j.schres.2018.12.007" />
+	</analytic>
+	<monogr>
+		<title level="j">Schizophrenia Research</title>
+		<imprint>
+			<biblScope unit="volume">206</biblScope>
+			<biblScope unit="page" from="13" to="20" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Zheng, W., Zhu, X.-M., Zhang, Q.-E., Yang, X.-H., Cai, D.-B., Li, L., Li, X.-B., Ng, C. H., Ungvari, G. S., Ning, Y.-P., &amp; Xiang, Y.-T. (2019). Adjunc`ve intranasal oxytocin for schizophrenia: A meta-analysis of randomized, double-blind, placebo-controlled trials. Schizophrenia Research, 206, 13-20. hpps://doi.org/10.1016/j.schres.2018.12.007</note>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Meta-analysis: Pharmacologic Treatment of Restricted and Repe``ve Behaviors in Au`sm Spectrum Disorders</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nasir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">C</forename><surname>Farhat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">B</forename><surname>Artukoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Bloch</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jaac.2020.03.007</idno>
+		<ptr target="hpps://doi.org/10.1016/j.jaac.2020.03.007" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Academy of Child &amp; Adolescent Psychiatry</title>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="35" to="45" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="raw_reference">Zhou, M. S., Nasir, M., Farhat, L. C., Kook, M., Artukoglu, B. B., &amp; Bloch, M. H. (2021). Meta-analysis: Pharmacologic Treatment of Restricted and Repe``ve Behaviors in Au`sm Spectrum Disorders. Journal of the American Academy of Child &amp; Adolescent Psychiatry, 60(1), 35-45. hpps://doi.org/10.1016/j.jaac.2020.03.007</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

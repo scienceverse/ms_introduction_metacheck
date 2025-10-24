@@ -93,7 +93,7 @@ library(progress)
 load("data/psychscience_2014_2024_xml.RData")
 load("data/psychscience_openalex_2014_2024.RData")
 load("data/psychscience_crossref_2014_2024.RData")
-# Downloasded in the chunk osf_retrieve, but stored as it takes a long time to run
+# Downloaded in the chunk osf_retrieve, but stored as it takes a long time to run
 all_osf_file_info_psych_science <- readRDS("data/all_osf_file_info_psych_science.rds")
 
 
@@ -363,11 +363,11 @@ ggplot(combined_summary, aes(x = factor(year), y = percentage, fill = test_type)
 
 ### Checking Data and Code in Repositories
 
-There is widespread support among scientists for open science practices, such as data and code sharing [@ferguson2023survey]. There is increasing awareness of the importance of making data and code available alongside publication, and sometimes this is even a requirement by funders or journals. As data and code sharing is a relatively new practice, and many scientists lack training in open science, it is common to see badly documented data repositories. Best practices exist, such as the [TIER protocol](https://www.projecttier.org/tier-protocol/protocol-4-0/), but not all researchers might be aware of best practices. By automatically checking data repositories, Papercheck can increase awareness of best practices, and make specific suggestions for improvements.
+There is widespread support among scientists for open science practices, such as data and code sharing [@ferguson2023survey]. Funders increasingly require the researchers they fund to make data and code available alongside publications from funded projects. As data and code sharing is a relatively new practice, and there is a lack of training in data management, it is common to see badly documented data repositories. Data repositories would improve substantially if more scientists followed best practices, such as the TIER protocol (https://www.projecttier.org/tier-protocol/protocol-4-0/). By automatically checking data repositories, Papercheck can increase awareness of best practices, and make suggestions for improvements.
 
-At a minimum a data repository should contain a Read Me file with instructions for how to reproduce the results. If data is shared, it should be stored in a 'data' folder, or at least have the word 'data' in the filename. Code or scripts should similarly be shared in a folder with that name, or at least with the word in the filename. Finally, if data is shared, there should be a codebook or data dictionary that explains which variables are in the dataset in order to allow others to re-use the data. Ideally peer reviewers or editors would check the contents of a data repository. In practice, time constraints mean that data repository are often not checked by any human. Automation can perform some of the checks that peers might otherwise perform manually.
+At a minimum a data repository for a scientific paper should contain a Read Me file that contains instructions on how to reproduce reported results. If data is shared, it should be stored in a 'data' folder, or at least have the word 'data' in the filename. Furthermore, there should be a codebook or data dictionary that explains which variables are included in the dataset, and what the values mean, in order for others to re-use the data. Code or scripts should similarly be shared in 'code' folder, or at least have the word 'code' in the filename. Ideally peer reviewers or editors would check the contents of a data repository. In practice, time constraints make it so that data repositories are often not checked. Automation can perform some checks of whether data repositories are organized following best practices, reducing the worksload of peer reviewers.
 
-We will illustrate the process of checking a data repository by focusing on projects on the [Open Science Framework](www.osf.io). We start by searching for OSF URLs using the `osf_links` function. OSF links can be tricky to find in PDFs, since they can insert spaces in odd places, and view-only links that contain a ? are often interpreted as being split across sentences. This function is our best attempt at catching and fixing them all.
+We will illustrate the process of checking a data repository by focusing on repositories on the Open Science Framework (www.osf.io). We start by searching for OSF URLs using the `osf_links` function. The function try to extract OSF links as reliably as possible, and detects X out of Y manually coded OSF links in validation datasets [DESCRIBE].
 
 ```{r search_osf}
 links <- osf_links(xml)
@@ -400,7 +400,7 @@ id_counts <- table(unique_files$osf_id)
 duplicate_ids <- names(id_counts[id_counts > 1])
 
 # Should be 0
-length(duplicate_ids)
+# length(duplicate_ids)
 
 registrations_only <- subset(unique_files, osf_type == "registrations")
 files_only <- subset(unique_files, osf_type == "files")
@@ -414,11 +414,196 @@ files_only <- subset(unique_files, osf_type == "files")
 
 ```
 
-So far we have used Papercheck to check whether links exist, are publicly available, and whether certain types of files exist. But it is also possible to automatically download files, examine their contents, and provide feedback to users. This can be useful to examine datasets (e.g., do files contain IP addresses or other personal information), or code files. Papercheck also contains a function `osf_file_download` to download all files from a project on the OSF while maintaining the folder structure. This should make it easier for reviewers to manually check all content shared on the OSF.
+So far we have used Papercheck to check whether links exist, are publicly available, and whether certain types of files exist. But it is also possible to automatically download files, examine their contents, and provide feedback to users. This can be useful to examine datasets (e.g., is personal information such as IP addressesincluded), or code files. Papercheck also contains a function `osf_file_download` to download all files from a project on the OSF while maintaining the folder structure. This should make it easier for reviewers to manually check all content shared on the OSF.
+
+
+CAN I ONLY DOWNLOAD R FILES AND CHECK THEM? 
+
+```{r}
+
+r_files_only <- files_only[grepl("\\.(r|rmd|qmd)$", files_only$name, ignore.case = TRUE), ]
+
+r_files_only$comment_lines <- NA
+r_files_only$code_lines <- NA
+r_files_only$percentage_comment <- NA
+r_files_only$library_on_top <- NA
+r_files_only$hardcoded_folders <- NA
+
+# Some libraries are declared in the beginning, but there are ret
+
+# Iterate over each row in osf_files
+    for (i in 1:nrow(r_files_only)) {
+      # Read in the R code
+      download_link <- r_files_only$download_url[i]
+      print(download_link)
+      cat("This is ",i,  " out of ", nrow(r_files_only),"\n")
+      
+      con <- url(download_link)
+      rfile <- readLines(con)
+      close(con)
+
+      
+      # Filter out comments, empty lines, and Rmd chunk headers
+      rfile_nc <- grep('^(\\s*$|\\s*#|```\\s*\\{r)', rfile, invert = TRUE, value = TRUE)
+      
+      # Exclude lines containing knitr::include_graphics
+      rfile_nc <- grep('knitr::include_graphics', rfile_nc, invert = TRUE, value = TRUE)
+      
+      # Regex for absolute paths (quoted, excludes URLs)
+      absolute_paths <- grep(
+        '(?<![A-Za-z0-9_])(["\'])(?:(?!https?://)(?:[A-Za-z]:[\\\\/]|(?:\\\\\\\\|//)[^\\\\/]+[\\\\/]|~[/\\\\]|/(?:Users|home|var|etc|opt|srv|mnt|Volumes|Library|Applications|gpfs|data|tmp|media|root)\\b)[^"\']*)\\1',
+        rfile_nc,
+        value = TRUE,
+        perl = TRUE
+      )
+
+      
+      if (length(absolute_paths) > 0) {
+        cat("We found the following absolute paths:\n")
+        cat(absolute_paths, sep = "\n")
+        r_files_only$hardcoded_folders[i] <- 1
+      
+        # Write to file
+        # Open connection in append mode
+        log_con <- file("absolute_paths_found.txt", open = "a")
+        
+        # Write to file
+        writeLines(c(sprintf("File: %s", r_files_only$name[i]), absolute_paths, ""), con = log_con)
+        
+        # Close connection
+        close(log_con)
+      } else {
+        cat("There are no absolute paths, well done!\n")
+        r_files_only$hardcoded_folders[i] <- 0
+      }
+      
+      # Find lines where libraries are loaded
+      library_lines <- grep("\\b(library|require)\\(", rfile)
+
+      # Check if libraries are loaded at multiple places
+      if (length(library_lines) > 1 && !all(diff(library_lines) == 1)) {
+        cat("Libraries are loaded in multiple places in the script:\n")
+        cat(sprintf("Line %d: %s\n", library_lines, r_code[library_lines]), sep = "")
+        r_files_only$library_on_top[i] <- 1
+      } else if (length(library_lines) > 0) {
+        cat("Libraries are loaded in a single block, well done!\n")
+        r_files_only$library_on_top[i] <- 0
+      } else {
+        # Warning if no libraries are loaded
+        cat("No libraries are specified in this script.\n")
+        r_files_only$library_on_top[i] <- NA
+      }
+      
+      # Count total lines
+      total_lines <- length(rfile)
+
+      # Count comment lines (lines starting with #, possibly preceded by whitespace)
+      comment_lines <- sum(grepl("^\\s*#", rfile))
+      r_files_only$comment_lines[i] <- comment_lines
+
+      # Count non-empty, non-comment lines (i.e., code lines)
+      code_lines <- sum(rfile != "" & !grepl("^\\s*#", rfile))
+      r_files_only$code_lines[i] <- code_lines
+      
+      # Percentage of comment lines
+      percent_comments <- (comment_lines / total_lines) * 100
+      r_files_only$percentage_comment[i] <- percent_comments
+}
+
+# saveRDS(r_files_only, file = "r_file_info_psych_science.rds")
+
+
+
+
+
+
+
+
+
+# BELOW OLD
+files_only$name
+# Subset of all R Files
+# Get all the OSF ID's
+# DOWNLOAD THEM ALL OR READ THEM IN DIRECTLY?
+
+
+osf_ids_vector <- all_osf_links_df$osf_project_id           # extract the column
+osf_ids_vector <- osf_ids_vector[!is.na(osf_ids_vector)]    # remove NA values
+osf_ids_vector <- unique(osf_ids_vector)                    # remove duplicates
+
+for (i in 1:nrow(osf_ids_vector)) {
+  link <- as.character(osf_ids_vector[i])  # Get the osf_id
+  
+  print(link)
+  print(i)
+  osf_id <- as_id("3kj6u")  # Ensure as_id function is defined
+  osf_project <- osf_retrieve_node(osf_id)
+  osf_files <- osf_ls_files(osf_project)
+  
+  # Save only .R files
+  osf_files <- osf_files[grepl("\\.r$", osf_files$name, ignore.case = TRUE), ]
+  
+  # Check if the dataframe is empty
+  if (nrow(osf_files) == 0) {
+    cat("There are no R files\n")
+  } else {
+    # Iterate over each row in osf_files
+    for (i in seq_len(nrow(osf_files))) {
+      # Read in the R code
+      download_link <- osf_files[[3]][[i]][["links"]][["download"]]
+      print(download_link)
+      
+      # Use tryCatch to handle warnings when reading the file
+      r_code <- tryCatch(
+        readLines(url(download_link)),
+        warning = function(w) {
+          cat(sprintf("Skipping file due to warning: %s\n", conditionMessage(w)))
+          return(NULL)
+        },
+        error = function(e) {
+          cat(sprintf("Skipping file due to error: %s\n", conditionMessage(e)))
+          return(NULL)
+        }
+      )
+      
+      # Skip further processing if the code is NULL
+      if (is.null(r_code)) next
+
+      # Search for absolute file paths (both Windows and Unix)
+      absolute_paths <- grep('(["\'])([A-Za-z]:\\\\|/|~)', r_code, value = TRUE)
+
+      # Print the result
+      if (length(absolute_paths) > 0) {
+        cat("We found the following absolute paths:\n")
+        cat(absolute_paths, sep = "\n")
+      } else {
+        cat("There are no absolute paths, well done!\n")
+      }
+
+      # Find lines where libraries are loaded
+      library_lines <- grep("\\b(library|require)\\(", r_code)
+
+      # Check if libraries are loaded at multiple places
+      if (length(library_lines) > 1 && !all(diff(library_lines) == 1)) {
+        cat("Libraries are loaded in multiple places in the script:\n")
+        cat(sprintf("Line %d: %s\n", library_lines, r_code[library_lines]), sep = "")
+      } else if (length(library_lines) > 0) {
+        cat("Libraries are loaded in a single block, well done!\n")
+      } else {
+        # Warning if no libraries are loaded
+        cat("Warning: No libraries are specified in this script.\n")
+      }
+    }
+  }
+}
+
+```
 
 ### Checking Preregistrations
 
-It is increasingly common for researchers to preregister their studies [@spitzer2023registered; @imai2025pre]. As preregistration is a new practice, it is not surprising that researchers do not perform preregistrations following the state-of-the-art. One challenge is that researchers deviate from their preregistration when reporting results from preregistered studies, but do not transparently report these deviations [@van2024potential]. Reviewers could check whether researchers adhere to the preregistration, but this requires some effort. Automation can provide a partial solution by making information from the preregistration more easily available.
+It is increasingly common for researchers to preregister their studies [@spitzer2023registered; @imai2025pre]. As preregistration is a new practice, best practices are continuously being developed. Researchers who preregister should ideally continuously stay up-to-date 
+
+and it can be difficult for researchers to stay up to date and write a state-of-the-art preregistration. it is not surprising that researchers do not perform preregistrations following the state-of-the-art. One challenge is that researchers deviate from their preregistration when reporting results from preregistered studies, but do not transparently report these deviations [@van2024potential]. Reviewers could check whether researchers adhere to the preregistration, but this requires some effort. Automation can provide a partial solution by making information from the preregistration more easily available.
 
 Here we demonstrate how Papercheck can automatically retrieve the content of a preregistration. The preregistration can then be presented alongside the relevant information in the manuscript. This makes it easier for peer reviewers to compare the information.
 
