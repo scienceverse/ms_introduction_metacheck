@@ -1,0 +1,150 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+#all packages used
+library(ggplot2)
+library(haven)
+library(dplyr)
+library(ggsignif)
+library(patchwork)
+```
+
+```{r}
+#import data
+dt <- read_dta("math.dta")
+#summary(dt)
+
+#original data the treat and female variable are numerical, 
+#change them to factor in order for preparation for plot barplots.
+dt<- mutate(dt, ftreat = factor(treat), ffemale = factor(female))
+dt$Sex <- ifelse(dt$female==1, "Female", "Male")
+```
+
+```{r}
+# create a function for summary analysis
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE)/sqrt(length(x[[col]])))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+ return(data_sum)
+}
+```
+
+```{r}
+#summary data to get sd
+df_sum_math <- data_summary(dt, varname="correct_number_math", 
+                    groupnames=c("Sex", "treat"))
+# Convert dose to a factor variable
+df_sum_math$treat=as.factor(df_sum_math$treat)
+head(df_sum_math)
+```
+
+```{r}
+#significance test
+#between treatment and control
+res.aov <- aov(correct_number_math ~ female * treat, data = dt)
+summary(res.aov)
+#within treatment group
+dttreat <- filter(dt, treat == 1)
+oneway.test(correct_number_math ~ Sex, data = dttreat, var.equal = FALSE)
+
+dtut <- filter(dt, treat == 0)
+oneway.test(correct_number_math ~ Sex, data = dtut, var.equal = FALSE)
+```
+
+
+```{r}
+# comparison between treatment
+p11<- ggplot(df_sum_math, aes(x=treat, y=correct_number_math, fill=Sex)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) +
+  geom_errorbar(aes(ymin=correct_number_math-1.96*sd, ymax=correct_number_math+1.96*sd), width=.2,
+                 position=position_dodge(.9)) +
+  geom_signif(comparisons = list(c("0", "1")),y_position = 9.5,
+    annotation = c("*")) +
+  theme(legend.title = element_blank())
+
+#comparison within treatment
+p12<- p11 
+  # + geom_signif(
+  #   y_position = c(9.5, 9.5),xmin = c(0.6, 1.6), xmax = c(1.4, 2.4),
+  #   annotation = c("***", "***"), tip_length = 0
+  # )
+print(p12)
+```
+
+```{r}
+# rename labels
+p_math <- p12 +
+  labs(title="Math Questions", x="Treatment", y = "Accuracy")+
+   theme_classic() +
+  theme(legend.title = element_blank())
+ggsave("p_math.jpg")
+```
+
+# Verbal
+```{r}
+df_sum_verbal <- data_summary(dt, varname="correct_number_verbal", 
+                    groupnames=c("Sex", "treat"))
+# Convert dose to a factor variable
+df_sum_verbal$treat=as.factor(df_sum_verbal$treat)
+head(df_sum_verbal)
+```
+
+```{r}
+#significance test
+#between treatment and control
+res.aov <- aov(correct_number_verbal ~ female * treat, data = dt)
+summary(res.aov)
+#within treatment group
+dttreat <- filter(dt, treat == 1)
+oneway.test(correct_number_verbal ~ Sex, data = dttreat, var.equal = FALSE)
+
+dtut <- filter(dt, treat == 0)
+oneway.test(correct_number_verbal ~ Sex, data = dtut, var.equal = FALSE)
+```
+
+```{r}
+# comparison between treatment
+p21<- ggplot(df_sum_verbal, aes(x=treat, y=correct_number_verbal, fill=Sex)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) +
+  geom_errorbar(aes(ymin=correct_number_verbal-1.96*sd, ymax=correct_number_verbal+1.96*sd), width=.2,
+                 position=position_dodge(.9)) +
+  ylim(0,10) +
+  theme(legend.title = element_blank())
+  # geom_signif(comparisons = list(c("0", "1")),y_position = 10.7,
+  #   annotation = c("NS"))
+
+#comparison within treatment
+p22<- p21 
+# +
+#   geom_signif(
+#     y_position = c(9.2, 9.2),xmin = c(0.6, 1.6), xmax = c(1.4, 2.4),
+#     annotation = c("NS", "NS"), tip_length = 0
+#   )
+print(p22)
+```
+
+```{r}
+# rename labels
+p_verbal <- p22 +
+  labs(title="Verbal Questions", x="Treatment", y = "Accuracy")+
+   theme_classic() +
+  theme(legend.title = element_blank())
+ggsave("p_verbal.jpg")
+```
+
+```{r}
+#merge tow barplots to one
+finalp <- p_math + p_verbal
+ggsave("finalp.jpg")
+print(finalp)
+```

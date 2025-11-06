@@ -1,0 +1,155 @@
+---
+title: "LTB Online Study Free Response Analysis"
+author: "Elizabeth Weitz, Anna Mistele, Adamari Alamillo, & Dwight Hua"
+date: "12/7/2020"
+output:
+  html_document: 
+    toc: TRUE
+    toc_float: TRUE
+---
+
+```{r setup, include=FALSE, echo=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(tidyverse)
+library(psych)
+library(kableExtra)
+
+d <- read_csv("OSF_teacher_study_coded_FRs.csv")
+```
+
+```{r}
+d_a <- read_csv("crime_rater1_IRR.csv")
+d_e <- read_csv("crime_rater2_IRR.csv")
+
+d_a <-
+  d_a %>%
+  mutate(crimecurious = as.factor(crimecurious),
+         crimecurious_collapsed = if_else(crimecurious == 1, 1, 2))
+
+d_e <-
+  d_e %>%
+  mutate(crimecurious = as.factor(crimecurious),
+         crimecurious_collapsed = if_else(crimecurious == 1, 1, 2))
+
+# after transformation, double check everything is in the same order.
+table(d_a$participant_id == d_e$participant_id)
+
+# cohens kappa - crime curious, unweighted estimate 
+Rater1 <- d_a$crimecurious
+Rater2 <- d_e$crimecurious
+cohen.kappa(x = cbind(Rater1, Rater2))
+
+# cohens kappa - crime curious collapsed
+Rater1 <- d_a$crimecurious_collapsed
+Rater2 <- d_e$crimecurious_collapsed
+cohen.kappa(x = cbind(Rater1, Rater2))
+```
+
+# Code Definitions
+**Crime Curious**  
+Do they want to know about *the reason the student was in JD*?  
+Excludes **that** they were incarcerated, includes **why** they were incarcerated  
+Responses could get 1, 2, or [3 and/or 4]. If they get both 3 and 4, primary is what comes first (top of mind), after asking about why they were incarcerated.  
+
+1.  **Not curious** They don’t mention it / don’t want to know  
+2.  **Curious w/o Reason** They think about it / want to know but don’t imply why  
+3.  **Curiousity Supports Student** They think about it / want to know and this is **in service of supporting the student** (in their transition).   
+    * If they wonder about incarceration due to behavioral problems/violence and knowing this is to support the student
+4.  **Curiosity Protects Others** They think about it / want to know and this is **in service of protecting themselves/others from the student**  
+    * If they wonder about incarceration due to behavioral problems/violence and don’t imply what knowing this is in service of, then assume it is to protect others  
+
+
+# Basic code outcomes
+```{r include=FALSE}
+# convert as factor
+d <-
+  d %>% 
+  mutate(crimecurious = as_factor(crimecurious))
+```
+
+## Descriptives
+### Crime Curious
+```{r}
+table(d$crimecurious, d$condition) %>% 
+  kbl(caption = "Crime Curious") %>% 
+  kable_material(c("striped", "hover"))
+
+prop.table(table(d[d$condition == "control",]$crimecurious)) %>% 
+  kbl(caption = "Crime Curious Overall Proportion - CONTROL") %>% 
+  kable_material(c("striped", "hover"))
+
+prop.table(table(d[d$condition == "letter",]$crimecurious)) %>% 
+  kbl(caption = "Crime Curious Proportion - LETTER") %>% 
+  kable_material(c("striped", "hover"))
+
+```
+
+### Crime Curious Binary
+```{r echo=FALSE}
+table(d$crimecurious_binary, d$condition) %>% 
+  kbl(caption = "Crime Curious Binary") %>% 
+  kable_material(c("striped", "hover"))
+
+d %>% 
+  summarise(crime_binary = mean(crimecurious_binary, na.rm = TRUE)) %>% 
+  kbl(caption = "Overall Proportion") %>% 
+  kable_material(c("striped", "hover"))
+
+
+d %>% 
+  group_by(condition) %>% 
+  summarise(crimecurious_binary = mean(crimecurious_binary, na.rm = TRUE)) %>% 
+  kbl(caption = "Overall Proportion by Condition") %>% 
+  kable_material(c("striped", "hover"))
+
+```
+
+
+## Visualizations 
+### Crime Curious 
+```{r echo=FALSE}
+
+d %>% 
+  select(crimecurious, condition) %>% 
+  na.omit(crimecurious) %>%
+  ggplot(aes(x = crimecurious)) + 
+  geom_bar(aes(fill = condition), position = position_dodge(width = .9), width = 0.8) +
+  ggtitle(label = "Count of teachers with differing curiosity") +
+  theme_classic() +
+  ylab("") +
+  xlab(" ") +
+  theme(axis.line = element_line(),
+         axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+### Crime Curious Binary 
+```{r echo=FALSE, warning=FALSE}
+
+d %>% 
+  select(crimecurious_binary, condition) %>% 
+  ggplot(mapping = aes(x = condition, y = crimecurious_binary, fill = condition)) + 
+  stat_summary(fun.y = mean, geom = "bar", position = "dodge") + 
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar",
+               position = position_dodge(width = 0.90), width = 0.3) +
+  ggtitle(label = "Proportion of teachers who are curious about the crime of student in re-entry") +
+  theme_classic() +
+  xlab("Condition") +
+  ylab("") +
+  theme(legend.position = "none")
+```
+
+## Analysis
+### Crime Curious
+```{r}
+chisq.test(d$crimecurious, d$condition) 
+```
+
+### Crime Curious Binary
+```{r echo=FALSE}
+summary(glm(crimecurious_binary ~ condition, data = d, family = binomial))  
+
+chisq.test(d$crimecurious_binary, d$condition) 
+```

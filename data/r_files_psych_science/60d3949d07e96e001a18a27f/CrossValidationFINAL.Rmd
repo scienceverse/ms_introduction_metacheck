@@ -1,0 +1,431 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+library(cvms)
+library(groupdata2)
+library(dplyr)
+library(lme4)
+
+library(jtools)
+library(sjPlot) # table functions
+library(sjmisc) # sample data
+```
+
+```{r}
+setwd("~/Google Drive/Volumes/Research Project/Social Evaluative Feedback Pilot/Data Analysis/Testing/")
+fullTDdf <- read.csv("fullTDdf.csv")
+setwd("~/Google Drive/Volumes/Research Project/Social Evaluative Feedback Pilot/Data Analysis/Testing/")
+tbtNeigh <- read.csv("tbtNeigh.csv")
+```
+
+
+```{r}
+attach(fullTDdf)
+fullTDdf$ZvalEstF <- scale(valEstF)
+fullTDdf$ZselfRespT1 <- scale(fullTDdf$selfRespT1)
+fullTDdf$ZselfRespT2 <- scale(fullTDdf$selfRespT2)
+fullTDdf$ZoutDegree <- scale(fullTDdf$outDegree)
+fullTDdf$ZinDegree <- scale(fullTDdf$inDegree)
+fullTDdf$ZpredError <- scale(fullTDdf$predError)
+fullTDdf$subID <- as.factor(fullTDdf$subID)
+```
+
+# Prepare models for cross-validation
+
+```{r}
+models <- c("ZselfRespT2 ~ ZselfRespT1 + (1 | subID)", 
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZvalEstF + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError + ZvalEstF + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError + ZvalEstF + ZoutDegree + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError + ZvalEstF + ZinDegree + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError + ZvalEstF + ZoutDegree + ZinDegree + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZinDegree + ZpredError*ZoutDegree + ZvalEstF + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZoutDegree + ZpredError*ZinDegree + ZvalEstF + (1 | subID)", 
+            "ZselfRespT2 ~ ZselfRespT1 + ZoutDegree + ZpredError + ZvalEstF*ZinDegree + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZinDegree + ZpredError + ZvalEstF*ZoutDegree + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError*ZoutDegree + ZvalEstF*ZinDegree + (1 | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError*ZoutDegree + ZvalEstF*ZinDegree + (ZvalEstF | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError*ZoutDegree + ZvalEstF*ZinDegree + (ZpredError | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError*ZoutDegree + ZvalEstF*ZinDegree + (ZpredError + ZvalEstF | subID)",
+            "ZselfRespT2 ~ ZselfRespT1 + ZpredError*ZoutDegree + ZvalEstF*ZinDegree + (ZpredError + ZvalEstF | subID) + (1 | Trait)")
+```
+
+# Create folds
+
+```{r}
+data <- fold(fullTDdf, k = 10,
+            num_col = 'ZselfRespT2',
+            id_col = 'subID',
+            num_fold_cols = 40,
+            handle_existing_fold_cols = "keep")
+```
+
+# Cross-validate
+
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+gm <- gaussian_metrics(all = TRUE)
+
+CV <- cross_validate(data, models = models,
+                     fold_cols = paste0(".folds_", 1:40),
+                     family = 'gaussian',
+                     REML = FALSE,
+                     metrics = gm,
+                     control=lmerControl(optimizer="bobyqa",
+                                 optCtrl=list(maxfun=2e5)) )
+```
+
+# Create dataframe of targets, predictions, and folds for each formula
+
+```{r}
+CVdf <- data.frame()
+for(i in 1:length(models)){
+  CVdf <- rbind(CVdf, data.frame(num = rep(i, length(CV$Predictions[[i]])), formula = rep(models[i], length(CV$Predictions[[i]])), Target = CV$Predictions[[i]]$Target, Prediction = CV$Predictions[[i]]$Prediction, Fold = CV$Predictions[[i]]$Fold ))
+}
+```
+
+# Cross-validation root mean square error across each model
+
+```{r}
+RMSEdf <- data.frame()
+for(i in 1:length(models)){
+  RMSEdf <- rbind(RMSEdf, data.frame(modelNum=rep(i, length(CV$Results[[i]]$RMSE)), RMSE = CV$Results[[i]]$RMSE) ) 
+}
+RMSEdf$modelNum <- as.factor(RMSEdf$modelNum)
+RMSEdf$minGroup <- 0
+meanPerModel <- data.frame(modelNum=1:length(models), mean=tapply(RMSEdf$RMSE, RMSEdf$modelNum, mean) )
+RMSEdf <- merge(RMSEdf, meanPerModel, by="modelNum")
+minMean <- RMSEdf$modelNum[which.min(RMSEdf$mean)]
+RMSEdf$minGroup[RMSEdf$modelNum==minMean] <- 1
+RMSEdf$minGroup <- as.factor(RMSEdf$minGroup)
+
+RMSE_re <- ggplot(RMSEdf, aes(x=modelNum, y=RMSE, fill=minGroup)) + 
+  geom_boxplot() + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Model") + ylab("RMSE") + theme(legend.position = "none")
+
+RMSE_re
+
+jpeg("CV_RMSE_reEvalbox.jpg", units="in", width=6, height=4, res=300)
+RMSE_re
+dev.off()
+```
+
+```{r}
+MAEdf <- data.frame()
+for(i in 1:length(models)){
+  MAEdf <- rbind(MAEdf, data.frame(modelNum=rep(i, length(CV$Results[[i]]$MAE)), MAE = CV$Results[[i]]$MAE) ) 
+}
+MAEdf$modelNum <- as.factor(MAEdf$modelNum)
+MAEdf$minGroup <- 0
+meanPerModel <- data.frame(modelNum=1:length(models), mean=tapply(MAEdf$MAE, MAEdf$modelNum, mean) )
+MAEdf <- merge(MAEdf, meanPerModel, by="modelNum")
+minMean <- MAEdf$modelNum[which.min(MAEdf$mean)]
+MAEdf$minGroup[MAEdf$modelNum==minMean] <- 1
+MAEdf$minGroup <- as.factor(MAEdf$minGroup)
+
+MAE_re <- ggplot(MAEdf, aes(x=modelNum, y=MAE, fill=minGroup)) + 
+  geom_boxplot() + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Model") + ylab("MAE") + theme(legend.position = "none")
+
+MAE_re
+
+jpeg("CV_MAE_reEvalbox.jpg", units="in", width=6, height=4, res=300)
+MAE_re
+dev.off()
+```
+
+
+```{r}
+r2mdf <- data.frame()
+for(i in 1:length(models)){
+  r2mdf <- rbind(r2mdf, data.frame(modelNum=rep(i, length(CV$Results[[i]]$r2m)), r2m = CV$Results[[i]]$r2m) ) 
+}
+r2mdf$modelNum <- as.factor(r2mdf$modelNum)
+r2mdf$maxGroup <- 0
+meanPerModel <- data.frame(modelNum=1:length(models), mean=tapply(r2mdf$r2m, r2mdf$modelNum, mean) )
+r2mdf <- merge(r2mdf, meanPerModel, by="modelNum")
+maxMean <- r2mdf$modelNum[which.max(r2mdf$mean)]
+r2mdf$maxGroup[r2mdf$modelNum==maxMean] <- 1
+r2mdf$maxGroup <- as.factor(r2mdf$maxGroup)
+
+r2m_re <- ggplot(r2mdf, aes(x=modelNum, y=r2m, fill=maxGroup)) + 
+  geom_boxplot() + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Model") + ylab(expression (bold("Marginal R"^2))) + theme(legend.position = "none")
+
+r2m_re
+
+jpeg("CV_r2m_reEvalbox.jpg", units="in", width=6, height=4, res=300)
+r2m_re
+dev.off()
+```
+
+
+```{r}
+r2cdf <- data.frame()
+for(i in 1:length(models)){
+  r2cdf <- rbind(r2cdf, data.frame(modelNum=rep(i, length(CV$Results[[i]]$r2c)), r2c = CV$Results[[i]]$r2c) ) 
+}
+r2cdf$modelNum <- as.factor(r2cdf$modelNum)
+r2cdf$maxGroup <- 0
+meanPerModel <- data.frame(modelNum=1:length(models), mean=tapply(r2cdf$r2c, r2cdf$modelNum, mean) )
+r2cdf <- merge(r2cdf, meanPerModel, by="modelNum")
+maxMean <- r2cdf$modelNum[which.max(r2cdf$mean)]
+r2cdf$maxGroup[r2cdf$modelNum==maxMean] <- 1
+r2cdf$maxGroup <- as.factor(r2cdf$maxGroup)
+
+r2c_re <- ggplot(r2cdf, aes(x=modelNum, y=r2c, fill=maxGroup)) + 
+  geom_boxplot() + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Model") + ylab(expression (bold("Conditional R"^2))) + theme(legend.position = "none")
+
+r2c_re
+
+jpeg("CV_r2c_reEvalbox.jpg", units="in", width=6, height=4, res=300)
+# insert ggplot code
+r2c_re
+dev.off()
+```
+
+```{r}
+ggpubr::ggarrange(MAE_re, RMSE_re, r2c_re, r2m_re,
+          ncol = 2, nrow = 2, labels = c("A","B","C","D"))
+
+ggsave("crossValPanel_RE.jpg", units = "in", dpi = 600, width = 6, height = 4)
+```
+
+
+# Predictions compared to targets
+
+```{r}
+CVdf$target <- scale(CVdf$Target)
+CVdf$prediction <- scale(CVdf$Prediction)
+for(i in 1:length(models)){
+  modelDf <- subset(CVdf, num == i)
+  curModel <- lm(target~ prediction , data = modelDf)
+  curModel <- assign(paste0("m",i), curModel )
+}
+
+
+tab_model(m1, m2, m3, m4, show.stat
+= TRUE, show.p = FALSE, show.icc = FALSE, show.re.var = FALSE, show.intercept = FALSE, show.aic = FALSE, show.obs = FALSE, show.ngroups = FALSE, show.ci = FALSE, pred.labels = c("Prediction"), dv.labels = c("Model 1", "Model 2","Model 3", "Model 4"), string.est = "B", string.stat = "t", file = "CVprediction_reEval_table1.html")
+tab_model(m5, m6, m7, m8, show.stat = TRUE, show.p = FALSE, show.icc = FALSE, show.re.var = FALSE, show.intercept = FALSE, show.aic = FALSE, show.obs = FALSE, show.ngroups = FALSE, show.ci = FALSE, pred.labels = c("Prediction"), dv.labels = c("Model 5", "Model 6", "Model 7", "Model 8"), string.est = "B", string.stat = "t", file = "CVprediction_reEval_table2.html")
+tab_model(m9, m10, m11, m12, show.stat = TRUE, show.p = FALSE, show.icc = FALSE, show.re.var = FALSE, show.intercept = FALSE, show.aic = FALSE, show.obs = FALSE, show.ngroups = FALSE, show.ci = FALSE, pred.labels = c("Prediction"), dv.labels = c("Model 9", "Model 10","Model 11", "Model 12"), string.est = "B", string.stat = "t", file = "CVprediction_reEval_table3.html" )
+tab_model(m13, m14, m15, m16, show.stat = TRUE, show.p = FALSE, show.icc = FALSE, show.re.var = FALSE, show.intercept = FALSE, show.aic = FALSE, show.obs = FALSE, show.ngroups = FALSE, show.ci = FALSE, pred.labels = c("Prediction"), dv.labels = c("Model 13", "Model 14", "Model 15", "Model 16"), string.est = "B", string.stat = "t", file = "CVprediction_reEval_table4.html" )
+```
+
+```{r}
+tab_model(m1, m2, m3, m4, m5, m6, m7, m8, show.stat
+= TRUE, show.p = FALSE, show.icc = FALSE, show.re.var = FALSE, show.intercept = FALSE, show.aic = FALSE, show.obs = FALSE, show.ngroups = FALSE, show.ci = FALSE, pred.labels = c("Prediction"), dv.labels = c("Model 1", "Model 2","Model 3", "Model 4", "Model 5", "Model 6", "Model 7", "Model 8"), string.est = "B", string.stat = "t", file = "CVprediction_reEval_table1.doc")
+tab_model(m9, m10, m11, m12, m13, m14, m15, m16, show.stat = TRUE, show.p = FALSE, show.icc = FALSE, show.re.var = FALSE, show.intercept = FALSE, show.aic = FALSE, show.obs = FALSE, show.ngroups = FALSE, show.ci = FALSE, pred.labels = c("Prediction"), dv.labels = c("Model 9", "Model 10","Model 11", "Model 12", "Model 13", "Model 14", "Model 15", "Model 16"), string.est = "B", string.stat = "t", file = "CVprediction_reEval_table2.doc" )
+```
+
+
+# Trial-by-trial DF
+
+```{r}
+attach(tbtNeigh)
+tbtNeigh$ZvalEst <- scale(valEst)
+tbtNeigh$ZvalEst <- scale(valEst)
+tbtNeigh$ZselfRespT1 <- scale(tbtNeigh$selfRespT1)
+tbtNeigh$ZT1averageAllPE <- scale(tbtNeigh$T1averageAllPE)
+tbtNeigh$subID <- as.factor(tbtNeigh$subID)
+```
+
+# Prepare models for cross-validation
+
+```{r}
+models2 <- c("ZselfRespT1 ~ 1 + (1 | subID)",
+            "ZselfRespT1 ~ ZvalEst + (1 | subID)",
+            "ZselfRespT1 ~ ZvalEst + (ZvalEst | subID)",
+            "ZselfRespT1 ~ ZvalEst + (ZvalEst | subID) + (1 | Trait)",
+            "ZselfRespT1 ~ ZvalEst + ZT1averageAllPE + (ZvalEst | subID) + (1 | Trait)",
+            "ZselfRespT1 ~ ZvalEst + ZT1averageAllPE + (ZvalEst + ZT1averageAllPE | subID) + (1 | Trait)"
+            )
+```
+
+# Create folds
+
+```{r}
+data2 <- fold(tbtNeigh, k = 10,
+            num_col = 'ZselfRespT1',
+            id_col = 'subID',
+            num_fold_cols = 40,
+            handle_existing_fold_cols = "keep")
+```
+
+# Cross-validate
+
+
+```{r}
+gm <- gaussian_metrics(all = TRUE)
+
+CV2 <- cross_validate(data2, models = models2,
+                     fold_cols = paste0(".folds_", 1:40),
+                     family = 'gaussian',
+                     REML = FALSE,
+                     metrics = gm,
+                     control=lmerControl(optimizer="bobyqa",
+                                 optCtrl=list(maxfun=2e5)) )
+```
+
+```{r}
+data2 %>% head(10) %>% as.data.frame()
+```
+
+# Create dataframe of targets, predictions, and folds for each formula
+
+```{r}
+CVdf2 <- data.frame()
+for(i in 1:length(models2)){
+  CVdf2 <- rbind(CVdf2, data.frame(num = rep(i, length(CV2$Predictions[[i]])), formula = rep(models2[i], length(CV2$Predictions[[i]])), Target = CV2$Predictions[[i]]$Target, Prediction = CV2$Predictions[[i]]$Prediction, Fold = CV2$Predictions[[i]]$Fold ))
+}
+```
+
+# Cross-validation root mean square error across each model
+
+```{r}
+RMSEdf <- data.frame()
+for(i in 1:length(models2)){
+  RMSEdf <- rbind(RMSEdf, data.frame(modelNum=rep(i, length(CV2$Results[[i]]$RMSE)), RMSE = CV2$Results[[i]]$RMSE) ) 
+}
+RMSEdf$modelNum <- as.factor(RMSEdf$modelNum)
+RMSEdf$minGroup <- 0
+meanPerModel <- data.frame(modelNum=1:length(models2), mean=tapply(RMSEdf$RMSE, RMSEdf$modelNum, mean) )
+RMSEdf <- merge(RMSEdf, meanPerModel, by="modelNum")
+minMean <- RMSEdf$modelNum[which.min(RMSEdf$mean)]
+RMSEdf$minGroup[RMSEdf$modelNum==minMean] <- 1
+RMSEdf$minGroup <- as.factor(RMSEdf$minGroup)
+
+RMSE_tbt <- ggplot(RMSEdf, aes(x=modelNum, y=RMSE, fill=minGroup)) + 
+  geom_boxplot() + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Model") + ylab("RMSE") + theme(legend.position = "none")
+
+RMSE_tbt
+
+jpeg("CV_RMSE_tbtbox.jpg", units="in", width=6, height=4, res=300)
+# insert ggplot code
+RMSE_tbt
+dev.off()
+```
+
+```{r}
+MAEdf <- data.frame()
+for(i in 1:length(models2)){
+  MAEdf <- rbind(MAEdf, data.frame(modelNum=rep(i, length(CV2$Results[[i]]$MAE)), MAE = CV2$Results[[i]]$MAE) ) 
+}
+MAEdf$modelNum <- as.factor(MAEdf$modelNum)
+MAEdf$minGroup <- 0
+meanPerModel <- data.frame(modelNum=1:length(models2), mean=tapply(MAEdf$MAE, MAEdf$modelNum, mean) )
+MAEdf <- merge(MAEdf, meanPerModel, by="modelNum")
+minMean <- MAEdf$modelNum[which.min(MAEdf$mean)]
+MAEdf$minGroup[MAEdf$modelNum==minMean] <- 1
+MAEdf$minGroup <- as.factor(MAEdf$minGroup)
+
+MAE_tbt <- ggplot(MAEdf, aes(x=modelNum, y=MAE, fill=minGroup)) + 
+  geom_boxplot() + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Model") + ylab("MAE") + theme(legend.position = "none")
+
+MAE_tbt
+
+jpeg("CV_MAE_tbtbox.jpg", units="in", width=6, height=4, res=300)
+# insert ggplot code
+MAE_tbt
+dev.off()
+```
+
+
+```{r}
+r2mdf <- data.frame()
+for(i in 1:length(models2)){
+  r2mdf <- rbind(r2mdf, data.frame(modelNum=rep(i, length(CV2$Results[[i]]$r2m)), r2m = CV2$Results[[i]]$r2m) ) 
+}
+r2mdf$modelNum <- as.factor(r2mdf$modelNum)
+r2mdf$maxGroup <- 0
+meanPerModel <- data.frame(modelNum=1:length(models2), mean=tapply(r2mdf$r2m, r2mdf$modelNum, mean) )
+r2mdf <- merge(r2mdf, meanPerModel, by="modelNum")
+maxMean <- r2mdf$modelNum[which.max(r2mdf$mean)]
+r2mdf$maxGroup[r2mdf$modelNum==maxMean] <- 1
+r2mdf$maxGroup <- as.factor(r2mdf$maxGroup)
+
+r2m_tbt <- ggplot(r2mdf, aes(x=modelNum, y=r2m, fill=maxGroup)) + 
+  geom_boxplot() + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Model") + ylab(expression (bold("Marginal R"^2))) + theme(legend.position = "none")
+
+r2m_tbt
+
+jpeg("CV_r2m_tbtbox.jpg", units="in", width=6, height=4, res=300)
+# insert ggplot code
+r2m_tbt
+dev.off()
+```
+
+```{r}
+r2cdf <- data.frame()
+for(i in 1:length(models2)){
+  r2cdf <- rbind(r2cdf, data.frame(modelNum=rep(i, length(CV2$Results[[i]]$r2c)), r2c = CV2$Results[[i]]$r2c) ) 
+}
+r2cdf$modelNum <- as.factor(r2cdf$modelNum)
+r2cdf$maxGroup <- 0
+meanPerModel <- data.frame(modelNum=1:length(models2), mean=tapply(r2cdf$r2c, r2cdf$modelNum, mean) )
+r2cdf <- merge(r2cdf, meanPerModel, by="modelNum")
+maxMean <- r2cdf$modelNum[which.max(r2cdf$mean)]
+r2cdf$maxGroup[r2cdf$modelNum==maxMean] <- 1
+r2cdf$maxGroup <- as.factor(r2cdf$maxGroup)
+
+r2c_tbt <- ggplot(r2cdf, aes(x=modelNum, y=r2c, fill=maxGroup)) + 
+  geom_boxplot() + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Model") + ylab(expression (bold("Conditional R"^2))) + theme(legend.position = "none")
+
+r2c_tbt
+
+jpeg("CV_r2c_tbtbox.jpg", units="in", width=6, height=4, res=300)
+# insert ggplot code
+r2c_tbt
+dev.off()
+```
+
+```{r}
+ggpubr::ggarrange(MAE_tbt, RMSE_tbt, r2c_tbt, r2m_tbt,
+          ncol = 2, nrow = 2, labels = c("A","B","C","D"))
+
+ggsave("crossValPanel_TBT.jpg", units = "in", dpi = 600, width = 6, height = 4)
+```
+
+# Predictions compared to targets
+
+```{r}
+CVdf2$target <- scale(CVdf2$Target)
+CVdf2$prediction <- scale(CVdf2$Prediction)
+for(i in 1:length(models2)){
+  modelDf <- subset(CVdf2, num == i)
+  curModel <- lm(target~ prediction, data = modelDf)
+  curModel <- assign(paste0("m2.",i), curModel )
+}
+
+tab_model(m2.1, m2.2, m2.3, m2.4, m2.5, m2.6, show.stat
+= TRUE, show.p = FALSE, show.icc = FALSE, show.re.var = FALSE, show.intercept = FALSE, show.aic = TRUE, show.obs = FALSE, show.ngroups = FALSE, show.ci = FALSE, pred.labels = c("Prediction"), dv.labels = c("Model 1", "Model 2","Model 3","Model 4", "Model 5", "Model 6"), string.est = "B", string.stat = "t", file = "CVprediction_tbt_table1.doc")
+```
+
+
+

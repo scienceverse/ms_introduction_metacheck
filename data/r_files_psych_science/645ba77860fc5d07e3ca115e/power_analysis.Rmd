@@ -1,0 +1,79 @@
+---
+title: "Power analysis"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(simr)
+set.seed(12345)
+```
+
+The goal of this file is to conduct a power analysis to determine the smallest effect of repetition that can be determined with 80% power and 607 participants.
+
+## Load data
+
+```{r}
+df <- subset(read.csv("repetition_texting_tm_data.csv", fileEncoding="UTF-8-BOM"), rating_type == "Eth")
+```
+
+
+## Power analysis
+
+Defining original model with 607 subjects
+
+```{r}
+df_607 <- subset(df, subjId %in% 1:607) # select first 607 participants
+
+
+m1 <- lmer(rating ~ exposure + (1|subjId) + (1|claim), data = df_607)
+summary(m1)
+```
+
+Simulation to determine power as a function of effect size
+
+Note: long output, can skip to "Simulation output" section for results
+
+```{r message=FALSE, warning=FALSE, cache = TRUE}
+#simulation parameters
+range <- seq(-1,-1.5,-.1)
+nsim <- 1000
+
+#intializing variables
+power <- c()
+
+for (effectsize in range) {
+  fixef(m1)["exposure"] <- effectsize
+  
+  psim <- powerSim(m1, test = fixed("exposure", "t"), nsim = nsim, alpha = .05)
+  
+  power <- c(power,psim$x/nsim)
+}
+```
+
+## Simulation output
+
+```{r}
+plot(range, power*100, xlab = "Effect size (b)", ylab = "Power (%)", ylim = c(0,100))
+abline(h= 80)
+
+
+data.frame(range,power*100)
+```
+
+
+```{r include=FALSE}
+save.image(file='posthoc_power.RData')
+```

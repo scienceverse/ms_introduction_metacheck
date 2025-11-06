@@ -1,0 +1,766 @@
+---
+title: "Miller et al. (2023) Experiment 2 - attributes"
+author: "Amy Dawel, Ben A. Steward, & Elizabeth J. Miller"
+date: '2023-03-17'
+output: 
+  html_document: 
+    toc: TRUE #add a table of contents
+    toc_depth: 2 #number of heading levels in toc (default = 3)
+    toc_float: TRUE #float toc to the left of document content
+    number_sections: TRUE
+    fig_caption: TRUE
+    theme: cerulean #markdown theme from Bootswatch theme library
+    highlight: tango #specifieds syntax highlighting style
+    code_folding: "hide" #includes code but hides it
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+R code for: Miller, E. J., Steward, B. A., Witkower, Z., Sutherland, C. A. M., Krumhuber, E. G., & Dawel, A. (2023). AI hyper-realism: Why AI faces are perceived as More real than human ones. *Psychological Science.*
+Contact details: amy.dawel@anu.edu.au
+
+The analyses herein are for Miller et al. (2023) Experiment 2 - attributes.
+
+# Load R packages
+
+Here, we load the required R packages.
+
+```{r, setup, message = FALSE, warning=FALSE}
+
+#clear workspace
+rm(list = ls())
+
+#list packages 
+lib <- (c("rmarkdown", #RStudio markdown
+          "knitr", #generating RStudio output
+          "readr", #read in data
+          "kableExtra", #extra tools for styling kable tables in R markdown knit
+          "tidyverse", #also loads ggplot2, dplyr, tidyr, readr, purrr, tibble
+          "Hmisc", #miscellaneous          
+          "psych", #core psychology functions e.g. ANOVA
+          "psycho", #for signal detection analyses
+          "apaTables", #for APA table output
+          "lme4", #linear modelling
+          "sjPlot", #for tab_model
+          "rstatix", #for checking outliers
+          "ggpubr", #for publishable plots
+          "ggpmisc", #stat_fit_glance function
+          "rlist" #for saving lists
+          ))
+
+#load packages
+for (i in 1:length(lib)){
+  pkg <- lib[i]
+library(pkg, character.only = TRUE)
+}
+
+#turn off scientific notation
+options(scipen = 999)
+
+#set date for file saving
+dt <- Sys.Date()
+
+```
+
+# Load & organise datasets
+
+Here, we load the datasets for male and female participants separately.
+
+Variable labels are generally formatted as follows:
+
+-   Letter 1 = real or synthetic (r or s)
+
+-   Letter 2 = black or east asian or south asian or white (b or e or s or w)
+
+-   Letter 3 = male or female (m or f) Number = stimulus number from 1-50
+
+-   Suffix codes are:
+.attr = How attractive is this face?
+.ligh = How congruent are the lighting and shadows across this picture?
+.expr = How emotionally expressive is this face?
+.fami = How familiar is this face?
+.qual = How good is the quality of this picture?
+.happ = How happy is this person genuinely feeling?
+.memo = How memorable is this face?
+.dist = How much would this face stand out in a crowd?
+.agyr = How old is this person?
+.prop = How proportional is this face?
+.smoo = How smooth is this person's skin?
+.symm = How symmetrical is this face?
+.eycn = Is this person making eye contact with you?
+.aliv = When you look at this person's eyes, how alive do they seem?
+
+```{r, load-data}
+
+#import raw data separately from male and female participants
+df.malePs <- read.csv("../data/LM_Expt2attributes_malePs.csv", na.strings = "")
+df.malePs <- as.data.frame(df.malePs)
+df.malePs$ProlificGender <- "Male"
+df.femalePs <- read.csv("../data/LM_Expt2attributes_femalePs.csv", na.strings = "")
+df.femalePs <- as.data.frame(df.femalePs)
+df.femalePs$ProlificGender <- "Female"
+
+```
+
+Here, we bind the male and female participant data together and set-up the data for further analyses.
+
+```{r, data-wrangling}
+
+#bind female and male data together 
+df.allPs <- rbind(df.femalePs, df.malePs)
+
+#remove cases that never started study
+df.allPs <- filter(df.allPs, !is.na(prolificId))
+
+#remove superfluous variables
+df.allPs <- select(df.allPs, -contains(c("firstclick", "lastclick", "clickcount", "prac1", "prac2", "submit")))
+
+#convert to tibble
+df.allPs <- as_tibble(df.allPs)
+df.allPs$AIaware <- "no"
+
+#cleanup: remove dfs that are no longer needed
+rm(df.malePs, df.femalePs)
+
+```
+
+# Data corrections
+
+Here, we correct responses where participants messaged via Prolific that they had made a mistake or experienced problems with the experiment. The chunk provides each participant message in full and if/how their data was managed.
+
+```{r, data-corrections}
+
+#ResponseId: R_1dGgmM8JDFxmB7H
+#Prolific message = "Hello, on the last question i selected the wrong option, I meant to select rating how smooth the face appeared. Sorry about this."
+#attentionCheck recoded as "How smooth is this person's skin?"
+df.allPs$attentionCheck[df.allPs$ResponseId == "R_1dGgmM8JDFxmB7H"] <- "How smooth is this person's skin?"
+
+#ResponseId: R_31mXd6viFCCno2L
+#Prolific message = "I accidently moved the slider to the wrong number on one of the attention checks, sorry!"
+#f.catch5.rating recoded as 36
+df.allPs$f.catch5.rating[df.allPs$ResponseId == "R_31mXd6viFCCno2L"] <- 36
+
+#ResponseId: R_3KOsNTK7MqggsTR
+#Prolific message = "Hello. I accidentally hit "next" on the first attention check right after realizing the writing on the photo. I was paying attention and caught all the others but was focusing on their eyes too intently on the first one. Sorry"
+#m.catch1.rating recoded as 72
+df.allPs$m.catch1.rating[df.allPs$ResponseId == "R_3KOsNTK7MqggsTR"] <- 72
+
+#ResponseId: R_1FnqyMTZymkhIxG
+#Prolific message = "Hi researcher, i missed one of the attention checks, it was the first one and i wasn't expecting it to be within the picture presented. Although i saw the number that i was asked to select which was 95 but i have already clicked on the forward key. Please kindly pardon me thank."
+#f.catch1.rating recoded as 95
+df.allPs$m.catch1.rating[df.allPs$ResponseId == "R_1FnqyMTZymkhIxG"] <- 57
+
+#ResponseId: R_10DuXH5CqbtgnIq
+#Prolific message = "For the final question regarding having a major neurological condition, I selected no because, while I do have cerebral palsy (later in life it's possibly a spinal cord injury) since birth, I wasn't sure if that classified for that question or not."
+#incNoCond recoded as 95
+df.allPs$incNoCond[df.allPs$ResponseId == "R_10DuXH5CqbtgnIq"] <- "I have a major neurological condition (e.g., brain tumor, stroke, Parkinson's disease, major brain injury requiring hospitalisation"
+
+#ResponseId         #anythingUnusual
+#R_2WvuNSwC13vCnoB	AI Generated faces
+#R_2whkbnbtpjNsq2y	Faces looked like they were generated by AI/machine learning
+#R_Xp7qjOMqbTBNxyp	I got the impression that some of the faces were A.I. generated.
+#R_1NaGJJ4jqmqVRKr	I thought some might be AI generated but not sure
+#R_2VkbCuRPrpOMGfF	I thought some of the faces were almost perfect like they had been enhanced by AI
+#R_22LgPEpJa6WLIBS	I'd bet they were AI or something
+#R_21pl4NniBAmKlRn	no (but maybe ai generated?)
+#R_24AEJfNP7UpK8dy	Not sure, but some might have had the appearance of AI blending of faces
+#R_294gQIItiTrQYz4	Some looked like they could have been made with AI. All of them could have for all I know, or they could be all real, but maybe a quarter had an uncanny look.
+#R_2bQmLv5zAEqoIW7	Some looked like they may have been AI generated.
+#R_3I4K7oFhXrI7AY1	Some of the faces looked like they were generated by AI
+#R_3luKX0zd1xbDsiC	Some of the faces seemed the same, and other faces seemed like they were aged or reverse-aged off an original template. Maybe some AI generation? (A few of the features like ears and eyes were off at times.)
+#R_1pu1kf3zp1byxMG	Some of them had abnormally large teeth or jaws making me wonder if the images were AI generated.
+#R_unbBmIvTJfstDhf	Some of them look like artificially generated faces. The ones with the blurry background and strange hair
+#R_3KIy97UNfzq7sHG	Some of them looked like they my be AI made
+#R_1IXn3wUV6c0sYFF	Some of them were AI-generated
+#R_2ZV95DsFvlSIOYX	some of these looked like they were from "this person does not exist" 
+#R_9pNQ0NsgXreE4CZ	They looked AI generated.
+#R_277faiagAux1TGJ	they seemed AI generated, a lot of them looked off
+#R_9nLtZmstw1GF9DP	They seemed to not be real people
+#R_1jrdtzdcVwweGct	....these seem to be AI generated images
+#R_2sQKhklYIdTbvY1	A few face were uncanny almost as if they were made from AI.
+#R_1pyxaiW6TQm57Hc	ai
+#R_2a9qQIQZq47dHo6	I feel like some of them were not real and/or photoshopped
+#R_2CkWWmQM549ReQe	I suspect some of the faces were AI created. 
+#R_1jcRD7vfdNZem9o	It seemed like a couple of them had weird looking eyes, something that an AI would generate. 
+#R_sbwo3HcKp9fOZ4l	many of them had somethin slightly off about them and I think some if not all were made by ai
+#R_2E1cHklOaEXJHih	most looked fake or AI-generated, they were all female 
+#R_3O3tWSrhUOPSIX6	Most of them looked like they were created and combined from other faces.
+#R_30jWoXpk70jPIVQ	No, a lot of them were very pretty. Maybe they are AI created faces?
+#R_22DhCLtEB2fCSny	Some almost seemed AI-generated. Some images repeated.
+#R_9GYMEgx5AcLl3G1	Some looked a little unrealistic (as if they were generated by thisfacedoesnotexist.com). Also, all were men and most were white
+#R_tL0cZfLDYAFpES5	Some looked AI generated
+#R_237PHqVhectWdUx	Some looked Ai generated and some looked real
+#R_4Tto0oQFcscrQEp	Some looked AI generated.
+#R_3340r4mX76o7GqB	Some looked like AI/not real people
+#R_23axZjt26O7gMyw	some of the faces looked digitally created to me
+#R_1NesJaGwFlxcqWk	Some of the faces seemed like AI generated. 
+#R_2TFUPdDu0oP2ldS	Some of the faces were similar in a way that made me suspect that they were AI-generated (subtle changes in the same face)
+#R_2qmlRNM9gm1pbES	Some of them didn't seem real
+#R_3PmE1Wes9UEV66H	some of them looked like they were AI generated or very edited
+#R_1C8aWO0Z3C383gh	Some of them looked like they were created by AI.
+#R_2VlGfKWyOuu09xL	Some of them seemed a little uncanny valley/not quite human to me.
+#R_eVRLoyhI58OFahz	Some of them seemed almost fake. Like the hair was almost always messed up and some of the facial proportions were kind of off.
+#R_zdTYWLsEqnag9Ud	Some of them seemed artificially generated.
+#R_2zBZvOjUQvmU8nR	Some of them seemed like they were generated by computers instead of being real people.
+#R_2ByTbc7pYAyoVBX	Some of them seemed unnaturally smooth or plastic-like in their skin texture; it makes me think they might have been AI-generated or manipulated in some way
+#R_2v9ez6mYqIJlXv0	Some were kids, which felt awkward. It's possible they were AI generated.
+#R_3Hk2OYOCh96xq2W	They looked AI generated
+#R_8uGPvfnx12PisRr	They looked AI generated
+#R_1M3zXUslC3c6WPI	They seemed AI generated and not real faces. 
+#R_2S915xPopYLn5UY	they were all men. some of them looked like AI. and some it was really hard to tell if they were directly looking at the camera or just off to the side. 
+#R_3kBskBpSKNn8HUt	A couple looked strange in a fake way most looked normal
+#R_231zYgsO3l0rN9q	I noticed a few looked as if they were fake or made up. As if someone had taken two different faces and made it look like one.
+#R_1hM5NihxpaU0SjI	Some of them seemed like they might have been AI generated.
+#R_UEkET0vtR8XaHYJ	They all looked AI generated.
+#R_2drL3TFx8Feufup	To me they looked like they were AI generated
+#R_1pG1l0UWg2Qod1L	They all looked AI generated.
+#R_3QPL0ydOxZTA145	Some seemed ai generated 
+#R_9BTbC2cRL2AGyxb	A couple of them instantly struck me as AI generated.
+#R_2bQn1GjEH7DexLP	I believe they were generated images
+#R_2XnyUScoGfoY1cw	Some looked very asymmetrical in an AI sort of way
+
+df.allPs$AIaware[df.allPs$ResponseId == "R_2WvuNSwC13vCnoB"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2whkbnbtpjNsq2y"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_Xp7qjOMqbTBNxyp"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1NaGJJ4jqmqVRKr"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2VkbCuRPrpOMGfF"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_22LgPEpJa6WLIBS"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_21pl4NniBAmKlRn"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_24AEJfNP7UpK8dy"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_294gQIItiTrQYz4"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2bQmLv5zAEqoIW7"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_3I4K7oFhXrI7AY1"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_3luKX0zd1xbDsiC"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1pu1kf3zp1byxMG"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_unbBmIvTJfstDhf"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_3KIy97UNfzq7sHG"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1IXn3wUV6c0sYFF"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2ZV95DsFvlSIOYX"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_9pNQ0NsgXreE4CZ"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_277faiagAux1TGJ"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_9nLtZmstw1GF9DP"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1jrdtzdcVwweGct"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2sQKhklYIdTbvY1"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1pyxaiW6TQm57Hc"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2a9qQIQZq47dHo6"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2CkWWmQM549ReQe"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1jcRD7vfdNZem9o"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_sbwo3HcKp9fOZ4l"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2E1cHklOaEXJHih"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_3O3tWSrhUOPSIX6"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_30jWoXpk70jPIVQ"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_22DhCLtEB2fCSny"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_9GYMEgx5AcLl3G1"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_tL0cZfLDYAFpES5"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_237PHqVhectWdUx"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_4Tto0oQFcscrQEp"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_3340r4mX76o7GqB"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_23axZjt26O7gMyw"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1NesJaGwFlxcqWk"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2TFUPdDu0oP2ldS"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2qmlRNM9gm1pbES"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_3PmE1Wes9UEV66H"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1C8aWO0Z3C383gh"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2VlGfKWyOuu09xL"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_eVRLoyhI58OFahz"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_zdTYWLsEqnag9Ud"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2zBZvOjUQvmU8nR"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2ByTbc7pYAyoVBX"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2v9ez6mYqIJlXv0"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_3Hk2OYOCh96xq2W"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_8uGPvfnx12PisRr"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1M3zXUslC3c6WPI"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2S915xPopYLn5UY"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_3kBskBpSKNn8HUt"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_231zYgsO3l0rN9q"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1hM5NihxpaU0SjI"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_UEkET0vtR8XaHYJ"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2drL3TFx8Feufup"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_1pG1l0UWg2Qod1L"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_3QPL0ydOxZTA145"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_9BTbC2cRL2AGyxb"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2bQn1GjEH7DexLP"] <- "yes"
+df.allPs$AIaware[df.allPs$ResponseId == "R_2XnyUScoGfoY1cw"] <- "yes"
+
+```
+
+# Data screening
+
+Here, we compute each participant's missing data for each of the face types.
+
+NB. We did not analyse RTs because the experiment was administered using Qualtrics on participants own hardware and therefore factors other than participant performance may have contributed to RTs (e.g., internet speed).
+
+```{r, missing-data}
+
+#compute missing data
+df.allPs <- df.allPs %>%
+  rowwise() %>%
+  #compute N ratings missing for each face type
+    mutate(rwm.rating.miss = rowSums(is.na(across(starts_with("rwm0") & ends_with(".rating"))))) %>%
+    mutate(swm.rating.miss = rowSums(is.na(across(starts_with("swm0") & ends_with(".rating"))))) %>%
+    mutate(rwf.rating.miss = rowSums(is.na(across(starts_with("rwf0") & ends_with(".rating"))))) %>%
+    mutate(swf.rating.miss = rowSums(is.na(across(starts_with("swf0") & ends_with(".rating"))))) %>%
+    mutate(rw.rating.miss = 50 - rwm.rating.miss - rwf.rating.miss) %>%
+    mutate(sw.rating.miss = 50 - swm.rating.miss - swf.rating.miss)
+
+#code which face sex each participant saw
+df.allPs <- df.allPs %>% 
+  mutate(face.sex.cond = case_when(rwm.rating.miss == 50 ~ "female faces",
+                                   rwf.rating.miss == 50 ~ "male faces"))
+  
+```
+
+Here, we compute accuracy for the catch trials.
+
+```{r, compute-catch}
+
+#recode data for catch trials as correct or incorrect, according to the value participants were asked to rate the item as
+df.allPs <- df.allPs %>% 
+  #male catch trials
+  #bs edit: removed case when as specific requirement so can be used with ifelse(). Also separated to be vertical to be easier to read
+  mutate(m.catch1.rating = ifelse(m.catch1.rating == 72,1,0)) %>% 
+  mutate(m.catch2.rating = ifelse(m.catch2.rating == 43,1,0)) %>%
+  mutate(m.catch3.rating = ifelse(m.catch3.rating == 20,1,0)) %>%
+  mutate(m.catch4.rating = ifelse(m.catch4.rating == 67,1,0)) %>%
+  mutate(m.catch5.rating = ifelse(m.catch5.rating == 88,1,0)) %>%
+  #female catch trials 
+  mutate(f.catch1.rating = ifelse(f.catch1.rating == 57,1,0)) %>%
+  mutate(f.catch2.rating = ifelse(f.catch2.rating == 11,1,0)) %>%
+  mutate(f.catch3.rating = ifelse(f.catch3.rating == 95,1,0)) %>%
+  mutate(f.catch4.rating = ifelse(f.catch4.rating ==  8,1,0)) %>%
+  mutate(f.catch5.rating = ifelse(f.catch5.rating == 36,1,0)) 
+
+#sum correct catch trials
+df.allPs <- df.allPs %>%  
+ rowwise() %>%
+  mutate(catch.acc = rowSums(across(contains("catch")), na.rm = TRUE))
+
+```
+
+# Select included sample
+
+Here, we screen the sample to select participants who meet inclusion/exclusion criteria and also code the reasons for participant exclusions.
+
+```{r, data-included}
+
+#identify cases to exclude
+df.allPs <- df.allPs %>%
+  rowwise() %>%
+      mutate(exclude = case_when(
+        Progress < 97 ~ "exclude", #exclude if <97% complete
+        str_detect(operateSys, "Android") ~ "exclude", #exclude if used phone
+        operateSys == "iPhone" ~ "exclude", #exclude if used phone
+        confirmWhite != "Yes, my ethnicity is White/European/Caucasian" ~ "exclude", #exclude if not White
+        USstate == "I do not reside in the United States" ~ "exclude", #exclude if not resident in US
+        yearsOutsideUS > 2 ~ "exclude", #exclude if >2 years outside US prior to 18
+        incNoCond != "No, none of these statements apply to me" ~ "exclude", #exclude if reported condition likely to affect face processing
+        AIaware == "yes" ~ "exclude", #exclude if response indicated aware faces were AI
+        catch.acc < 4 ~ "exclude", #exclude if more than 1 catch trial incorrect
+        attentionCheck == "How attractive is this face?" & rating.cond != "attractiveness" ~ "exclude", #exclude if failed attention check
+        attentionCheck == "How congruent are the lighting and shadows across this picture?" & rating.cond != "lighting and shadows" ~ "exclude",
+        attentionCheck == "How emotionally expressive is this face?" & rating.cond != "expressivity" ~ "exclude",
+        attentionCheck == "How familiar is this face?" & rating.cond != "familiarity" ~ "exclude",
+        attentionCheck == "How good is the quality of this picture?" & rating.cond != "image quality" ~ "exclude",
+        attentionCheck == "How happy is this person genuinely feeling?" & rating.cond != "happiness" ~ "exclude",
+        attentionCheck == "How memorable is this face?" & rating.cond != "memorability" ~ "exclude",
+        attentionCheck == "How much would this face stand out in a crowd?" & rating.cond != "distinctiveness" ~ "exclude",
+        attentionCheck == "How old is this person?" & rating.cond != "age" ~ "exclude",
+        attentionCheck == "How proportional is this face?" & rating.cond != "proportionality" ~ "exclude",
+        attentionCheck == "How smooth is this person's skin?" & rating.cond != "skin texture" ~ "exclude",
+        attentionCheck == "How symmetrical is this face?" & rating.cond != "symmetry" ~ "exclude",
+        attentionCheck == "Is this person making eye contact with you?" & rating.cond != "eye contact" ~ "exclude",
+        attentionCheck == "When you look at this person's eyes, how alive do they seem?" & rating.cond != "aliveness" ~ "exclude",
+        rw.rating.miss > 5 ~ "exclude", #exclude if >10% trials missing for any condition
+        sw.rating.miss > 5 ~ "exclude"
+        )) 
+
+#code reasons for exclusions
+df.allPs <- df.allPs %>%
+  rowwise() %>%
+    mutate(excReason.incomplete = case_when(
+      Progress < 97 ~ "incomplete")) %>%
+    mutate(excReason.phone = case_when(
+      str_detect(operateSys, "Android") ~ "used phone", operateSys == "iPhone" ~ "used phone")) %>% 
+    mutate(excReason.white = case_when(
+      confirmWhite != "Yes, my ethnicity is White/European/Caucasian" ~ "not White")) %>%
+    mutate(excReason.notUS = case_when(
+      USstate == "I do not reside in the United States" ~ "not living in US")) %>%
+    mutate(excReason.yrsOutUS = case_when(
+      yearsOutsideUS > 2 ~ ">2 yrs outside US pre-18")) %>%
+    mutate(excReason.condFP = case_when(
+      incNoCond != "No, none of these statements apply to me" ~ "condition affecting face processing")) %>%
+    mutate(excReason.AIaware = case_when(
+      AIaware == "yes" ~ "AI aware")) %>%
+    mutate(excReason.catch = case_when(
+      catch.acc < 4 ~ ">1 error on catch trials")) %>%
+    mutate(excReason.attCheck = case_when(
+      attentionCheck == "How attractive is this face?" & rating.cond != "attractiveness" ~ "failed attention check", 
+      attentionCheck == "How congruent are the lighting and shadows across this picture?" & rating.cond != "lighting and shadows" ~ "failed attention check",
+      attentionCheck == "How emotionally expressive is this face?" & rating.cond != "expressivity" ~ "failed attention check",
+      attentionCheck == "How familiar is this face?" & rating.cond != "familiarity" ~ "failed attention check",
+      attentionCheck == "How good is the quality of this picture?" & rating.cond != "image quality" ~ "failed attention check",
+      attentionCheck == "How happy is this person genuinely feeling?" & rating.cond != "happiness" ~ "failed attention check",
+      attentionCheck == "How memorable is this face?" & rating.cond != "memorability" ~ "failed attention check",
+      attentionCheck == "How much would this face stand out in a crowd?" & rating.cond != "distinctiveness" ~ "failed attention check",
+      attentionCheck == "How old is this person?" & rating.cond != "age" ~ "failed attention check",
+      attentionCheck == "How proportional is this face?" & rating.cond != "proportionality" ~ "failed attention check",
+      attentionCheck == "How smooth is this person's skin?" & rating.cond != "skin texture" ~ "failed attention check",
+      attentionCheck == "How symmetrical is this face?" & rating.cond != "symmetry" ~ "failed attention check",
+      attentionCheck == "Is this person making eye contact with you?" & rating.cond != "eye contact" ~ "failed attention check",
+      attentionCheck == "When you look at this person's eyes, how alive do they seem?" & rating.cond != "aliveness" ~ "failed attention check")) %>%
+    mutate(excReason.miss = case_when(
+      rw.rating.miss > 5 ~ ">10% missing in 1 or more conditions",
+      sw.rating.miss > 5 ~ ">10% missing in 1 or more conditions",
+  )) 
+
+#concatenate reasons for exclusions into a single variable
+df.allPs <- df.allPs %>%
+  mutate(excReason = paste(excReason.incomplete, excReason.phone, excReason.white, excReason.notUS, excReason.yrsOutUS, excReason.condFP, excReason.AIaware, excReason.catch, excReason.attCheck, excReason.miss, sep = "; ")) %>%
+  mutate(excReason = gsub("NA; ", "", excReason)) %>%
+  mutate(excReason = gsub("NA", "", excReason))
+
+#generate dataset for included Ps
+df.incPs <- df.allPs %>%
+  filter(is.na(exclude))
+
+#generate dataset for excluded Ps
+df.excPs <- df.allPs %>%
+  filter(exclude == "exclude") 
+
+#save data
+write.csv(df.incPs, paste("../data/LM_Expt2attributes_includedPs.csv"))
+write.csv(df.excPs, paste("../data/LM_Expt2attributes_excludedPs.csv"))
+
+#table showing Ns for male vs female Ps across conditions for included Ps
+x <- table(df.incPs$rating.cond, df.incPs$face.sex.cond, df.incPs$gender)
+sum(x)
+
+#cleanup: remove dfs that are no longer needed
+rm(df.excPs)
+
+```
+
+# Compute scores
+
+Here, we compute scores for each of the face types.
+
+```{r, compute-scores}
+
+#compute mean ratings for each face type
+df.incPs <- df.incPs %>%
+  rowwise() %>%
+    mutate(rwm.rating = rowMeans(across(starts_with("rwm0") & ends_with(".rating")), na.rm = TRUE)) %>% 
+    mutate(swm.rating = rowMeans(across(starts_with("swm0") & ends_with(".rating")), na.rm = TRUE)) %>%
+    mutate(rwf.rating = rowMeans(across(starts_with("rwf0") & ends_with(".rating")), na.rm = TRUE)) %>% 
+    mutate(swf.rating = rowMeans(across(starts_with("swf0") & ends_with(".rating")), na.rm = TRUE)) %>%
+    mutate(rw.rating = rowMeans(across(starts_with("rw") & contains("0") & ends_with(".rating")), na.rm = TRUE)) %>% 
+    mutate(sw.rating = rowMeans(across(starts_with("sw") & contains("0") & ends_with(".rating")), na.rm = TRUE))
+
+#replace NaN's with NA's
+df.incPs[df.incPs == "NaN"] <- NA
+
+#save data
+write.csv(df.incPs, paste("../data/LM_Expt2attributes_includedPs_scored.csv"))
+
+```
+
+# Descriptives
+
+Here, we get key descriptives for our selected sample for each of the fourteen rating conditions.
+
+```{r, describe, warning = FALSE}
+
+#making rating condition factor
+df.incPs$rating.cond <- as.factor(df.incPs$rating.cond)
+
+#sample descriptives
+descript.sampByCond <- df.incPs %>%
+  dplyr::group_by(rating.cond, face.sex.cond) %>%
+  dplyr::summarize(
+    n = n(),
+    nMan = sum(ProlificGender == "Male"), #Prolific rather than self-identified
+    nWom = sum(ProlificGender == "Female"), 
+    age.mean = mean(age),
+    age.min = min(age),
+    age.max = max(age),
+    age.sd = sd(age)
+  )
+write.csv(descript.sampByCond, paste("../output/LM_Expt2attributes_descriptives_sampByCond.csv")) #save key sample descriptives
+
+#stimulus descriptives
+descript.stimByCond <- df.incPs %>%
+  group_by(rating.cond) %>%
+  group_map(~ describe(.x))
+names(descript.stimByCond) <- levels(df.incPs$rating.cond) #names items in list by rating condition
+
+#extract means from list
+means.stimByCond <- lapply(descript.stimByCond,"[", 3) #where column 3 is means
+means.stimByCond <- data.frame(matrix(unlist(means.stimByCond), nrow=length(descript.stimByCond), byrow=TRUE)) #convert to dataframe
+means.stimByCond$rating.cond <- levels(df.incPs$rating.cond) #add variable for condition
+naming <- colnames(df.incPs) #naming columns
+naming <- naming[! naming %in% c("rating.cond")]
+naming <- append(naming, "rating.cond")
+colnames(means.stimByCond) <- naming
+
+write.csv(means.stimByCond, paste("../output/LM_Expt2attributes_descriptives_stimByCond.csv")) #save full stimulus and sample descriptives
+
+```
+
+# Reshape wide data into long format
+
+Here, we reshape our data into long format.
+
+```{r, reshape-w2l}
+
+#remove superflous variables
+dfl.anova.part <- df.incPs %>%
+  select('ResponseId', 'rating.cond', 'rwm.rating':'swf.rating') %>%
+  select(-contains(c("catch"))) #%>%
+  #select(-contains(c("rw"))) #use this option to remove real faces to analyse AI faces only
+  #select(-contains(c("sw"))) #use this option to remove AI faces to analyse real faces only
+
+#convert data required for ANOVA and t-tests to long format BY PARTICIPANT
+dfl.anova.part <- df.incPs %>%  
+  gather("FaceType", "mean.rating", c(rwm.rating, swm.rating, rwf.rating, swf.rating), convert = TRUE) %>%
+  mutate(face.sex = substr(FaceType, 3, 3)) %>%
+  mutate(face.format = substr(FaceType, 1, 1)) %>%
+  filter(!is.na(mean.rating))
+dfl.anova.part$face.sex <- as.factor(dfl.anova.part$face.sex)
+dfl.anova.part$face.format <- as.factor(dfl.anova.part$face.format)
+
+#convert data required for ANOVA and t-tests to long format BY STIMULUS
+dfl.anova.stim <- means.stimByCond %>%
+  select('rating.cond', starts_with('swm0') | starts_with('rwm0') | starts_with('swf0') | starts_with('rwf0')) %>%
+  pivot_longer(cols = c(-rating.cond), names_to = "faceId") %>%
+  pivot_wider(names_from = c(rating.cond)) %>%
+  mutate(face.sex = substr(faceId, 3, 3)) %>%
+  mutate(face.format = substr(faceId, 1, 1)) %>%
+  gather("rating.cond", "mean.rating", age:symmetry, convert = TRUE)
+dfl.anova.stim$face.sex <- as.factor(dfl.anova.stim$face.sex)
+dfl.anova.stim$face.format <- as.factor(dfl.anova.stim$face.format)
+
+#remove superflous variables
+dfl.icc <- df.incPs %>%
+  select('ResponseId', 'rating.cond', 'rwm001.rating':'swf009.rating') %>%
+  select(-contains(c("catch"))) #%>%
+  #select(-contains(c("rw"))) #use this option to remove real faces to analyse AI faces only
+  #select(-contains(c("sw"))) #use this option to remove AI faces to analyse real faces only
+
+#convert data required for ICCs to long format
+dfl.icc <- df.incPs %>%  
+  gather("FaceId", "rating", rwm001.rating:swf009.rating, convert = TRUE) %>%
+  #gather("FaceId", "rating", swm001.rating:swf009.rating, convert = TRUE) %>% #to analyse AI faces only
+  #gather("FaceId", "rating", rwm001.rating:rwf009.rating, convert = TRUE) %>% #to analyse real faces only
+  filter(!is.na(rating))
+
+```
+
+# Plots
+
+## Participant plots
+
+Here, we plot the data using means for each stimulus.
+
+```{r, participant-plots}
+
+#distribution plots
+ggplot(dfl.anova.part) +
+  geom_density(aes(x = mean.rating, colour = face.format)) + 
+  ylim(0, .08) +
+  facet_wrap(~rating.cond, ncol = 2)
+
+ggplot(dfl.anova.part) +
+  geom_violin(aes(factor(face.format), mean.rating)) + 
+  facet_wrap(~rating.cond, ncol = 2)
+
+#based on script from Nic Fay.
+#mean.rating plots
+rating.vplots <- ggplot(data = dfl.anova.part, aes(x = face.format, y = mean.rating))
+#add bars to indicate mean
+rating.vplots <- rating.vplots + stat_summary(fun.y=mean, geom="bar", position ="dodge", alpha=0.6, aes(fill=face.format))
+
+#add violin geom to indicate distribution
+rating.vplots <- rating.vplots + geom_violin(alpha = 0.4, aes(color = face.format))
+#change colour manually: http://sape.inf.usi.ch/quick-reference/ggplot2/colour
+rating.vplots <- rating.vplots + scale_fill_manual(values=c("#5D3A9B", "#E66100")) + 
+  scale_color_manual(values=c("#5D3A9B", "#E66100"))
+rating.vplots <- rating.vplots + theme_bw()
+#add geom-points to bars
+rating.vplots <- rating.vplots + geom_dotplot(data = dfl.anova.part, aes(x = face.format, y = mean.rating, fill=face.format, colour=face.format), binaxis='y', stackdir='center', stackratio=1.00, dotsize=0.4, alpha = 0.5)
+#add boostrapped 95% CIs; doing this AFTER adding the geom_points ensures the CIs are Forward in the figure
+rating.vplots <- rating.vplots + stat_summary(fun.data=mean_cl_boot, geom='errorbar', 
+                                                                  position = position_dodge(width=0.9), 
+                                                                  color='grey22', size=0.75, width=0.2)
+#labels and text size
+rating.vplots <- rating.vplots + labs(x = NULL, y = "Participant mean rating") + 
+  theme(title= element_text(size=11, face='bold'), 
+        axis.title.x= element_text(size=12), 
+        axis.title.y = element_text(size=12),
+        axis.text.x= element_text(size=11, face="bold"), 
+        axis.text.y= element_text(size=11, face="bold"), 
+        strip.text.x= element_text(size=11, face="bold"),
+        strip.text.y= element_text(size=11, face="bold"))
+#change legend position & increase legend font size
+rating.vplots <- rating.vplots + theme(legend.position = "none", legend.text = element_text(size = 25, colour = 'grey22'))
+#change x-axis text 
+rating.vplots <- rating.vplots + scale_x_discrete(labels = c(c("Real", "AI"))) 
+#wrap by rating condition
+rating.vplots <- rating.vplots + facet_wrap(~rating.cond, ncol = 2)
+
+```
+
+## Stimulus plots
+
+Here, we plot the data using means for each stimulus.
+
+```{r, stimulus-plots}
+
+#distribution plots
+ggplot(dfl.anova.stim) +
+  geom_density(aes(x = mean.rating, colour = face.format)) + 
+  ylim(0, .08) +
+  facet_wrap(~rating.cond, ncol = 2)
+
+ggplot(dfl.anova.stim) +
+  geom_violin(aes(factor(face.format), mean.rating)) + 
+  facet_wrap(~rating.cond, ncol = 2)
+
+#based on script from Nic Fay.
+#mean.rating plots
+rating.vplots <- ggplot(data = dfl.anova.stim, aes(x = face.format, y = mean.rating))
+#add bars to indicate mean
+rating.vplots <- rating.vplots + stat_summary(fun.y=mean, geom="bar", position ="dodge", alpha=0.6, aes(fill=face.format))
+
+#add violin geom to indicate distribution
+rating.vplots <- rating.vplots + geom_violin(alpha = 0.4, aes(color = face.format))
+#change colour manually: http://sape.inf.usi.ch/quick-reference/ggplot2/colour
+rating.vplots <- rating.vplots + scale_fill_manual(values=c("#1B9E77", "#D95F02")) + 
+  scale_color_manual(values=c("#1B9E77", "#D95F02"))
+rating.vplots <- rating.vplots + theme_bw()
+#add geom-points to bars
+rating.vplots <- rating.vplots + geom_dotplot(data = dfl.anova.stim, aes(x = face.format, y = mean.rating, fill=face.format, colour=face.format), binaxis='y', stackdir='center', stackratio=1.00, dotsize=0.4, alpha = 0.5)
+#add boostrapped 95% CIs; doing this AFTER adding the geom_points ensures the CIs are Forward in the figure
+rating.vplots <- rating.vplots + stat_summary(fun.data=mean_cl_boot, geom='errorbar', 
+                                              position = position_dodge(width=0.9), 
+                                              color='grey22', size=0.75, width=0.2)
+#labels and text size
+rating.vplots <- rating.vplots + labs(x = NULL, y = "Mean stimulus rating") + 
+  theme(title= element_text(size=11, face='bold'), 
+        axis.title.x= element_text(size=12), 
+        axis.title.y = element_text(size=12),
+        axis.text.x= element_text(size=11, face="bold"), 
+        axis.text.y= element_text(size=11, face="bold"), 
+        strip.text.x= element_text(size=11, face="bold"),
+        strip.text.y= element_text(size=11, face="bold"))
+#change legend position & increase legend font size
+rating.vplots <- rating.vplots + theme(legend.position = "none", legend.text = element_text(size = 25, colour = "black"))
+#change x-axis text 
+rating.vplots <- rating.vplots + scale_x_discrete(labels = c(c("Real", "AI"))) 
+#wrap by rating condition
+rating.vplots <- rating.vplots + facet_wrap(~rating.cond, ncol = 2)
+
+```
+
+# Statistical analyses
+
+```{r, statistical-analyses}
+
+dfl.anova.part.splitConds <- split(dfl.anova.part, dfl.anova.part$rating.cond)
+df.ttest.splitConds <- split(df.incPs, df.incPs$rating.cond)
+dfl.icc.splitConds <- split(dfl.icc, dfl.icc$rating.cond)
+splitNames <- c("df.age", 
+              "df.aliveness", 
+              "df.attractiveness", 
+              "df.distinctiveness", 
+              "df.expressivity", 
+              "df.eye.contact", 
+              "df.familiarity", 
+              "df.happiness", 
+              "df.image.quality", 
+              "df.lighting.shadows", 
+              "df.memorability", 
+              "df.proportionality", 
+              "df.skin.texture", 
+              "df.symmetry")
+
+aov.output <- NULL
+aov.output <- as.data.frame(aov.output)
+stats.output <- NULL
+stats.output <- as.data.frame(stats.output)
+reliability.output <- NULL
+reliability.output <- as.data.frame(reliability.output)
+for (i in 1:length(dfl.anova.part.splitConds)) {
+    assign(splitNames[i], dfl.anova.part.splitConds[[i]])
+    assign(splitNames[i], dfl.icc.splitConds[[i]])
+    cond.name <- splitNames[i]
+#ANOVA; here we produce an ANOVA with face.sex.cond between subjects and CG-human within subjects.
+    aov.out <- anova_test(
+      data = dfl.anova.part.splitConds[[i]], dv = mean.rating, wid = ResponseId,
+      within = c(face.format), between = c(face.sex)
+      )
+    aov.out <- as.data.frame(aov.out)
+    aov.out$cond <- splitNames[i]
+    aov.output <- rbind(aov.output, aov.out)
+#pairwise comparisons; here, we compare mean ratings for CG vs human for each of the rating conditions.
+    rw.sw <- t.test(df.ttest.splitConds[[i]]$rw.rating, df.ttest.splitConds[[i]]$sw.rating, paired = TRUE) #male and female faces combined
+    rw.sw.t <- rw.sw$statistic
+    rw.sw.df <- rw.sw$parameter
+    rw.sw.p <- rw.sw$p.value
+    rwm.swm <- t.test(df.ttest.splitConds[[i]]$rwm.rating, df.ttest.splitConds[[i]]$swm.rating, paired = TRUE) #male faces only
+    rwm.swm.t <- rwm.swm$statistic
+    rwm.swm.df <- rwm.swm$parameter
+    rwm.swm.p <- rwm.swm$p.value
+    rwf.swf <- t.test(df.ttest.splitConds[[i]]$rwf.rating, df.ttest.splitConds[[i]]$swf.rating, paired = TRUE) #female faces only
+    rwf.swf.t <- rwf.swf$statistic
+    rwf.swf.df <- rwf.swf$parameter
+    rwf.swf.p <- rwf.swf$p.value
+#ICCs; here, we compute the observer (participant response) and stimulus (face) contributions to variance in the ratings, following code provided by Hehman, E., Sutherland, C. A., Flake, J. K., & Slepian, M. L. (2017). The unique contributions of perceiver and target characteristics in person perception. *Journal of personality and social psychology, 113*(4), 513.
+    model <- lmer(rating ~ 1 + (1 | ResponseId) + (1 | FaceId), data = dfl.icc.splitConds[[i]])
+    df.x <- assign(cond.name, as.data.frame(VarCorr(model))) #Will return, in part, a section labeled ‘random effects’.
+    FaceId.est <- df.x[1, "vcov"]
+    ResponseId.est <- df.x[2, "vcov"]
+    Residual.est <- df.x[3, "vcov"]
+    stimulus.icc <- FaceId.est / (FaceId.est + ResponseId.est + Residual.est) * 100
+    observer.icc <- ResponseId.est / (FaceId.est + ResponseId.est + Residual.est) * 100
+    residual.icc <- Residual.est / (FaceId.est + ResponseId.est + Residual.est) * 100
+    check.icc <- stimulus.icc + observer.icc + residual.icc
+    stats.output <- rbind(stats.output, data.frame(cond.name, rw.sw.t, rw.sw.df, rw.sw.p, rwm.swm.t, rwm.swm.df, rwm.swm.p, rwf.swf.t, rwf.swf.df, rwf.swf.p, FaceId.est, ResponseId.est, Residual.est, stimulus.icc, observer.icc, residual.icc, check.icc))
+#The first two numbers in the summary represent the taus (τ) for rater and target, respectively. 
+#The bottom value (labeled residual) is sigma squared (σ2) in the ICC equation in Hehman et al. (2017). 
+#To calculate rater ICC.
+#ICC = rater tau / (sigma squared + rater tau + target tau).
+#To calculate target ICC.
+#ICC = target tau / (sigma squared + rater tau + target tau).
+#The resulting numbers represent the percentage of variance from between-rater (rater-ICC) or between- #target (target-ICC), respectively. 
+#reliability: here we calculate Cronbach's alphas for each rating condition 
+    df.y <- (df.ttest.splitConds[[i]])
+    df.y <- select(df.y, ends_with(".rating"))
+    df.y.male.ai <- select(df.y, contains(c("swm0")))
+    alpha.male.ai <- alpha(df.y.male.ai)
+    a.male.ai <- alpha.male.ai[["feldt"]][["alpha"]][[1]]
+    lci.a.male.ai <- alpha.male.ai[["feldt"]][["lower.ci"]][[1]]
+    uci.a.male.ai <- alpha.male.ai[["feldt"]][["upper.ci"]][[1]]
+    df.y.female.ai <- select(df.y, contains(c("swf0")))
+    alpha.female.ai <- alpha(df.y.female.ai)
+    a.female.ai <- alpha.female.ai[["feldt"]][["alpha"]][[1]]
+    lci.a.female.ai <- alpha.female.ai[["feldt"]][["lower.ci"]][[1]]
+    uci.a.female.ai <- alpha.female.ai[["feldt"]][["upper.ci"]][[1]]
+    df.y.male.hum <- select(df.y, contains(c("rwm0")))
+    alpha.male.hum <- alpha(df.y.male.hum)
+    a.male.hum <- alpha.male.hum[["feldt"]][["alpha"]][[1]]
+    lci.a.male.hum <- alpha.male.hum[["feldt"]][["lower.ci"]][[1]]
+    uci.a.male.hum <- alpha.male.hum[["feldt"]][["upper.ci"]][[1]]
+    df.y.female.hum <- select(df.y, contains(c("rwf0")))
+    alpha.female.hum <- alpha(df.y.female.hum)
+    a.female.hum <- alpha.female.hum[["feldt"]][["alpha"]][[1]]
+    lci.a.female.hum <- alpha.female.hum[["feldt"]][["lower.ci"]][[1]]
+    uci.a.female.hum <- alpha.female.hum[["feldt"]][["upper.ci"]][[1]]
+    reliability.output <- rbind(reliability.output, data.frame(cond.name, a.male.ai, lci.a.male.ai, uci.a.male.ai, a.female.ai, lci.a.female.ai, uci.a.female.ai, a.male.hum, lci.a.male.hum, uci.a.male.hum, a.female.hum, lci.a.female.hum, uci.a.female.hum))
+}
+
+write.csv(aov.output, paste("../output/LM_Expt2attributes_anovas_incPs.csv")) #save ANOVAs
+write.csv(stats.output, paste("../output/LM_Expt2attributes_ttests_iccs_incPs.csv")) #save ttests & ICCs
+write.csv(reliability.output, paste("../output/LM_Expt2attributes_reliability_incPs.csv")) #save Cronbach's alphas
+
+```

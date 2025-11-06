@@ -1,0 +1,86 @@
+---
+title: "Yousif and Keil 2019"
+author: Lincoln J Colling
+date: "`r Sys.Date()`"
+output: 
+  bookdown::pdf_document2:
+    latex_engine: xelatex
+    keep_tex: FALSE
+    citation_package: biblatex
+documentclass: "article"
+biblio-style: "apa"
+classoption: ["a4paper","12pt"]
+bibliography: ['references.bib','yousif.bib']
+
+header-includes:
+  - \usepackage{pdflscape}
+  - \usepackage{makecell}
+  - \usepackage{booktabs}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+xfun::pkg_attach2("tidyverse",
+"knitr",
+"kableExtra",
+"rmarkdown",
+"bookdown",
+"bib2df")
+
+remotes::install_github("ljcolling/ODPHelper")
+options(kableExtra.latex.load_packages = TRUE)
+
+yousif <- readRDS("../made/yousif.Rdata")
+yousif_download <- readRDS("../made/yousif_download_info.Rdata")
+readr::write_lines(unlist(yousif$session_info$citations), path = "yousif.bib")
+library(ODPHelper)
+as_tibble <- as_data_frame
+keys = keys_from_session(yousif$session_info$citations)
+keys <- keys[!(keys %in% "R-ODPHelper")]
+```
+
+\newpage
+
+# Introduction
+
+This documents contains the reanalysis of the following papers:
+
+Yousif, S. R., & Keil, F. C. (2019). The Additive-Area Heuristic: An Efficient but Illusory Means of Visual Area Approximation. *Psychological Science, 30*(4), 495–503.
+
+The analysis code is available at [https://github.com/ljcolling/odp-yousif](https://github.com/ljcolling/odp-yousif). This document is automatically built. To manually build this document, clone the git repository and run `make all`.
+
+## Data download
+
+A total of `r length(yousif_download$files)` files were downloaded from [`r glue::glue("https://osf.io/{yousif_download$node}")`](`r glue::glue("https://osf.io/{yousif_download$node}")`). The downloaded files the MD5 hashes are shown in Table \@ref(tab:yousiftable1).
+
+```{r yousiftable1, echo=FALSE}
+tibble::tibble(`File name` = stringr::str_remove_all(names(yousif_download$hashes),"./data/"), `MD5 Hash` = yousif_download$hashes) %>%  knitr::kable(digits = 3, booktabs = T, caption = "Files downloaded for Yousif et al. (2019)", escape = T, format = "latex") %>%
+  kableExtra::kable_styling(latex_options = "scale_down") 
+```
+
+## Preliminary data checking
+
+For the preliminary data checking we checked whether the number of reported participants matched the number of participants in the data files. The number of reported participants before and after inclusions are listed in Table \@ref(tab:yousifsub). The data files provided on Yousif and Keil's OSF page contains multiple columns that could correspond to the participant ID. This includes the columns labelled `id` and `id2`. The number of unique participant IDs listed in the `id` and `id2` columns for each of the five experiments are listed in Table \@ref(tab:yousifsubb). None of the data files contained the correct number of participants suggesting that an error was introduced when participant codes were partially redacted (for privacy reasons). Because the mismatch between the reported number of participants and the number of participants in the data file the re-analysis could not proceed.  
+
+```{r yousifsub, echo=FALSE}
+
+tibble::tribble(~Experiment, ~Total, ~"After exclusions",
+                "1", 100, 100 - 3,
+                "2", 100, 100 - 3,
+                "3", 100, 100 - 1, 
+                "4", 100, 100 - 2, 
+                "5", 100, 100) %>% 
+  knitr::kable(caption = "Number of participants reported in each experiment from Yousif and Keil (2019)", format = "latex", booktabs = T) %>% 
+  kableExtra::kable_styling()
+```
+
+```{r yousifsubb, echo=FALSE}
+'[{"Experiment":"1","id":96,"id2":95},{"Experiment":"2","id":101,"id2":97},{"Experiment":"3","id":102,"id2":100},{"Experiment":"4","id":106,"id2":101},{"Experiment":"5","id":101,"id2":97}]'  %>% jsonlite::fromJSON() %>%
+   knitr::kable(caption = "Number of participants contained in the data file for each experiment from Yousif and Keil (2019)", format = "latex", booktabs = T) %>% 
+  kableExtra::kable_styling()
+```
+
+
+# `R` information {-}
+
+We performed our analysis on `r yousif$session_info$sessionInfo$R.version$version.string` with all packages installed from a timestamped version of MRAN (date: `r str_remove(yousif$session_info$cran,"https://mran.microsoft.com/snapshot/")`). The following R packages were used: `r paste0(map_chr(keys, function(x) glue::glue("@{x}")), collapse = ", ")`.

@@ -1,0 +1,727 @@
+---
+title: "NZAVS - Vaping"
+author: "A Mason"
+date: "12/04/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Packages
+library(tidyverse)
+library(dplyr)
+library(sjPlot)
+library(ggsankey)
+library(gt)
+library(gtsummary)
+
+#Import Data File
+Vaping_Data <- read_csv("Vaping Data.csv")
+
+#Create ID column
+Vaping_Data$ID <- 1:nrow(Vaping_Data)
+```
+
+```{r weighting}
+
+### Impute the data
+imputed <- data %>%
+  mice::mice() %>%
+  mice::complete()
+
+### Calculate frequencies for each weighting strata
+freqs <- imputed %>%
+  mutate(age_grp = cut(Age.T10, c(0, 30, 40, 50, 60, Inf), right=FALSE)) %>%
+  mutate(ethnicity = case_when(
+    EthnicCats.T10 == 1 ~ "euro_other",
+    EthnicCats.T10 %in% c(2,3) ~ "maori_pacific",
+    EthnicCats.T10 == 4 ~ "asian"
+  ),
+  sex = ifelse(Gender.T10 == 0, "Female", "Male")
+  ) %>%
+  group_by(sex, age_grp, ethnicity) %>%
+  summarise(cnt = n()) %>%
+  ungroup() %>%
+  mutate(pct = cnt / sum(cnt))
+
+## Load benchmarks, i.e., census population counts
+pops <- read_csv("data/single_year_weighting.csv") %>%
+  select(age, sex, euro_other, maori_pacific, asian) %>%
+  pivot_longer(cols = c(euro_other, maori_pacific, asian), names_to = "ethnicity", values_to = "pop") %>%
+  mutate(age_grp = cut(age, c(0, 30, 40, 50, 60, Inf), right=FALSE))
+
+## Link the two datasets and the number of people in the population per respondent in AVS is the weight
+wgts <- pops %>%
+  left_join(freqs, by=c("age_grp", "sex", "ethnicity")) %>%
+  mutate(wgt = pop / cnt)
+
+################################ These are some examples on how to use weights ##########################
+
+# I can join it onto a base dataset but i need to create the same joining vars
+test <- imputed %>%
+  mutate(age_grp = cut(Age.T10, c(0, 30, 40, 50, 60, Inf), right=FALSE)) %>%
+  mutate(ethnicity = case_when(
+    EthnicCats.T10 == 1 ~ "euro_other",
+    EthnicCats.T10 %in% c(2,3) ~ "maori_pacific",
+    EthnicCats.T10 == 4 ~ "asian"
+  ),
+  sex = ifelse(Gender.T10 == 0, "Female", "Male")
+  ) %>%
+  left_join(wgts, by=c("age_grp", "sex", "ethnicity"))
+
+# Now I can sum up the weights where someone is a smoker to get a NZ population count
+
+# Count and percentage smokers in sample
+sum(test$Smoker.T10 == 1) # 68000 people smoked at T10 in sample
+mean(test$Smoker.T10 == 1) # 6.8% of people smoked at T10 in sample
+
+# Now instead, I can do the same for the NZ population using weights
+sum(as.integer(test$Smoker.T10 == 1) * test$wgt) # 318400 people in NZ smoked at T10
+sum(as.integer(test$Smoker.T10 == 1) * test$wgt) / sum(test$wgt) # 7.7% of people smoked at T10 in NZ
+
+```
+
+```{r Tidying, warning=FALSE, include=FALSE}
+
+#Shift Data in factors
+vap.data <- Vaping_Data %>% 
+  mutate(
+    # Create categories
+    age_group.T12 = dplyr::case_when(
+      Age.T12 < 18            ~ "<18",
+      Age.T12 >= 18 & Age.T12 < 25 ~ "19-25",
+      Age.T12 >= 25 & Age.T12 < 35 ~ "26-35",
+      Age.T12 >= 35 & Age.T12 < 45 ~ "36-45",
+      Age.T12 >= 45             ~ "45+"
+    ),
+    age_group.T11 = dplyr::case_when(
+      Age.T11 < 18           ~ "<18",
+      Age.T11 >= 18 & Age.T11 < 25 ~ "19-25",
+      Age.T11 >= 25 & Age.T11 < 35 ~ "26-35",
+      Age.T11 >= 35 & Age.T11 < 45 ~ "36-45",
+      Age.T11 >= 45             ~ "45+"
+    ),
+    age_group.T10 = dplyr::case_when(
+      Age.T10 < 18            ~ "<18",
+      Age.T10 >= 18 & Age.T10 < 25 ~ "19-25",
+      Age.T10 >= 25 & Age.T10 < 35 ~ "26-35",
+      Age.T10 >= 35 & Age.T10 < 45 ~ "36-45",
+      Age.T10 >= 45             ~ "45+"
+    ),
+    # Convert to factor
+    age_group.T12 = factor(age_group.T12, level = c("<18", "19-25","26-35", "36-45", "45+")),
+    age_group.T11 = factor(age_group.T12, level = c("<18", "19-25","26-35", "36-45", "45+")),
+    age_group.T10 = factor(age_group.T12, level = c("<18", "19-25","26-35", "36-45", "45+")),
+    Gender.T12 = factor(Gender.T12, level = c(0,1), labels = c("Women", "Men")),
+    Gender.T11 = factor(Gender.T11, level = c(0,1), labels = c("Women", "Men")),
+    Gender.T10 = factor(Gender.T10, level = c(0,1), labels = c("Women", "Men")),
+    NZDep.2018.T12 = factor(NZDep.2018.T12, level = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 
+                            labels = c("Most Affluent", 2, 3, 4, 5, 6, 7, 8, 9, "Least Affluent")),
+    NZDep.2018.T11 = factor(NZDep.2018.T11, level = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 
+                            labels = c("Most Affluent", 2, 3, 4, 5, 6, 7, 8, 9, "Least Affluent")),
+    NZDep.2018.T10 = factor(NZDep.2018.T10, level = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 
+                            labels = c("Most Affluent", 2, 3, 4, 5, 6, 7, 8, 9, "Least Affluent")),
+    EthnicCats.T12 = factor(EthnicCats.T12, level = c(1, 2, 3, 4),
+                            labels = c("European", "Maori", "Pacific", "Asian")),
+    EthnicCats.T11 = factor(EthnicCats.T11, level = c(1, 2, 3, 4),
+                            labels = c("European", "Maori", "Pacific", "Asian")),
+    EthnicCats.T10 = factor(EthnicCats.T10, level = c(1, 2, 3, 4),
+                            labels = c("European", "Maori", "Pacific", "Asian")),
+    Vaper.T12 = factor(Vaper.T12,level = c(0,1),labels = c("No", "Yes")),
+    Vaper.T11 = factor(Vaper.T11, level = c(0,1), labels = c("No", "Yes")),
+    Vaper.T10 = factor(Vaper.T10, level = c(0,1), labels = c("No", "Yes")),
+    VaperEver.T12 = factor(VaperEver.T12,level = c(0,1),labels = c("No", "Yes")),
+    VaperEver.T11 = factor(VaperEver.T11, level = c(0,1), labels = c("No", "Yes")),
+    VaperEver.T10 = factor(VaperEver.T10, level = c(0,1), labels = c("No", "Yes")),
+    Smoker.T12 = factor(Smoker.T12,level = c(0,1),labels = c("No", "Yes")),
+    Smoker.T11 = factor(Smoker.T11,level = c(0,1),labels = c("No", "Yes")),
+    Smoker.T10 = factor(Smoker.T10,level = c(0,1),labels = c("No", "Yes")),
+    Smoker.T09 = factor(Smoker.T09,level = c(0,1),labels = c("No", "Yes")),
+    SmokerEver.T12 = factor(SmokerEver.T12,level = c(0,1),labels = c("No", "Yes")),
+    SmokerEver.T11 = factor(SmokerEver.T11,level = c(0,1),labels = c("No", "Yes")),
+    SmokerEver.T10 = factor(SmokerEver.T10,level = c(0,1),labels = c("No", "Yes")),
+    SmokerEver.T09 = factor(SmokerEver.T09,level = c(0,1),labels = c("No", "Yes"))
+    )
+
+#Smoker @t9
+smoker.9 <- vap.data %>%
+  filter(Smoker.T09 == "Yes")
+
+#smoker data at T9
+smokedata.9 <- vap.data %>%
+  filter(Smoker.T09 == "Yes" | Smoker.T09 == "No")
+
+
+vap.data %>%
+  filter(Smoker.T09 == "Yes") %>%
+  select(Smoker.T09, Smoker.T10, Smoker.T11, Vaper.T10, Vaper.T11) %>%
+  complete.cases() %>%
+  table()
+
+#n for smoking-related @ T9
+vap.data %>% filter(Smoker.T09 == "Yes" | Smoker.T09 == "No") %>% count()
+
+#n for smoking related @ T10
+vap.data %>% filter(Smoker.T10 == "Yes" | Smoker.T10 == "No") %>% count()
+
+```
+
+
+```{r Data Wrangling, eval = T, include= T}
+## Data to long format
+data.long.smoking <- vap.data %>%
+  select(
+    ID, Smoker.T09, Smoker.T10, Smoker.T11, Smoker.T12
+  ) %>%
+  pivot_longer(
+    cols = c(Smoker.T09, Smoker.T10, Smoker.T11, Smoker.T12),
+    names_to = "Time",
+    names_prefix = "Smoker.T",
+    values_to = "Smoking"
+  ) 
+
+data.long.vaping <- vap.data %>%
+  select(
+    ID, Vaper.T10, Vaper.T11, Vaper.T12
+  ) %>%
+  pivot_longer(
+    cols = c(Vaper.T10, Vaper.T11, Vaper.T12),
+    names_to = "Time",
+    names_prefix = "Vaper.T",
+    values_to = "Vaping"
+  ) 
+
+data.long.1 <- vap.data %>%
+  select(
+    ID, VaperEver.T10, VaperEver.T11, VaperEver.T12
+  ) %>%
+  pivot_longer(
+    cols = c(VaperEver.T10, VaperEver.T11, VaperEver.T12),
+    names_to = "Time",
+    names_prefix = "VaperEver.T",
+    values_to = "VapingEver"
+  ) 
+
+data.long.2 <- vap.data %>%
+  select(
+    ID, SmokerEver.T10, SmokerEver.T11, SmokerEver.T12
+  ) %>%
+  pivot_longer(
+    cols = c(SmokerEver.T10, SmokerEver.T11, SmokerEver.T12),
+    names_to = "Time",
+    names_prefix = "SmokerEver.T",
+    values_to = "SmokingEver"
+  ) 
+
+data.long.3 <- vap.data %>%
+  select(
+    ID, Age.T10, Age.T11, Age.T12
+  ) %>%
+  pivot_longer(
+    cols = c(Age.T10, Age.T11, Age.T12),
+    names_to = "Time",
+    names_prefix = "Age.T",
+    values_to = "Age"
+  ) 
+
+data.long.3.1 <- vap.data %>%
+  select(
+    ID, age_group.T10, age_group.T11, age_group.T12
+  ) %>%
+  pivot_longer(
+    cols = c(age_group.T10, age_group.T11, age_group.T12),
+    names_to = "Time",
+    names_prefix = "age_group.T",
+    values_to = "age_group"
+  ) 
+
+data.long.4 <- vap.data %>%
+  select(
+    ID, Gender.T10, Gender.T11, Gender.T12
+  ) %>%
+  pivot_longer(
+    cols = c(Gender.T10, Gender.T11, Gender.T12),
+    names_to = "Time",
+    names_prefix = "Gender.T",
+    values_to = "Gender"
+  ) 
+
+data.long.5 <- vap.data %>%
+  select(
+    ID, NZDep.2018.T10, NZDep.2018.T11, NZDep.2018.T12
+  ) %>%
+  pivot_longer(
+    cols = c(NZDep.2018.T10, NZDep.2018.T11, NZDep.2018.T12),
+    names_to = "Time",
+    names_prefix = "NZDep.2018.T",
+    values_to = "Deprivation"
+  ) 
+
+data.long.6 <- vap.data %>%
+  select(
+    #Select the variable that you want, plus the grouping (ID) variable
+    ID, EthnicCats.T10, EthnicCats.T11, EthnicCats.T12
+  ) %>%
+  pivot_longer(
+    #What columns are you flicking into long format
+    cols = c(EthnicCats.T10, EthnicCats.T11, EthnicCats.T12),
+    #What are you pivoting on - generally this is time
+    names_to = "Time",
+    #The fist part of the name... anything entered here gets deleted
+    names_prefix = "EthnicCats.T",
+    #Column that you want the numbers put in
+    values_to = "Ethnicity"
+  ) 
+
+data.long <- left_join(data.long.vaping, data.long.smoking, by = c("ID", "Time")) %>%
+  left_join(., data.long.1, by = c("ID", "Time")) %>%
+  left_join(., data.long.2, by = c("ID", "Time")) %>%
+  left_join(., data.long.3, by = c("ID", "Time")) %>%
+  left_join(., data.long.3.1, by = c("ID", "Time")) %>%
+  left_join(., data.long.4, by = c("ID", "Time")) %>%
+  left_join(., data.long.5, by = c("ID", "Time")) %>%
+  left_join(., data.long.6, by = c("ID", "Time"))
+  
+```
+
+# What are our RQs?
+1) To determine the prevalence of smoking and vaping in NZ
+2) To determine the direction of the transitional pathway between smoking to vaping
+
+# Data Analyses
+
+# Results
+
+## Basic Outlook of Counts Data at Each Time
+```{r Count Data summary, include=TRUE, eval=FALSE}
+data.long1 <- data.long %>%
+  group_by(ID, Time) %>%
+  mutate("Smoker Only" = case_when(Smoking == "Yes" & Vaping == "No" ~ "Yes",
+                                   Smoking == "No" | Vaping == "Yes" ~ "No"),
+         "Vaper Only" = case_when(Smoking == "No" & Vaping == "Yes" ~ "Yes",
+                                  Smoking == "Yes" | Vaping == "No"~ "No"),
+         Both = case_when(Vaping == "Yes" & Smoking == "Yes" ~ "Yes",
+                          Vaping == "No" | Smoking == "No" ~ "No"),
+         Neither = case_when(Vaping == "No" & Smoking == "No" ~ "Yes",
+                             Vaping == "Yes" | Smoking == "Yes" ~ "No"))
+
+#write.csv(data.long1, file = "S:/Research/Damian Scarf/Andre Mason/NZAVS/Long Data Categorised.csv")
+
+```
+         
+```{r}
+data.long1 %>% 
+  tbl_summary(by = "Time",
+              missing = "no",
+              include = c("Smoking", "Vaping")) %>%
+   modify_header(list(
+     stat_1 ~ "**10** <br> (n = {n})",
+     stat_2 ~ "**11** <br> (n = {n})",
+     stat_3 ~ "**12** <br> (n = {n})"
+    )
+   ) %>%
+   #modify_header(label = "**1**") %>%
+   add_p() %>%
+   as_gt() %>%
+   tab_header("Total number of Smokers and Vapers over Time") %>%
+   tab_spanner(
+    label = "Time",
+    columns = starts_with("stat_")
+    )  
+
+data.long1 %>% 
+  tbl_summary(by = "Time",
+              missing = "no",
+              #include = -c("ID", "Smoking", "Vaping")
+              ) %>%
+   modify_header(list(
+     stat_1 ~ "**10** <br> (n = {n})",
+     stat_2 ~ "**11** <br> (n = {n})",
+     stat_3 ~ "**12** <br> (n = {n})"
+    )
+   ) %>%
+   #modify_header(label = "**1**") %>%
+   add_p() %>%
+   as_gt() %>%
+   tab_header("Behaviour over Time") %>%
+   tab_spanner(
+    label = "Time",
+    columns = starts_with("stat_")
+    )  
+```
+
+## Visualisation: Movement between groups over time
+
+```{r Sankey visualisation}
+#Dataset for Sankey
+sankey.data <- vap.data %>%
+  mutate(
+    T09 = case_when(Smoker.T09 == "Yes" ~ "Smoker",
+                    Smoker.T09 == "No" ~ "Non-Smoker"),
+    T10 = case_when(Smoker.T10 == "Yes" & Vaper.T10 == "No" ~ "Smoker T10",
+                    Smoker.T10 == "No" & Vaper.T10 == "Yes" ~ "Vaper T10",
+                    Smoker.T10 == "Yes" & Vaper.T10 == "Yes" ~ "Both T10",
+                    Smoker.T10 == "No" & Vaper.T10 == "No" ~ "Neither T10"),
+    T11 = case_when(Smoker.T11 == "Yes" & Vaper.T11 == "No" ~ "Smoker T11",
+                    Smoker.T11 == "No" & Vaper.T11 == "Yes" ~ "Vaper T11",
+                    Smoker.T11 == "Yes" & Vaper.T11 == "Yes" ~ "Both T11",
+                    Smoker.T11 == "No" & Vaper.T11 == "No" ~ "Neither T11"),
+    T12 = case_when(Smoker.T12 == "Yes" & Vaper.T12 == "No" ~ "Smoker T12",
+                    Smoker.T12 == "No" & Vaper.T12 == "Yes" ~ "Vaper T12",
+                    Smoker.T12 == "Yes" & Vaper.T12 == "Yes" ~ "Both T12",
+                    Smoker.T12 == "No" & Vaper.T12 == "No" ~ "Neither T12",
+                    is.na(Smoker.T12) ~ "No Data T12")
+  ) %>%
+  select(T09, T10, T11, T12)
+
+sankey.long <- sankey.data %>%
+  filter(T10 != is.na(T10) & T10 != "Neither T10") %>%
+  filter(T11 != is.na(T11)) %>%
+  filter(T12 != "No Data T12") %>%
+  make_long(T10, T11, T12) 
+
+sank <- sankey.long %>%
+  group_by(node) %>%
+  count()
+
+sankey.mod <- merge(sankey.long, sank, by.x = 'node', by.y = 'node', all.x = TRUE)
+
+ggplot(sankey.mod, aes(x = x, next_x = next_x, node = node, next_node = next_node, label = paste0(node, "\n (n = ", n, ")"), fill = factor(node))) +
+  geom_sankey(flow.alpha = .5,
+              node.color = 2) +
+  geom_sankey_label(size = 3, color = "white", fill = "black") +
+  scale_fill_viridis_d(option = "inferno", alpha = .5) +
+  theme_sankey(base_size = 18) +
+  scale_fill_manual(values = c("Vaper T10" = "red",
+                               "Smoker T10" = "forestgreen",
+                               "Both T10" = "orange",
+                               "Vaper T11" = "red",
+                               "Smoker T11" = "forestgreen",
+                               "Both T11" = "orange",
+                               "Vaper T12" = "red",
+                               "Smoker T12" = "forestgreen",
+                               "Both T12" = "orange",
+                               "Neither T12" = "lightblue")) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank())
+
+
+
+
+
+```  
+
+# Descriptives regarding Transition
+```{r}
+#Creating Transition Groups using wide data
+vap.transitions <- vap.data %>% 
+  mutate(
+    #Trans1: Transition 10-11
+    Trans1 = case_when(#Smoker Only T10
+                       Smoker.T10 == "Yes" & Vaper.T10 == "No" & Vaper.T11 == "No" & Smoker.T11 == "No" ~ "S10-N11",
+                       Smoker.T10 == "Yes" & Vaper.T10 == "No" & Vaper.T11 == "Yes" & Smoker.T11 == "No" ~ "S10-V11",
+                       Smoker.T10 == "Yes" & Vaper.T10 == "No" & Vaper.T11 == "Yes" & Smoker.T11 == "Yes" ~ "S10-B11",
+                       Smoker.T10 == "Yes" & Vaper.T10 == "No" & Vaper.T11 == "No" & Smoker.T11 == "Yes" ~ "S10-S11",
+                       #Vaping Only T10
+                       Smoker.T10 == "No" & Vaper.T10 == "Yes" & Vaper.T11 == "No" & Smoker.T11 == "No" ~ "V10-N11",
+                       Smoker.T10 == "No" & Vaper.T10 == "Yes" & Vaper.T11 == "Yes" & Smoker.T11 == "No" ~ "V10-V11",
+                       Smoker.T10 == "No" & Vaper.T10 == "Yes" & Vaper.T11 == "Yes" & Smoker.T11 == "Yes" ~ "V10-B11",
+                       Smoker.T10 == "No" & Vaper.T10 == "Yes" & Vaper.T11 == "No" & Smoker.T11 == "Yes" ~ "V10-S11",
+                       #Both T10
+                       Smoker.T10 == "Yes" & Vaper.T10 == "Yes" & Vaper.T11 == "No" & Smoker.T11 == "No" ~ "B10-N11",
+                       Smoker.T10 == "Yes" & Vaper.T10 == "Yes" & Vaper.T11 == "Yes" & Smoker.T11 == "No" ~ "B10-V11",
+                       Smoker.T10 == "Yes" & Vaper.T10 == "Yes" & Vaper.T11 == "Yes" & Smoker.T11 == "Yes" ~ "B10-B11",
+                       Smoker.T10 == "Yes" & Vaper.T10 == "Yes" & Vaper.T11 == "No" & Smoker.T11 == "Yes" ~ "B10-S11",
+                       #Neither T10
+                       Smoker.T10 == "No" & Vaper.T10 == "No" & Vaper.T11 == "No" & Smoker.T11 == "No" ~ "N10-N11",
+                       Smoker.T10 == "No" & Vaper.T10 == "No" & Vaper.T11 == "Yes" & Smoker.T11 == "No" ~ "N10-V11",
+                       Smoker.T10 == "No" & Vaper.T10 == "No" & Vaper.T11 == "Yes" & Smoker.T11 == "Yes" ~ "N10-B11",
+                       Smoker.T10 == "No" & Vaper.T10 == "No" & Vaper.T11 == "No" & Smoker.T11 == "Yes" ~ "N10-S11",
+                       ),
+    Trans2 = case_when(#Smoker Only T11
+                       Smoker.T11 == "Yes" & Vaper.T11 == "No" & Vaper.T12 == "No" & Smoker.T12 == "No" ~ "S11-N12",
+                       Smoker.T11 == "Yes" & Vaper.T11 == "No" & Vaper.T12 == "Yes" & Smoker.T12 == "No" ~ "S11-V12",
+                       Smoker.T11 == "Yes" & Vaper.T11 == "No" & Vaper.T12 == "Yes" & Smoker.T12 == "Yes" ~ "S11-B12",
+                       Smoker.T11 == "Yes" & Vaper.T11 == "No" & Vaper.T12 == "No" & Smoker.T12 == "Yes" ~ "S11-S12",
+                       #Vaping Only T11
+                       Smoker.T11 == "No" & Vaper.T11 == "Yes" & Vaper.T12 == "No" & Smoker.T12 == "No" ~ "V11-N12",
+                       Smoker.T11 == "No" & Vaper.T11 == "Yes" & Vaper.T12 == "Yes" & Smoker.T12 == "No" ~ "V11-V12",
+                       Smoker.T11 == "No" & Vaper.T11 == "Yes" & Vaper.T12 == "Yes" & Smoker.T12 == "Yes" ~ "V11-B12",
+                       Smoker.T11 == "No" & Vaper.T11 == "Yes" & Vaper.T12 == "No" & Smoker.T12 == "Yes" ~ "V11-S12",
+                       #Both T11
+                       Smoker.T11 == "Yes" & Vaper.T11 == "Yes" & Vaper.T12 == "No" & Smoker.T12 == "No" ~ "B11-N12",
+                       Smoker.T11 == "Yes" & Vaper.T11 == "Yes" & Vaper.T12 == "Yes" & Smoker.T12 == "No" ~ "B11-V12",
+                       Smoker.T11 == "Yes" & Vaper.T11 == "Yes" & Vaper.T12 == "Yes" & Smoker.T12 == "Yes" ~ "B11-B12",
+                       Smoker.T11 == "Yes" & Vaper.T11 == "Yes" & Vaper.T12 == "No" & Smoker.T12 == "Yes" ~ "B11-S12",
+                       #Neither T11
+                       Smoker.T11 == "No" & Vaper.T11 == "No" & Vaper.T12 == "No" & Smoker.T12 == "No" ~ "N11-N12",
+                       Smoker.T11 == "No" & Vaper.T11 == "No" & Vaper.T12 == "Yes" & Smoker.T12 == "No" ~ "N11-V12",
+                       Smoker.T11 == "No" & Vaper.T11 == "No" & Vaper.T12 == "Yes" & Smoker.T12 == "Yes" ~ "N11-B12",
+                       Smoker.T11 == "No" & Vaper.T11 == "No" & Vaper.T12 == "No" & Smoker.T12 == "Yes" ~ "N11-S12",
+                       ),
+    Trans3 = case_when(#Smoke - Smoke - ?
+                       Trans1 == "S10-S11" & Trans2 == "S11-S12" ~ "S10-S11-S12",
+                       Trans1 == "S10-S11" & Trans2 == "S11-V12" ~ "S10-S11-V12",
+                       Trans1 == "S10-S11" & Trans2 == "S11-B12" ~ "S10-S11-B12",
+                       Trans1 == "S10-S11" & Trans2 == "S11-N12" ~ "S10-S11-N12",
+                       #Smoke - Vape - ?
+                       Trans1 == "S10-V11" & Trans2 == "V11-S12" ~ "S10-V11-S12",
+                       Trans1 == "S10-V11" & Trans2 == "V11-V12" ~ "S10-V11-V12",
+                       Trans1 == "S10-V11" & Trans2 == "V11-B12" ~ "S10-V11-B12",
+                       Trans1 == "S10-V11" & Trans2 == "V11-N12" ~ "S10-V11-N12",
+                       #Smoke - Both - ?
+                       Trans1 == "S10-B11" & Trans2 == "B11-S12" ~ "S10-B11-S12",
+                       Trans1 == "S10-B11" & Trans2 == "B11-V12" ~ "S10-B11-V12",
+                       Trans1 == "S10-B11" & Trans2 == "B11-B12" ~ "S10-B11-B12",
+                       Trans1 == "S10-B11" & Trans2 == "B11-N12" ~ "S10-B11-N12",
+                       #Smoke - Neither - ?
+                       Trans1 == "S10-N11" & Trans2 == "N11-S12" ~ "S10-N11-S12",
+                       Trans1 == "S10-N11" & Trans2 == "N11-V12" ~ "S10-N11-V12",
+                       Trans1 == "S10-N11" & Trans2 == "N11-B12" ~ "S10-N11-B12",
+                       Trans1 == "S10-N11" & Trans2 == "N11-N12" ~ "S10-N11-N12",
+                       ############## 
+                       #Vape - Smoke - ?
+                       Trans1 == "V10-S11" & Trans2 == "S11-S12" ~ "V10-S11-S12",
+                       Trans1 == "V10-S11" & Trans2 == "S11-V12" ~ "V10-S11-V12",
+                       Trans1 == "V10-S11" & Trans2 == "S11-B12" ~ "V10-S11-B12",
+                       Trans1 == "V10-S11" & Trans2 == "S11-N12" ~ "V10-S11-N12",
+                       #Vape - Vape - ?
+                       Trans1 == "V10-V11" & Trans2 == "V11-S12" ~ "V10-V11-S12",
+                       Trans1 == "V10-V11" & Trans2 == "V11-V12" ~ "V10-V11-V12",
+                       Trans1 == "V10-V11" & Trans2 == "V11-B12" ~ "V10-V11-B12",
+                       Trans1 == "V10-V11" & Trans2 == "V11-N12" ~ "V10-V11-N12",
+                       #Vape - Both - ?
+                       Trans1 == "V10-B11" & Trans2 == "B11-S12" ~ "V10-B11-S12",
+                       Trans1 == "V10-B11" & Trans2 == "B11-V12" ~ "V10-B11-V12",
+                       Trans1 == "V10-B11" & Trans2 == "B11-B12" ~ "V10-B11-B12",
+                       Trans1 == "V10-B11" & Trans2 == "B11-N12" ~ "V10-B11-N12",
+                       #Vape - Neither - ?
+                       Trans1 == "V10-N11" & Trans2 == "N11-S12" ~ "V10-N11-S12",
+                       Trans1 == "V10-N11" & Trans2 == "N11-V12" ~ "V10-N11-V12",
+                       Trans1 == "V10-N11" & Trans2 == "N11-B12" ~ "V10-N11-B12",
+                       Trans1 == "V10-N11" & Trans2 == "N11-N12" ~ "V10-N11-N12",
+                       #############
+                       #Both - Smoke - ?
+                       Trans1 == "B10-S11" & Trans2 == "S11-S12" ~ "B10-S11-S12",
+                       Trans1 == "B10-S11" & Trans2 == "S11-V12" ~ "B10-S11-V12",
+                       Trans1 == "B10-S11" & Trans2 == "S11-B12" ~ "B10-S11-B12",
+                       Trans1 == "B10-S11" & Trans2 == "S11-N12" ~ "B10-S11-N12",
+                       #Both - Vape - ?
+                       Trans1 == "B10-V11" & Trans2 == "V11-S12" ~ "B10-V11-S12",
+                       Trans1 == "B10-V11" & Trans2 == "V11-V12" ~ "B10-V11-V12",
+                       Trans1 == "B10-V11" & Trans2 == "V11-B12" ~ "B10-V11-B12",
+                       Trans1 == "B10-V11" & Trans2 == "V11-N12" ~ "B10-V11-N12",
+                       #Both - Both - ?
+                       Trans1 == "B10-B11" & Trans2 == "B11-S12" ~ "B10-B11-S12",
+                       Trans1 == "B10-B11" & Trans2 == "B11-V12" ~ "B10-B11-V12",
+                       Trans1 == "B10-B11" & Trans2 == "B11-B12" ~ "B10-B11-B12",
+                       Trans1 == "B10-B11" & Trans2 == "B11-N12" ~ "B10-B11-N12",
+                       #Both - Neither - ?
+                       Trans1 == "B10-N11" & Trans2 == "N11-S12" ~ "B10-N11-S12",
+                       Trans1 == "B10-N11" & Trans2 == "N11-V12" ~ "B10-N11-V12",
+                       Trans1 == "B10-N11" & Trans2 == "N11-B12" ~ "B10-N11-B12",
+                       Trans1 == "B10-N11" & Trans2 == "N11-N12" ~ "B10-N11-N12",
+                       #############
+                       ),
+    Change1 = case_when(#Changing : Yes(1) or No(0)
+                        Trans1 == "V10-S11" | Trans1 == "V10-B11" ~ 1,
+                        Trans1 == "V10-V11" | Trans1 == "V10-N11" ~ 0,
+                        Trans1 == "S10-V11" | Trans1 == "S10-B11" ~ 1,
+                        Trans1 == "S10-S11" | Trans1 == "S10-N11" ~ 0 ),
+    Initial1 = case_when(#Initial State: Smoking (1), Vaper (2)
+                        Vaper.T10 == "Yes" ~ 2,
+                        Smoker.T10 == "Yes" ~ 1),
+    Change2 = case_when(Trans2 == "V11-S12" | Trans2 == "V11-B12" ~ 1,
+                        Trans2 == "V11-V12" | Trans2 == "V11-N12" ~ 0,
+                        Trans2 == "S11-V12" | Trans2 == "S11-B12" ~ 1,
+                        Trans2 == "S11-S12" | Trans2 == "S11-N12" ~ 0 ),
+    Initial2 = case_when(#Initial State: Smoking (1), Vaper (2)
+                        Vaper.T11 == "Yes" ~ 2,
+                        Smoker.T11 == "Yes" ~ 1)
+    )
+
+table(vap.transitions$Trans1)
+table(vap.transitions$Trans2)
+table(vap.transitions$Initial1)
+
+#write.csv(vap.transitions, "S:/Research/Damian Scarf/Andre Mason/NZAVS/Vaping Clean w Transitions.csv")
+
+
+
+```
+
+## Binomial GLMM: Predicting likelihood of transition.
+
+```{r}
+##Long format with state and transition
+
+change.long <- vap.transitions %>%
+  select(
+    ID, Change1, Change2
+  ) %>%
+  pivot_longer(
+    cols = c(Change1, Change2),
+    names_to = "Transition",
+    names_prefix = "Change",
+    values_to = "Change"
+  ) 
+
+transitions.long <- vap.transitions %>%
+  select(
+    ID, Initial1, Initial2
+  ) %>%
+  pivot_longer(
+    cols = c(Initial1, Initial2),
+    names_to = "Transition",
+    names_prefix = "Initial",
+    values_to = "Initial"
+  ) 
+
+ages.long <- vap.transitions %>%
+  select(
+    ID, Age.T10, Age.T11
+  ) %>%
+  rename(AgeT1 = Age.T10, 
+         AgeT2 = Age.T11) %>%
+  pivot_longer(
+    cols = c(AgeT1, AgeT2),
+    names_to = "Transition",
+    names_prefix = "AgeT",
+    values_to = "Age"
+  ) 
+
+ages.group.long <- vap.transitions %>%
+  select(
+    ID, age_group.T10, age_group.T11
+  ) %>%
+  rename(age_groupT1 = age_group.T10, 
+         age_groupT2 = age_group.T11) %>%
+  pivot_longer(
+    cols = c(age_groupT1, age_groupT2),
+    names_to = "Transition",
+    names_prefix = "age_groupT",
+    values_to = "age_group"
+  ) 
+
+gender.long <- vap.transitions %>%
+  select(
+    ID, Gender.T10, Gender.T11
+  ) %>%
+  rename(GenderT1 = Gender.T10, 
+         GenderT2 = Gender.T11) %>%
+  pivot_longer(
+    cols = c(GenderT1, GenderT2),
+    names_to = "Transition",
+    names_prefix = "GenderT",
+    values_to = "Gender"
+  ) 
+
+eth.long <- vap.transitions %>%
+  select(
+    ID, EthnicCats.T10, EthnicCats.T11
+  ) %>%
+  rename(EthnicCatT1 = EthnicCats.T10, 
+         EthnicCatT2 = EthnicCats.T11) %>%
+  pivot_longer(
+    cols = c(EthnicCatT1, EthnicCatT2),
+    names_to = "Transition",
+    names_prefix = "EthnicCatT",
+    values_to = "Ethnicity"
+  ) 
+
+dep.long <- vap.transitions %>%
+  select(
+    ID, NZDep.2018.T10, NZDep.2018.T11
+  ) %>%
+  rename(NZDep.2018T1 = NZDep.2018.T10, 
+         NZDep.2018T2 = NZDep.2018.T11) %>%
+  pivot_longer(
+    cols = c(NZDep.2018T1, NZDep.2018T2),
+    names_to = "Transition",
+    names_prefix = "NZDep.2018T",
+    values_to = "Deprivation"
+  ) 
+
+
+
+vap.transition.long <- left_join(change.long, transitions.long, by = c("ID", "Transition")) %>%
+  left_join(., ages.long, by = c("ID", "Transition")) %>%
+  left_join(., gender.long, by = c("ID", "Transition")) %>%
+  left_join(., eth.long, by = c("ID", "Transition")) %>%
+  left_join(., dep.long, by = c("ID", "Transition")) %>%
+  left_join(., ages.group.long, by = c("ID", "Transition"))
+  
+
+vap.transition.long$Initial <- factor(vap.transition.long$Initial, level = c(1,2),labels = c("Smoker", "Vaper"))
+vap.transition.long$Change <- factor(vap.transition.long$Change, level = c(0,1),labels = c("Stable", "Changed"))
+#vap.transition.long$Ethnicity <- as.integer(vap.transition.long$Ethnicity)
+#vap.transition.long$Gender <- as.integer(vap.transition.long$Gender)
+#vap.transition.long$Deprivation <- as.integer(vap.transition.long$Deprivation)
+
+vap.transition.glmm.small <- lme4::glmer(Change ~ Initial + (1|Transition), 
+                                family = binomial, 
+                                data = vap.transition.long %>% filter(Change == "Changed" | Change == "Stable"))
+
+vap.transition.glmm.big <- lme4::glmer(Change ~ Initial + Age + Gender + Ethnicity + Deprivation + (1|Transition), 
+                                family = binomial, 
+                                data = vap.transition.long %>% filter(Change == "Changed" | Change == "Stable"))
+
+tab_model(vap.transition.glmm.big,
+          show.reflvl = T)
+
+AIC(vap.transition.glmm.small, vap.transition.glmm.big)
+```
+
+## Binomial GLMM
+
+```{r}
+vap.long.current.time <- readRDS(file = "S:/Research/Damian Scarf/Andre Mason/NZAVS/Vape GLMM.RDS")
+smoke.long.current.time <- readRDS(file = "S:/Research/Damian Scarf/Andre Mason/NZAVS/Smoke GLMM.RDS")
+
+sjPlot::tab_model(vap.long.current.time, 
+                  smoke.long.current.time,
+                  order.terms = c(1,3,4,23,24,25,26,5,6,2,7,8,9,10,
+                                  11,12,13,14,15,16,17,18,19,20,21,22),
+                  show.reflvl = T, prefix.labels = "varname"
+                  #pred.labels = c("Smoking", "Vaping")
+                  )
+
+
+sjPlot::tab_model(vap.long.current.time, 
+                  smoke.long.current.time,
+                  terms = c("Smoking [Yes, No]",
+                            "Vaping [Yes, No]")
+                  ) 
+  
+
+
+sjPlot::plot_model(vap.long.current.time, vline.color = "black")
+
+table(vap.data$Vaper.T10, vap.data$Smoker.T11)
+table(vap.data$Vaper.T11, vap.data$Smoker.T12)
+```
+
+## Standard Binomial Regression
+
+```{r include = F, eval  = F}
+
+write.csv(vap.data, file = "S:/Research/Damian Scarf/Andre Mason/NZAVS/Vap.data.csv")
+## Binomial Regression
+tab_model(glm(Smoker.T11 ~ Vaper.T10 + Smoker.T10 + Age.T11 + Gender.T11 + NZDep.2018.T11 + EthnicCats.T11,
+                     family = "binomial",
+                     data = vap.data))
+
+tab_model(glm(Smoker.T12 ~ Vaper.T11 + Smoker.T11 + Age.T12 + Gender.T12 + NZDep.2018.T12 + EthnicCats.T12,
+                     family = "binomial",
+                     data = vap.data))
+
+tab_model(glm(Vaper.T11 ~ Smoker.T10 + Vaper.T10 + Age.T11 + Gender.T11 + NZDep.2018.T11 + EthnicCats.T11,
+                     family = "binomial",
+                     data = vap.data))
+
+tab_model(glm(Vaper.T12 ~ Smoker.T11 + Vaper.T11 + Age.T12 + Gender.T12 + NZDep.2018.T12 + EthnicCats.T12,
+                     family = "binomial",
+                     data = vap.data))
+```
+

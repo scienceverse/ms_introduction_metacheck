@@ -1,0 +1,1018 @@
+---
+title: "Analysis"
+author: "Patricia Chen & Desmond C. Ong"
+date: "October 30, 2016"
+output: html_document
+---
+
+This analysis script accompanies the manuscript Chen, Chavez, Ong, & Gunderson (in press; Psychological Science). 
+
+
+```{r reading-in-datasets, echo=FALSE, warning=FALSE, message=FALSE, eval=TRUE}
+# loads all the packages required for this session. If you do not have them, install them using the command:
+#      install.packages('packageName')
+# for example, install.packages('ggplot2')
+library(ggplot2)
+library('scales')
+library(Hmisc)
+library(corrplot)
+library(psych)
+library(psy)
+library(reshape2)
+library(reshape)
+library(lme4)
+library(nlme)
+library(lmerTest)
+library(lsr) # for cohensD()
+library(devtools) # for session diagnostics at the end using session_info()
+source("summarySE.R")
+
+# helper function to print numbers to a specific number of decimal places
+# citation: http://stackoverflow.com/questions/3443687/formatting-decimal-places-in-r
+print_decimal_places <- function(x, k) format(round(x, k), nsmall=k)
+
+# calculate 95% confidence intervals
+#    mean(x) - [multiplier] * SD(x) / sqrt(n(x)), where multiplier tends to 1.96 as n->infinity
+CI_Low <- function(x) { mean(x, na.rm=TRUE) - qt(.975, sum(!is.na(x)))*sd(x, na.rm=TRUE)/sqrt(sum(!is.na(x)))}
+CI_High <- function(x) { mean(x, na.rm=TRUE) + qt(.975, sum(!is.na(x)))*sd(x, na.rm=TRUE)/sqrt(sum(!is.na(x)))}
+
+# reading in the data
+study1 = read.csv("study1_analysis_release.csv", header=TRUE)
+study2 = read.csv("study2_analysis_release.csv", header=TRUE)
+
+# subsetting into _c(ontrol) and _t(reatment) groups
+study1_c = subset(study1, study1$group==0)
+study1_t = subset(study1, study1$group==1)
+study2_c = subset(study2, study2$group==0)
+study2_t = subset(study2, study2$group==1)
+
+# emotion and motivation variables long form dataset
+emotion_motivation_dataset <- read.csv("emotion_motivation_variables_release.csv", header=TRUE)
+```
+
+
+
+
+
+# Results
+
+```{r in-text-pre-intervention-competencies-and-motivation, echo=FALSE, results='hide', eval=FALSE}
+summary(lm(highschoolGPA ~ group, study1))$coeff[2,4]  # p = 0.939
+summary(lm(highschoolGPA ~ group, study2))$coeff[2,4]  # p = 0.393
+
+summary(lm(pre_intervention_GPA ~ group, study1))$coeff[2,4]  # p = 0.577
+summary(lm(pre_intervention_GPA ~ group, study2))$coeff[2,4]  # p = 0.557
+
+##################### PRE-INT COMPETENCIES & MOTIVATION #######################
+
+# Grade Goal
+summary(lm(gradegoal ~ group, study1))$coeff[2,4]
+summary(lm(gradegoal_E2 ~ group, study1))$coeff[2,4]
+summary(lm(gradegoal ~ group, study2))$coeff[2,4]
+summary(lm(gradegoal_E2 ~ group, study2))$coeff[2,4]
+
+# Motivation
+summary(lm(motivation ~ group, study1))$coeff[2,4]
+summary(lm(motivation_E2 ~ group, study1))$coeff[2,4]
+summary(lm(motivation ~ group, study2))$coeff[2,4]
+summary(lm(motivation_E2 ~ group, study2))$coeff[2,4]
+
+# Importance
+summary(lm(importance ~ group, study1))$coeff[2,4]
+summary(lm(importance_E2 ~ group, study1))$coeff[2,4]
+summary(lm(importance ~ group, study2))$coeff[2,4]
+summary(lm(importance_E2 ~ group, study2))$coeff[2,4]
+
+# Confidence
+summary(lm(confidence ~ group, study1))$coeff[2,4]
+summary(lm(confidence_E2 ~ group, study1))$coeff[2,4]
+summary(lm(confidence ~ group, study2))$coeff[2,4]
+summary(lm(confidence_E2 ~ group, study2))$coeff[2,4]
+```
+
+
+Students' performance and motivation levels were not statistically different between the treatment and control conditions prior to the intervention and at every time point in both our studies (Table S2 in the SOM contains the descriptive statistics of these variables for each condition). Regression analyses showed that there were no statistically significant differences between conditions in students' high school GPAs (
+$p_\text{Study 1}$ = `r print_decimal_places(summary(lm(highschoolGPA ~ group, study1))$coeff[2,4], 3)`, 
+$p_\text{Study 2}$ = `r print_decimal_places(summary(lm(highschoolGPA ~ group, study2))$coeff[2,4], 3)`) 
+and college GPAs before the intervention (
+$p_\text{Study 1}$ = `r print_decimal_places(summary(lm(pre_intervention_GPA ~ group, study1))$coeff[2,4], 3)`, 
+$p_\text{Study 2}$ = `r print_decimal_places(summary(lm(pre_intervention_GPA ~ group, study2))$coeff[2,4], 3)`
+). 
+
+Across both cohorts, there were also no significant differences between conditions in students' desired grades on each of their two exams (
+all p-values > `r print_decimal_places(min(summary(lm(gradegoal ~ group, study1))$coeff[2,4], summary(lm(gradegoal_E2 ~ group, study1))$coeff[2,4], summary(lm(gradegoal ~ group, study2))$coeff[2,4], summary(lm(gradegoal_E2 ~ group, study2))$coeff[2,4]), 3)`
+), their motivation to achieve their desired grades (
+all p-values > `r print_decimal_places(min(summary(lm(motivation ~ group, study1))$coeff[2,4], summary(lm(motivation_E2 ~ group, study1))$coeff[2,4], summary(lm(motivation ~ group, study2))$coeff[2,4], summary(lm(motivation_E2 ~ group, study2))$coeff[2,4]), 3)`
+), the personal importance of these desired grades (
+all p-values > `r print_decimal_places(min(summary(lm(importance ~ group, study1))$coeff[2,4], summary(lm(importance_E2 ~ group, study1))$coeff[2,4], summary(lm(importance ~ group, study2))$coeff[2,4], summary(lm(importance_E2 ~ group, study2))$coeff[2,4]), 3)`
+), and their confidence in attaining their desired grades (
+all p-values > `r print_decimal_places(min(summary(lm(confidence ~ group, study1))$coeff[2,4], summary(lm(confidence_E2 ~ group, study1))$coeff[2,4], summary(lm(confidence ~ group, study2))$coeff[2,4], summary(lm(confidence_E2 ~ group, study2))$coeff[2,4]), 3)`
+). 
+
+
+### Treatment Effects
+
+We conducted our analyses using multiple approaches: First, we conducted an intent-to-treat analysis (Gupta, 2011; Wertz, 1995) by comparing the performance of all students based on their randomly assigned condition, regardless of how many surveys they took. This avoids the self-selection bias potentially introduced by only analyzing students who finished the full treatment or full control. Second, we compared the performance of students in the treatment and control conditions who took our surveys before both of their exams (i.e. the full treatment versus the same number of control surveys). Third, we considered whether treatment dosage among those who were assigned to receive the intervention resulted in differential benefits among those treated. Performance differences between conditions in all three analyses replicated when we analyzed students' exam and final course performance, excluding the homework extra credit points that they attained for participating in these surveys.
+
+
+
+```{r in-text-treatment-effects-intent-to-treat, echo=FALSE, results='hide', eval=FALSE}
+############################## INTENT-TO-TREAT ################################
+##### Study 1 #####
+t.test(study1$grade~study1$group)
+t.test(study1$exam_1~study1$group)
+t.test(study1$exam_2~study1$group)
+
+##### study2 #####
+t.test(study2$grade~study2$group)
+t.test(study2$exam_1~study2$group)
+t.test(study2$exam_2~study2$group)
+```
+
+
+
+In both studies, our intent-to-treat analyses found that students in the treatment condition outperformed those in the control condition on their final course grades by an average of one-third of a letter grade. In Study 1, students in the treatment condition performed an average of 
+`r print_decimal_places(t.test(study1$grade~study1$group)$estimate[2] - t.test(study1$grade~study1$group)$estimate[1], 2)`% 
+[`r print_decimal_places(abs(t.test(study1$grade~study1$group)$conf.int[2]), 2)`%, 
+`r print_decimal_places(abs(t.test(study1$grade~study1$group)$conf.int[1]), 2)`%] 
+higher on their final course grades than students in the control condition (
+$M_T$ = `r print_decimal_places(mean(study1_t$grade, na.rm=T), 2)`% 
+vs. $M_C$ = `r print_decimal_places(mean(study1_c$grade, na.rm=T), 2)`%, 
+Cohen's $d$ = `r print_decimal_places(lsr::cohensD(study1_c$grade, study1_t$grade), 2)`, 
+Welch $t$(`r print_decimal_places(t.test(study1$grade~study1$group)$parameter, 0)`) = `r print_decimal_places(abs(t.test(study1$grade~study1$group)$statistic), 2)`, 
+$p$ = `r format(t.test(study1$grade~study1$group)$p.value, digits=2)`
+). 
+This performance advantage replicated in Study 2, where students in the treatment condition scored an average of 
+`r print_decimal_places(t.test(study2$grade~study2$group)$estimate[2] - t.test(study2$grade~study2$group)$estimate[1], 2)`% 
+[`r print_decimal_places(abs(t.test(study2$grade~study2$group)$conf.int[2]), 2)`%, 
+`r print_decimal_places(abs(t.test(study2$grade~study2$group)$conf.int[1]), 2)`%] 
+higher in the class than those in the control condition (
+$M_T$ = `r print_decimal_places(mean(study2_t$grade, na.rm=T), 2)`% 
+vs. $M_C$ = `r print_decimal_places(mean(study2_c$grade, na.rm=T), 2)`%, 
+$d$ = `r print_decimal_places(lsr::cohensD(study2_c$grade, study2_t$grade), 2)`, 
+$t$(`r print_decimal_places(t.test(study2$grade~study2$group)$parameter, 0)`) = `r print_decimal_places(abs(t.test(study2$grade~study2$group)$statistic), 2)`, 
+$p$ = `r format(t.test(study2$grade~study2$group)$p.value, digits=2)`
+). Performance differences between conditions were significant on every exam that the students took in both cohorts, except on Exam 1 in Study 1, where it was in the same predicted direction but not statistically significant at the 0.05 level (Fig. 1).  
+
+
+```{r letter-grade-conversion, echo=FALSE, eval=FALSE}
+# On average, students in the treatment group got 1/3 of a letter grade (the majority of them got this) boost, relative to their final grade if they hadn't received the average intent-to-treat effect.
+# Approach: Treatment student - Average intent-to-treat effect -> converted to letter grade & GPA equivalent -> show proportion of students who got this GPA boost.
+  
+  #Letter Grade Boost
+letter_to_grade_points = function(string){
+  grade_letters = c("A+","A","A-","B+","B","B-","C+","C","C-","D+","D","D-","E")
+  grade_points  = c(4.0, 4.0, 3.7, 3.3, 3.0, 2.7, 2.3, 2.0, 1.7, 1.3, 1.0, 0.7, 0.0)
+  #print(class(string))
+  #print(string)
+  index         = which(grade_letters == string)
+  if(length(index) > 0){
+    gp       	  = grade_points[index]
+    return(gp)
+  }else(return(NA))
+}
+grade_to_letter = function(grade){
+  if(grade < 50){return("E")}
+  if(grade >= 50 & grade < 55){return("D-")}
+  if(grade >= 55 & grade < 59){return("D")}
+  if(grade >= 59 & grade < 63){return("D+")}
+  if(grade >= 63 & grade < 68){return("C-")}
+  if(grade >= 68 & grade < 72){return("C")}
+  if(grade >= 72 & grade < 76){return("C+")}
+  if(grade >= 76 & grade < 80){return("B-")}
+  if(grade >= 80 & grade < 84){return("B")}
+  if(grade >= 84 & grade < 88){return("B+")}
+  if(grade >= 88 & grade < 92){return("A-")}
+  if(grade >= 92 & grade < 96){return("A")}
+  if(grade >= 96){return("A+")}
+}
+
+  # Intent to treat effect #
+Study1_intent_to_treat_effect = 3.6369
+grade_diffs_Study1 = c()
+temp = study1[study1$group == 1,]
+temp = temp[!is.na(temp$grade),]
+for(i in 1:nrow(temp)){
+  before_letter = grade_to_letter(temp$grade[i] - Study1_intent_to_treat_effect)
+  before_points = letter_to_grade_points(before_letter)
+  
+  after_letter = grade_to_letter(temp$grade[i])
+  after_points = letter_to_grade_points(after_letter)
+  
+  grade_diffs_Study1 = c(grade_diffs_Study1, after_points - before_points)
+}
+summary(factor(grade_diffs_Study1))/length(grade_diffs_Study1)
+
+
+Study2_intent_to_treat_effect = 4.20526
+grade_diffs_Study2 = c()
+temp = study2[study2$group == 1,]
+temp = temp[!is.na(temp$grade),]
+for(i in 1:nrow(temp)){
+  before_letter = grade_to_letter(temp$grade[i] - Study2_intent_to_treat_effect)
+  before_points = letter_to_grade_points(before_letter)
+  
+  after_letter = grade_to_letter(temp$grade[i])
+  after_points = letter_to_grade_points(after_letter)
+  
+  grade_diffs_Study2 = c(grade_diffs_Study2, after_points - before_points)
+}
+summary(factor(grade_diffs_Study2))/length(grade_diffs_Study2)
+
+  # Full treatment effect #
+Study1_full_treatment_effect = 3.45303
+grade_diffs_Study1 = c()
+temp = study1[study1$group == 1,]
+temp = temp[!is.na(temp$grade),]
+for(i in 1:nrow(temp)){
+  before_letter = grade_to_letter(temp$grade[i] - Study1_full_treatment_effect)
+  before_points = letter_to_grade_points(before_letter)
+  
+  after_letter = grade_to_letter(temp$grade[i])
+  after_points = letter_to_grade_points(after_letter)
+  
+  grade_diffs_Study1 = c(grade_diffs_Study1, after_points - before_points)
+}
+summary(factor(grade_diffs_Study1))/length(grade_diffs_Study1)
+
+
+Study2_full_treatment_effect = 4.64856
+grade_diffs_Study2 = c()
+temp = study2[study2$group == 1,]
+temp = temp[!is.na(temp$grade),]
+for(i in 1:nrow(temp)){
+  before_letter = grade_to_letter(temp$grade[i] - Study2_full_treatment_effect)
+  before_points = letter_to_grade_points(before_letter)
+  
+  after_letter = grade_to_letter(temp$grade[i])
+  after_points = letter_to_grade_points(after_letter)
+  
+  grade_diffs_Study2 = c(grade_diffs_Study2, after_points - before_points)
+}
+summary(factor(grade_diffs_Study2))/length(grade_diffs_Study2)
+
+```
+
+
+
+
+
+
+```{r fig-1-graphs-of-treatment-effect, echo=FALSE, message=FALSE, fig.height=5, fig.width=7}
+######################## Graphs of treatment effect #######################
+
+  ### Intent to treat with 95% CI bars ###
+
+tempStudy1 = subset(study1, study1$group==1 | study1$group==0) # removing NAs
+study1summary = summarySE(tempStudy1, measurevar = "grade", groupvars = c("group"), na.rm=TRUE)
+colnames(study1summary)[3] = "value"
+study1summary$type = "Course Grade"
+study1summary2 = summarySE(tempStudy1, measurevar = "exam_1", groupvars = c("group"), na.rm=TRUE)
+colnames(study1summary2)[3] = "value"
+study1summary2$type = "Exam 1"
+study1summary = rbind(study1summary, study1summary2)
+study1summary2 = summarySE(tempStudy1, measurevar = "exam_2", groupvars = c("group"), na.rm=TRUE)
+colnames(study1summary2)[3] = "value"
+study1summary2$type = "Exam 2"
+study1summary = rbind(study1summary, study1summary2)
+
+study1summary$year = "Study 1"
+
+tempStudy2 = subset(study2, study2$group==1 | study2$group==0) # removing NAs
+study2summary = summarySE(tempStudy2, measurevar = "grade", groupvars = c("group"), na.rm=TRUE)
+colnames(study2summary)[3] = "value"
+study2summary$type = "Course Grade"
+study2summary2 = summarySE(tempStudy2, measurevar = "exam_1", groupvars = c("group"), na.rm=TRUE)
+colnames(study2summary2)[3] = "value"
+study2summary2$type = "Exam 1"
+study2summary = rbind(study2summary, study2summary2)
+study2summary2 = summarySE(tempStudy2, measurevar = "exam_2", groupvars = c("group"), na.rm=TRUE)
+colnames(study2summary2)[3] = "value"
+study2summary2$type = "Exam 2"
+study2summary = rbind(study2summary, study2summary2)
+
+study2summary$year = "Study 2"
+
+
+study1and2summary = rbind(study1summary, study2summary)
+study1and2summary$groupFactor = factor(study1and2summary$group, levels=c(0, 1), labels=c("Control   ", "Treatment"))
+
+study1and2summary$typeFactor = factor(study1and2summary$type, levels=c("Exam 1", "Exam 2", "Course Grade"))
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+ggplot(data=study1and2summary, aes(x=typeFactor, y=value, fill=groupFactor)) +
+  geom_bar(position=position_dodge(), stat="identity",colour="black", size=.3) +  
+  geom_errorbar(aes(ymin=value-ci, ymax=value+ci), colour="black", width=.1, size=.3, position=position_dodge(.9)) +
+  scale_fill_manual(name="Condition", values=c("#cccccc", "#999999")) + 
+  scale_y_continuous(limits=c(70,90),oob = rescale_none) + 
+  facet_grid(~year) +
+  xlab("") + ylab("Score (%)") + theme_bw() +
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        panel.grid = element_blank(),
+        strip.text = element_text(size=12),
+        legend.position="top")
+
+# aspect ratio: 7 by 5 pdf
+```
+
+Fig. 1. Average student performance (% score) on Exam 1, Exam 2, and final course grades by condition in our intent-to-treat analyses. Error bars represent 95% confidence intervals of the means for each condition. 
+
+
+
+
+```{r in-text-treatment-effects-fulltreatment, echo=FALSE, results='hide', eval=TRUE}
+
+  ############################## FULL TREATMENT VS. FULL CONTROL ##############################
+
+# study 1: n = 130, 73.0%; study 2: n = 143, 69.1%). 
+study1_fulltrt <- subset(study1, study1$number_pre_complete==2)  
+study2_fulltrt <- subset(study2, study2$number_pre_complete==2)
+
+study1_fulltrt_c <- subset(study1_fulltrt, study1_fulltrt$group==0)
+study1_fulltrt_t <- subset(study1_fulltrt, study1_fulltrt$group==1)
+
+study2_fulltrt_c <- subset(study2_fulltrt, study2_fulltrt$group==0)
+study2_fulltrt_t <- subset(study2_fulltrt, study2_fulltrt$group==1)
+
+#t.test(study1_fulltrt$grade~study1_fulltrt$group)
+#t.test(study1_fulltrt$exam_1~study1_fulltrt$group)
+#t.test(study1_fulltrt$exam_2~study1_fulltrt$group)
+
+#t.test(study2_fulltrt$grade~study2_fulltrt$group)
+#t.test(study2_fulltrt$exam_1~study2_fulltrt$group)
+#t.test(study2_fulltrt$exam_2~study2_fulltrt$group)
+```
+
+
+
+We replicated these findings when we compared the performances of the majority of students who took the full intervention dosage (i.e. once before each of two exams) against students in the control condition who received the same number of control exam reminders. In both studies, the average class performance difference between these two groups of students was one-third of a letter grade. Students who took the intervention twice scored an average of 
+`r print_decimal_places(t.test(study1_fulltrt$grade~study1_fulltrt$group)$estimate[2] - t.test(study1_fulltrt$grade~study1_fulltrt$group)$estimate[1], 2)`% 
+[`r print_decimal_places(abs(t.test(study1_fulltrt$grade~study1_fulltrt$group)$conf.int[2]), 2)`%, 
+`r print_decimal_places(abs(t.test(study1_fulltrt$grade~study1_fulltrt$group)$conf.int[1]), 2)`%] 
+higher on their final course grades in Study 1 (
+$M_T$ = `r print_decimal_places(mean(study1_fulltrt_t$grade, na.rm=T), 2)`% 
+vs. $M_C$ = `r print_decimal_places(mean(study1_fulltrt_c$grade, na.rm=T), 2)`%, 
+$d$ = `r print_decimal_places(lsr::cohensD(study1_fulltrt_c$grade, study1_fulltrt_t$grade), 2)`, 
+$t$(`r print_decimal_places(t.test(study1_fulltrt$grade~study1_fulltrt$group)$parameter, 0)`) = `r print_decimal_places(abs(t.test(study1_fulltrt$grade~study1_fulltrt$group)$statistic), 2)`, 
+$p$ = `r format(t.test(study1_fulltrt$grade~study1_fulltrt$group)$p.value, digits=2)`
+), and 
+`r print_decimal_places(t.test(study2_fulltrt$grade~study2_fulltrt$group)$estimate[2] - t.test(study2_fulltrt$grade~study2_fulltrt$group)$estimate[1], 2)`% 
+[`r print_decimal_places(abs(t.test(study2_fulltrt$grade~study2_fulltrt$group)$conf.int[2]), 2)`%, 
+`r print_decimal_places(abs(t.test(study2_fulltrt$grade~study2_fulltrt$group)$conf.int[1]), 2)`%] 
+higher in Study 2 (
+$M_T$ = `r print_decimal_places(mean(study2_fulltrt_t$grade, na.rm=T), 2)`% 
+vs. $M_C$ = `r print_decimal_places(mean(study2_fulltrt_c$grade, na.rm=T), 2)`%, 
+$d$ = `r print_decimal_places(lsr::cohensD(study2_fulltrt_c$grade, study2_fulltrt_t$grade), 2)`, 
+$t$(`r print_decimal_places(t.test(study2_fulltrt$grade~study2_fulltrt$group)$parameter, 0)`) = `r print_decimal_places(abs(t.test(study2_fulltrt$grade~study2_fulltrt$group)$statistic), 2)`, 
+$p$ = `r format(t.test(study2_fulltrt$grade~study2_fulltrt$group)$p.value, digits=2)`
+), relative to those in the control condition. Significant performance differences were also observed on students' exams, with the exception of Exam 1 in Study 1, where our results were in the predicted direction but not statistically significant (Fig. S1).
+
+
+
+
+```{r in-text-treatment-dosage-effects, echo=FALSE, results='hide', eval=TRUE}
+######################## TREATMENT DOSAGE EFFECTS #########################
+
+### Among students in the treatment group, did doing 2 surveys boost performance more than doing 1 survey? ###
+table(study1$number_pre_complete)
+table(study2$number_pre_complete)
+
+  ### Treatment groups ###
+
+#t.test(study1_t$grade~study1_t$number_pre_complete)
+#t.test(study2_t$grade~study2_t$number_pre_complete)
+
+  ### Control Groups ###
+
+#t.test(study1_c$grade~study1_c$number_pre_complete)
+#t.test(study2_c$grade~study2_c$number_pre_complete)
+
+### Pre-intervention motivation measures by treatment dosage ###
+study1_c <- subset(study1, study1$group==0)
+study1_t <- subset(study1, study1$group==1)
+
+study2_c <- subset(study2, study2$group==0)
+study2_t <- subset(study2, study2$group==1)
+
+t.test(study1_t$gradegoal~study1_t$number_pre_complete)
+t.test(study1_t$motivation~study1_t$number_pre_complete)
+t.test(study1_t$importance~study1_t$number_pre_complete)
+t.test(study1_t$confidence~study1_t$number_pre_complete)
+
+t.test(study1_t$gradegoal_E2~study1_t$number_pre_complete)
+t.test(study1_t$motivation_E2~study1_t$number_pre_complete)
+t.test(study1_t$importance_E2~study1_t$number_pre_complete)
+t.test(study1_t$confidence_E2~study1_t$number_pre_complete)
+
+t.test(study2_t$gradegoal~study2_t$number_pre_complete)
+t.test(study2_t$motivation~study2_t$number_pre_complete)
+t.test(study2_t$importance~study2_t$number_pre_complete)
+t.test(study2_t$confidence~study2_t$number_pre_complete)
+
+t.test(study2_t$gradegoal_E2~study2_t$number_pre_complete)
+t.test(study2_t$motivation_E2~study2_t$number_pre_complete)
+t.test(study2_t$importance_E2~study2_t$number_pre_complete)
+t.test(study2_t$confidence_E2~study2_t$number_pre_complete)
+
+### Differences in Grades by Number of Surveys Taken, Controlling for Prior Achievement, in Each Group ###
+
+dosage_model_study1 <- lm(grade ~ number_pre_complete + pre_intervention_GPA, data = study1_t) 
+#summary(dosage_model_study1)
+#confint(dosage_model_study1, 'number_pre_complete', level=0.95)
+
+dosage_model_study2 <- lm(grade ~ number_pre_complete + pre_intervention_GPA, data = study2_t)   
+#summary(dosage_model_study2)
+#confint(dosage_model_study2, "number_pre_complete", level=0.95)
+```
+
+
+We found a treatment dosage effect among those who had received the intervention. The majority of treatment condition students in each study took the treatment twice rather than once (Study 1: 75.9% twice versus 24.1% once; Study 2: 70.5% twice versus 29.5% once). Students in the treatment condition who took the intervention twice (as opposed to once) scored significantly higher on their final course grades (Study 1: 
+$M_\text{diff}$ = `r print_decimal_places(t.test(study1_t$grade~study1_t$number_pre_complete)$estimate[2] - t.test(study1_t$grade~study1_t$number_pre_complete)$estimate[1], 2)`% 
+[`r print_decimal_places(abs(t.test(study1_t$grade~study1_t$number_pre_complete)$conf.int[2]), 2)`%, 
+`r print_decimal_places(abs(t.test(study1_t$grade~study1_t$number_pre_complete)$conf.int[1]), 2)`%], 
+$d$ = `r print_decimal_places(lsr::cohensD(subset(study1_t, study1_t$number_pre_complete==1)$grade, subset(study1_t, study1_t$number_pre_complete==2)$grade), 2)`,
+$t$(`r print_decimal_places(t.test(study1_t$grade~study1_t$number_pre_complete)$parameter, 0)`) = `r print_decimal_places(abs(t.test(study1_t$grade~study1_t$number_pre_complete)$statistic), 2)`, 
+$p$ = `r format(t.test(study1_t$grade~study1_t$number_pre_complete)$p.value, digits=2)`
+; Study 2: 
+$M_\text{diff}$ = `r print_decimal_places(t.test(study2_t$grade~study2_t$number_pre_complete)$estimate[2] - t.test(study2_t$grade~study2_t$number_pre_complete)$estimate[1], 2)`% 
+[`r print_decimal_places(abs(t.test(study2_t$grade~study2_t$number_pre_complete)$conf.int[2]), 2)`%, 
+`r print_decimal_places(abs(t.test(study2_t$grade~study2_t$number_pre_complete)$conf.int[1]), 2)`%], 
+$d$ = `r print_decimal_places(lsr::cohensD(subset(study2_t, study2_t$number_pre_complete==1)$grade, subset(study2_t, study2_t$number_pre_complete==2)$grade), 2)`,
+$t$(`r print_decimal_places(t.test(study2_t$grade~study2_t$number_pre_complete)$parameter, 0)`) = `r print_decimal_places(abs(t.test(study2_t$grade~study2_t$number_pre_complete)$statistic), 2)`, 
+$p$ = `r format(t.test(study2_t$grade~study2_t$number_pre_complete)$p.value, digits=2)`
+). 
+
+
+To rule out the possibility that these performance differences were primarily driven by differences in students' motivation, we tested whether there were significant differences in students' self-reported motivation between the groups of students who took one versus two doses of the intervention. These motivation variables were the ones that we had assessed in our pre-exam surveys, namely students' desired grades on each exam, their self-reported motivation to achieve their desired grades, how personally important their grades in the course were, and their confidence in attaining their desired grades. We found no significant differences between groups of students who had taken one versus two doses of the treatment on any of these motivation variables (all p-values across both studies > .05). In addition, we found that the treatment dosage effect remained statistically significant even when controlling for students' GPA at the beginning of the class—a performance index that is often associated with how motivated students are towards their academic learning in general (
+Study 1: $b_\text{dosage}$ = 
+`r print_decimal_places(summary(dosage_model_study1)$coeff[2,1], 2)` 
+[`r print_decimal_places(confint(dosage_model_study1, 'number_pre_complete', level=0.95)[1], 2)`, 
+`r print_decimal_places(confint(dosage_model_study1, 'number_pre_complete', level=0.95)[2], 2)`],
+se = `r print_decimal_places(summary(dosage_model_study1)$coeff[2,2], 2)`, 
+$t$(`r print_decimal_places(dosage_model_study1$df.residual, 0)`) = `r print_decimal_places(summary(dosage_model_study1)$coeff[2,3], 2)`, 
+$p$ = `r format(summary(dosage_model_study1)$coeff[2,4], digits=2)`
+; Study 2: $b_\text{dosage}$ = 
+`r print_decimal_places(summary(dosage_model_study2)$coeff[2,1], 2)` 
+[`r print_decimal_places(confint(dosage_model_study2, 'number_pre_complete', level=0.95)[1], 2)`, 
+`r print_decimal_places(confint(dosage_model_study2, 'number_pre_complete', level=0.95)[2], 2)`],
+se = `r print_decimal_places(summary(dosage_model_study2)$coeff[2,2], 2)`, 
+$t$(`r print_decimal_places(dosage_model_study2$df.residual, 0)`) = `r print_decimal_places(summary(dosage_model_study2)$coeff[2,3], 2)`, 
+$p$ = `r format(summary(dosage_model_study2)$coeff[2,4], digits=2)`
+). 
+
+
+In summary, we can conclude that students benefit from doing the intervention exercise over getting a regular exam reminder, and that more exposure to the intervention is associated with higher class performance. 
+
+
+
+### Treatment Homogeneity
+
+```{r in-text-treatment-homogeneity, echo=FALSE, warning=FALSE, results='hide', eval=TRUE}
+
+moderation_p_values = c(
+  anova(lm(grade ~ group*sex, data = study1))[3,5],
+  anova(lm(grade ~ group*pre_intervention_GPA, data = study1))[3,5],
+  anova(lm(grade ~ group*classstanding, data = study1))[3,5],
+  anova(lm(grade ~ group*race_dummy, data = study1))[3,5],
+  anova(lm(grade ~ group*sex, data = study2))[3,5],
+  anova(lm(grade ~ group*pre_intervention_GPA, data = study2))[3,5],
+  anova(lm(grade ~ group*classstanding, data = study2))[3,5],
+  anova(lm(grade ~ group*race_dummy, data = study2))[3,5]
+)
+
+# Combined dataset, comparing models with and without interaction terms.
+
+study1and2 = rbind(study1[, c("group", "grade", "sex", "pre_intervention_GPA", "race_dummy", "classstanding")], 
+               study2[, c("group", "grade", "sex", "pre_intervention_GPA", "race_dummy", "classstanding")])
+study1and2$year = c(rep(1, nrow(study1)), rep(2, nrow(study2)))
+
+simple_moderation_model = lm(grade ~ group + (sex + pre_intervention_GPA + race_dummy + classstanding + year), data = study1and2)
+interactive_moderation_model = lm(grade ~ group * (sex + pre_intervention_GPA + race_dummy + classstanding + year), data = study1and2)
+
+anova(simple_moderation_model, interactive_moderation_model)
+```
+
+We found that the Strategic Resource Use for Learning intervention was academically advantageous for different types of college students across the demographic and performance variables that we had collected (gender, race, class standing, and pre-intervention performance levels). Moderation analyses showed that there were no statistically significant differences in the treatment effect between males and females, students of different racial groups, students of different class standings, and low and high-performing students in both cohorts (all interaction p-values > `r print_decimal_places(min(moderation_p_values), 3)`). Model comparisons further reinforced these results: Pooling across both studies, we compared one model specifying all the interactions between condition and individual difference variables (gender, race, class standing, pre-intervention GPA, and cohort) to another model without the interactions (only the main effects). The two models were not statistically different from one another ($p$ = `r print_decimal_places(anova(simple_moderation_model, interactive_moderation_model)[2,6], 3)`), implying that the more parsimonious model without interactions is sufficient to explain the data. These results support our inference that the intervention did not benefit one kind of student to a greater extent than another.
+
+
+
+### Causal Process
+
+
+
+```{r in-text-causal-process, echo=FALSE, eval=TRUE}
+
+study1and2_mechstack_prepost <- read.csv("study1and2_mechstack_prepost.csv", header = T)
+
+# colnames(study1and2_mechstack_prepost)
+# "ID", "group", "grade", "resourceuse", "numresourcesused", "selfreflection", "year"  
+
+  ## Testing causal path model ##
+path1 <- lm(selfreflection ~ group, study1and2_mechstack_prepost)
+  summary(path1)
+  confint(path1, 'group', level=0.95)
+  
+path2 <- lm(resourceuse ~ selfreflection, study1and2_mechstack_prepost)
+  summary(path2)
+  confint(path2, 'selfreflection', level=0.95)
+
+path3 <- lm(grade ~ resourceuse, study1and2_mechstack_prepost)
+  summary(path3)
+  confint(path3, 'resourceuse', level=0.95)
+  
+path4 <- lm(resourceuse ~ group, study1and2_mechstack_prepost)
+  summary(path4)
+  confint(path4, 'group', level=0.95)
+
+
+numResUseTTest = t.test(study1and2_mechstack_prepost$numresourcesused ~ study1and2_mechstack_prepost$group)
+
+
+```
+
+
+
+We tested our prediction that the intervention would affect students' performance through greater self-reflection on their learning and more effective resource use behaviors, in that order. Aggregating across all available data in our two studies, we first ran regression analyses to test for the predicted relationships among our variables. Students who had been randomly assigned to the treatment reported practicing significantly more self-reflection on their learning in class 
+($b$ = 
+`r print_decimal_places(summary(path1)$coeff[2,1], 2)` 
+[`r print_decimal_places(confint(path1, 'group', level=0.95)[1], 2)`, 
+`r print_decimal_places(confint(path1, 'group', level=0.95)[2], 2)`],
+se = `r print_decimal_places(summary(path1)$coeff[2,2], 2)`, 
+$t$(`r print_decimal_places(path1$df.residual, 0)`) = `r print_decimal_places(summary(path1)$coeff[2,3], 2)`, 
+$p$ = `r format(summary(path1)$coeff[2,4], digits=2)`
+).
+the more students thought strategically about how to effectively approach their learning, the more useful they found the resources they had used for studying 
+($b$ = 
+`r print_decimal_places(summary(path2)$coeff[2,1], 2)` 
+[`r print_decimal_places(confint(path2, 'selfreflection', level=0.95)[1], 2)`, 
+`r print_decimal_places(confint(path2, 'selfreflection', level=0.95)[2], 2)`],
+se = `r print_decimal_places(summary(path2)$coeff[2,2], 2)`, 
+$t$(`r print_decimal_places(path2$df.residual, 0)`) = `r print_decimal_places(summary(path2)$coeff[2,3], 2)`, 
+$p$ = `r format(summary(path2)$coeff[2,4], digits=2)`
+), 
+and this predicted how well they performed in the class 
+($b$ = 
+`r print_decimal_places(summary(path3)$coeff[2,1], 2)` 
+[`r print_decimal_places(confint(path3, 'resourceuse', level=0.95)[1], 2)`, 
+`r print_decimal_places(confint(path3, 'resourceuse', level=0.95)[2], 2)`],
+se = `r print_decimal_places(summary(path3)$coeff[2,2], 2)`, 
+$t$(`r print_decimal_places(path3$df.residual, 0)`) = `r print_decimal_places(summary(path3)$coeff[2,3], 2)`, 
+$p$ = `r format(summary(path3)$coeff[2,4], digits=2)`
+).
+There was no direct effect of condition on students' resource use behaviors 
+($p$ = `r print_decimal_places(summary(path4)$coeff[2,4], 3)`). 
+The treatment effect was not driven by students in the treatment condition using a greater number of resources than students in the control condition. If anything, students in the treatment condition used fewer learning resources on average in the class
+($M_T$ = `r print_decimal_places(numResUseTTest$estimate[2], 2)` 
+vs. $M_C$ = `r print_decimal_places(numResUseTTest$estimate[1], 2)`, 
+$M_\text{diff}$ = `r print_decimal_places(abs(numResUseTTest$estimate[2] - numResUseTTest$estimate[1]), 2)` [`r print_decimal_places(numResUseTTest$conf.int[1], 2)`, `r print_decimal_places(numResUseTTest$conf.int[2], 2)`],
+$d$ = `r print_decimal_places(lsr::cohensD(subset(study1and2_mechstack_prepost, study1and2_mechstack_prepost$group==1)$numresourcesused, subset(study1and2_mechstack_prepost, study1and2_mechstack_prepost$group==0)$numresourcesused), 2)`, 
+$t$(`r print_decimal_places(numResUseTTest$parameter, 0)`) = `r print_decimal_places(abs(numResUseTTest$statistic), 2)`, 
+$p$ = `r format(numResUseTTest$p.value, digits=2)`). 
+This result suggests that the intervention made students use their resources *more effectively* rather than just getting them to use *a greater number of* resources.
+
+
+
+
+[Serial Mediation in Mplus]
+```{r dataset-for-spss}
+study1and2_mechstack_prepost_forMPlus = study1and2_mechstack_prepost[, c("ID", "group", "grade", "selfreflection", "resourceuse")]
+study1and2_mechstack_prepost_forMPlus[is.na(study1and2_mechstack_prepost_forMPlus)] <- 999
+write.csv(study1and2_mechstack_prepost_forMPlus, "spssfileformplus.csv", row.names=FALSE, col.names=FALSE)
+```
+1. Change "NAs" to "999" in R.
+2. Save as excel file.
+3. Use SPSS to save as dat file without headers.
+4. Import dat file to MPLUS and save as MPLUS input file.
+
+
+### Exam-Focused Resource Selection and Follow-Through in the Treatment Condition
+
+
+To further understand how the intervention translates into benefits for students in the treatment condition, we asked the following questions: What are the performance benefits of using resources that students had strategically selected ahead of time, versus those that they had not selected in advance but ended up using? How much do the benefits of planning out resource use depend on actually following-through with these plans? To address these questions, we matched the resources that every student had selected and planned to use before their exams with their post-exam resource use responses. We aggregated across all exams in both studies and used mixed effects models with exam number, individual student, and cohort included as random effects.
+
+
+##### Importance of strategic forethought in resource use. 
+
+
+```{r in-text-planning-vs-not-planned-resources, echo=FALSE, warning=FALSE, message=FALSE, eval=TRUE}
+#### Contribution of Each Type of Resource Use to Performance in T group
+## Testing T group NotPlannedDid, PlanlessDid, & NotPlannedNotDid resource use predicting exam performance.
+
+# Ideal: Random Intercepts by exam within ID within year.
+#   but, because we have missing data (some students only took the survey for one exam), so we don't have enough to estiamte the examNum within student nesting.
+#   So compromise: still can estimate student within year, and add a separate random intercept for examNum.
+
+m1_T_PDidvsNotPlannedDid = lmer(exam ~ PlannedDid + NotPlannedDid + (1|year/ID) + (1|examNum), 
+             subset(emotion_motivation_dataset, emotion_motivation_dataset$group==1) )
+sum_m1_T_PDidvsNotPlannedDid = summary(m1_T_PDidvsNotPlannedDid)
+confint_m1_T_PDidvsNotPlannedDid = confint(m1_T_PDidvsNotPlannedDid, level = 0.95)
+```
+
+
+We tested the contribution of strategic forethought to students' grades by comparing how well treatment group students' exam performance was explained by the number of resources that they had strategically selected and used versus the number of resources they had not selected a priori but ended up using. Both of these variables were added as fixed effects predictors in our mixed effects model. Only the number of resources that students had strategically selected in advance and used positively related to their exam performance 
+($b$ = `r print_decimal_places(sum_m1_T_PDidvsNotPlannedDid$coeff[2,1], 2)` 
+[`r print_decimal_places(confint_m1_T_PDidvsNotPlannedDid["PlannedDid",1], 2)`, 
+`r print_decimal_places(confint_m1_T_PDidvsNotPlannedDid["PlannedDid",2], 2)`],
+se = `r print_decimal_places(sum_m1_T_PDidvsNotPlannedDid$coeff[2,2], 2)`, 
+$t$(`r print_decimal_places(sum_m1_T_PDidvsNotPlannedDid$coeff[2,3], 0)`) = `r print_decimal_places(sum_m1_T_PDidvsNotPlannedDid$coeff[2,4], 2)`, 
+$p$ = `r format(sum_m1_T_PDidvsNotPlannedDid$coeff[2,5], digits=2)`); 
+the number of resources that they used but had not selected in the intervention ahead of time did not significantly predict their exam performance 
+($p$ = `r print_decimal_places(sum_m1_T_PDidvsNotPlannedDid$coeff[3,5], 3)`). Thus, within the same model, the resources that students had strategically selected through our intervention exercise predicted students' exam performance, but not those which they used without such strategic forethought.
+
+
+
+
+
+##### Follow-through with plans. 
+
+
+```{r in-text-planning-used-vs-planned-unused-resources, echo=FALSE, warning=FALSE, message=FALSE, eval=TRUE}
+#### Contribution of Each Type of Resource Use to Performance in T group
+## Testing T group NotPlannedDid, PlanlessDid, & NotPlannedNotDid resource use predicting exam performance.
+
+# Ideal: Random Intercepts by exam within ID within year.
+#   but, because we have missing data (some students only took the survey for one exam), so we don't have enough to estiamte the examNum within student nesting.
+#   So compromise: still can estimate student within year, and add a separate random intercept for examNum.
+
+emotion_motivation_dataset$TotalPlanned = 
+  emotion_motivation_dataset$PlannedDid + emotion_motivation_dataset$PlannedNotDid
+
+m2_T_PDidvsPlannedNotDid = lmer(exam ~ PlannedDid * TotalPlanned + (1|ID) + (1|year) + (1|examNum),
+                                subset(emotion_motivation_dataset, emotion_motivation_dataset$group==1) )
+sum_m2_T_PDidvsPlannedNotDid = summary(m2_T_PDidvsPlannedNotDid)
+
+confint_m2_T_PDidvsPlannedNotDid = confint(m2_T_PDidvsPlannedNotDid, level = 0.95)
+```
+
+
+Does follow-through with one's resource use plans matter for students' exam performance? Note that individual students differed in how many resources they planned in total ("Total Planned"), as well as how many of those planned resources they ended up using ("Planned-Used"). We ran a mixed effects model predicting students' exam performance with three fixed effects predictors: the number of resources that treatment group students had planned and used (Planned-Used), the total number of resources that they had planned to use (Total Planned), and the interaction between these two regressors (Planned-Used X Total Planned). Note that the total number of planned resources (Total Planned) contains the number of resources that the student had planned and used (Planned-Used), as well as the number of resources that students did not end up using; and the interaction allowed us to model the effect of follow-through at different total numbers of resources planned.
+
+
+There was a significant negative Planned-Used X Total Planned interaction 
+($b$ = `r print_decimal_places(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid:TotalPlanned",1], 2)` 
+[`r print_decimal_places(confint_m2_T_PDidvsPlannedNotDid["PlannedDid:TotalPlanned",1], 2)`, 
+`r print_decimal_places(confint_m2_T_PDidvsPlannedNotDid["PlannedDid:TotalPlanned",2], 2)`],
+se = `r print_decimal_places(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid:TotalPlanned",2], 2)`, 
+$t$(`r print_decimal_places(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid:TotalPlanned",3], 0)`) = `r print_decimal_places(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid:TotalPlanned",4], 2)`, 
+$p$ = `r format(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid:TotalPlanned",5], digits=2)`).
+There was also a significant simple effect of the number of resources that students had planned and used on their exam performance 
+($b$ = `r print_decimal_places(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid",1], 2)` 
+[`r print_decimal_places(confint_m2_T_PDidvsPlannedNotDid["PlannedDid",1], 2)`, 
+`r print_decimal_places(confint_m2_T_PDidvsPlannedNotDid["PlannedDid",2], 2)`],
+se = `r print_decimal_places(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid",2], 2)`, 
+$t$(`r print_decimal_places(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid",3], 0)`) = `r print_decimal_places(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid",4], 2)`, 
+$p$ = `r format(sum_m2_T_PDidvsPlannedNotDid$coeff["PlannedDid",5], digits=2)`); 
+but no significant simple effect of the total number of resources that they had planned 
+($p$ = `r print_decimal_places(sum_m2_T_PDidvsPlannedNotDid$coeff["TotalPlanned",5], 3)`).
+Our results suggests that strategically planning out what resources will be useful does not automatically boost students' grades—it also requires putting these strategic plans to practice (Gollwitzer, 1999). In addition, the significant interaction effect indicates that students' use of planned resources confers decreasing marginal benefit as the total number of resources planned increases (i.e. using one more planned resource when one had planned four resources confers more benefit than if one had planned fourteen). In other words, planning more resources to use confers performance benefits to the extent that (i) individuals follow through on using those resources, and (ii) the scope of planning keeps within reasonably practical bounds, rather than being indiscriminate.
+
+
+
+
+### Additional Emotional and Motivational Benefits
+
+
+```{r in-text-emotional-and-motivational-benefits, echo=FALSE, warning=FALSE, message=FALSE, results='hide', eval=TRUE}
+# Ideal: Random Intercepts by exam within ID within year.
+#   but, because we have missing data (some students only took the survey for one exam), so we don't have enough to estiamte the examNum within student nesting.
+#   So compromise: still can estimate student within year, and add a separate random intercept for examNum.
+
+additional_outcomes_negEmotions_model = lmer(negemotions ~ group + (1|year/ID) + (1|examNum), emotion_motivation_dataset, na.action=na.omit)
+additional_outcomes_negEmotions <- summary(additional_outcomes_negEmotions_model)
+confint_additional_outcomes_negEmotions = confint(additional_outcomes_negEmotions_model, level = 0.95)
+
+
+additional_outcomes_controlOverGrade_model = lmer(control.over.grade ~ group + (1|year/ID) + (1|examNum), emotion_motivation_dataset, na.action=na.omit)
+additional_outcomes_controlOverGrade <- summary(additional_outcomes_controlOverGrade_model)
+confint_additional_outcomes_controlOverGrade = confint(additional_outcomes_controlOverGrade_model, level = 0.95)
+
+
+additional_outcomes_extentOfPlanning <- summary(lmer(extent.of.planning_poE ~ group + (1|year/ID) + (1|examNum), emotion_motivation_dataset, na.action=na.omit))
+
+additional_outcomes_keptToPlans <- summary(lmer(kept.to.plans_poE ~ group + (1|year/ID) + (1|examNum), emotion_motivation_dataset, na.action=na.omit))
+```
+
+
+
+
+We examined additional potential consequences of the intervention, including its effects on students' pre-exam negative affect and perceived control over their performance, how much pre-exam planning they did, and how well they followed through with their plans. We aggregated across all exams in both studies and used mixed effects models to test for differences on each of these variables by condition, including exam number, individual student, and cohort as random effects. Relative to control condition, students in the treatment condition experienced significantly lower negative affect towards their upcoming exams 
+($b$ = `r print_decimal_places(additional_outcomes_negEmotions$coeff[2,1], 2)`,
+[`r print_decimal_places(confint_additional_outcomes_negEmotions["group",1], 2)`, 
+`r print_decimal_places(confint_additional_outcomes_negEmotions["group",2], 2)`],
+se = `r print_decimal_places(additional_outcomes_negEmotions$coeff[2,2], 2)`,
+$t$(`r print_decimal_places(additional_outcomes_negEmotions$coeff[2,3], 0)`) =
+`r print_decimal_places(abs(additional_outcomes_negEmotions$coeff[2,4]), 2)`,
+$p$ = `r format(additional_outcomes_negEmotions$coeff[2,5], digits=2)`)
+and perceived greater control over their own learning in the class 
+($b$ = `r print_decimal_places(abs(additional_outcomes_controlOverGrade$coeff[2,1]), 2)`,
+[`r print_decimal_places(confint_additional_outcomes_controlOverGrade["group",1], 2)`, 
+`r print_decimal_places(confint_additional_outcomes_controlOverGrade["group",2], 2)`],
+se = `r print_decimal_places(additional_outcomes_controlOverGrade$coeff[2,2], 2)`,
+$t$(`r print_decimal_places(additional_outcomes_controlOverGrade$coeff[2,3], 0)`) =
+`r print_decimal_places(abs(additional_outcomes_controlOverGrade$coeff[2,4]), 2)`,
+$p$ = `r format(additional_outcomes_controlOverGrade$coeff[2,5], digits=2)`)
+. Neither students' subjective degree of prior planning 
+(p = `r print_decimal_places(additional_outcomes_extentOfPlanning$coeff[2,5], 3)`)
+nor how much they felt that they had followed-through with their plans 
+(p = `r print_decimal_places(additional_outcomes_keptToPlans$coeff[2,5], 3)`)
+differed between conditions.
+
+
+
+
+### Students' Open-Ended Responses
+
+To understand which elements of the intervention predicted students' class performance, we coded and analyzed students' open-ended responses to why each resource they had chosen would be useful to them ("why useful" responses) and the descriptions of their exam preparation plans (planning). Examples of students' open-ended responses are provided in the SOM Appendix C. 
+
+Students' "why useful" responses were coded into five main strategies that they mentioned which are consistent with self-regulation theory: (1) explicit consideration of the exam format, (2) leveraging multiple resources in a synergistic manner, (3) a focus on promoting learning and understanding of the class material, (4) illustrating an understanding of personal strengths and weaknesses, and (5) recognizing that learning is a social process (as opposed to an individual's isolated endeavor). Two independent coders categorized students' open-ended responses into these five categories if students mentioned any of the categories in their responses (inter-rater κ ranged from 0.88 to 1.00), and any disagreements were resolved through discussion. Students' plans were similarly coded into the following three thematic categories: when, where, and how the resources were going to be used (inter-rater κ ranged from 0.94 to 1.00). For each thematic category, we created a measure of how much students engaged in it across their two exams ("0" if they did not mention it at all, "1" if they only wrote about it before one exam, and "2" if they wrote about it before both exams). 
+
+We regressed treatment condition students' final course grades on this measure of engagement separately for each of these 8 categories (see Table 1 for results). Four elements of the intervention significantly and consistently related to students' class performance across the two studies: explicitly tailoring their choice of resources to the exam questions expected, focusing their resource use on learning and understanding the material, and planning out when and how they would use their resources (Table 1). For example, students in the treatment condition who were more engaged in reflecting on what was expected of them on their exams as they chose their resources tended to perform better in the class. These results emphasize that both strategic self-reflection and planning are valuable components of the intervention. 
+
+
+
+
+
+
+```{r in-text-open-ended responses, echo=FALSE, results='hide', eval=TRUE}
+################## OPEN-ENDED RESPONSES ######################
+
+### Analyses regressing performance on engagement with each SP strategy/ approach ###
+
+# results are in Table 1 #
+
+## Study 1 ##
+# Why Useful #
+m1_study1 = lm(study1_t$grade ~ study1_t$why1_examformat, data = study1_t)
+#summary(m1_study1)
+#confint(m1_study1, 'study1_t$why1_examformat', level=0.95)
+
+m2_study1 = lm(study1_t$grade ~ study1_t$why2_otherres, data = study1_t)
+#summary(m2_study1)
+#confint(m2_study1, 'study1_t$why2_otherres', level=0.95)
+
+m3_study1 = lm(study1_t$grade ~ study1_t$why3_learnundst, data = study1_t)
+#summary(m3_study1)
+#confint(m3_study1, 'study1_t$why3_learnundst', level=0.95)
+
+m4_study1 = lm(study1_t$grade ~ study1_t$why4_selfknow, data = study1_t)
+#summary(m4_study1)
+#confint(m4_study1, 'study1_t$why4_selfknow', level=0.95)
+
+m5_study1 = lm(study1_t$grade ~ study1_t$why5_sociallearn, data = study1_t)
+#summary(m5_study1)
+#confint(m5_study1, 'study1_t$why5_sociallearn', level=0.95)
+
+# Elements of Planning #
+mp1_study1 = lm(study1_t$grade ~ study1_t$plan1_when, data = study1_t)
+#summary(mp1_study1)
+#confint(mp1_study1, 'study1_t$plan1_when', level=0.95)
+
+mp2_study1 = lm(study1_t$grade ~ study1_t$plan2_where, data = study1_t)
+#summary(mp2_study1)
+#confint(mp2_study1, 'study1_t$plan2_where', level=0.95)
+
+mp3_study1 = lm(study1_t$grade ~ study1_t$plan3_how, data = study1_t)
+#summary(mp3_study1)
+#confint(mp3_study1, 'study1_t$plan3_how', level=0.95)
+
+## Study 2 ##
+# Why Useful #
+m1_study2 = lm(study2_t$grade ~ study2_t$why1_examformat, data = study2_t)
+#summary(m1_study2)
+#confint(m1_study2, 'study2_t$why1_examformat', level=0.95)
+
+m2_study2 = lm(study2_t$grade ~ study2_t$why2_otherres, data = study2_t)
+#summary(m2_study2)
+#confint(m2_study2, 'study2_t$why2_otherres', level=0.95)
+
+m3_study2 = lm(study2_t$grade ~ study2_t$why3_learnundst, data = study2_t)
+#summary(m3_study2)
+#confint(m3_study2, 'study2_t$why3_learnundst', level=0.95)
+
+m4_study2 = lm(study2_t$grade ~ study2_t$why4_selfknow, data = study2_t)
+#summary(m4_study2)
+#confint(m4_study2, 'study2_t$why4_selfknow', level=0.95)
+
+m5_study2 = lm(study2_t$grade ~ study2_t$why5_sociallearn, data = study2_t)
+#summary(m5_study2)
+#confint(m5_study2, 'study2_t$why5_sociallearn', level=0.95)
+
+# Elements of Planning #
+mp1_study2 = lm(study2_t$grade ~ study2_t$plan1_when, data = study2_t)
+#summary(mp1_study2)
+#confint(mp1_study2, 'study2_t$plan1_when', level=0.95)
+
+mp2_study2 = lm(study2_t$grade ~ study2_t$plan2_where, data = study2_t)
+#summary(mp2_study2)
+#confint(mp2_study2, 'study2_t$plan2_where', level=0.95)
+
+mp3_study2 = lm(study2_t$grade ~ study2_t$plan3_how, data = study2_t)
+#summary(mp3_study2)
+#confint(mp3_study2, 'study2_t$plan3_how', level=0.95)
+```
+
+
+
+
+
+Table 1
+
+Categories | Unstandardized $b$ <br> [95\% CI] | $t$ | $p$
+--- | --- | --- | ---
+&nbsp; | <b>"Why Useful" Self-regulatory Elements</b> | &nbsp; | &nbsp;
+<b>Study 1</b> | &nbsp; | &nbsp; | &nbsp;
+Consideration of exam format | `r print_decimal_places(summary(m1_study1)$coeff[2,1], 2)` [`r print_decimal_places(confint(m1_study1, 'study1_t$why1_examformat', level=0.95)[1], 2)`, `r print_decimal_places(confint(m1_study1, 'study1_t$why1_examformat', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m1_study1)$coeff[2,3], 2)` | `r print_decimal_places(summary(m1_study1)$coeff[2,4], 2)`
+Synergistic use with other resources | `r print_decimal_places(summary(m2_study1)$coeff[2,1], 2)` [`r print_decimal_places(confint(m2_study1, 'study1_t$why2_otherres', level=0.95)[1], 2)`, `r print_decimal_places(confint(m2_study1, 'study1_t$why2_otherres', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m2_study1)$coeff[2,3], 2)` | `r print_decimal_places(summary(m2_study1)$coeff[2,4], 2)`
+Learning and understanding of the class material | `r print_decimal_places(summary(m3_study1)$coeff[2,1], 2)` [`r print_decimal_places(confint(m3_study1, 'study1_t$why3_learnundst', level=0.95)[1], 2)`, `r print_decimal_places(confint(m3_study1, 'study1_t$why3_learnundst', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m3_study1)$coeff[2,3], 2)` | `r print_decimal_places(summary(m3_study1)$coeff[2,4], 2)`
+Understanding of personal strengths | `r print_decimal_places(summary(m4_study1)$coeff[2,1], 2)` [`r print_decimal_places(confint(m4_study1, 'study1_t$why4_selfknow', level=0.95)[1], 2)`, `r print_decimal_places(confint(m4_study1, 'study1_t$why4_selfknow', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m4_study1)$coeff[2,3], 2)` | `r print_decimal_places(summary(m4_study1)$coeff[2,4], 2)`
+Learning as a social process | `r print_decimal_places(summary(m5_study1)$coeff[2,1], 2)` [`r print_decimal_places(confint(m5_study1, 'study1_t$why5_sociallearn', level=0.95)[1], 2)`, `r print_decimal_places(confint(m5_study1, 'study1_t$why5_sociallearn', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m5_study1)$coeff[2,3], 2)` | `r print_decimal_places(summary(m5_study1)$coeff[2,4], 2)`
+<b>Study 2</b> | &nbsp; | &nbsp; | &nbsp;
+Consideration of exam format | `r print_decimal_places(summary(m1_study2)$coeff[2,1], 2)` [`r print_decimal_places(confint(m1_study2, 'study2_t$why1_examformat', level=0.95)[1], 2)`, `r print_decimal_places(confint(m1_study2, 'study2_t$why1_examformat', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m1_study2)$coeff[2,3], 2)` | `r print_decimal_places(summary(m1_study2)$coeff[2,4], 2)`
+Synergistic use with other resources | `r print_decimal_places(summary(m2_study2)$coeff[2,1], 2)` [`r print_decimal_places(confint(m2_study2, 'study2_t$why2_otherres', level=0.95)[1], 2)`, `r print_decimal_places(confint(m2_study2, 'study2_t$why2_otherres', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m2_study2)$coeff[2,3], 2)` | `r print_decimal_places(summary(m2_study2)$coeff[2,4], 2)`
+Learning and understanding of the class material | `r print_decimal_places(summary(m3_study2)$coeff[2,1], 2)` [`r print_decimal_places(confint(m3_study2, 'study2_t$why3_learnundst', level=0.95)[1], 2)`, `r print_decimal_places(confint(m3_study2, 'study2_t$why3_learnundst', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m3_study2)$coeff[2,3], 2)` | `r print_decimal_places(summary(m3_study2)$coeff[2,4], 2)`
+Understanding of personal strengths | `r print_decimal_places(summary(m4_study2)$coeff[2,1], 2)` [`r print_decimal_places(confint(m4_study2, 'study2_t$why4_selfknow', level=0.95)[1], 2)`, `r print_decimal_places(confint(m4_study2, 'study2_t$why4_selfknow', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m4_study2)$coeff[2,3], 2)` | `r print_decimal_places(summary(m4_study2)$coeff[2,4], 2)`
+Learning as a social process | `r print_decimal_places(summary(m5_study2)$coeff[2,1], 2)` [`r print_decimal_places(confint(m5_study2, 'study2_t$why5_sociallearn', level=0.95)[1], 2)`, `r print_decimal_places(confint(m5_study2, 'study2_t$why5_sociallearn', level=0.95)[2], 2)`] | `r print_decimal_places(summary(m5_study2)$coeff[2,3], 2)` | `r print_decimal_places(summary(m5_study2)$coeff[2,4], 2)`
+&nbsp; | <b>Elements of Planning</b> | &nbsp; | &nbsp;
+<b>Study 1</b> | &nbsp; | &nbsp; | &nbsp;
+When | `r print_decimal_places(summary(mp1_study1)$coeff[2,1], 2)` [`r print_decimal_places(confint(mp1_study1, 'study1_t$plan1_when', level=0.95)[1], 2)`, `r print_decimal_places(confint(mp1_study1, 'study1_t$plan1_when', level=0.95)[2], 2)`] | `r print_decimal_places(summary(mp1_study1)$coeff[2,3], 2)` | `r print_decimal_places(summary(mp1_study1)$coeff[2,4], 2)`
+Where | `r print_decimal_places(summary(mp2_study1)$coeff[2,1], 2)` [`r print_decimal_places(confint(mp2_study1, 'study1_t$plan2_where', level=0.95)[1], 2)`, `r print_decimal_places(confint(mp2_study1, 'study1_t$plan2_where', level=0.95)[2], 2)`] | `r print_decimal_places(summary(mp2_study1)$coeff[2,3], 2)` | `r print_decimal_places(summary(mp2_study1)$coeff[2,4], 2)`
+How | `r print_decimal_places(summary(mp3_study1)$coeff[2,1], 2)` [`r print_decimal_places(confint(mp3_study1, 'study1_t$plan3_how', level=0.95)[1], 2)`, `r print_decimal_places(confint(mp3_study1, 'study1_t$plan3_how', level=0.95)[2], 2)`] | `r print_decimal_places(summary(mp3_study1)$coeff[2,3], 2)` | `r print_decimal_places(summary(mp3_study1)$coeff[2,4], 2)`
+<b>Study 2</b> | &nbsp; | &nbsp; | &nbsp;
+When | `r print_decimal_places(summary(mp1_study2)$coeff[2,1], 2)` [`r print_decimal_places(confint(mp1_study2, 'study2_t$plan1_when', level=0.95)[1], 2)`, `r print_decimal_places(confint(mp1_study2, 'study2_t$plan1_when', level=0.95)[2], 2)`] | `r print_decimal_places(summary(mp1_study2)$coeff[2,3], 2)` | `r print_decimal_places(summary(mp1_study2)$coeff[2,4], 2)`
+Where | `r print_decimal_places(summary(mp2_study2)$coeff[2,1], 2)` [`r print_decimal_places(confint(mp2_study2, 'study2_t$plan2_where', level=0.95)[1], 2)`, `r print_decimal_places(confint(mp2_study2, 'study2_t$plan2_where', level=0.95)[2], 2)`] | `r print_decimal_places(summary(mp2_study2)$coeff[2,3], 2)` | `r print_decimal_places(summary(mp2_study2)$coeff[2,4], 2)`
+How | `r print_decimal_places(summary(mp3_study2)$coeff[2,1], 2)` [`r print_decimal_places(confint(mp3_study2, 'study2_t$plan3_how', level=0.95)[1], 2)`, `r print_decimal_places(confint(mp3_study2, 'study2_t$plan3_how', level=0.95)[2], 2)`] | `r print_decimal_places(summary(mp3_study2)$coeff[2,3], 2)` | `r print_decimal_places(summary(mp3_study2)$coeff[2,4], 2)`
+
+
+
+
+ 
+
+
+
+# Supplementary Materials
+
+##### Table S1
+
+Percentage of students in the class who participated in each survey
+
+\% Participation | Study 1 | Study 2
+--- | --- | ---
+Pre-Exam 1 Survey | `r print_decimal_places(sum(study1$didSurveyPreE1, na.rm=T)/nrow(study1)*100,1)` | `r print_decimal_places(sum(study2$didSurveyPreE1, na.rm=T)/nrow(study2)*100,1)`
+Pre-Exam 2 Survey | `r print_decimal_places(sum(study1$didSurveyPreE2, na.rm=T)/nrow(study1)*100,1)` | `r print_decimal_places(sum(study2$didSurveyPreE2, na.rm=T)/nrow(study2)*100,1)`
+Both Pre-Exam Surveys | `r print_decimal_places(sum(study1$didSurveyPreE1 + study1$didSurveyPreE2, na.rm=T)/2/nrow(study1)*100,1)` | `r print_decimal_places(sum(study2$didSurveyPreE1 + study2$didSurveyPreE2, na.rm=T)/2/nrow(study2)*100,1)`
+Post-Exam 1 Survey | `r print_decimal_places(sum(study1$didSurveyPostE1, na.rm=T)/nrow(study1)*100,1)` | `r print_decimal_places(sum(study2$didSurveyPostE1, na.rm=T)/nrow(study2)*100,1)`
+Post-Exam 2 Survey | `r print_decimal_places(sum(study1$didSurveyPostE2, na.rm=T)/nrow(study1)*100,1)` | `r print_decimal_places(sum(study2$didSurveyPostE2, na.rm=T)/nrow(study2)*100,1)`
+Both Post-Exam Surveys | `r print_decimal_places(sum(study1$didSurveyPostE1 + study1$didSurveyPostE2, na.rm=T)/2/nrow(study1)*100,1)` | `r print_decimal_places(sum(study2$didSurveyPostE1 + study2$didSurveyPostE2, na.rm=T)/2/nrow(study2)*100,1)`
+All Four Surveys | `r print_decimal_places(sum(study1$didSurveyPreE1 + study1$didSurveyPreE2 + study1$didSurveyPostE1 + study1$didSurveyPostE2, na.rm=T)/4/nrow(study1)*100,1)` | `r print_decimal_places(sum(study2$didSurveyPreE1 + study2$didSurveyPreE2 + study2$didSurveyPostE1 + study2$didSurveyPostE2, na.rm=T)/4/nrow(study2)*100,1)`
+
+Note. There were `r nrow(study1)` students who enrolled in and obtained a final grade in the class in study 1, and `r nrow(study2)` students in study 2.
+
+```{r descriptives, echo=FALSE, results='hide', eval=FALSE}
+
+############################## NUMBER OF SURVEYS TAKEN ################################
+
+##### Study 1 ####
+
+nrow(study1)  # n = 178
+table(study1$group)  # 84 C, 87 T
+table(study1$groupE1)  # 68 C, 71 T
+table(study1$groupE2)  # 79 C, 82 T
+
+    # Note that ID = 172 did not make it to the randomization page on pre-E1 but did for pre-E2. Student answered only the goal question for pre-E1.
+    #     ID didSurveyPreE1 didSurveyPreE2 groupE1 groupE2
+    # 59 172   1      1      NA       0
+
+#didSurveyPreE1       # n = 140 took study1 pre-E1 survey
+#didSurveyPreE2    # n = 161 took study1 pre-E2 survey
+#didSurveyPostE1  # n = 144 took study1 post-E1 survey
+#didSurveyPostE2  # n = 139 took study1 post-E2 survey
+
+# Number of pre-E surveys complete
+
+    # 73.0% took both pre-exam surveys in study1.
+    # Total n = 171 who took either or both of the pre-exam surveys.
+
+    #   0   1   2 
+    #   7  41 130 
+
+# Number of post-E surveys complete
+
+    # 68.0% took both post-exam surveys in study1; 91.0% took part in at least one.
+    #   0   1   2 
+    #  16  41 121 
+
+
+# Total number of surveys complete
+
+  # n = 104, 58.4% completed all 4 surveys.
+    #   0   1   2   3   4 
+    #   3   9  27  35 104 
+
+
+##### Study 2 ####
+
+nrow(study2)  # n = 207, 199 participated in at least one survey.
+table(study2$group)  # 95 C, 95 T
+table(study2$groupE1)  # 88 C, 87 T
+table(study2$groupE2)  # 83 C, 75 T
+
+#didSurveyPreE1                  # n = 175 took study2 pre-E1 survey
+#didSurveyPreE2               # n = 158 took study2 pre-E2 survey
+#didSurveyPostE1/ Q77_poE1   # n = 162 took study2 post-E1 survey
+#didSurveyPostE2/ Q77_poE2   # n = 173 took study2 post-E2 survey
+
+# Number of pre-E surveys complete
+
+    # 69.1% took both pre-exam surveys in study2; 91.8% took at least one pre-exam survey.
+    # Total n = 190 who took either or both of the pre-exam surveys.
+
+    #    0   1   2 
+    #   17  47 143 
+
+# Number of post-E surveys complete
+
+    # 71.0% took both post-exam surveys; 90.8% took at least one post-exam survey.
+    #   0   1   2 
+    #  19  41 147 
+
+# Total number of surveys complete
+
+    # 58.9% completed all 4 surveys in study2.
+    #   0   1   2   3   4 
+    #   8  14  23  40 122 
+
+
+### Participant demographics ###
+
+table(study1$sex)
+table(study1$race)
+summary(study1$pre_intervention_GPA)
+
+table(study2$sex)
+table(study2$race)
+summary(study2$pre_intervention_GPA)
+
+```
+
+
+
+
+##### Table S2
+
+Students' pre-intervention measures by condition
+
+&nbsp; | High School GPA | College GPA | Goal grade | Motivation | Importance | Confidence
+----- | ----- | ----- | ----- | ----- | ----- | -----
+&nbsp; | &nbsp; | &nbsp; | Study 1 | &nbsp; | &nbsp; | &nbsp;
+Control | `r print_decimal_places(mean(study1_c$highschoolGPA, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$highschoolGPA, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$highschoolGPA), 2)`, `r print_decimal_places(CI_High(study1_c$highschoolGPA), 2)`]  | `r print_decimal_places(mean(study1_c$pre_intervention_GPA, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$pre_intervention_GPA, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$pre_intervention_GPA), 2)`, `r print_decimal_places(CI_High(study1_c$pre_intervention_GPA), 2)`] | &nbsp; | &nbsp; | &nbsp; | &nbsp;
+Treatment | `r print_decimal_places(mean(study1_t$highschoolGPA, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$highschoolGPA, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$highschoolGPA), 2)`, `r print_decimal_places(CI_High(study1_t$highschoolGPA), 2)`] | `r print_decimal_places(mean(study1_t$pre_intervention_GPA, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$pre_intervention_GPA, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$pre_intervention_GPA), 2)`, `r print_decimal_places(CI_High(study1_t$pre_intervention_GPA), 2)`] | &nbsp; | &nbsp; | &nbsp; | &nbsp;
+<b>Study 1 Exam 1</b> | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp;
+Control | &nbsp; | &nbsp; | `r print_decimal_places(mean(study1_c$gradegoal, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$gradegoal, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$gradegoal), 2)`, `r print_decimal_places(CI_High(study1_c$gradegoal), 2)`] | `r print_decimal_places(mean(study1_c$motivation, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$motivation, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$motivation), 2)`, `r print_decimal_places(CI_High(study1_c$motivation), 2)`] | `r print_decimal_places(mean(study1_c$importance, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$importance, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$importance), 2)`, `r print_decimal_places(CI_High(study1_c$importance), 2)`] | `r print_decimal_places(mean(study1_c$confidence, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$confidence, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$confidence), 2)`, `r print_decimal_places(CI_High(study1_c$confidence), 2)`]
+Treatment | &nbsp; | &nbsp; | `r print_decimal_places(mean(study1_t$gradegoal, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$gradegoal, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$gradegoal), 2)`, `r print_decimal_places(CI_High(study1_t$gradegoal), 2)`] | `r print_decimal_places(mean(study1_t$motivation, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$motivation, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$motivation), 2)`, `r print_decimal_places(CI_High(study1_t$motivation), 2)`] | `r print_decimal_places(mean(study1_t$importance, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$importance, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$importance), 2)`, `r print_decimal_places(CI_High(study1_t$importance), 2)`] | `r print_decimal_places(mean(study1_t$confidence, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$confidence, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$confidence), 2)`, `r print_decimal_places(CI_High(study1_t$confidence), 2)`]
+<b>Study 1 Exam 2</b> | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp;
+Control | &nbsp; | &nbsp; | `r print_decimal_places(mean(study1_c$gradegoal_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$gradegoal_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$gradegoal_E2), 2)`, `r print_decimal_places(CI_High(study1_c$gradegoal_E2), 2)`] | `r print_decimal_places(mean(study1_c$motivation_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$motivation_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$motivation_E2), 2)`, `r print_decimal_places(CI_High(study1_c$motivation_E2), 2)`] | `r print_decimal_places(mean(study1_c$importance_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$importance_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$importance_E2), 2)`, `r print_decimal_places(CI_High(study1_c$importance_E2), 2)`] | `r print_decimal_places(mean(study1_c$confidence_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_c$confidence_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_c$confidence_E2), 2)`, `r print_decimal_places(CI_High(study1_c$confidence_E2), 2)`]
+Treatment | &nbsp; | &nbsp; | `r print_decimal_places(mean(study1_t$gradegoal_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$gradegoal_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$gradegoal_E2), 2)`, `r print_decimal_places(CI_High(study1_t$gradegoal_E2), 2)`] | `r print_decimal_places(mean(study1_t$motivation_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$motivation_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$motivation_E2), 2)`, `r print_decimal_places(CI_High(study1_t$motivation_E2), 2)`] | `r print_decimal_places(mean(study1_t$importance_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$importance_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$importance_E2), 2)`, `r print_decimal_places(CI_High(study1_t$importance_E2), 2)`] | `r print_decimal_places(mean(study1_t$confidence_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study1_t$confidence_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study1_t$confidence_E2), 2)`, `r print_decimal_places(CI_High(study1_t$confidence_E2), 2)`]
+&nbsp; | &nbsp; | &nbsp; | Study 2 | &nbsp; | &nbsp; | &nbsp;
+Control | `r print_decimal_places(mean(study2_c$highschoolGPA, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$highschoolGPA, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$highschoolGPA), 2)`, `r print_decimal_places(CI_High(study2_c$highschoolGPA), 2)`] | `r print_decimal_places(mean(study2_c$pre_intervention_GPA, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$pre_intervention_GPA, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$pre_intervention_GPA), 2)`, `r print_decimal_places(CI_High(study2_c$pre_intervention_GPA), 2)`] | &nbsp; | &nbsp; | &nbsp; | &nbsp;
+Treatment | `r print_decimal_places(mean(study2_t$highschoolGPA, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$highschoolGPA, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$highschoolGPA), 2)`, `r print_decimal_places(CI_High(study2_t$highschoolGPA), 2)`] | `r print_decimal_places(mean(study2_t$pre_intervention_GPA, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$pre_intervention_GPA, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$pre_intervention_GPA), 2)`, `r print_decimal_places(CI_High(study2_t$pre_intervention_GPA), 2)`] | &nbsp; | &nbsp; | &nbsp; | &nbsp;
+<b>Study 2 Exam 1</b> | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp;
+Control | &nbsp; | &nbsp; | `r print_decimal_places(mean(study2_c$gradegoal, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$gradegoal, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$gradegoal), 2)`, `r print_decimal_places(CI_High(study2_c$gradegoal), 2)`]  | `r print_decimal_places(mean(study2_c$motivation, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$motivation, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$motivation), 2)`, `r print_decimal_places(CI_High(study2_c$motivation), 2)`]  | `r print_decimal_places(mean(study2_c$importance, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$importance, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$importance), 2)`, `r print_decimal_places(CI_High(study2_c$importance), 2)`]  | `r print_decimal_places(mean(study2_c$confidence, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$confidence, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$confidence), 2)`, `r print_decimal_places(CI_High(study2_c$confidence), 2)`] 
+Treatment | &nbsp; | &nbsp; | `r print_decimal_places(mean(study2_t$gradegoal, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$gradegoal, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$gradegoal), 2)`, `r print_decimal_places(CI_High(study2_t$gradegoal), 2)`] | `r print_decimal_places(mean(study2_t$motivation, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$motivation, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$motivation), 2)`, `r print_decimal_places(CI_High(study2_t$motivation), 2)`]  | `r print_decimal_places(mean(study2_t$importance, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$importance, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$importance), 2)`, `r print_decimal_places(CI_High(study2_t$importance), 2)`] | `r print_decimal_places(mean(study2_t$confidence, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$confidence, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$confidence), 2)`, `r print_decimal_places(CI_High(study2_t$confidence), 2)`] 
+<b>Study 2 Exam 2</b> | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp;
+Control | &nbsp; | &nbsp; | `r print_decimal_places(mean(study2_c$gradegoal_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$gradegoal_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$gradegoal_E2), 2)`, `r print_decimal_places(CI_High(study2_c$gradegoal_E2), 2)`] | `r print_decimal_places(mean(study2_c$motivation_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$motivation_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$motivation_E2), 2)`, `r print_decimal_places(CI_High(study2_c$motivation_E2), 2)`] | `r print_decimal_places(mean(study2_c$importance_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$importance_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$importance_E2), 2)`, `r print_decimal_places(CI_High(study2_c$importance_E2), 2)`] | `r print_decimal_places(mean(study2_c$confidence_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_c$confidence_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_c$confidence_E2), 2)`, `r print_decimal_places(CI_High(study2_c$confidence_E2), 2)`]
+Treatment | &nbsp; | &nbsp; | `r print_decimal_places(mean(study2_t$gradegoal_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$gradegoal_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$gradegoal_E2), 2)`, `r print_decimal_places(CI_High(study2_t$gradegoal_E2), 2)`] | `r print_decimal_places(mean(study2_t$motivation_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$motivation_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$motivation_E2), 2)`, `r print_decimal_places(CI_High(study2_t$motivation_E2), 2)`] | `r print_decimal_places(mean(study2_t$importance_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$importance_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$importance_E2), 2)`, `r print_decimal_places(CI_High(study2_t$importance_E2), 2)`] | `r print_decimal_places(mean(study2_t$confidence_E2, na.rm=TRUE), 2)` (`r print_decimal_places(sd(study2_t$confidence_E2, na.rm=TRUE), 2)`) <br> [`r print_decimal_places(CI_Low(study2_t$confidence_E2), 2)`, `r print_decimal_places(CI_High(study2_t$confidence_E2), 2)`]
+&nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp;
+
+Note. Descriptive statistics of the motivation, importance, and confidence measures reflect 7-point scales. No significant differences between conditions were found on any of these pre-intervention measures.
+
+
+
+##### Table S3
+
+Goodness-of-fit statistics for mediation models tested.
+
+##### TODO TABLE S3
+
+
+
+
+
+
+
+
+
+## R Session Info; to aid in reproducibility
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+# Details on the R versions and package versions used
+devtools::session_info()
+```
+
+
+
+
+
+
+

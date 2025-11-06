@@ -1,0 +1,553 @@
+---
+title: 'Challenging Moral Attitudes with Moral Messages: Supplemental Analyses'
+author: "[authors blind]"
+output:
+  html_document:
+    theme: sandstone
+    toc: yes
+    css: RMDfiles/rmd_css.css
+csl: RMDfiles/apa.csl
+bibliography: RMDfiles/references.bib
+link-citations: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, echo = F, warning=F, include=F}
+# Set Working Directory (Depends on Where the Files Are)
+setwd()
+
+# Load packages
+if (!require("dplyr")) install.packages("dplyr") #For easier data manipulation
+if (!require("tidyr")) install.packages("tidyr") #For easier data manipulation
+if (!require("ggplot2")) install.packages("ggplot2") #For graphing
+if (!require("stringr")) install.packages("stringr") #For string manipulation
+if (!require("readr")) install.packages("readr") #For reading in data as tibble
+if (!require("metafor")) install.packages("metafor") #For meta-analysis
+if (!require("broom")) install.packages("broom") #For collapsing multiple analyses into one results table
+if (!require("extrafont")) install.packages("extrafont") #For custom fonts in graphs
+if (!require("kableExtra")) install.packages("kableExtra") #For formatting tables
+if (!require("readtext")) install.packages("readtext") #For formatting tables
+library(papaja) #Additional formatting (not on CRAN; must be installed independently)
+select <- dplyr::select #Ensuring that the default for "select" is from dplyr
+
+# Set up plot theme
+## (Thanks to John Sakaluk for this particular setup: 
+## https://sakaluk.wordpress.com/2015/08/27/6-make-it-pretty-plotting-2-way-interactions-with-ggplot2/#APA)
+apatheme <- theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_line())
+```
+
+**Setting up Workspace**
+
+(See the full manuscript's analyses for details on processing each study's dataframe.)
+
+```{r, warning=F, results='hide', message=F}
+# Regression Display Function
+## This function is useful for rounding estimates and displaying CIs alongside other output.
+display.lm <- function(model) {
+  df <- summary(model) %>% with(df)
+  display.obj <- tidy(model) %>% bind_cols(confint_tidy(model)) %>% 
+    as.data.frame() %>% mutate(p.value.char = ifelse(p.value < .001, "< .001", p.value),
+                               p.value.3 = round(p.value, 3),
+                               ` ` = ifelse(p.value < .001, "***", 
+                                            ifelse(p.value < .01, "**", 
+                                                   ifelse(p.value < .05, "*", 
+                                                          ifelse(p.value < .10, ".", " "))))) %>%
+    mutate(p.value = as.character(ifelse(p.value < .001, "< .001", p.value.3)),
+           df = df[2]) %>%
+    select(term, B = estimate, SE = std.error, t = statistic, df, p.value, conf.low, conf.high, ` `) %>%
+    mutate_if(is.numeric, round, 2)
+  return(display.obj)
+}
+
+## Additional steps for formatting kable
+kable.lm <- function(display.obj) {
+  kable(display.obj, align = c("l", rep('c', ncol(display.obj) - 1))) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed", "responsive"), 
+                  full_width = F, position = "center")
+}
+
+# Study 1
+S1.full <- read_csv("data/MoralPersuasionData_Study1.csv")  %>% mutate(att1 = (att1_1 + att1_2 + att1_3) / 3,
+                              att2 = (att2_1 + att2_2 + att2_3) / 3,
+                              attchange = att1 - att2,
+                              att.pre = 0 - att1,
+                              att.post = 0 - att2,
+                              ideology = (poli_soc + poli_econ) / 2) 
+
+## Computing thought favorability
+### Coder 1
+S1.full$posA <- rowSums(select(S1.full, matches("Th[1-6]VA")) == 1, na.rm = T)
+S1.full$negA <- rowSums(select(S1.full, matches("Th[1-6]VA")) == 2, na.rm = T)
+S1.full$neuA <- rowSums(select(S1.full, matches("Th[1-6]VA")) == 3, na.rm = T)
+S1.full$irrA <- rowSums(select(S1.full, matches("Th[1-6]VA")) == 4, na.rm = T)
+
+### Coder 2
+S1.full$posB <- rowSums(select(S1.full, matches("Th[1-6]VB")) == 1, na.rm = T)
+S1.full$negB <- rowSums(select(S1.full, matches("Th[1-6]VB")) == 2, na.rm = T)
+S1.full$neuB <- rowSums(select(S1.full, matches("Th[1-6]VB")) == 3, na.rm = T)
+S1.full$irrB <- rowSums(select(S1.full, matches("Th[1-6]VB")) == 4, na.rm = T)
+
+### Average Thought Codings
+S1.full$pos <- S1.full %>% select(starts_with("pos")) %>% rowMeans()
+S1.full$neg <- S1.full %>% select(starts_with("neg")) %>% rowMeans()
+S1.full$neu <- S1.full %>% select(starts_with("neu")) %>% rowMeans()
+S1.full$irr <- S1.full %>% select(starts_with("irr")) %>% rowMeans()
+
+S1.full <- mutate(S1.full, cogres = (pos - neg) / (pos + neg + neu))
+S1.full$cogres[is.nan(S1.full$cogres)] <- 0 
+
+S1 <- filter(S1.full, att1 >= 0 & duplicatedIP == F)
+
+## Split into Study
+S1A <- filter(S1, study.F == "Study 1A")
+S1B <- filter(S1, study.F == "Study 1B")
+
+
+# Study 2
+S2.full <- read_csv("data/MoralPersuasionData_Study2.csv") %>% mutate(att1 = (att1_1 + att1_2 + att1_3) / 3,
+                              att2 = (att2_1 + att2_2 + att2_3) / 3,
+                              attchange = att1 - att2,
+                              att.pre = 0 - att1,
+                              att.post = 0 - att2,
+                              ideology = (poli_soc + poli_econ) / 2,
+                              att.post.modZ = abs(att.post - median(att.post)) / mad(att.post)) 
+S2.full$pos <- rowSums(select(S2.full, matches("rate[1-6]")) == 2, na.rm = T)
+S2.full$neg <- rowSums(select(S2.full, matches("rate[1-6]")) == 1, na.rm = T)
+S2.full$neu <- rowSums(select(S2.full, matches("rate[1-6]")) == 3, na.rm = T)
+S2.full$irr <- rowSums(select(S2.full, matches("rate[1-6]")) == 4, na.rm = T)
+S2.full <- mutate(S2.full, cogres = (pos - neg) / (pos + neg + neu))
+S2.full$cogres[is.nan(S2.full$cogres)] <- 0 
+S2 <- filter(S2.full, att1 >= 0 & duplicatedIP == F & att.post.modZ < 4)
+
+```
+
+<br>
+
+# Language Analysis of Persuasive Messages
+
+The following uses the Moral Foundations LIWC dictionary to code our messages. Note that we omit one of the words in the dictionary ("legal...") which would necessarily capture many cases of "legalize" and other words integral to the marijuana legalization topic itself.
+
+```{r, warning=F, results='hide', message=F}
+## Load quanteda
+if (!require("quanteda")) install.packages("quanteda") #For text analysis
+
+## Load Message Text
+messages <- read_csv("data/messages.csv")
+
+## Load messages and transform to corpus
+text <- as.character(messages$text)
+corpus <- corpus(text)
+
+## Dictionary Coding
+#download.file(url = "http://www.moralfoundations.org/sites/default/files/files/downloads/moral+foundations+dictionary.dic",
+#              destfile = "data/MFTdict.dic")
+MFT <- readtext("data/MFTdict.dic")
+MFT$text <- str_replace(MFT$text, "legal\\*", "") #Removing "legal*" from dictionary
+write(as.character(MFT$text[1]), file = "data/MFT_noLegal.dic")
+
+liwcdict <- dictionary(file = "data/MFT_noLegal.dic", format = "LIWC") #Loading dictionary in LIWC format
+liwcdfm <- dfm(corpus, dictionary = liwcdict, verbose = FALSE) #Applying dictionary to text
+liwc.df <- convert(liwcdfm, to = "data.frame") #Converting results to a dataframe
+
+## Get word counts
+words <- str_count(messages$text, '\\s+')+1
+
+## Merge dictionary coding with word count information
+text.sum <- cbind(words, liwc.df)
+text.sum$document <- str_c("text", 1:6, sep="") #Label text.sum so it can merge back with document information
+
+## Consolidating the "Virtue" vs. "Vice" words.
+text.sum$Harm <- text.sum$HarmVice + text.sum$HarmVirtue
+text.sum$Fairness <- text.sum$FairnessVice + text.sum$FairnessVirtue
+text.sum$Loyalty <-text.sum$IngroupVice + text.sum$IngroupVirtue
+text.sum$Authority <- text.sum$AuthorityVice + text.sum$AuthorityVirtue
+text.sum$Purity <- text.sum$PurityVice + text.sum$PurityVirtue
+```
+
+```{r}
+messages %>% inner_join(text.sum) %>% dplyr::select(study, message, words, MoralityGeneral,
+                                                    Harm, Fairness, Loyalty, Authority, Purity) %>%
+  dplyr::rename('General Morality' = 'MoralityGeneral') %>%
+  kable(align = c("l", "l", rep('c', 7))) %>%
+  kable_styling(bootstrap_options = c("hover", "condensed", "responsive", "striped"), 
+                  full_width = F, position = "center")
+```
+
+The two moral words in the practical message in Study 2 were intentional. These instances are:
+
+* "Although some believe that making marijuana legal is the **moral** thing to do, it is impractical for the following reasons." 
+* "It's not a **moral** question but rather a practical one."
+
+<br>
+
+# Outlier Criterion in Study 2
+
+Read in data and compute modified Z scores:
+
+```{r}
+S1.base <- filter(S1.full, att1 >= 0 & duplicatedIP == F)
+S2.base <- filter(S2.full, att1 >= 0 & duplicatedIP == F)
+
+S1.base$modZ <- abs((S1.base$att.post - median(S1.base$att.post)) / mad(S1.base$att.post))
+S2.base$modZ <- abs((S2.base$att.post - median(S2.base$att.post)) / mad(S2.base$att.post))
+```
+
+<br>
+
+## Moral Basis x Message Type on Post-Message Attitudes
+
+```{r, warning=F, results='hide'}
+persuasion <- list()
+for(i in c(3, 3.5, 4, 4.5, 5)) {
+  j <- (i * 2) - 5
+  print(j)
+  tmp1 <- filter(S1.base, modZ < i)
+  tmp2 <- filter(S2.base, modZ < i)
+  S1.base.out <- lm(att.post ~ att.pre + cond * base_mor, tmp1) %>% 
+    display.lm() %>% filter(term == "cond:base_mor") %>%
+    mutate(Study = "Study 1", cutoff = i, N = nrow(tmp1), exclude = nrow(S1.base) - nrow(tmp1)) %>% 
+    select(Study, cutoff, N, exclude, B, conf.low, conf.high, p.value, ` `)
+  S2.base.out <- lm(att.post ~ att.pre + cond * base_mor, tmp2) %>% 
+    display.lm() %>% filter(term == "cond:base_mor") %>%
+    mutate(Study = "Study 2", cutoff = i, N = nrow(tmp2), exclude = nrow(S2.base) - nrow(tmp2)) %>% 
+    select(Study, cutoff, N, exclude, B, conf.low, conf.high, p.value, ` `)
+  persuasion[[j]] <- rbind(S1.base.out, S2.base.out)
+}
+persuasion.df <- do.call(rbind.data.frame, persuasion) %>% mutate(N.ch = str_c("N = ", N))
+```
+
+```{r, fig.align = 'center', out.width="100%", fig.height=2.5}
+FigS1.1 <- ggplot(persuasion.df, aes(x = cutoff, y = B, color = Study, label = N.ch)) + 
+  geom_hline(yintercept = 0) +
+  geom_point() +
+  geom_text(vjust = 1.6, size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = .1) +
+  apatheme + ylim(c(-.45, .06)) +
+  coord_flip() +
+  xlim(c(2.75, 5.15)) +
+  theme(text = element_text(family = "Times New Roman", size = 12)) +
+  scale_color_manual(values = c("#1A738D", "#D64700"), guide = F) +
+  labs(x = "Modified Z Cutoff", y = "Regression Coefficient [95% CI]", 
+       title = "A. Moral Basis x Message Type on Post-Message Attitudes") +
+  facet_wrap(~Study, nrow = 1)
+print(FigS1.1)
+#ggsave(plot = FigS1.1, "figures/FigS1A.png", type = "cairo-png", width = 8, height = 2.5)
+```
+
+<br>
+
+## Moral Basis x Message Type on Valenced Thoughts
+
+```{r, warning=F, results='hide'}
+thoughts <- list()
+for(i in c(3, 3.5, 4, 4.5, 5)) {
+  j <- (i * 2) - 5
+  print(j)
+  tmp1 <- filter(S1.base, modZ < i)
+  tmp2 <- filter(S2.base, modZ < i)
+  S1.base.out <- lm(cogres ~ cond * base_mor, tmp1) %>% 
+    display.lm() %>% filter(term == "cond:base_mor") %>%
+    mutate(Study = "Study 1", cutoff = i, N = nrow(tmp1), exclude = nrow(S1.base) - nrow(tmp1)) %>% 
+    select(Study, cutoff, N, exclude, B, conf.low, conf.high, p.value, ` `)
+  S2.base.out <- lm(cogres ~ cond * base_mor, tmp2) %>% 
+    display.lm() %>% filter(term == "cond:base_mor") %>%
+    mutate(Study = "Study 2", cutoff = i, N = nrow(tmp2), exclude = nrow(S2.base) - nrow(tmp2)) %>% 
+    select(Study, cutoff, N, exclude, B, conf.low, conf.high, p.value, ` `)
+  thoughts[[j]] <- rbind(S1.base.out, S2.base.out)
+}
+thoughts.df <- do.call(rbind.data.frame, thoughts) %>% mutate(N.ch = str_c("N = ", N))
+```
+
+```{r, fig.align = 'center', out.width="100%", fig.height=2.5}
+FigS1.2 <- ggplot(thoughts.df, aes(x = cutoff, y = B, color = Study, label = N.ch)) + 
+  geom_hline(yintercept = 0) +
+  geom_point() +
+  geom_text(vjust = 1.6, size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = .1) +
+  apatheme + ylim(c(-.45, .06)) +
+  coord_flip() +
+  xlim(c(2.75, 5.15)) +
+  theme(text = element_text(family = "Times New Roman", size = 12)) +
+  scale_color_manual(values = c("#1A738D", "#D64700"), guide = F) +
+  labs(x = "Modified Z Cutoff", y = "Regression Coefficient [95% CI]", 
+       title = "B. Moral Basis x Message Type on Valenced Thoughts") +
+  facet_wrap(~Study, nrow = 1)
+print(FigS1.2)
+#ggsave(plot = FigS1.2, "figures/FigS1B.png", type = "cairo-png", width = 8, height = 2.5)
+```
+
+<br>
+
+## Moral Basis x Message Type on Perceived Argument Strength
+
+```{r, warning=F, results='hide'}
+essAQ <- list()
+for(i in c(3, 3.5, 4, 4.5, 5)) {
+  j <- (i * 2) - 5
+  print(j)
+  tmp1 <- filter(S1.base, modZ < i)
+  tmp2 <- filter(S2.base, modZ < i)
+  # Note that this version creates sham output for Study 1, which does not have this variable.
+  S1.base.out <- data.frame(Study = "Study 1", cutoff = i, N = 415, 
+                            exclude = 0, B = -.1, conf.low = -.11, conf.high = -.09, 
+                            p.value = 0)
+  S2.base.out <- lm(essAQ ~ cond * base_mor, tmp2) %>% 
+    display.lm() %>% filter(term == "cond:base_mor") %>%
+    mutate(Study = "Study 2", cutoff = i, N = nrow(tmp2), exclude = nrow(S2.base) - nrow(tmp2)) %>% 
+    select(Study, cutoff, N, exclude, B, conf.low, conf.high, p.value)
+  essAQ[[j]] <- rbind(S1.base.out, S2.base.out)
+}
+essAQ.df <- do.call(rbind.data.frame, essAQ) %>% mutate(N.ch = str_c("N = ", N))
+```
+
+```{r, fig.align = 'center', out.width="100%", fig.height=2.5}
+FigS1.3 <- ggplot(essAQ.df, aes(x = cutoff, y = B, color = Study, label = N.ch)) + 
+  geom_hline(yintercept = 0) +
+  geom_point() +
+  geom_text(vjust = 1.6, size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = .1) +
+  apatheme + ylim(c(-.45, .06)) +
+  coord_flip() +
+  xlim(c(2.75, 5.15)) +
+  theme(text = element_text(family = "Times New Roman", size = 12)) +
+  scale_color_manual(values = c("white", "#D64700"), guide = F) +
+  labs(x = "Modified Z Cutoff", y = "Regression Coefficient [95% CI]", 
+       title = "C. Moral Basis x Message Type on Perceived Argument Strength") +
+  facet_wrap(~Study, nrow = 1)
+print(FigS1.3)
+#ggsave(plot = FigS1.3, "figures/FigS1C.png", type = "cairo-png", width = 8, height = 2.5)
+```
+
+<br>
+
+## Moral Basis x Message Type x Political Orientation on Post-Message Attitudes
+
+```{r, warning=F, results='hide'}
+ideology <- list()
+for(i in c(3, 3.5, 4, 4.5, 5)) {
+  j <- (i * 2) - 5
+  print(j)
+  tmp1 <- filter(S1.base, modZ < i)
+  tmp2 <- filter(S2.base, modZ < i)
+  S1.base.out <- lm(att.post ~ att.pre + cond * base_mor * ideology, tmp1) %>% 
+    display.lm() %>% filter(term == "cond:base_mor:ideology") %>%
+    mutate(Study = "Study 1", cutoff = i, N = nrow(tmp1), exclude = nrow(S1.base) - nrow(tmp1)) %>% 
+    select(Study, cutoff, N, exclude, B, conf.low, conf.high, p.value, ` `)
+  S2.base.out <- lm(att.post ~ att.pre + cond * base_mor* ideology, tmp2) %>% 
+    display.lm() %>% filter(term == "cond:base_mor:ideology") %>%
+    mutate(Study = "Study 2", cutoff = i, N = nrow(tmp2), exclude = nrow(S2.base) - nrow(tmp2)) %>% 
+    select(Study, cutoff, N, exclude, B, conf.low, conf.high, p.value, ` `)
+  ideology[[j]] <- rbind(S1.base.out, S2.base.out)
+}
+ideology.df <- do.call(rbind.data.frame, ideology) %>% mutate(N.ch = str_c("N = ", N))
+```
+
+```{r, fig.align = 'center', out.width="100%", fig.height=2.5}
+FigS1.4 <- ggplot(ideology.df, aes(x = cutoff, y = B, color = Study, label = N.ch)) + 
+  geom_hline(yintercept = 0) +
+  geom_point() +
+  geom_text(vjust = 1.6, size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = .1) +
+  apatheme + ylim(c(-.45, .06)) +
+  coord_flip() +
+  xlim(c(2.75, 5.15)) +
+  theme(text = element_text(family = "Times New Roman", size = 12)) +
+  scale_color_manual(values = c("#1A738D", "#D64700"), guide = F) +
+  labs(x = "Modified Z Cutoff", y = "Regression Coefficient [95% CI]", 
+       title = "D. Moral Basis x Message Type x Ideology on Post-Message Attitudes") +
+  facet_wrap(~Study, nrow = 1)
+print(FigS1.4)
+#ggsave(plot = FigS1.4, "figures/FigS1D.png", type = "cairo-png", width = 8, height = 2.5)
+```
+
+
+<br>
+
+# Internal Meta-Analysis
+
+## Moral Basis x Message Type on Post-Message Attitudes
+
+```{r}
+## Study 1A
+S1A.ME.test1 <- lm(att.post ~ att.pre + cond + base_mor, S1A)
+S1A.int.test1 <- lm(att.post ~ att.pre + cond * base_mor, S1A)
+S1A.coeff.test1 <- broom::tidy(S1A.int.test1) %>% filter(term == "cond:base_mor")
+
+## Study 1B
+S1B.ME.test1 <- lm(att.post ~ att.pre + cond + base_mor, S1B) 
+S1B.int.test1 <- lm(att.post ~ att.pre + cond * base_mor, S1B) 
+S1B.coeff.test1 <- broom::tidy(S1B.int.test1) %>% filter(term == "cond:base_mor")
+
+## Study 2
+S2.ME.test1 <- lm(att.post ~ att.pre + cond + base_mor, S2) 
+S2.int.test1 <- lm(att.post ~ att.pre + cond * base_mor, S2) 
+S2.coeff.test1 <- broom::tidy(S2.int.test1) %>% filter(term == "cond:base_mor")
+
+## Relevant data for meta-analysis
+meta.test1 <- data.frame(study = c("Study 1A", "Study 1B", "Study 2"),
+                         n = c(nrow(S1A), nrow(S1B), nrow(S2)),
+                         p = rep(4, 3), #Number of predictors in the model
+                         b = c(S1A.coeff.test1$estimate[1], 
+                               S1B.coeff.test1$estimate[1], 
+                               S2.coeff.test1$estimate[1]),
+                         t = c(S1A.coeff.test1$statistic[1], 
+                               S1B.coeff.test1$statistic[1], 
+                               S2.coeff.test1$statistic[1]),
+                         R2Full = c(with(summary(S1A.int.test1), r.squared),
+                                    with(summary(S1B.int.test1), r.squared),
+                                    with(summary(S2.int.test1), r.squared)),
+                         R2Change = c(with(summary(S1A.int.test1), r.squared) - 
+                                        with(summary(S1A.ME.test1), r.squared),
+                                      with(summary(S1B.int.test1), r.squared - 
+                                             with(summary(S1B.ME.test1), r.squared)),
+                                      with(summary(S2.int.test1), r.squared - 
+                                             with(summary(S2.ME.test1), r.squared)))) %>%
+  mutate(f2 = R2Change / (1 - R2Full),
+         rp = t / sqrt((t)^2 + (n - p - 1)),
+         rp.v = (1 - (rp)^2)^2 / (n - p - 1))
+
+meta.test1 %>% mutate_if(is.numeric, round, 4) %>% kable() %>% kable_styling()
+```
+
+```{r}
+res.test1 <- rma(yi = rp, vi = rp.v, data = meta.test1, slab = study)
+res.test1
+```
+
+```{r, out.width="100%"}
+forest(res.test1, xlab = "Partial Correlation [95% CI]")
+text(-.35, 4.25, "A. Moral Basis x Message Type on Post-Message Attitudes")
+```
+
+<br>
+
+## Moral Basis x Message Type on Valenced Thoughts
+
+```{r}
+## Study 1A
+S1A.ME.test2 <- lm(cogres ~ cond + base_mor, S1A)
+S1A.int.test2 <- lm(cogres ~ cond * base_mor, S1A)
+S1A.coeff.test2 <- broom::tidy(S1A.int.test2) %>% filter(term == "cond:base_mor")
+
+## Study 1B
+S1B.ME.test2 <- lm(cogres ~ cond + base_mor, S1B) 
+S1B.int.test2 <- lm(cogres ~ cond * base_mor, S1B) 
+S1B.coeff.test2 <- broom::tidy(S1B.int.test2) %>% filter(term == "cond:base_mor")
+
+## Study 2
+S2.ME.test2 <- lm(cogres ~ cond + base_mor, S2) 
+S2.int.test2 <- lm(cogres ~ cond * base_mor, S2) 
+S2.coeff.test2 <- broom::tidy(S2.int.test2) %>% filter(term == "cond:base_mor")
+
+## Relevant data for meta-analysis
+meta.test2 <- data.frame(study = c("Study 1A", "Study 1B", "Study 2"),
+                         n = c(nrow(S1A), nrow(S1B), nrow(S2)),
+                         p = rep(4, 3), #Number of predictors in the model
+                         b = c(S1A.coeff.test2$estimate[1], 
+                               S1B.coeff.test2$estimate[1], 
+                               S2.coeff.test2$estimate[1]),
+                         t = c(S1A.coeff.test2$statistic[1], 
+                               S1B.coeff.test2$statistic[1], 
+                               S2.coeff.test2$statistic[1]),
+                         R2Full = c(with(summary(S1A.int.test2), r.squared),
+                                    with(summary(S1B.int.test2), r.squared),
+                                    with(summary(S2.int.test2), r.squared)),
+                         R2Change = c(with(summary(S1A.int.test2), r.squared) - 
+                                        with(summary(S1A.ME.test2), r.squared),
+                                      with(summary(S1B.int.test2), r.squared - 
+                                             with(summary(S1B.ME.test2), r.squared)),
+                                      with(summary(S2.int.test2), r.squared - 
+                                             with(summary(S2.ME.test2), r.squared)))) %>%
+  mutate(f2 = R2Change / (1 - R2Full),
+         rp = t / sqrt((t)^2 + (n - p - 1)),
+         rp.v = (1 - (rp)^2)^2 / (n - p - 1))
+
+meta.test2 %>% mutate_if(is.numeric, round, 4) %>% kable() %>% kable_styling()
+```
+
+```{r}
+res.test2 <- rma(yi = rp, vi = rp.v, data = meta.test2, slab = study)
+res.test2
+```
+
+```{r, out.width="100%"}
+forest(res.test2, xlab = "Partial Correlation [95% CI]")
+text(-.32, 4.25, "B. Moral Basis x Message Type on Valenced Thoughts")
+```
+
+<br>
+
+## Moral Basis x Message Type x Ideology on Post-Message Attitudes
+
+```{r}
+## Study 1A
+S1A.ME.test3 <- lm(att.post ~ att.pre + cond * base_mor + cond * ideology + base_mor * ideology, S1A)
+S1A.int.test3 <- lm(att.post ~ att.pre + cond * base_mor * ideology, S1A)
+S1A.coeff.test3 <- broom::tidy(S1A.int.test3) %>% filter(term == "cond:base_mor:ideology")
+
+## Study 1B
+S1B.ME.test3 <- lm(att.post ~ att.pre + cond * base_mor + cond * ideology + base_mor * ideology, S1B) 
+S1B.int.test3 <- lm(att.post ~ att.pre + cond * base_mor * ideology, S1B) 
+S1B.coeff.test3 <- broom::tidy(S1B.int.test3) %>% filter(term == "cond:base_mor:ideology")
+
+## Study 2
+S2.ME.test3 <- lm(att.post ~ att.pre + cond * base_mor + cond * ideology + base_mor * ideology, S2) 
+S2.int.test3 <- lm(att.post ~ att.pre + cond * base_mor * ideology, S2) 
+S2.coeff.test3 <- broom::tidy(S2.int.test3) %>% filter(term == "cond:base_mor:ideology")
+
+## Relevant data for meta-analysis
+meta.test3 <- data.frame(study = c("Study 1A", "Study 1B", "Study 2"),
+                         n = c(nrow(S1A), nrow(S1B), nrow(S2)),
+                         p = rep(4, 3), #Number of predictors in the model
+                         b = c(S1A.coeff.test3$estimate[1], 
+                               S1B.coeff.test3$estimate[1], 
+                               S2.coeff.test3$estimate[1]),
+                         t = c(S1A.coeff.test3$statistic[1], 
+                               S1B.coeff.test3$statistic[1], 
+                               S2.coeff.test3$statistic[1]),
+                         R2Full = c(with(summary(S1A.int.test3), r.squared),
+                                    with(summary(S1B.int.test3), r.squared),
+                                    with(summary(S2.int.test3), r.squared)),
+                         R2Change = c(with(summary(S1A.int.test3), r.squared) - 
+                                        with(summary(S1A.ME.test3), r.squared),
+                                      with(summary(S1B.int.test3), r.squared - 
+                                             with(summary(S1B.ME.test3), r.squared)),
+                                      with(summary(S2.int.test3), r.squared - 
+                                             with(summary(S2.ME.test3), r.squared)))) %>%
+  mutate(f2 = R2Change / (1 - R2Full),
+         rp = t / sqrt((t)^2 + (n - p - 1)),
+         rp.v = (1 - (rp)^2)^2 / (n - p - 1))
+
+meta.test3 %>% mutate_if(is.numeric, round, 4) %>% kable() %>% kable_styling()
+```
+
+```{r}
+res.test3 <- rma(yi = rp, vi = rp.v, data = meta.test3, slab = study)
+res.test3
+```
+
+```{r, out.width="100%"}
+forest(res.test3, xlab = "Partial Correlation [95% CI]")
+text(-.12, 4.25, "C. Moral Basis x Message Type x Political Orientation on Post-Message Attitutdes")
+```
+
+<br>
+
+# Software Used
+
+```{r}
+r_refs(file = "moral_matching_references.bib", append = T)
+my_citations <- cite_r(file = "moral_matching_references.bib")
+```
+
+`r my_citations`
+
+<br>
+
+# References
+

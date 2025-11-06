@@ -1,0 +1,600 @@
+---
+title: Does Nationalism Compensate for Perceived Ethnic Disadvantage? The Moderating Effect of SDO
+date: 10/10/2024
+output:
+  word_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+    theme: readable
+---
+
+# Data Preparation
+
+## Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results = "hide", fig.show = "hide", message = FALSE, warning = FALSE, include = TRUE, eval = FALSE)
+```
+
+## Packages
+
+```{r Load Packages}
+library(dplyr)
+library(psych)
+library(misty)
+library(apaTables)
+library(jtools)
+library(interactions)
+library(sandwich)
+library(ggplot2)
+library(emmeans)
+library(brms)
+library(sjPlot)
+library(lavaan)
+```
+
+## Dataset
+
+```{r Read Dataset}
+dataset <- read.csv("dataset.csv")
+```
+
+```{r Delete first rows of data with NA on all values}
+
+dataset <- dataset[-(1:5),]
+```
+
+```{r Subset sample to White British who passed attention check}
+mydf <- subset(loose, Ethnicity == 1 & Attention == 2)
+```
+
+```{r Create integer vectors}
+
+mydf <- as.data.frame(apply(mydf, 2, as.integer))
+
+```
+
+```{r Data Cleaning}
+mydf$Gender <- car::recode(mydf$Gender, "1 = '0' ; 2 = '1'") 
+
+mydf$Gender<-item.reverse(mydf$Gender, min = 0, max = 1)
+
+mydf$SDO_9.r <- item.reverse(mydf$SDO_9, min = 1, max = 5)
+mydf$SDO_10.r <- item.reverse(mydf$SDO_10, min = 1, max = 5)
+mydf$SDO_11.r <- item.reverse(mydf$SDO_11, min = 1, max = 5)
+mydf$SDO_12.r <- item.reverse(mydf$SDO_12, min = 1, max = 5)
+mydf$SDO_13.r <- item.reverse(mydf$SDO_13, min = 1, max = 5)
+mydf$SDO_14.r <- item.reverse(mydf$SDO_14, min = 1, max = 5)
+mydf$SDO_15.r <- item.reverse(mydf$SDO_15, min = 1, max = 5)
+mydf$SDO_16.r <- item.reverse(mydf$SDO_16, min = 1, max = 5)
+
+mydf$Nat_8.r <- item.reverse(mydf$Nat_8, min = 1, max = 5)
+
+mydf$SelfEsteem_7.r <- item.reverse(mydf$SelfEsteem_7, min = 1, max = 4)
+
+mydf<-mydf[!(mydf$Gender=="3" ),]
+
+mydf<-mydf[!(mydf$Income =="0" ),]
+
+mydf$logIncome <- log(mydf$Income)
+
+mydf$IRD <- mydf$SelfEsteem_7.r
+
+mydf$Natmean <- (mydf$Nat_1+mydf$Nat_2+mydf$Nat_3+mydf$Nat_4+mydf$Nat_5+mydf$Nat_6+mydf$Nat_7+mydf$Nat_8.r)/8
+
+mydf$SDOmean <- (mydf$SDO_1+mydf$SDO_2+mydf$SDO_3+mydf$SDO_4+mydf$SDO_5+mydf$SDO_6+mydf$SDO_7+mydf$SDO_8+mydf$SDO_9.r+mydf$SDO_10.r+mydf$SDO_11.r+mydf$SDO_12.r+mydf$SDO_13.r+mydf$SDO_14.r+mydf$SDO_15.r+mydf$SDO_16.r)/16
+
+mydf$GRDmean <- (mydf$GRD_1+mydf$GRD_2)/2
+
+mydf$IDmean <- (mydf$NatIden_1+mydf$NatIden_2+mydf$NatIden_3)/3
+
+mydf$Ethmean <- (mydf$EthIden_1+mydf$EthIden_2+mydf$EthIden_3)/3
+```
+
+## Demographics
+
+```{r Percentage Secondary school education}
+category_counts <- table(mydf$Education)
+
+category_percentages <- prop.table(category_counts) * 100
+
+category_percentages
+```
+
+```{r Dichotimize education variable}
+mydf$Education_d <- car::recode(mydf$Education, "1:4 = '0'; 5:7 = '1'")
+```
+
+## Reliability of Scales
+
+```{r Reliability GRD}
+cor.test(mydf$GRD_1, mydf$GRD_2, method=c("pearson"))
+```
+
+```{r Reliability Nationalism}
+items_Nat <- c("Nat_1","Nat_2", "Nat_3", "Nat_4", "Nat_5", "Nat_6", "Nat_7", "Nat_8")
+mydf[items_Nat]
+psych::alpha(mydf[items_Nat])
+```
+
+```{r Reliability SDO}
+items_SDO <- c("SDO_1","SDO_2", "SDO_3", "SDO_4", "SDO_5", "SDO_6", "SDO_7", "SDO_8","SDO_9.r","SDO_10.r","SDO_11.r","SDO_12.r",
+"SDO_13.r", "SDO_14.r","SDO_15.r","SDO_16.r")
+mydf[items_SDO]
+psych::alpha(mydf[items_SDO])
+```
+
+```{r National ID}
+items_NatIden <- c("NatIden_1","NatIden_2", "NatIden_3")
+mydf[items_NatIden]
+psych::alpha(mydf[items_NatIden])
+```
+
+## Mean Centering
+
+```{r Mean Centering}
+mydf$GRD.m = as.numeric(scale(mydf$GRDmean, scale = F))
+mydf$GRD1.m = as.numeric(scale(mydf$GRD_1, scale = F))
+mydf$GRD2.m = as.numeric(scale(mydf$GRD_2, scale = F))
+mydf$SDO.m = as.numeric(scale(mydf$SDOmean, scale =F))
+mydf$Natmean.m = as.numeric(scale(mydf$Natmean, scale = F))
+mydf$IDmean.m = as.numeric(scale(mydf$IDmean, scale = F))
+mydf$Age.m = as.numeric(scale(mydf$Age, scale = F))
+mydf$Gender.m = as.numeric(scale(mydf$Gender, scale = F))
+```
+
+## Standardization
+
+```{r Standardization}
+mydf$GRD_std = as.numeric(scale(mydf$GRDmean, scale = T))
+mydf$GRD1_std = as.numeric(scale(mydf$GRD_1, scale = T))
+mydf$GRD2_std = as.numeric(scale(mydf$GRD_2, scale = T))
+mydf$SDO_std = as.numeric(scale(mydf$SDOmean, scale =T))
+mydf$Natmean_std = as.numeric(scale(mydf$Natmean, scale = T))
+mydf$IDmean_std = as.numeric(scale(mydf$IDmean, scale = T))
+mydf$Age_std = as.numeric(scale(mydf$Age, scale = T))
+mydf$Gender_std = as.numeric(scale(mydf$Gender, scale = T))
+```
+
+## Create Correlation Table
+
+```{r Correlation Table}
+loosetable <- select(mydf, Natmean , GRD_1 , GRD_2 , SDOmean , Ethmean , Age , Gender)
+
+apa.cor.table(loosetable,
+              filename = "loosetable.doc",
+              table.number = 1,
+              show.sig.stars = TRUE,
+              landscape = FALSE
+)
+```
+
+# GRD Full Models
+
+## GRD Full Model
+
+```{r Path Model GRDmean}
+
+mydf$int <- mydf$GRD.m*mydf$SDO.m
+
+model1 <- '
+# regressions
+Natmean ~ b1*GRD.m + b2*SDO.m + b3*int
+IDmean ~ GRD.m + SDO.m + int
+
+# residual covariance of DVs
+Natmean ~~ IDmean
+
+# Simple Slopes
+
+SDOHigh := b1+b3*0.7
+SDOMed := b1+b3*0
+SDOLow := b1+b3*(-0.7)
+'
+
+fit1 <- lavaan::sem(model = model1, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit1, fit.measures=TRUE)
+
+parameter_estimates <- parameterEstimates(fit1, ci = TRUE)
+print(parameter_estimates)
+```
+
+## GRD Full Model Standardised
+
+```{r Path Model GRDmean Standardized Effect Sizes}
+
+mydf$int <- mydf$GRD.m*mydf$SDO.m
+
+model1.1 <- '
+# regressions
+Natmean_std ~ b1*GRD_std + b2*SDO_std + b3*int
+IDmean_std ~ b4*GRD_std + b5*SDO_std + b6*int
+
+# residual covariance of DVs
+Natmean_std ~~ IDmean_std
+
+# Simple Slopes
+
+N_SDOHigh := b1+b3*0.7
+N_SDOMed := b1+b3*0
+N_SDOLow := b1+b3*(-0.7)
+
+# Simple Slopes Patriotism
+
+P_SDOHigh := b4+b6*0.7
+P_SDOMed := b4+b6*0
+P_SDOLow := b4+b6*(-0.7)
+'
+
+fit1.1 <- lavaan::sem(model = model1.1, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit1.1, fit.measures=TRUE)
+
+parameter_estimates <- parameterEstimates(fit1.1, ci = TRUE)
+print(parameter_estimates)
+```
+
+## GRD Full Model w/ Covariates
+
+```{r Path Model GRDmean w/ covariates}
+
+mydf$int <- mydf$GRD.m*mydf$SDO.m
+
+model1.2 <- '
+# regressions
+Natmean ~ b1*GRD.m + b2*SDO.m + b3*int + Age + Gender
+IDmean ~ GRD.m + SDO.m + int  + Age + Gender
+
+# residual covariance of DVs
+Natmean ~~ IDmean
+
+# Simple Slopes
+
+SDOHigh := b1+b3*0.7
+SDOMed := b1+b3*0
+SDOLow := b1+b3*(-0.7)
+'
+
+fit1.2 <- lavaan::sem(model = model1.2, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit1.2, fit.measures=TRUE)
+
+parameter_estimates <- parameterEstimates(fit1.2, ci = TRUE)
+print(parameter_estimates)
+
+```
+
+## GRD Full Model Standardised w/ Covariates
+
+```{r Path Model GRDmean w/ covariates standardised}
+
+mydf$int <- mydf$GRD.m*mydf$SDO.m
+
+model1.3 <- '
+# regressions
+Natmean_std ~ b1*GRD_std + b2*SDO_std + b3*int + Age_std + Gender_std
+IDmean_std ~ GRD_std + SDO_std + int + Age_std + Gender_std
+
+# residual covariance of DVs
+Natmean_std ~~ IDmean_std
+
+# Simple Slopes
+
+SDOHigh := b1+b3*0.7
+SDOMed := b1+b3*0
+SDOLow := b1+b3*(-0.7)
+'
+
+fit1.3 <- lavaan::sem(model = model1.3, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit1.3, fit.measures=TRUE)
+```
+
+## GRD Full Model Visualisation
+
+```{r Visualisation Simple Slopes GRD Full Model}
+mydf <- mydf %>%
+  filter(!is.na(GRDmean) & !is.na(SDOmean) & !is.na(Natmean))
+
+model1 <- lm(data = mydf, Natmean ~  GRDmean*SDOmean)
+
+
+object1 <- sjPlot::plot_model(model1, type = "int", 
+                             terms = c("GRDmean", "SDOmean[mean(SDOmean, na.rm = TRUE) - sd(SDOmean, na.rm = TRUE), 
+                                     mean(SDOmean, na.rm = TRUE), 
+                                     mean(SDOmean, na.rm = TRUE) + sd(SDOmean, na.rm = TRUE)]")+
+labs(x = "GRDmean") +
+labs(y = "Natmean") +
+labs(color = "SDOmean"))
+
+
+tiff("Figure2.tiff", units="in", width=7, height=5, res=300, type = "cairo")
+
+# Create the plot
+
+plot <- object1 +
+  # Confidence interval ribbons with transparency
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.15, color = NA) +
+  
+  # Add lines with different linetypes based on group (SDO levels)
+  geom_line(aes(linetype = group), size = 1.3) +
+  
+  # Customize the color scheme and linetypes
+  scale_color_manual(values = c("#002C54", "#C5001A"), labels = c("Low SDO (-1 SD)", "High SDO (+1 SD)")) +
+  scale_fill_manual(values = c("#002C54", "#C5001A")) +
+  
+  # Add linetype for the dotted line (e.g., "dashed" or "dotted")
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Low SDO (-1 SD)", "High SDO (+1 SD)")) +
+  
+  # Set x-axis limits from 1 to 4
+  scale_x_continuous(limits = c(1, 4), breaks = seq(1, 4, 1)) +
+  
+  # Set y-axis limits to start at 2, and ensure it shows only whole numbers
+  scale_y_continuous(limits = c(1, 7), breaks = seq(1, 7, 1)) +
+  
+  # Add labels for axes and legend
+  labs(x = "GRD", y = "Nationalism", color = "SDO", linetype = "SDO", fill = "Confidence Interval", 
+       title = NULL) +
+  
+  # Customize the theme
+  theme_apa() +
+  theme(
+    legend.position = c(0.185, 0.84),  # Adjust legend position inside plot
+    legend.background = element_rect(fill = "white", color = "black"),
+    axis.text = element_text(size = 16, color = "black"),
+    axis.title.x = element_text(size = 16, color = "black"),
+    axis.title.y = element_text(size = 16, margin = margin(t = 0, r = 10, b = 0, l = 0))
+  )
+
+# Display the plot
+plot
+
+# Close the TIFF file
+dev.off()
+```
+
+# Affective GRD Models
+
+## GRD1 Model
+
+```{r Path Model GRD01}
+
+mydf$int <- mydf$GRD1.m*mydf$SDO.m
+
+model2 <- '
+# regressions
+Natmean ~ b1*GRD1.m + b2*SDO.m + b3*int
+IDmean ~ GRD1.m + SDO.m + int
+
+# residual covariance of DVs
+Natmean ~~ IDmean
+
+# Simple Slopes
+
+SDOHigh := b1+b3*0.7
+SDOMed := b1+b3*0
+SDOLow := b1+b3*(-0.7)
+'
+
+fit2 <- lavaan::sem(model = model2, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit2, fit.measures=TRUE)
+
+parameter_estimates <- parameterEstimates(fit2, ci = TRUE)
+print(parameter_estimates)
+
+```
+
+## GRD1 Model Standardised
+
+```{r Path Model GRD1 standardised}
+
+mydf$int <- mydf$GRD1.m*mydf$SDO.m
+
+model2.1 <- '
+# regressions
+Natmean_std ~ b1*GRD1_std + b2*SDO_std + b3*int
+IDmean_std ~ b4*GRD1_std + b5*SDO_std + b6*int
+
+# residual covariance of DVs
+Natmean_std ~~ IDmean_std
+
+# Simple Slopes
+
+Nat_SDOHigh := b1+b3*0.7
+Nat_SDOMed := b1+b3*0
+Nat_SDOLow := b1+b3*(-0.7)
+
+ID_SDOHigh := b4+b6*0.7
+ID_SDOMed := b4+b6*0
+ID_SDOLow := b4+b6*(-0.7)
+'
+
+fit2.1 <- lavaan::sem(model = model2.1, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit2.1, fit.measures=TRUE)
+
+parameter_estimates <- parameterEstimates(fit2.1, ci = TRUE)
+print(parameter_estimates)
+```
+
+## GRD1 Model w/ Covariates
+
+```{r Path Model GRD1 w/ covariates}
+
+mydf$int <- mydf$GRD1.m*mydf$SDO.m
+
+model2.2 <- '
+# regressions
+Natmean ~ b1*GRD1.m + b2*SDO.m + b3*int + Age.m + Gender
+IDmean ~ GRD1.m + SDO.m + int + Age.m + Gender
+
+# residual covariance of DVs
+Natmean ~~ IDmean
+
+# Simple Slopes
+
+SDOHigh := b1+b3*0.7
+SDOMed := b1+b3*0
+SDOLow := b1+b3*(-0.7)
+'
+
+fit2.2 <- lavaan::sem(model = model2.2, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit2.2, fit.measures=TRUE)
+
+parameter_estimates <- parameterEstimates(fit2.2, ci = TRUE)
+print(parameter_estimates)
+
+```
+
+## GRD1 Model Standardised w/ Covariates
+
+```{r Path Model GRD1 standardised w/ Covariates}
+
+mydf$int <- mydf$GRD1.m*mydf$SDO.m
+
+model2.3 <- '
+# regressions
+Natmean_std ~ b1*GRD1_std + b2*SDO_std + b3*int + Age_std + Gender
+IDmean_std ~ GRD1_std + SDO_std + int + Age_std + Gender
+
+# residual covariance of DVs
+Natmean_std ~~ IDmean_std
+
+# Simple Slopes
+
+SDOHigh := b1+b3*0.7
+SDOMed := b1+b3*0
+SDOLow := b1+b3*(-0.7)
+'
+
+fit2.3 <- lavaan::sem(model = model2.3, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit2.3, fit.measures=TRUE)
+```
+
+# Cognitive GRD Model
+
+## GRD2 Model
+
+```{r Path Model GRD2}
+
+mydf$int <- mydf$GRD2.m*mydf$SDO.m
+
+model3 <- '
+# regressions
+Natmean ~ b1*GRD2.m + b2*SDO.m + b3*int
+IDmean ~ GRD2.m + SDO.m + int
+
+# residual covariance of DVs
+Natmean ~~ IDmean
+
+# Simple Slopes
+
+SDOHigh := b1+b3*0.7
+SDOMed := b1+b3*0
+SDOLow := b1+b3*(-0.7)
+'
+
+fit3 <- sem(model3, data = mydf)
+summary(fit3, fit.measures=TRUE)
+
+parameter_estimates <- parameterEstimates(fit3, ci = TRUE)
+print(parameter_estimates)
+
+```
+
+## GRD2 Model Standardised
+
+```{r Path Model GRD2 standardised}
+
+mydf$int <- mydf$GRD2.m*mydf$SDO.m
+
+model3.1 <- '
+# regressions
+Natmean_std ~ b1*GRD2_std + b2*SDO_std + b3*int
+IDmean_std ~ b4*GRD2_std + b5*SDO_std + b6*int
+
+# residual covariance of DVs
+Natmean_std ~~ IDmean_std
+
+# Simple Slopes
+
+Nat_SDOHigh := b1+b3*0.7
+Nat_SDOMed := b1+b3*0
+Nat_SDOLow := b1+b3*(-0.7)
+
+ID_SDOHigh := b4+b6*0.7
+ID_SDOMed := b4+b6*0
+ID_SDOLow := b4+b6*(-0.7)
+'
+
+fit3.1 <- lavaan::sem(model = model3.1, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit3.1, fit.measures=TRUE)
+
+parameter_estimates <- parameterEstimates(fit3.1, ci = TRUE)
+print(parameter_estimates)
+```
+
+## GRD2 Model w/ Covariates
+
+```{r Path Model GRD2 w/ covariates}
+
+mydf$int <- mydf$GRD2.m*mydf$SDO.m
+
+model3.2 <- '
+# regressions
+Natmean ~ b1*GRD2.m + b2*SDO.m + b3*int + Age.m + Gender
+IDmean ~ GRD2.m + SDO.m + int + Age.m + Gender
+
+# residual covariance of DVs
+Natmean ~~ IDmean
+
+# Simple Slopes
+
+SDOHigh := b1+b3*0.7
+SDOMed := b1+b3*0
+SDOLow := b1+b3*(-0.7)
+'
+
+fit3.2 <- lavaan::sem(model = model3.2, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit3.2, fit.measures=TRUE)
+
+parameter_estimates <- parameterEstimates(fit3.2, ci = TRUE)
+print(parameter_estimates)
+
+```
+
+## GRD2 Standardised w/ Covariates
+
+```{r Path Model GRD2 standardised w/Covariates}
+
+mydf$int <- mydf$GRD2.m*mydf$SDO.m
+
+model3.3 <- '
+# regressions
+Natmean_std ~ b1*GRD2_std + b2*SDO_std + b3*int + Age_std + Gender
+IDmean_std ~ GRD2_std + SDO_std + int + Age_std + Gender
+
+# residual covariance of DVs
+Natmean_std ~~ IDmean_std
+
+# Simple Slopes
+
+SDOHigh := b1+b3*0.7
+SDOMed := b1+b3*0
+SDOLow := b1+b3*(-0.7)
+'
+
+fit3.3 <- lavaan::sem(model = model3.3, data = mydf, fixed.x = FALSE,
+                    meanstructure = TRUE)
+summary(fit3.3, fit.measures=TRUE)
+```

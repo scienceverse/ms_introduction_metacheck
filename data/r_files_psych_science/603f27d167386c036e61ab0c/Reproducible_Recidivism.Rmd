@@ -1,0 +1,254 @@
+---
+title: "Recidivism Analysis for Reproducibility"
+date: "9/16/2020"
+output:
+  html_document: 
+    toc: yes
+    toc_float: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read in Data
+```{r global options,  warning=FALSE}
+# install.packages("https://cran.r-project.org/src/contrib/Archive/emmeans/emmeans_1.4.tar.gz", repos = NULL, type = "source")
+library(psych)
+library(readr)
+library(sjPlot)
+library(emmeans)
+library(kableExtra)
+library(dplyr)
+
+d <- read_rds("~/Box Sync/Lifting the Bar Materials & Data/LTB Data/LTB School Data/Cleaned Data/Juvenile_Recidivism.rds")
+sessionInfo()
+```
+
+```{r include=FALSE}
+ltb <-
+  read_rds("~/Box Sync/Lifting the Bar Materials & Data/LTB Data/LTB Intervention Data/Fall '16-Spring '17 & Fall '17-Spring '18 Intervention Data (Filtered & cleaned).rds")
+
+d <- 
+  ltb %>% 
+  dplyr::select(id, s0.demo_edu_mom) %>% 
+  left_join(d, ltb, by = "id")
+
+d <-
+  d %>% 
+  mutate(gender_nonmale = ifelse(gender == "Other" | gender == "F", 1, 0))
+
+describe(d$s0.demo_edu_mom)
+d <-
+  d %>% 
+  mutate(imputed_mothers_ed = ifelse(is.na(s0.demo_edu_mom), 2.30, s0.demo_edu_mom))
+
+# add days in custody variable
+str(d$booked)
+str(d$released)
+d <-
+  d %>% 
+  mutate(days_in_custody = as.numeric((released - booked) + 1))
+
+d %>% 
+  dplyr::select(booked, released, days_in_custody)
+str(d$days_in_custody)
+```
+
+# Model 1
+```{r warning=FALSE}
+options("scipen" = 100, "digits" = 4)
+
+model1 <- 
+  glm(juvenile_recidivism_USETHIS ~ cond_f,
+      data = d, family = binomial, na.action = na.omit)
+
+tab_model(model1, show.stat = T, string.stat = "z-value", dv.labels = "Model 1", 
+          string.p = "P-Value", transform = NULL)
+
+summary(model1)
+
+# Odds Ratios, zs, and ps between all conditions
+emmean <- emmeans(model1, "cond_f", type = "response")
+pairs <- pairs(emmean, reverse = TRUE, adjust = "none")
+kable_styling(kable(pairs))
+
+# how many participants per condition?
+table(model1$model$cond_f)
+
+```
+
+## 1b - incl months after release
+```{r}
+model1b <- 
+  glm(juvenile_recidivism_USETHIS ~ cond_f + months_after_jjc,
+      data = d, family = binomial, na.action = na.omit)
+
+tab_model(model1b, show.stat = T, string.stat = "z-value", dv.labels = "Model 1b", 
+          string.p = "P-Value", transform = NULL)
+
+summary(model1b)
+
+# Odds Ratios, zs, and ps between all conditions, and conversion of coefficient to probability estimate
+emmean <- emmeans(model1b, "cond_f", type = "response")
+emmean
+pairs <- pairs(emmean, reverse = TRUE, adjust = "none")
+pairs
+
+```
+
+## 1c - days in custody
+```{r}
+model1c <- 
+  glm(juvenile_recidivism_USETHIS ~ cond_f + days_in_custody,
+      data = d, family = binomial, na.action = na.omit)
+
+tab_model(model1c, show.stat = T, string.stat = "z-value", dv.labels = "Model 1c", 
+          string.p = "P-Value", transform = NULL)
+
+summary(model1c)
+
+# Odds Ratios, zs, and ps between all conditions, and conversion of coefficient to probability estimate
+emmean <- emmeans(model1c, "cond_f", type = "response")
+emmean
+pairs <- pairs(emmean, reverse = TRUE, adjust = "none")
+kable_styling(kable(pairs))
+```
+
+## 1d - days in custody + months after release
+```{r}
+model1d <- 
+  glm(juvenile_recidivism_USETHIS ~ cond_f + days_in_custody + months_after_jjc,
+      data = d, family = binomial, na.action = na.omit)
+
+tab_model(model1d, show.stat = T, string.stat = "z-value", dv.labels = "Model 1d", 
+          string.p = "P-Value", transform = NULL)
+
+summary(model1d)
+
+# Odds Ratios, zs, and ps between all conditions, and conversion of coefficient to probability estimate
+emmean <- emmeans(model1d, "cond_f", type = "response")
+emmean
+pairs <- pairs(emmean, reverse = TRUE, adjust = "none")
+kable_styling(kable(pairs))
+```
+
+# Model 2
+## Model 2A
+```{r warning=FALSE}
+model2a <- glm(juvenile_recidivism_USETHIS ~ cond_f +
+                 months_after_jjc +
+                 s0.grit_c5 + s0.personality_c3 + s0.school_c2 + s0.fight_totalscore +
+                 gender_nonmale +
+                 age_intv + s0.demo_edu_mom,
+               data = d, family = binomial, na.action = na.omit)
+
+tab_model(model2a, show.stat = T, string.stat = "z-value", dv.labels = "Model 2a", 
+          string.p = "P-Value", transform = NULL)
+
+summary(model2a)
+
+# Odds Ratios, zs, and ps between all conditions
+emmean <- emmeans(model2a, "cond_f", type = "response")
+pairs <- pairs(emmean, reverse = TRUE, adjust = "none")
+kable_styling(kable(pairs))
+
+# participants per condition
+table(model2a$model$cond_f) 
+```
+
+## Model 2B
+```{r warning=FALSE}
+model2b <- glm(juvenile_recidivism_USETHIS ~ cond_f +
+                 months_after_jjc +
+                 s0.grit_c5 + s0.personality_c3 + s0.school_c2 + s0.fight_totalscore +
+                 gender_nonmale +
+                 age_intv + imputed_mothers_ed,
+               data = d, family = binomial, na.action = na.omit)
+
+tab_model(model2b, show.stat = T, string.stat = "z-value", 
+          dv.labels = "Model 2b (Imputed Mother's Ed)", 
+          string.p = "P-Value", transform = NULL)
+
+summary(model2b)
+
+# Odds Ratios, zs, and ps between all conditions
+emmean <- emmeans(model2b, "cond_f", type = "response")
+pairs <- pairs(emmean, reverse = TRUE, adjust = "none")
+kable_styling(kable(pairs))
+
+# participants per condition
+table(model2b$model$cond_f) # n = 44 (3 are missing the DV)
+
+```
+
+# Model 3
+## Model 3A
+```{r warning=FALSE}
+model3a <- glm(juvenile_recidivism_USETHIS ~ cond_f +
+                 months_after_jjc + s0.personality_c3 + gender_nonmale + age_intv + s0.demo_edu_mom,
+               data = d, family = binomial, na.action = na.omit)
+
+tab_model(model3a, show.stat = T, string.stat = "z-value", 
+          dv.labels = "Model 3", 
+          string.p = "P-Value", transform = NULL)
+
+summary(model3a)
+
+# Odds Ratios, zs, and ps between all conditions
+emmean <- emmeans(model3a, "cond_f", type = "response")
+pairs <- pairs(emmean, reverse = TRUE, adjust = "none")
+kable_styling(kable(pairs))
+
+# participants per condition
+table(model3a$model$cond_f) # n = 40
+```
+
+## Model 3B
+```{r warning=FALSE}
+model3b <- glm(juvenile_recidivism_USETHIS ~ cond_f +
+                        months_after_jjc + s0.personality_c3 + gender_nonmale + 
+                        age_intv + imputed_mothers_ed,
+                      data = d, family = binomial, na.action = na.omit)
+
+tab_model(model3b, show.stat = T, string.stat = "z-value", 
+          dv.labels = "Model 3b (Imputed Mother's Ed)", 
+          string.p = "P-Value", transform = NULL)
+
+summary(model3b)
+
+# Odds Ratios, zs, and ps between all conditions
+emmean <- emmeans(model3b, "cond_f", type = "response")
+pairs <- pairs(emmean, reverse = TRUE, adjust = "none")
+kable_styling(kable(pairs))
+
+# participants per condition
+table(model3b$model$cond_f) # n = 44
+
+```
+
+# Correlate Recidivism and Evaluation time
+The effect this time differential may have on the results is dependent on the variation of time from intervention to recidivism evaluation. Was there a significant difference in recidivism based on time of release?
+
+Test the correlations between (1) time since release, (2) days in custody, and (3) recidivism.
+```{r}
+recidivism <-
+  d %>% 
+  dplyr::select(id, juvenile_recidivism_USETHIS, months_after_jjc, days_in_custody) 
+
+recidivism_cor <-
+  recidivism %>% 
+  dplyr::select(-id) %>% 
+  cor(use = "pairwise.complete.obs")
+
+## pearson's r
+kable_styling(kable(recidivism_cor))
+
+recidivism_cor_p.mat <- ggcorrplot::cor_pmat(recidivism_cor)
+
+## p-values on correlation
+kable_styling(kable(recidivism_cor_p.mat))
+
+```

@@ -1,0 +1,146 @@
+---
+title: "DC pilot analyses"
+author: ""
+date: "4/6/2020"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# --------------------------------------------------------------------
+# Set Environment and load packages
+# --------------------------------------------------------------------
+
+rm(list=ls())
+options(stringsAsFactors = FALSE, width = 2500)
+
+if("pacman" %in% installed.packages() == FALSE) {install.packages("pacman")}
+pacman::p_load(ggplot2,
+               dplyr,
+               magrittr,
+               tidyr,
+               plotrix,
+               gmodels,
+               foreign,
+               ggcorrplot,
+               Hmisc,
+               car,
+               psych,
+               forcats,
+               plotly,
+               data.table,
+               readxl,
+               SnowballC,
+               wordcloud,
+               tm,
+               ggdark)
+
+# Set your own wd here
+setwd("")
+
+# --------------------------------------------------------------------
+# Read in data
+# --------------------------------------------------------------------
+# Processed data
+load("./Exploratory pilot cleaned and recoded")
+
+# Free response codes
+ra_codes <- read_excel("./DC pilot free response codes.xlsx", sheet = "Combined")
+
+# Merge RA codes in
+cleaned$ResponseId <- as.character(cleaned$ResponseId)
+
+ra_codes$Final_audience <- as.character(ra_codes$Final_audience)
+ra_codes$Final_why <- as.character(ra_codes$Final_why)
+ra_codes$Final_selfdet <- as.character(ra_codes$Final_selfdet)
+ra_codes$Final_otherdet <- as.character(ra_codes$Final_otherdet)
+
+cleaned %<>% left_join(ra_codes, by = "ResponseId")
+```
+
+## Concealment frequency
+
+```{r concealment frequency, echo = FALSE}
+describe(cleaned$Conceal_frequency)
+
+table(cleaned$Conceal_frequency)
+```
+
+## Behaviors
+
+```{r behaviors, echo = FALSE}
+# open-ended behaviors
+DT::datatable(cleaned %>%
+        select(Other_behaviors_1:Other_behaviors_10) %>%
+        mutate_all(as.character) %>%
+        pivot_longer(Other_behaviors_1:Other_behaviors_10,
+                         names_to = "Behavior_number",
+                         values_to = "Behavior") %>%
+            filter(Behavior != "") %>%
+            arrange(Behavior))
+```
+
+## First descriptive situation
+
+```{r first descriptive}
+DT::datatable(select(cleaned, Sick_conceal))
+```
+
+
+## Audiences
+
+```{r audiences, echo = FALSE}
+DT::datatable(select(cleaned, Conceal_selfaudience.x, Conceal_selfwhy.x) %>%
+  filter(Conceal_selfaudience.x != "") %>%
+  arrange(Conceal_selfaudience.x))
+```
+
+## Coded responses
+
+```{r coded, echo = FALSE}
+# find audience count lengths
+never <- length(grep("0", cleaned$Final_audience))
+family <- length(grep("1", cleaned$Final_audience))
+friends <- length(grep("2", cleaned$Final_audience))
+romantic_partners <- length(grep("3", cleaned$Final_audience))
+ac_prof <- length(grep("4", cleaned$Final_audience))
+strangers <- length(grep("5", cleaned$Final_audience))
+other <- length(grep("6", cleaned$Final_audience))
+
+# create df from audience counts
+audience_df <- data.frame(c("never", "family", "friends", "romantic_partners", "ac_prof", "strangers", "other"), c(never, family, friends,
+                      romantic_partners, ac_prof, strangers, other)) %>%
+           rename(audience = c..never....family....friends....romantic_partners....ac_prof...,
+                  count = c.never..family..friends..romantic_partners..ac_prof..strangers..) %>%
+           mutate(audience = fct_reorder(audience, count))
+
+ggplot(audience_df, aes(x = audience, y = count, fill = audience)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = count), vjust = -.25) +
+  labs(title = "Absolute counts of audiences that participants concealed from", subtitle = "Some ps listed more than one audience, so the sum across bars is greater than N")
+
+# Motivation breakdown
+self <- length(grep("1", cleaned$Final_why))
+other_ppl <- length(grep("2", cleaned$Final_why))
+na_motive <- length(grep("3", cleaned$Final_why))
+
+motiv_df <- data.frame(c("self motive", "other motive", "not really a motive"), c(self, other_ppl, na_motive)) %>%
+            rename(motive = c..self.motive....other.motive....not.really.a.motive.., count = c.self..other_ppl..na_motive.) %>%
+            mutate(motive = fct_reorder(motive, count))
+
+ggplot(motiv_df, aes(x = motive, y = count, fill = motive)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = count), vjust = -.25) +
+  labs(title = "Absolute counts of motivation for concealing, split by self/other", subtitle = "Some ps listed both self and other motives, so the sum across bars is greater than N")
+
+```
+
+## Demographics
+
+```{r demographics}
+table(cleaned$Sex, exclude = NULL)
+
+describe(cleaned$Age)
+
+```

@@ -1,0 +1,62 @@
+---
+title: "Discipline Analysis for Reproducibility"
+author: "Elizabeth Weitz"
+date: "9/16/2020"
+output:
+  html_document: 
+    toc: yes
+    toc_float: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read in Data
+```{r global options,  warning=FALSE}
+library(psych)
+library(readr)
+library(MASS)
+library(sjPlot)
+
+d <- read_rds("~/Box Sync/Lifting the Bar Materials & Data/LTB Data/LTB School Data/Cleaned Data/Discipline_Counts_Cleaned.rds")
+sessionInfo()
+
+```
+
+# Base Model
+```{r warning=FALSE}
+model1 <- glm.nb(comb_post ~ cond_f, 
+                 data = d) 
+
+tab_model(model1, show.stat = T, string.stat = "z-value", 
+          dv.labels = "Model 1", string.p = "P-Value",
+          pred.labels = c("Intercept", "Student Treatment", "Student Treatment + Letter"))
+
+# the condition estimate is B, the log count coefficient
+summary(model1)
+
+# mean citation counts and SE
+describeBy(d$comb_post, d$cond_f)
+
+# how many participants per condition in this analysis?
+table(model1$model$cond_f) 
+```
+
+# Model with controls
+```{r warning=FALSE}
+model3 <- glm.nb(comb_post ~ cond_f + immPre + s0.demo_edu_mom
+                 + s0.personality_c3, data = d) 
+
+tab_model(model3, show.stat = T, string.stat = "z-value", dv.labels = "Model 3", string.p = "P-Value",
+          pred.labels = c("Intercept",
+            "Student Treatment", "Student Treatment + Letter", "Prior Term Citations", "Mother's education", "Baseline IT Personality"))
+
+# the condition estimate is B, the log count coefficient
+summary(model3)
+
+# how many participants per condition in this analysis?
+table(model3$model$cond_f) 
+```

@@ -1,0 +1,441 @@
+---
+title: "Dorfman et al. open data replication attempt"
+author: "Deborah Apthorp"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: vignette
+---
+
+``` {r setup, include=FALSE}
+
+library(readr)
+library(ggplot2)
+library(rcartocolor) # For colourblind-friendly palettes
+library(tidyverse)
+library(broom)
+library(dplyr)
+library(yarrr)
+library(tidyr)
+library(reshape2)
+library(purrr)
+library(Hmisc)
+library(afex)
+library(emmeans)
+library(kableExtra)
+library(ggpubr)
+library(rstatix)
+options(knitr.kable.NA = '')
+```
+
+## Overview of available data
+
+This article describes an experiment where participants (recruited from Mechanical Turk) participated in a "mining" task, where they had to choose between two mines on each trial, and received either "gold" or rocks. The mines had different reward probabilities, 70% vs. 30%, and participants had to learn which had the higher probability of reward. But in 3 different conditions, an invisible "agent" intervened on some of the trials. In the "adversarial" condition, the "bandit" stole the gold and replaced it with rocks; in the 
+"benevolent" condition, the "tycoon" did the opposite (replaced the rocks with gold), and in the "neutral" condition, the "sheriff" tries to redistribute the rocks and gold. After each trial, the participant is asked whether they thought the agent intervened on that particular trial. 
+
+The only data available is what seems to be the raw data almost directly from MTurk, with the participant number in the leftmost column. The conditions are labelled by number, so it is not clear which condition is which. There is no code for the Bayesian modelling used, and the only details about the models are in the Supplementary Materials, which just gives equations, so there is insufficient detail to reproduce any of the Bayesian analyses. However, it may be possible to reproduce the "behavioural" results on p. 519 in the paper (for Experiment 1), with some data wrangling. 
+
+There is no information tab to let us know what each column label means, but I am assuming "feedback" means 1 for a win and 0 for a loss, as there's no other column that could be this. I am also guessing that "subj_choice" is coded as 1 for "left" and 2 for "right". "latent_agent" will be whether or not the agent acted on that trial (1 for yes, 0 for no); "latent_guess" will be the subject's guess for whether the agent acted on that trial (1 for yes, 0 for no). "mine_prob_left" and "mine_prob_right" are 0.7 or 0.3 all the way through each trial, so that is fairly obvious. "chosen_mine_prob" is also fairly obvious. I will start with the assumption that "condition" means 1 for adversarial, 2 for benevolent, and 3 for neutral. 
+
+### Update on available data and code
+
+One of our group managed to find some code for the Bayesian modelling on the first author's [GitHub](https://github.com/hayleydorfman/valence-control)! These were not linked in the paper in any way, so their discovery was a matter of some digging. Although the Github was linked from the OSF page, it said only that 
+
+> "The behavioral tasks used for both experiments in the paper are provided here and on the first author's GitHub"
+
+ so it is not immediately evident that the modelling code should be there as well. From the GitHub repository it is clear that the analyses were carried out in MATLAB, though this is not mentioned anywhere in the paper. The GitHub also, usefully, has a ReadMe which describes the variables (much as I had intuited above): 
+
+>feedback: reward feedback received (0 = negative outcome, 1 = positive outcome)
+
+>latent_agent: did the latent agent intervene on this trial? (0 = no, 1 = yes)
+
+>subject: unique, non-identifiable subject ID number
+
+>latent_prob: probability of latent agent intervention for this version of the task
+
+>mine_prob_win_left: probability of a positive outcome for the stimulus on the left side
+
+>mine_prob_win_right: probability of a positive outcome for the stimulus on the right side
+
+>latent_guess: button press for subject guess about latent agent intervention (0 = no, agent did not intervene, 1 = yes, agent did intervene)
+
+>block_num: block order
+
+>trial_num: trial number
+
+>condition: condition (1 = adversarial, 2 = benvolent, or 3 = random)
+
+>subj_choice: button press (1 = left, 2 = right)
+
+The code requires another toolbox by Sam Gershman called [mfit](https://github.com/sjgershm/mfit), as well as the Optimization Toolbox in MATLAB, to run. I will outline my attempts to run the code below. 
+
+
+## Attempt to replicate the behavioural results
+
+First of all, it ought to be possible to at least reproduce the behavioural results from the raw data. 
+
+In the paper, the authors report: 
+
+> As a preliminary manipulation check, we verified that participants’ beliefs about hidden causes varied with the outcome valence in a condition-specific manner (Fig. 2a). Participants were more likely to believe that a hidden cause resulted in negative outcomes, as opposed to positive outcomes, overall, $t(71) = 16.82, p < .0001, d = −0.32$, 95% confidence interval, or  $CI = [−0.55, −0.08]$.
+
+
+
+```{r import and wrangle data, echo = FALSE, include = FALSE}
+# Import data
+exp1_data <- read_csv("exp1_data.csv")
+
+# aggregate across trials for behavioural data
+guess <- aggregate(data=exp1_data, latent_guess ~ subject + condition + feedback, FUN="mean")
+
+# re-label conditions in a new variable
+guess <- guess%>%
+  mutate(Feedback = case_when(feedback == 0 ~ 'Negative',
+                              TRUE ~ 'Positive'))
+
+guess <- guess%>%
+  mutate(Condition = case_when(condition == 1 ~ 'Adversarial',
+                               condition == 2 ~ 'Benevolent', 
+                              TRUE ~ 'Neutral'))
+
+# re-label overall conditions for feedback in a new variable
+guessOverall <- aggregate(data=exp1_data, latent_guess ~ subject + feedback, FUN="mean")
+
+guessOverall <- guessOverall%>%
+  mutate(Feedback = case_when(feedback == 0 ~ 'Negative',
+                              TRUE ~ 'Positive'))
+
+# Filter into 3 separate conditions to do the t-tests
+adversarial <- filter(guess, guess$condition ==1)
+benevolent <- filter(guess, condition ==2)
+neutral <- filter (guess, condition ==3)
+
+# Overall t-test
+resOverall <- guessOverall %>%
+  t_test(latent_guess ~ Feedback, paired = TRUE, detailed = TRUE) %>%
+  add_significance()
+resOverall <- resOverall%>%
+  select(estimate, statistic, p, df, conf.low, conf.high, p.signif)
+
+effectSizeOverall <- guessOverall %>% cohens_d(latent_guess ~ feedback, paired = TRUE)
+
+# Adversarial t-test
+resAdversarial <- adversarial %>%
+  t_test(latent_guess ~ Feedback, paired = TRUE, detailed = TRUE) %>%
+  add_significance()
+resAdversarial <- resAdversarial%>%
+  select(estimate, statistic, p, df, conf.low, conf.high, p.signif)
+effectSizeAdversarial <- adversarial %>% cohens_d(latent_guess ~ Feedback, paired = TRUE)
+
+# Benevolent t-test
+resBenevolent <- benevolent %>%
+  t_test(latent_guess ~ Feedback, paired = TRUE, detailed = TRUE) %>%
+  add_significance()
+resBenevolent <- resBenevolent%>%
+  select(estimate, statistic, p, df, conf.low, conf.high, p.signif)
+
+effectSizeBenevolent <- benevolent %>% cohens_d(latent_guess ~ Feedback, paired = TRUE)
+
+# Neutral t-test
+resNeutral <- neutral %>%
+  t_test(latent_guess ~ Feedback, paired = TRUE, detailed = TRUE) %>%
+  add_significance()
+resNeutral <- resNeutral%>%
+  select(estimate, statistic, p, df, conf.low, conf.high, p.signif)
+effectSizeNeutral <- neutral %>% cohens_d(latent_guess ~ Feedback, paired = TRUE)
+```
+
+I have used `aggregate` to summarise the data by positive and negative outcomes (1 and 0) for the mean of `latent_guess`, which should provide the correct data for this analysis. However, I get a very different result: 
+
+```{r print results t-test overall, include = TRUE, echo = FALSE}
+
+
+resOverall%>%
+  kable(caption = 'Results overall comparing Positive and Negative conditions') %>%
+  kable_styling()
+
+effectSizeOverall %>%
+  kable(caption = 'Effect size overall, comparing Positive and Negative conditions') %>%
+  kable_styling()
+
+
+```
+
+So the top of the CI is the same, but the bottom is very different, and the t-value is completely different. The degrees of freedom are the same - so why, if their CI is actually much **wider**, is their t-value so much higher? In addition, they report a smaller effect size. I am puzzled. 
+
+They then report: 
+
+> Importantly, participants were more likely to believe that the hidden agent had intervened after negative than after positive outcomes in the adversarial condition, $t(71) = 66.24$, $p < .0001$, $d = −0.28$, 95% CI = $[−0.51, −0.04]$
+
+So we can filter the data to include only condition 1, and test that out. 
+
+```{r print results t-test adversarial, include = TRUE, echo = FALSE}
+
+resAdversarial%>%
+  kable(caption = 'Results for the Adversarial condition comparing Positive and Negative') %>%
+  kable_styling()
+
+effectSizeAdversarial %>%
+  kable(caption = 'Effect size for the Adversarial condition, comparing Positive and Negative') %>%
+  kable_styling()
+```
+
+
+Hmm. Let's plot that to see if we have the right data. 
+
+```{r plot condition 1, echo = FALSE}
+bxp <- ggpaired(adversarial, x = "Feedback", y = "latent_guess", 
+                 order = c("Positive", "Negative"),
+         ylab = "Intervention probability", xlab = "Feedback")
+
+bxp
+
+```
+
+
+Hang on, let's do an ANOVA on the whole dataset so we can try to replicate Figure 2a, even though the authors don't actually do this. That will help us check that we have the right results. 
+
+```{r ANOVA on guess data, echo = FALSE}
+
+fit <- aov_ez(id = "subject", dv = "latent_guess",
+              within = c("Condition", "Feedback"),
+              data = guess)
+
+ems <- emmeans(fit,  ~ Condition + Feedback) %>% 
+  summary()
+
+p1 <- ggplot(ems, aes(Condition, emmean, fill = Feedback, group = Feedback)) +
+  geom_col(position = position_dodge(.8),
+           width = .8) +
+  geom_point(position = position_dodge(.8)) +
+  geom_errorbar(aes(ymin = emmean-SE, ymax = emmean+SE),
+                width = .1,
+                position = position_dodge(.8))
+p1 +
+  labs(x = 'Condition', y = 'Intervention Probability', fill = 'Feedback') +
+  scale_fill_manual(values = c('dimgray', 'gray')) +
+  scale_x_discrete(labels = c('Adversarial', 'Benevolent', 'Neutral')) +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme_bw() +
+  theme(legend.position = 'bottom')
+
+```
+
+Yes, that looks very much like Figure 2a (note I've used the SEs from the Estimated Marginal Means for the error bars, so they may not be quite the same as Figure 2a, but I just wanted to see whether I had the condition labels right and was using the right DV. This seems to show that I am; note also the Feedback is reversed in this plot, but the numbers look right).
+
+OK, let's check the stats on the Benevolent condition. 
+
+From the paper: 
+
+> ... and after positive than after negative outcomes in the benevolent condition, $t(71) = −71.35$,  $p < .0001$, $d = −0.99$, 95% CI = $[−1.23, −0.74]$.
+
+
+```{r print results for Benevolent condition, echo = FALSE}
+resBenevolent%>%
+  kable(caption = 'Results for the Benevolent condition comparing Positive and Negative') %>%
+  kable_styling()
+
+
+effectSizeBenevolent%>%
+ kable(caption = 'Effect size for the Benevolent condition, comparing Positive and Negative') %>%
+  kable_styling()
+
+```
+
+So again the reported effect size in the paper is smaller than the effect size we see here, but their t-value is 7 times higher! Also, their CI seems odd - is this actually the CI for the effect size? 
+
+
+Finally, let's check the results for the Neutral condition. 
+
+From the paper: 
+
+> Participants were also slightly more likely to believe that the hidden agent had intervened after negative outcomes in the neutral condition, $t(71) = 6.83$, $p < .0001$, $d = −0.31$, 95%  CI = $[−0.55, −0.08]$.
+
+
+```{r print results for Neutral condition, echo = FALSE}
+resNeutral%>%
+  kable(caption = 'Results for the Neutral condition comparing Positive and Negative') %>%
+  kable_styling()
+
+
+effectSizeNeutral%>%
+ kable(caption = 'Effect size for the Neutral condition, comparing Positive and Negative') %>%
+  kable_styling()
+
+```
+
+
+So now we have a smaller effect size, smaller t-value, and much larger p-value (although still significant). 
+
+## Computational modelling
+
+The authors then state: 
+
+> To characterize the effects of outcome valence and agent type on learning, we first fitted a reinforcement-learning model with six separate learning rates. 
+
+At first I assumed it would be impossible to reproduce the results from here on in, as no code is provided in the linked resources from the paper, either on the OSF site or in the (strangely underspecified) preregistration for Experiment 2. However, my colleague found the code mentioned above on the first author's GitHub site, as mentioned above, so I thought I would give that a try. 
+
+### MATLAB code for computational modelling
+
+Firstly, I downloaded both the code from [Dorfman's GitHub](https://github.com/hayleydorfman/valence-control) plus the modelling toolbox [mfit](https://github.com/sjgershm/mfit). I tried to run the function `fit_models.m`. However, it was clear from the error messages that there were two functions missing, which seemed to be likelihood models: `lik_asym.m` and `lik_rational_adaptive.m`. Without these, the code would not run. I tried commenting out the lines that called them, but then realised I would need the Optimization Toolbox. After downloading that, the code still would not run until I found another error on line 57 - `likfuns{m} = 'lik_rational'`should have read `likfuns{m} = 'lik_rational4'`. 
+
+After this, I did successfully get the code to run and fit the two models for which we had functions, `lik_asym_sticky` and `lik_rational4`. However, the only plot I could manage to recreate from the results was Figure 2 - at least I got the model predictions! 
+
+![Reproduction of Figure 2 from the paper](Figure 2.png)
+
+It was really not clear from the output what was used for the statistical tests or the other plots. Possibly being less experienced in Bayesian modelling was a hurdle for me, but the lack of commenting in the code did not help. 
+
+This was as far as I got with the modelling - I do not think it is really possible to go further without contacting the authors for the missing code. 
+
+## Experiment 2 behavioural results 
+
+For completeness, I attempted to reproduce the behavioural results for Experiment 2. 
+
+In the paper, the authors report: 
+
+> Results of Experiment 2 replicated those of Experiment 1: Participants believed that the hidden agent caused negative outcomes more often than positive outcomes across all conditions, t(254) = 6.26, p < .0001, d = −0.06, 95% CI = [−0.18, 0.06], and there was a significant difference between belief in the hidden agent for good outcomes in the benevolent and neutral conditions and for bad outcomes in the adversarial and neutral conditions, t(254) = 7.03, p < .0001, d = 0.29, 95% CI = [0.17, 0.41].
+
+
+Again, I have used `aggregate` to summarise the data by positive and negative outcomes (1 and 0) for the mean of `latent_guess`, which should provide the correct data for this analysis. This is the only case in which I get the same t-statistic and p-values as in the paper, but my effect size estimate and confidence interval are different. It also seems odd that they get such a highly significant p-value but their CI contains 0 - even if this is the CI for the effect size, that does seem odd.  
+
+
+```{r reproduce Experiment 2, include = FALSE, echo = FALSE}
+# Import data
+exp2_data <- read_csv("exp2_data.csv")
+
+# aggregate across trials for behavioural data
+guess2 <- aggregate(data=exp2_data, latent_guess ~ subject + condition + feedback, FUN="mean")
+
+# re-label conditions in a new variable
+guess2 <- guess2%>%
+  mutate(Feedback = case_when(feedback == 0 ~ 'Negative',
+                              TRUE ~ 'Positive'))
+
+guess2 <- guess2%>%
+  mutate(Condition = case_when(condition == 1 ~ 'Adversarial',
+                               condition == 2 ~ 'Benevolent', 
+                              TRUE ~ 'Neutral'))
+
+# re-label overall conditions for feedback in a new variable
+guessOverall2 <- aggregate(data=exp2_data, latent_guess ~ subject + feedback, FUN="mean")
+
+guessOverall2 <- guessOverall2%>%
+  mutate(Feedback = case_when(feedback == 0 ~ 'Negative',
+                              TRUE ~ 'Positive'))
+
+# Filter into 3 separate conditions to do the t-tests
+adversarial2 <- filter(guess2, guess2$condition ==1)
+benevolent2 <- filter(guess2, condition ==2)
+neutral2 <- filter (guess2, condition ==3)
+
+# Overall t-test
+resOverall2 <- guessOverall2 %>%
+  t_test(latent_guess ~ Feedback, paired = TRUE, detailed = TRUE) %>%
+  add_significance()
+resOverall2 <- resOverall2%>%
+  select(estimate, statistic, p, df, conf.low, conf.high, p.signif)
+
+effectSizeOverall2 <- guessOverall2 %>% cohens_d(latent_guess ~ feedback, paired = TRUE)
+
+# Adversarial t-test
+resAdversarial2 <- adversarial2 %>%
+  t_test(latent_guess ~ Feedback, paired = TRUE, detailed = TRUE) %>%
+  add_significance()
+resAdversarial2 <- resAdversarial2%>%
+  select(estimate, statistic, p, df, conf.low, conf.high, p.signif)
+effectSizeAdversarial2 <- adversarial2 %>% cohens_d(latent_guess ~ Feedback, paired = TRUE)
+
+# Benevolent t-test
+resBenevolent2 <- benevolent2 %>%
+  t_test(latent_guess ~ Feedback, paired = TRUE, detailed = TRUE) %>%
+  add_significance()
+resBenevolent2 <- resBenevolent2%>%
+  select(estimate, statistic, p, df, conf.low, conf.high, p.signif)
+
+effectSizeBenevolent2 <- benevolent2 %>% cohens_d(latent_guess ~ Feedback, paired = TRUE)
+
+# Neutral t-test
+resNeutral2 <- neutral2 %>%
+  t_test(latent_guess ~ Feedback, paired = TRUE, detailed = TRUE) %>%
+  add_significance()
+resNeutral2 <- resNeutral2%>%
+  select(estimate, statistic, p, df, conf.low, conf.high, p.signif)
+effectSizeNeutral2 <- neutral2 %>% cohens_d(latent_guess ~ Feedback, paired = TRUE)
+
+```
+
+
+```{r Exp 2 print results t-test overall, include = TRUE, echo = FALSE}
+
+
+resOverall2%>%
+  kable(caption = 'Results overall for Experiment 2 comparing Positive and Negative conditions') %>%
+  kable_styling()
+
+effectSizeOverall2 %>%
+  kable(caption = 'Effect size overall for Experiment 2, comparing Positive and Negative conditions')%>%
+  kable_styling()
+```
+
+
+It is really not clear what result the authors are referring to in the second part of this paragraph: 
+
+> ... and there was a significant difference between belief in the hidden agent for good outcomes in the benevolent and neutral conditions and for bad outcomes in the adversarial and neutral conditions, t(254) = 7.03, p < .0001, d = 0.29, 95% CI = [0.17, 0.41].
+
+Let's do each of the separate t-tests and see if we can work it out.... 
+
+
+
+### Adversarial condition, Experiment 2 
+
+```{r print Exp 2 results t-test adversarial, include = TRUE, echo = FALSE}
+
+resAdversarial2%>%
+  kable(caption = 'Results for the Adversarial condition in Experiment 2, comparing Positive and Negative') %>%
+  kable_styling()
+
+effectSizeAdversarial2 %>%
+  kable(caption = 'Effect size for the Adversarial condition in Experiment 2, comparing Positive and Negative') %>%
+  kable_styling()
+```
+
+
+### Benevolent condition, Experiment 2 
+
+```{r print Experiment 2 results for Benevolent condition, echo = FALSE}
+resBenevolent2%>%
+  kable(caption = 'Results for the Benevolent condition in Experiment 2, comparing Positive and Negative') %>%
+  kable_styling()
+
+
+effectSizeBenevolent2%>%
+ kable(caption = 'Effect size for the Benevolent condition in Experiment 2, comparing Positive and Negative') %>%
+  kable_styling()
+
+```
+
+### Neutral condition, Experiment 2 
+
+```{r print Experiment 2 results for Neutral condition, echo = FALSE}
+resNeutral2%>%
+  kable(caption = 'Results for the Neutral condition in Experiment 2 comparing Positive and Negative') %>%
+  kable_styling()
+
+
+effectSizeNeutral2%>%
+ kable(caption = 'Effect size for the Neutral condition in Experiment 2, comparing Positive and Negative') %>%
+  footnote(number = "I have corrected a minor error in this analysis pointed out by the authors before publication (the effect size for the Neutral condition accidentally called the value from Experiment 1), but it does not alter the fact that this analysis fails to reproduce the results reported in the paper ") %>%
+  kable_styling()
+
+```
+
+
+Nope, none of those match the statistics in the paper. And the neutral condition does not show a significant difference this time.... and when you look at the sentence above, it seems contradictory - it's really not clear how the data were analysed here to carry out a single t-test. 
+
+
+## Summary 
+
+I did not get very far at all in attempting to reproduce these results. It was clear from the start that I would not be able to reproduce the computational modelling, due to the lack of code (although I made some attempts after finding the code on GitHub), but I thought I might at least be able to reproduce the simple analyses at the start. Although I could produce a plot very similar to Figure 2a, suggesting that I was probably using the right data, the results of the t-tests were very different to those given in the paper. This very minimal attempt to provide data should probably not have earned a data badge, and it is not at all clear what was done with the data to obtain even the most basic results. 
+
+
+

@@ -1,0 +1,498 @@
+---
+title: 'Study 2, data processing steps'
+author: "Sonja Kunz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    code_download: true
+---
+Load packages
+```{r, message=FALSE}
+library(tidyverse) 
+library(misty)
+library(data.table)
+```
+
+Import raw data.
+```{r, message=FALSE}
+dat_raw <- 
+  read_csv2('Data/Study2_data_raw.csv')
+```
+
+# Variable re-codings
+
+In the study, participants viewed meals from two contexts. We counterbalanced the background colours as well as the names of the first and second context, therefore participants were assigned to one of 4 possible combinations of these variables. The combination is indicated by the variable `random_color_context` in the dataset. To better be able to control for the possible effects of colours vs. names, we separated this variable into two variables indicating *either* the randomisation of context background colours *or* the names, respectively. 
+
+```{r}
+dat <- 
+  dat_raw %>% 
+  mutate(random_context = (ifelse(random_color_context %in% c(1,2), 1, 2)),
+         random_colour = (ifelse(random_color_context %in% c(1,3), 1, 2))
+  )
+```
+
+## Combine responses of the different base rate manipulation groups
+
+Participants were randomly assigned to different base rate manipulations, harmonious, conflicting or control base rates.
+In the data, the responses of participants in the base rate manipulations are indicated by the expected perceived relationship evoked by the base rate manipulation ("pos", "neg", "zero"). 
+Moreover, as explained above, participants were also assigned to one of 4 possible combinations of context colours and names.
+
+Hence, the responses to the on-line ratings (assessed during stimulus presentation) are separated for altogether 12 different groups (3 base rate manipulations x 4 colour-label combinations) and we had to combine them into a common variable per trial.
+
+```{r}
+dat <- 
+  dat %>% 
+  mutate(onl_taste_c1_1 = rowSums(. [ , c('a_pos_onl_taste_c1_1', 'b_pos_onl_taste_c1_1', 'c_pos_onl_taste_c1_1', 'd_pos_onl_taste_c1_1', 'a_neg_onl_taste_c1_1', 'b_neg_onl_taste_c1_1', 'c_neg_onl_taste_c1_1', 'd_neg_onl_taste_c1_1', 'a_zero_onl_taste_c1_1', 'b_zero_onl_taste_c1_1', 'c_zero_onl_taste_c1_1', 'd_zero_onl_taste_c1_1')], na.rm = TRUE),
+         onl_taste_c1_2 = rowSums(. [ , c('a_pos_onl_taste_c1_2', 'b_pos_onl_taste_c1_2', 'c_pos_onl_taste_c1_2', 'd_pos_onl_taste_c1_2', 'a_neg_onl_taste_c1_2', 'b_neg_onl_taste_c1_2', 'c_neg_onl_taste_c1_2', 'd_neg_onl_taste_c1_2', 'a_zero_onl_taste_c1_2', 'b_zero_onl_taste_c1_2', 'c_zero_onl_taste_c1_2', 'd_zero_onl_taste_c1_2')], na.rm = TRUE),
+         onl_taste_c1_3 = rowSums(. [ , c('a_pos_onl_taste_c1_3', 'b_pos_onl_taste_c1_3', 'c_pos_onl_taste_c1_3', 'd_pos_onl_taste_c1_3', 'a_neg_onl_taste_c1_3', 'b_neg_onl_taste_c1_3', 'c_neg_onl_taste_c1_3', 'd_neg_onl_taste_c1_3', 'a_zero_onl_taste_c1_3', 'b_zero_onl_taste_c1_3', 'c_zero_onl_taste_c1_3', 'd_zero_onl_taste_c1_3')], na.rm = TRUE),
+         onl_taste_c1_4 = rowSums(. [ , c('a_pos_onl_taste_c1_4', 'b_pos_onl_taste_c1_4', 'c_pos_onl_taste_c1_4', 'd_pos_onl_taste_c1_4', 'a_neg_onl_taste_c1_4', 'b_neg_onl_taste_c1_4', 'c_neg_onl_taste_c1_4', 'd_neg_onl_taste_c1_4', 'a_zero_onl_taste_c1_4', 'b_zero_onl_taste_c1_4', 'c_zero_onl_taste_c1_4', 'd_zero_onl_taste_c1_4')], na.rm = TRUE),
+         onl_taste_c1_5 = rowSums(. [ , c('a_pos_onl_taste_c1_5', 'b_pos_onl_taste_c1_5', 'c_pos_onl_taste_c1_5', 'd_pos_onl_taste_c1_5', 'a_neg_onl_taste_c1_5', 'b_neg_onl_taste_c1_5', 'c_neg_onl_taste_c1_5', 'd_neg_onl_taste_c1_5', 'a_zero_onl_taste_c1_5', 'b_zero_onl_taste_c1_5', 'c_zero_onl_taste_c1_5', 'd_zero_onl_taste_c1_5')], na.rm = TRUE),
+         onl_taste_c1_6 = rowSums(. [ , c('a_pos_onl_taste_c1_6', 'b_pos_onl_taste_c1_6', 'c_pos_onl_taste_c1_6', 'd_pos_onl_taste_c1_6', 'a_neg_onl_taste_c1_6', 'b_neg_onl_taste_c1_6', 'c_neg_onl_taste_c1_6', 'd_neg_onl_taste_c1_6', 'a_zero_onl_taste_c1_6', 'b_zero_onl_taste_c1_6', 'c_zero_onl_taste_c1_6', 'd_zero_onl_taste_c1_6')], na.rm = TRUE),
+         onl_taste_c1_7 = rowSums(. [ , c('a_pos_onl_taste_c1_7', 'b_pos_onl_taste_c1_7', 'c_pos_onl_taste_c1_7', 'd_pos_onl_taste_c1_7', 'a_neg_onl_taste_c1_7', 'b_neg_onl_taste_c1_7', 'c_neg_onl_taste_c1_7', 'd_neg_onl_taste_c1_7', 'a_zero_onl_taste_c1_7', 'b_zero_onl_taste_c1_7', 'c_zero_onl_taste_c1_7', 'd_zero_onl_taste_c1_7')], na.rm = TRUE),
+         onl_taste_c1_8 = rowSums(. [ , c('a_pos_onl_taste_c1_8', 'b_pos_onl_taste_c1_8', 'c_pos_onl_taste_c1_8', 'd_pos_onl_taste_c1_8', 'a_neg_onl_taste_c1_8', 'b_neg_onl_taste_c1_8', 'c_neg_onl_taste_c1_8', 'd_neg_onl_taste_c1_8', 'a_zero_onl_taste_c1_8', 'b_zero_onl_taste_c1_8', 'c_zero_onl_taste_c1_8', 'd_zero_onl_taste_c1_8')], na.rm = TRUE),
+         onl_taste_c1_9 = rowSums(. [ , c('a_pos_onl_taste_c1_9', 'b_pos_onl_taste_c1_9', 'c_pos_onl_taste_c1_9', 'd_pos_onl_taste_c1_9', 'a_neg_onl_taste_c1_9', 'b_neg_onl_taste_c1_9', 'c_neg_onl_taste_c1_9', 'd_neg_onl_taste_c1_9', 'a_zero_onl_taste_c1_9', 'b_zero_onl_taste_c1_9', 'c_zero_onl_taste_c1_9', 'd_zero_onl_taste_c1_9')], na.rm = TRUE),
+         onl_taste_c1_10 = rowSums(. [ , c('a_pos_onl_taste_c1_10', 'b_pos_onl_taste_c1_10', 'c_pos_onl_taste_c1_10', 'd_pos_onl_taste_c1_10', 'a_neg_onl_taste_c1_10', 'b_neg_onl_taste_c1_10', 'c_neg_onl_taste_c1_10', 'd_neg_onl_taste_c1_10', 'a_zero_onl_taste_c1_10', 'b_zero_onl_taste_c1_10', 'c_zero_onl_taste_c1_10', 'd_zero_onl_taste_c1_10')], na.rm = TRUE),
+         onl_taste_c1_11 = rowSums(. [ , c('a_pos_onl_taste_c1_11', 'b_pos_onl_taste_c1_11', 'c_pos_onl_taste_c1_11', 'd_pos_onl_taste_c1_11', 'a_neg_onl_taste_c1_11', 'b_neg_onl_taste_c1_11', 'c_neg_onl_taste_c1_11', 'd_neg_onl_taste_c1_11', 'a_zero_onl_taste_c1_11', 'b_zero_onl_taste_c1_11', 'c_zero_onl_taste_c1_11', 'd_zero_onl_taste_c1_11')], na.rm = TRUE),
+         onl_taste_c1_12 = rowSums(. [ , c('a_pos_onl_taste_c1_12', 'b_pos_onl_taste_c1_12', 'c_pos_onl_taste_c1_12', 'd_pos_onl_taste_c1_12', 'a_neg_onl_taste_c1_12', 'b_neg_onl_taste_c1_12', 'c_neg_onl_taste_c1_12', 'd_neg_onl_taste_c1_12', 'a_zero_onl_taste_c1_12', 'b_zero_onl_taste_c1_12', 'c_zero_onl_taste_c1_12', 'd_zero_onl_taste_c1_12')], na.rm = TRUE),
+         onl_health_c1_1 = rowSums(. [ , c('a_pos_onl_health_c1_1', 'b_pos_onl_health_c1_1', 'c_pos_onl_health_c1_1', 'd_pos_onl_health_c1_1', 'a_neg_onl_health_c1_1', 'b_neg_onl_health_c1_1', 'c_neg_onl_health_c1_1', 'd_neg_onl_health_c1_1', 'a_zero_onl_health_c1_1', 'b_zero_onl_health_c1_1', 'c_zero_onl_health_c1_1', 'd_zero_onl_health_c1_1')], na.rm = TRUE),
+         onl_health_c1_2 = rowSums(. [ , c('a_pos_onl_health_c1_2', 'b_pos_onl_health_c1_2', 'c_pos_onl_health_c1_2', 'd_pos_onl_health_c1_2', 'a_neg_onl_health_c1_2', 'b_neg_onl_health_c1_2', 'c_neg_onl_health_c1_2', 'd_neg_onl_health_c1_2', 'a_zero_onl_health_c1_2', 'b_zero_onl_health_c1_2', 'c_zero_onl_health_c1_2', 'd_zero_onl_health_c1_2')], na.rm = TRUE),
+         onl_health_c1_3 = rowSums(. [ , c('a_pos_onl_health_c1_3', 'b_pos_onl_health_c1_3', 'c_pos_onl_health_c1_3', 'd_pos_onl_health_c1_3', 'a_neg_onl_health_c1_3', 'b_neg_onl_health_c1_3', 'c_neg_onl_health_c1_3', 'd_neg_onl_health_c1_3', 'a_zero_onl_health_c1_3', 'b_zero_onl_health_c1_3', 'c_zero_onl_health_c1_3', 'd_zero_onl_health_c1_3')], na.rm = TRUE),
+         onl_health_c1_4 = rowSums(. [ , c('a_pos_onl_health_c1_4', 'b_pos_onl_health_c1_4', 'c_pos_onl_health_c1_4', 'd_pos_onl_health_c1_4', 'a_neg_onl_health_c1_4', 'b_neg_onl_health_c1_4', 'c_neg_onl_health_c1_4', 'd_neg_onl_health_c1_4', 'a_zero_onl_health_c1_4', 'b_zero_onl_health_c1_4', 'c_zero_onl_health_c1_4', 'd_zero_onl_health_c1_4')], na.rm = TRUE),
+         onl_health_c1_5 = rowSums(. [ , c('a_pos_onl_health_c1_5', 'b_pos_onl_health_c1_5', 'c_pos_onl_health_c1_5', 'd_pos_onl_health_c1_5', 'a_neg_onl_health_c1_5', 'b_neg_onl_health_c1_5', 'c_neg_onl_health_c1_5', 'd_neg_onl_health_c1_5', 'a_zero_onl_health_c1_5', 'b_zero_onl_health_c1_5', 'c_zero_onl_health_c1_5', 'd_zero_onl_health_c1_5')], na.rm = TRUE),
+         onl_health_c1_6 = rowSums(. [ , c('a_pos_onl_health_c1_6', 'b_pos_onl_health_c1_6', 'c_pos_onl_health_c1_6', 'd_pos_onl_health_c1_6', 'a_neg_onl_health_c1_6', 'b_neg_onl_health_c1_6', 'c_neg_onl_health_c1_6', 'd_neg_onl_health_c1_6', 'a_zero_onl_health_c1_6', 'b_zero_onl_health_c1_6', 'c_zero_onl_health_c1_6', 'd_zero_onl_health_c1_6')], na.rm = TRUE),
+         onl_health_c1_7 = rowSums(. [ , c('a_pos_onl_health_c1_7', 'b_pos_onl_health_c1_7', 'c_pos_onl_health_c1_7', 'd_pos_onl_health_c1_7', 'a_neg_onl_health_c1_7', 'b_neg_onl_health_c1_7', 'c_neg_onl_health_c1_7', 'd_neg_onl_health_c1_7', 'a_zero_onl_health_c1_7', 'b_zero_onl_health_c1_7', 'c_zero_onl_health_c1_7', 'd_zero_onl_health_c1_7')], na.rm = TRUE),
+         onl_health_c1_8 = rowSums(. [ , c('a_pos_onl_health_c1_8', 'b_pos_onl_health_c1_8', 'c_pos_onl_health_c1_8', 'd_pos_onl_health_c1_8', 'a_neg_onl_health_c1_8', 'b_neg_onl_health_c1_8', 'c_neg_onl_health_c1_8', 'd_neg_onl_health_c1_8', 'a_zero_onl_health_c1_8', 'b_zero_onl_health_c1_8', 'c_zero_onl_health_c1_8', 'd_zero_onl_health_c1_8')], na.rm = TRUE),
+         onl_health_c1_9 = rowSums(. [ , c('a_pos_onl_health_c1_9', 'b_pos_onl_health_c1_9', 'c_pos_onl_health_c1_9', 'd_pos_onl_health_c1_9', 'a_neg_onl_health_c1_9', 'b_neg_onl_health_c1_9', 'c_neg_onl_health_c1_9', 'd_neg_onl_health_c1_9', 'a_zero_onl_health_c1_9', 'b_zero_onl_health_c1_9', 'c_zero_onl_health_c1_9', 'd_zero_onl_health_c1_9')], na.rm = TRUE),
+         onl_health_c1_10 = rowSums(. [ , c('a_pos_onl_health_c1_10', 'b_pos_onl_health_c1_10', 'c_pos_onl_health_c1_10', 'd_pos_onl_health_c1_10', 'a_neg_onl_health_c1_10', 'b_neg_onl_health_c1_10', 'c_neg_onl_health_c1_10', 'd_neg_onl_health_c1_10', 'a_zero_onl_health_c1_10', 'b_zero_onl_health_c1_10', 'c_zero_onl_health_c1_10', 'd_zero_onl_health_c1_10')], na.rm = TRUE),
+         onl_health_c1_11 = rowSums(. [ , c('a_pos_onl_health_c1_11', 'b_pos_onl_health_c1_11', 'c_pos_onl_health_c1_11', 'd_pos_onl_health_c1_11', 'a_neg_onl_health_c1_11', 'b_neg_onl_health_c1_11', 'c_neg_onl_health_c1_11', 'd_neg_onl_health_c1_11', 'a_zero_onl_health_c1_11', 'b_zero_onl_health_c1_11', 'c_zero_onl_health_c1_11', 'd_zero_onl_health_c1_11')], na.rm = TRUE),
+         onl_health_c1_12 = rowSums(. [ , c('a_pos_onl_health_c1_12', 'b_pos_onl_health_c1_12', 'c_pos_onl_health_c1_12', 'd_pos_onl_health_c1_12', 'a_neg_onl_health_c1_12', 'b_neg_onl_health_c1_12', 'c_neg_onl_health_c1_12', 'd_neg_onl_health_c1_12', 'a_zero_onl_health_c1_12', 'b_zero_onl_health_c1_12', 'c_zero_onl_health_c1_12', 'd_zero_onl_health_c1_12')], na.rm = TRUE),
+         onl_taste_c2_1 = rowSums(. [ , c('a_pos_onl_taste_c2_1', 'b_pos_onl_taste_c2_1', 'c_pos_onl_taste_c2_1', 'd_pos_onl_taste_c2_1', 'a_neg_onl_taste_c2_1', 'b_neg_onl_taste_c2_1', 'c_neg_onl_taste_c2_1', 'd_neg_onl_taste_c2_1', 'a_zero_onl_taste_c2_1', 'b_zero_onl_taste_c2_1', 'c_zero_onl_taste_c2_1', 'd_zero_onl_taste_c2_1')], na.rm = TRUE),
+         onl_taste_c2_2 = rowSums(. [ , c('a_pos_onl_taste_c2_2', 'b_pos_onl_taste_c2_2', 'c_pos_onl_taste_c2_2', 'd_pos_onl_taste_c2_2', 'a_neg_onl_taste_c2_2', 'b_neg_onl_taste_c2_2', 'c_neg_onl_taste_c2_2', 'd_neg_onl_taste_c2_2', 'a_zero_onl_taste_c2_2', 'b_zero_onl_taste_c2_2', 'c_zero_onl_taste_c2_2', 'd_zero_onl_taste_c2_2')], na.rm = TRUE),
+         onl_taste_c2_3 = rowSums(. [ , c('a_pos_onl_taste_c2_3', 'b_pos_onl_taste_c2_3', 'c_pos_onl_taste_c2_3', 'd_pos_onl_taste_c2_3', 'a_neg_onl_taste_c2_3', 'b_neg_onl_taste_c2_3', 'c_neg_onl_taste_c2_3', 'd_neg_onl_taste_c2_3', 'a_zero_onl_taste_c2_3', 'b_zero_onl_taste_c2_3', 'c_zero_onl_taste_c2_3', 'd_zero_onl_taste_c2_3')], na.rm = TRUE),
+         onl_taste_c2_4 = rowSums(. [ , c('a_pos_onl_taste_c2_4', 'b_pos_onl_taste_c2_4', 'c_pos_onl_taste_c2_4', 'd_pos_onl_taste_c2_4', 'a_neg_onl_taste_c2_4', 'b_neg_onl_taste_c2_4', 'c_neg_onl_taste_c2_4', 'd_neg_onl_taste_c2_4', 'a_zero_onl_taste_c2_4', 'b_zero_onl_taste_c2_4', 'c_zero_onl_taste_c2_4', 'd_zero_onl_taste_c2_4')], na.rm = TRUE),
+         onl_taste_c2_5 = rowSums(. [ , c('a_pos_onl_taste_c2_5', 'b_pos_onl_taste_c2_5', 'c_pos_onl_taste_c2_5', 'd_pos_onl_taste_c2_5', 'a_neg_onl_taste_c2_5', 'b_neg_onl_taste_c2_5', 'c_neg_onl_taste_c2_5', 'd_neg_onl_taste_c2_5', 'a_zero_onl_taste_c2_5', 'b_zero_onl_taste_c2_5', 'c_zero_onl_taste_c2_5', 'd_zero_onl_taste_c2_5')], na.rm = TRUE),
+         onl_taste_c2_6 = rowSums(. [ , c('a_pos_onl_taste_c2_6', 'b_pos_onl_taste_c2_6', 'c_pos_onl_taste_c2_6', 'd_pos_onl_taste_c2_6', 'a_neg_onl_taste_c2_6', 'b_neg_onl_taste_c2_6', 'c_neg_onl_taste_c2_6', 'd_neg_onl_taste_c2_6', 'a_zero_onl_taste_c2_6', 'b_zero_onl_taste_c2_6', 'c_zero_onl_taste_c2_6', 'd_zero_onl_taste_c2_6')], na.rm = TRUE),
+         onl_taste_c2_7 = rowSums(. [ , c('a_pos_onl_taste_c2_7', 'b_pos_onl_taste_c2_7', 'c_pos_onl_taste_c2_7', 'd_pos_onl_taste_c2_7', 'a_neg_onl_taste_c2_7', 'b_neg_onl_taste_c2_7', 'c_neg_onl_taste_c2_7', 'd_neg_onl_taste_c2_7', 'a_zero_onl_taste_c2_7', 'b_zero_onl_taste_c2_7', 'c_zero_onl_taste_c2_7', 'd_zero_onl_taste_c2_7')], na.rm = TRUE),
+         onl_taste_c2_8 = rowSums(. [ , c('a_pos_onl_taste_c2_8', 'b_pos_onl_taste_c2_8', 'c_pos_onl_taste_c2_8', 'd_pos_onl_taste_c2_8', 'a_neg_onl_taste_c2_8', 'b_neg_onl_taste_c2_8', 'c_neg_onl_taste_c2_8', 'd_neg_onl_taste_c2_8', 'a_zero_onl_taste_c2_8', 'b_zero_onl_taste_c2_8', 'c_zero_onl_taste_c2_8', 'd_zero_onl_taste_c2_8')], na.rm = TRUE),
+         onl_taste_c2_9 = rowSums(. [ , c('a_pos_onl_taste_c2_9', 'b_pos_onl_taste_c2_9', 'c_pos_onl_taste_c2_9', 'd_pos_onl_taste_c2_9', 'a_neg_onl_taste_c2_9', 'b_neg_onl_taste_c2_9', 'c_neg_onl_taste_c2_9', 'd_neg_onl_taste_c2_9', 'a_zero_onl_taste_c2_9', 'b_zero_onl_taste_c2_9', 'c_zero_onl_taste_c2_9', 'd_zero_onl_taste_c2_9')], na.rm = TRUE),
+         onl_taste_c2_10 = rowSums(. [ , c('a_pos_onl_taste_c2_10', 'b_pos_onl_taste_c2_10', 'c_pos_onl_taste_c2_10', 'd_pos_onl_taste_c2_10', 'a_neg_onl_taste_c2_10', 'b_neg_onl_taste_c2_10', 'c_neg_onl_taste_c2_10', 'd_neg_onl_taste_c2_10', 'a_zero_onl_taste_c2_10', 'b_zero_onl_taste_c2_10', 'c_zero_onl_taste_c2_10', 'd_zero_onl_taste_c2_10')], na.rm = TRUE),
+         onl_taste_c2_11 = rowSums(. [ , c('a_pos_onl_taste_c2_11', 'b_pos_onl_taste_c2_11', 'c_pos_onl_taste_c2_11', 'd_pos_onl_taste_c2_11', 'a_neg_onl_taste_c2_11', 'b_neg_onl_taste_c2_11', 'c_neg_onl_taste_c2_11', 'd_neg_onl_taste_c2_11', 'a_zero_onl_taste_c2_11', 'b_zero_onl_taste_c2_11', 'c_zero_onl_taste_c2_11', 'd_zero_onl_taste_c2_11')], na.rm = TRUE),
+         onl_taste_c2_12 = rowSums(. [ , c('a_pos_onl_taste_c2_12', 'b_pos_onl_taste_c2_12', 'c_pos_onl_taste_c2_12', 'd_pos_onl_taste_c2_12', 'a_neg_onl_taste_c2_12', 'b_neg_onl_taste_c2_12', 'c_neg_onl_taste_c2_12', 'd_neg_onl_taste_c2_12', 'a_zero_onl_taste_c2_12', 'b_zero_onl_taste_c2_12', 'c_zero_onl_taste_c2_12', 'd_zero_onl_taste_c2_12')], na.rm = TRUE),
+         onl_health_c2_1 = rowSums(. [ , c('a_pos_onl_health_c2_1', 'b_pos_onl_health_c2_1', 'c_pos_onl_health_c2_1', 'd_pos_onl_health_c2_1', 'a_neg_onl_health_c2_1', 'b_neg_onl_health_c2_1', 'c_neg_onl_health_c2_1', 'd_neg_onl_health_c2_1', 'a_zero_onl_health_c2_1', 'b_zero_onl_health_c2_1', 'c_zero_onl_health_c2_1', 'd_zero_onl_health_c2_1')], na.rm = TRUE),
+         onl_health_c2_2 = rowSums(. [ , c('a_pos_onl_health_c2_2', 'b_pos_onl_health_c2_2', 'c_pos_onl_health_c2_2', 'd_pos_onl_health_c2_2', 'a_neg_onl_health_c2_2', 'b_neg_onl_health_c2_2', 'c_neg_onl_health_c2_2', 'd_neg_onl_health_c2_2', 'a_zero_onl_health_c2_2', 'b_zero_onl_health_c2_2', 'c_zero_onl_health_c2_2', 'd_zero_onl_health_c2_2')], na.rm = TRUE),
+         onl_health_c2_3 = rowSums(. [ , c('a_pos_onl_health_c2_3', 'b_pos_onl_health_c2_3', 'c_pos_onl_health_c2_3', 'd_pos_onl_health_c2_3', 'a_neg_onl_health_c2_3', 'b_neg_onl_health_c2_3', 'c_neg_onl_health_c2_3', 'd_neg_onl_health_c2_3', 'a_zero_onl_health_c2_3', 'b_zero_onl_health_c2_3', 'c_zero_onl_health_c2_3', 'd_zero_onl_health_c2_3')], na.rm = TRUE),
+         onl_health_c2_4 = rowSums(. [ , c('a_pos_onl_health_c2_4', 'b_pos_onl_health_c2_4', 'c_pos_onl_health_c2_4', 'd_pos_onl_health_c2_4', 'a_neg_onl_health_c2_4', 'b_neg_onl_health_c2_4', 'c_neg_onl_health_c2_4', 'd_neg_onl_health_c2_4', 'a_zero_onl_health_c2_4', 'b_zero_onl_health_c2_4', 'c_zero_onl_health_c2_4', 'd_zero_onl_health_c2_4')], na.rm = TRUE),
+         onl_health_c2_5 = rowSums(. [ , c('a_pos_onl_health_c2_5', 'b_pos_onl_health_c2_5', 'c_pos_onl_health_c2_5', 'd_pos_onl_health_c2_5', 'a_neg_onl_health_c2_5', 'b_neg_onl_health_c2_5', 'c_neg_onl_health_c2_5', 'd_neg_onl_health_c2_5', 'a_zero_onl_health_c2_5', 'b_zero_onl_health_c2_5', 'c_zero_onl_health_c2_5', 'd_zero_onl_health_c2_5')], na.rm = TRUE),
+         onl_health_c2_6 = rowSums(. [ , c('a_pos_onl_health_c2_6', 'b_pos_onl_health_c2_6', 'c_pos_onl_health_c2_6', 'd_pos_onl_health_c2_6', 'a_neg_onl_health_c2_6', 'b_neg_onl_health_c2_6', 'c_neg_onl_health_c2_6', 'd_neg_onl_health_c2_6', 'a_zero_onl_health_c2_6', 'b_zero_onl_health_c2_6', 'c_zero_onl_health_c2_6', 'd_zero_onl_health_c2_6')], na.rm = TRUE),
+         onl_health_c2_7 = rowSums(. [ , c('a_pos_onl_health_c2_7', 'b_pos_onl_health_c2_7', 'c_pos_onl_health_c2_7', 'd_pos_onl_health_c2_7', 'a_neg_onl_health_c2_7', 'b_neg_onl_health_c2_7', 'c_neg_onl_health_c2_7', 'd_neg_onl_health_c2_7', 'a_zero_onl_health_c2_7', 'b_zero_onl_health_c2_7', 'c_zero_onl_health_c2_7', 'd_zero_onl_health_c2_7')], na.rm = TRUE),
+         onl_health_c2_8 = rowSums(. [ , c('a_pos_onl_health_c2_8', 'b_pos_onl_health_c2_8', 'c_pos_onl_health_c2_8', 'd_pos_onl_health_c2_8', 'a_neg_onl_health_c2_8', 'b_neg_onl_health_c2_8', 'c_neg_onl_health_c2_8', 'd_neg_onl_health_c2_8', 'a_zero_onl_health_c2_8', 'b_zero_onl_health_c2_8', 'c_zero_onl_health_c2_8', 'd_zero_onl_health_c2_8')], na.rm = TRUE),
+         onl_health_c2_9 = rowSums(. [ , c('a_pos_onl_health_c2_9', 'b_pos_onl_health_c2_9', 'c_pos_onl_health_c2_9', 'd_pos_onl_health_c2_9', 'a_neg_onl_health_c2_9', 'b_neg_onl_health_c2_9', 'c_neg_onl_health_c2_9', 'd_neg_onl_health_c2_9', 'a_zero_onl_health_c2_9', 'b_zero_onl_health_c2_9', 'c_zero_onl_health_c2_9', 'd_zero_onl_health_c2_9')], na.rm = TRUE),
+         onl_health_c2_10 = rowSums(. [ , c('a_pos_onl_health_c2_10', 'b_pos_onl_health_c2_10', 'c_pos_onl_health_c2_10', 'd_pos_onl_health_c2_10', 'a_neg_onl_health_c2_10', 'b_neg_onl_health_c2_10', 'c_neg_onl_health_c2_10', 'd_neg_onl_health_c2_10', 'a_zero_onl_health_c2_10', 'b_zero_onl_health_c2_10', 'c_zero_onl_health_c2_10', 'd_zero_onl_health_c2_10')], na.rm = TRUE),
+         onl_health_c2_11 = rowSums(. [ , c('a_pos_onl_health_c2_11', 'b_pos_onl_health_c2_11', 'c_pos_onl_health_c2_11', 'd_pos_onl_health_c2_11', 'a_neg_onl_health_c2_11', 'b_neg_onl_health_c2_11', 'c_neg_onl_health_c2_11', 'd_neg_onl_health_c2_11', 'a_zero_onl_health_c2_11', 'b_zero_onl_health_c2_11', 'c_zero_onl_health_c2_11', 'd_zero_onl_health_c2_11')], na.rm = TRUE),
+         onl_health_c2_12 = rowSums(. [ , c('a_pos_onl_health_c2_12', 'b_pos_onl_health_c2_12', 'c_pos_onl_health_c2_12', 'd_pos_onl_health_c2_12', 'a_neg_onl_health_c2_12', 'b_neg_onl_health_c2_12', 'c_neg_onl_health_c2_12', 'd_neg_onl_health_c2_12', 'a_zero_onl_health_c2_12', 'b_zero_onl_health_c2_12', 'c_zero_onl_health_c2_12', 'd_zero_onl_health_c2_12')], na.rm = TRUE)
+  )
+```
+
+## Match responses to the first and second context
+ 
+In the study, participants answered the same questions about 2 different contexts, context 1 with many tasty foods and context 2 with few tasty foods. 
+For some participants, context 1 was the cafeterias (caf) and context 2 the restaurants in the area (area), while it was reversed for the other participants. This is reflected in the variable `random_context`.
+
+For participants in `random_context` group 1, the 1st context was the cafeterias, the 2nd context was the restaurants in the area. For participants in `random_context` group 2, the 1st context was the restaurants in the area, the 2nd context was the cafeterias.
+
+The survey was programmed such that responses are recorded for the cafeteria and restaurant contexts, regardless of which one was context 1 or 2. But for the analyses, we need to know the responses to contexts 1 and 2, regardless of how they were called. 
+
+So, we re-coded participants' answers accordingly. That is, for all participants, who first answered the items about the cafeterias and then the ones about the area, their responses to context 1 are the responses to the cafeterias and the responses to context 2 are the responses to the areas. Conversely, for all participants, who first answered the items about the area and then the ones about the cafeterias, their responses to context 1 are the responses to the areas and the responses to context 2 are the responses to the cafeterias.
+
+### Manipulation checks
+
+#### Base rate estimates
+
+```{r}
+dat <- 
+  dat %>% 
+  mutate(base_healthy_c1 = (ifelse(random_context == 1, base_healthy_caf, base_healthy_area)),
+         base_unhealthy_c1 = (ifelse(random_context == 1, base_unhealthy_caf, base_unhealthy_area)),
+         base_tasty_c1 = (ifelse(random_context == 1, base_tasty_caf, base_tasty_area)),
+         base_ntasty_c1 = (ifelse(random_context == 1, base_ntasty_caf, base_ntasty_area)),
+         base_healthy_c2 = (ifelse(random_context == 1, base_healthy_area, base_healthy_caf)),
+         base_unhealthy_c2 = (ifelse(random_context == 1, base_unhealthy_area, base_unhealthy_caf)),
+         base_tasty_c2 = (ifelse(random_context == 1, base_tasty_area, base_tasty_caf)),
+         base_ntasty_c2 = (ifelse(random_context == 1, base_ntasty_area, base_ntasty_caf))
+         )
+```
+
+### Perceived health-taste relationship within contexts
+
+#### Joint frequency estimates
+```{r}
+dat <- 
+  dat %>% 
+  mutate(healthy_tasty_freq_c1 = (ifelse(random_context == 1, healthy_tasty_freq_caf, healthy_tasty_freq_area)),
+         healthy_ntasty_freq_c1 = (ifelse(random_context == 1, healthy_ntasty_freq_caf, healthy_ntasty_freq_area)),
+         unhealthy_tasty_freq_c1 = (ifelse(random_context == 1, unhealthy_tasty_freq_caf, unhealthy_tasty_freq_area)),
+         unhealthy_ntasty_freq_c1 = (ifelse(random_context == 1, unhealthy_ntasty_freq_caf, unhealthy_ntasty_freq_area)),
+         healthy_tasty_freq_c2 = (ifelse(random_context == 1, healthy_tasty_freq_area, healthy_tasty_freq_caf)),
+         healthy_ntasty_freq_c2 = (ifelse(random_context == 1, healthy_ntasty_freq_area, healthy_ntasty_freq_caf)),
+         unhealthy_tasty_freq_c2 = (ifelse(random_context == 1, unhealthy_tasty_freq_area, unhealthy_tasty_freq_caf)),
+         unhealthy_ntasty_freq_c2 = (ifelse(random_context == 1, unhealthy_ntasty_freq_area, unhealthy_ntasty_freq_caf))
+         )
+```
+#### Contingency belief 
+```{r}
+dat <- 
+  dat %>% 
+  mutate(belief_ht1_c1 = ifelse(random_context == 1, belief_ht1_caf, belief_ht1_area),
+         belief_ht2_c1 = ifelse(random_context == 1, belief_ht2_caf, belief_ht2_area),
+         belief_ht1_c2 = ifelse(random_context == 1, belief_ht1_area, belief_ht1_caf),
+         belief_ht2_c2 = ifelse(random_context == 1, belief_ht2_area, belief_ht2_caf)
+         )
+```
+#### Prediction task
+
+In the prediction task, participants had to predict new meals' taste from their given health ratings and vice versa, 4 times per combination of context and rating direction. The given ratings of the different contexts were presented in the same colours as the presented ratings in the learning trials. Ratings starting with "ad" indicate that the participant viewed the ratings from cafeterias on a pink and the restaurants in the area on a green background. Ratings starting with "bc" indicate that the participant viewed the ratings from the cafeterias on a green and the restaurants in the area on a pink background.
+
+But again, this tells nothing about which context (cafeterias or restaurants) was the first and second context. So we re-coded the variable accordingly. That is, for all participants for whom the first context were the cafeterias and the second context the restaurants in the area, their responses to context 1 are the responses to the cafeterias, and the responses to context 2 are the responses to the areas, combined for the different random colour groups, respectively. 
+Conversely, for all participants, for whom the first context was the restaurants in the area and the second context the cafeterias, their responses to context 1 are the responses to the areas and the responses to context 2 are the responses to the cafeterias, combined for the different random colour groups, respectively.
+
+```{r}
+dat <- 
+  dat %>% 
+  mutate(pred_health1_c1 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_caf_pred_health1', 'bc_caf_pred_health1')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_area_pred_health1', 'bc_area_pred_health1')], na.rm = TRUE)),
+         pred_health2_c1 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_caf_pred_health2', 'bc_caf_pred_health2')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_area_pred_health2', 'bc_area_pred_health2')], na.rm = TRUE)),
+         pred_health3_c1 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_caf_pred_health3', 'bc_caf_pred_health3')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_area_pred_health3', 'bc_area_pred_health3')], na.rm = TRUE)),
+         pred_health4_c1 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_caf_pred_health4', 'bc_caf_pred_health4')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_area_pred_health4', 'bc_area_pred_health4')], na.rm = TRUE)),
+         pred_taste1_c1 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_caf_pred_taste1', 'bc_caf_pred_taste1')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_area_pred_taste1', 'bc_area_pred_taste1')], na.rm = TRUE)),
+         pred_taste2_c1 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_caf_pred_taste2', 'bc_caf_pred_taste2')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_area_pred_taste2', 'bc_area_pred_taste2')], na.rm = TRUE)),
+         pred_taste3_c1 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_caf_pred_taste3', 'bc_caf_pred_taste3')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_area_pred_taste3', 'bc_area_pred_taste3')], na.rm = TRUE)),
+         pred_taste4_c1 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_caf_pred_taste4', 'bc_caf_pred_taste4')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_area_pred_taste4', 'bc_area_pred_taste4')], na.rm = TRUE)),
+         pred_health1_c2 = ifelse(random_context == 1, 
+                                  rowSums(.[ ,c('ad_area_pred_health1', 'bc_area_pred_health1')], na.rm = TRUE), 
+                                  rowSums(.[ ,c('ad_caf_pred_health1', 'bc_caf_pred_health1')], na.rm = TRUE)),
+         pred_health2_c2 = ifelse(random_context == 1, 
+                                  rowSums(.[ ,c('ad_area_pred_health2', 'bc_area_pred_health2')], na.rm = TRUE), 
+                                  rowSums(.[ ,c('ad_caf_pred_health2', 'bc_caf_pred_health2')], na.rm = TRUE)),
+         pred_health3_c2 = ifelse(random_context == 1, 
+                                  rowSums(.[ ,c('ad_area_pred_health3', 'bc_area_pred_health3')], na.rm = TRUE), 
+                                  rowSums(.[ ,c('ad_caf_pred_health3', 'bc_caf_pred_health3')], na.rm = TRUE)),
+         pred_health4_c2 = ifelse(random_context == 1, 
+                                  rowSums(.[ ,c('ad_area_pred_health4', 'bc_area_pred_health4')], na.rm = TRUE), 
+                                  rowSums(.[ ,c('ad_caf_pred_health4', 'bc_caf_pred_health4')], na.rm = TRUE)),
+         pred_taste1_c2 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_area_pred_taste1', 'bc_area_pred_taste1')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_caf_pred_taste1', 'bc_caf_pred_taste1')], na.rm = TRUE)),
+         pred_taste2_c2 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_area_pred_taste2', 'bc_area_pred_taste2')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_caf_pred_taste2', 'bc_caf_pred_taste2')], na.rm = TRUE)),
+         pred_taste3_c2 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_area_pred_taste3', 'bc_area_pred_taste3')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_caf_pred_taste3', 'bc_caf_pred_taste3')], na.rm = TRUE)),
+         pred_taste4_c2 = ifelse(random_context == 1, 
+                                 rowSums(.[ ,c('ad_area_pred_taste4', 'bc_area_pred_taste4')], na.rm = TRUE), 
+                                 rowSums(.[ ,c('ad_caf_pred_taste4', 'bc_caf_pred_taste4')], na.rm = TRUE)),
+         )
+
+```
+# Variable computations
+
+## Attention checks: Online health and taste ratings
+
+For the attention check analyses, we calculated the mean on-line health and taste ratings per context, to compare them between the base rate manipulations.
+
+```{r}
+dat <-
+  dat %>% 
+  mutate(mean_onl_taste_c1 = rowMeans(.[ ,c('onl_taste_c1_1','onl_taste_c1_2', 'onl_taste_c1_3', 'onl_taste_c1_4', 'onl_taste_c1_5', 'onl_taste_c1_2', 'onl_taste_c1_7', 'onl_taste_c1_8', 'onl_taste_c1_9', 'onl_taste_c1_10', 'onl_taste_c1_11', 'onl_taste_c1_12')]),
+         mean_onl_taste_c2 = rowMeans(.[ ,c('onl_taste_c2_1','onl_taste_c2_2', 'onl_taste_c2_3', 'onl_taste_c2_4', 'onl_taste_c2_5', 'onl_taste_c2_2', 'onl_taste_c2_7', 'onl_taste_c2_8', 'onl_taste_c2_9', 'onl_taste_c2_10', 'onl_taste_c2_11', 'onl_taste_c2_12')]),
+         mean_onl_health_c1 = rowMeans(.[ ,c('onl_health_c1_1','onl_health_c1_2', 'onl_health_c1_3', 'onl_health_c1_4', 'onl_health_c1_5', 'onl_health_c1_2', 'onl_health_c1_7', 'onl_health_c1_8', 'onl_health_c1_9', 'onl_health_c1_10', 'onl_health_c1_11', 'onl_health_c1_12')]),
+         mean_onl_health_c2 = rowMeans(.[ ,c('onl_health_c2_1','onl_health_c2_2', 'onl_health_c2_3', 'onl_health_c2_4', 'onl_health_c2_5', 'onl_health_c2_2', 'onl_health_c2_7', 'onl_health_c2_8', 'onl_health_c2_9', 'onl_health_c2_10', 'onl_health_c2_11', 'onl_health_c2_12')])
+         )
+```
+
+## Perceived health-taste relationship within contexts
+
+### Joint frequency estimates (Phi coefficient)
+
+The main dependent variable was the strength of participants' perceived relationship between health and taste. 
+They first indicated their relationship by estimating for each context, how man foods were healthy and tasty, healthy and not tasty, unhealthy and tasty, as well as unhealthy and not tasty.
+Out of those four frequency estimates, we calculated the phi coefficient for each context.
+
+```{r}
+dat <-
+  dat %>%
+  mutate(phi_c1 = ((healthy_tasty_freq_c1 * unhealthy_ntasty_freq_c1) - 
+                     (unhealthy_tasty_freq_c1 * healthy_ntasty_freq_c1)
+  )/
+    sqrt((healthy_tasty_freq_c1 + healthy_ntasty_freq_c1) * 
+           (unhealthy_ntasty_freq_c1 + unhealthy_tasty_freq_c1) * 
+           (healthy_tasty_freq_c1 + unhealthy_tasty_freq_c1) * 
+           (unhealthy_ntasty_freq_c1 + healthy_ntasty_freq_c1)
+    ),
+  phi_c2 = ((healthy_tasty_freq_c2 * unhealthy_ntasty_freq_c2) - 
+              (unhealthy_tasty_freq_c2 * healthy_ntasty_freq_c2)
+  )/
+    sqrt((healthy_tasty_freq_c2 + healthy_ntasty_freq_c2) * 
+           (unhealthy_ntasty_freq_c2 + unhealthy_tasty_freq_c2) * 
+           (healthy_tasty_freq_c2 + unhealthy_tasty_freq_c2) * 
+           (unhealthy_ntasty_freq_c2 + healthy_ntasty_freq_c2)
+    )
+  )
+```
+
+### Contingency belief
+
+Second, participants indicated their perceived relationship more directly by indicating for each context, as well as across contexts, whether the healthy foods tasted worse, equally good or better than unhealthy foods and vice versa, all on a 100-point slider scale.
+
+First, we re-coded the 2nd items ("Unhealthy food tastes worse / better than healthy food") for each context and across contexts, so that high values indicate a high belief that healthy food tastes better.
+```{r}
+dat <- 
+  dat %>% 
+  mutate(belief_ht2_c1_r = item.reverse(belief_ht2_c1, min = 1, max = 100),
+         belief_ht2_c2_r = item.reverse(belief_ht2_c2, min = 1, max = 100),
+         belief_ht2_overall_r = item.reverse(belief_ht2_overall, min = 1, max = 100)
+  )
+```
+
+#### Scale reliability
+```{r}
+dat %>% 
+  select(belief_ht1_c1, belief_ht2_c1_r) %>% 
+  item.alpha()
+
+dat %>% 
+  select(belief_ht1_c2, belief_ht2_c2_r) %>% 
+  item.alpha()
+
+dat %>% 
+  select(belief_ht1_overall, belief_ht2_overall_r) %>% 
+  item.alpha()
+```
+#### Calculate the mean contingency belief scores
+
+Reliability was high for all scales, so we calculated the mean scores of the two contingency belief items for the 1st and 2nd context as well as across contexts:
+```{r}
+dat <-
+  dat %>%
+  mutate(belief_ht_c1 = rowMeans(.[ ,c('belief_ht1_c1','belief_ht2_c1_r')]), 
+         belief_ht_c2 = rowMeans(.[ ,c('belief_ht1_c2','belief_ht2_c2_r')]),
+         belief_ht_overall = rowMeans(.[ ,c('belief_ht1_overall', 'belief_ht2_overall_r')])
+  )
+```
+
+Next, we re-coded the contingency belief, so that it ranged from - 0.5 to 0.5 instead of 1 to 100.
+
+```{r}
+dat <-
+  dat %>% 
+  mutate(belief_ht_c1_R = (belief_ht_c1 - 50) / 100,
+         belief_ht_c2_R = (belief_ht_c2 - 50) / 100,
+         belief_ht_overall_R = (belief_ht_overall - 50) / 100)
+```
+
+### Prediction task
+
+The final dependent variable was participants' correlation between given and predicted health/taste values for new meals in the prediction task. Therefore, we calculated the Pearson correlation coefficient between the given and predicted health/taste ratings.
+
+First, we restructured the responses in the prediction task into long format. We also re-coded the prediction task trials to obtain a variable indicating the given health/taste value (we know what was the given value in each trial, as this was determined when programming the survey).
+
+First, we defined which columns from the wide format are put together in the long format:
+```{r}
+predicted_value_c1 = paste(list('pred_health1_c1', 'pred_health2_c1', 'pred_health3_c1', 'pred_health4_c1','pred_taste1_c1', 'pred_taste2_c1', 'pred_taste3_c1', 'pred_taste4_c1'))
+predicted_value_c2 = paste(list('pred_health1_c2', 'pred_health2_c2', 'pred_health3_c2', 'pred_health4_c2','pred_taste1_c2', 'pred_taste2_c2', 'pred_taste3_c2', 'pred_taste4_c2'))
+```
+Next, we restructured from wide to long format. We used the `melt.data.table` function for this to easily pivot multiple sets of columns.
+```{r}
+dat_pred <- 
+  dat %>% 
+  select(id, starts_with('pred')) %>%  
+  as.data.table() %>% 
+  melt.data.table(., id = 'id', 
+                  measure = list(predicted_value_c1, predicted_value_c2), 
+                  variable.name = 'trial', 
+                  value.name = c('predicted_value_c1', 'predicted_value_c2'), na.rm = TRUE) %>% 
+  arrange(id) %>% 
+  as.data.frame() %>% 
+  mutate(given_value_c1 = case_when(trial %in% c(1, 5) ~ 5,
+                                          trial %in% c(2, 6) ~ 4,
+                                          trial %in% c(3, 7) ~ 2,
+                                          trial %in% c(4, 8) ~ 1),
+         given_value_c2 = case_when(trial %in% c(1, 5) ~ 5,
+                                    trial %in% c(2, 6) ~ 4,
+                                    trial %in% c(3, 7) ~ 2,
+                                    trial %in% c(4, 8) ~ 1)
+         )
+```
+Then, we calculated the Pearson correlation coefficient between given and predicted values for each context for each participant. 
+We aggregated the correlation coefficients per participant and context and saved them in a data set.
+
+```{r}
+dat_cor <- 
+  dat_pred %>% 
+  group_by(id) %>% 
+  mutate(cor_c1 = cor(predicted_value_c1, given_value_c1, method = 'pearson'),
+         cor_c2 = cor(predicted_value_c2, given_value_c2, method = 'pearson')
+         )%>% 
+  summarise(cor_c1 = mean(cor_c1),
+            cor_c2 = mean(cor_c2))
+```
+Finally, we added the correlation coefficients per context and participant to the main data set.
+```{r}
+dat <- inner_join(dat, dat_cor, by = 'id')
+```
+
+## Merge indicators of perceived health-taste relationship
+
+We checked whether the three different measures in each context (joint frequency estimates, contingency belief, and prediction task) were correlated so that they could be combined into one measure.
+
+### Scale reliability per context
+
+```{r}
+dat %>% 
+  select(phi_c1, cor_c1, belief_ht_c1_R) %>% 
+  item.alpha()
+
+dat %>% 
+  select(phi_c2, cor_c2, belief_ht_c2_R) %>% 
+  item.alpha()
+
+```
+
+Because the different indicators of a perceived health-taste relationship correlated acceptably high (Cronbach's alphas .69 and .76), we aggregated them into one measure per context, indicating the perceived relationship between health and taste.
+
+```{r}
+dat <-
+  dat %>% 
+  mutate(ht_rel_c1 = rowMeans(.[ , c('phi_c1', 'cor_c1', 'belief_ht_c1_R')]),
+         ht_rel_c2 = rowMeans(.[ , c('phi_c2', 'cor_c2', 'belief_ht_c2_R')]))
+```
+
+## Add the real contingency
+
+To illustrate that participants' perceived health-taste relationship was even opposite to the actual contingency, we added a variable indicating the actual health-taste contingency per context to compare it with the perceived relationship in the descriptive statistics and also graphically.
+In the harmonious base rate manipulation, the real contingency within each context was - .33, in the conflicting base rate manipulation, it was .33, and in the control group it was 0.
+
+```{r}
+dat <- 
+  dat %>% 
+  mutate(real_cor_c1 = ifelse(
+    (condition == '1'), -0.33, ifelse((condition == '2'), 0.33, 0)),
+    real_cor_c2 = ifelse((condition == '1'), -0.33, ifelse((condition == '2'), 0.33, 0))
+    )
+```
+
+## Additional measures
+
+### Explicitness of unhealthy = tasty belief
+
+For one, we measured the explicitness of belief in the "unhealthy = tasty intuition" with 2 items by Raghunathan et al. 2006.
+Participants indicated their agreement on a scale from 1 = *strongly disagree* to 9 = *strongly agree* to the following items:
+</br>1. `UTI1`: "Things that are good for me rarely taste good."
+</br>2. `UTI2`: "There is no way to make a food healthier without sacrificing taste."
+
+#### Scale reliability
+```{r}
+dat %>% 
+  select(UTI_1, UTI_2) %>% 
+  item.alpha()
+```
+Reliability was pretty low, so we did not use this measure in the control analyses.
+
+### Belief in a causal health-taste relationship 
+
+In addition, we asked participants for their causal belief in a health-taste relationship, with two items:</br>
+</br>1. `belief_healthier`: "If a food was made healthier, it would also be ...1 = *much less tasty* - 100 = *much tastier*"
+</br>2. `belief_tastier`: "If a food was made tastier, it would also be ...1 = *much less healthy* - 100 = *much healthier*"
+
+#### Scale reliability
+
+```{r}
+dat %>% 
+  select(belief_healthier, belief_tastier) %>% 
+  item.alpha()
+```
+
+#### Calculate the mean belief in a causal HT relationship scores
+
+```{r}
+dat <-
+  dat %>%
+  mutate(causal_HT = rowMeans(.[ ,c('belief_healthier', 'belief_tastier')])
+         )
+```
+
+### General health interest (GHI)
+
+We assessed participant's general interest in a healthy lifestyle, with a scale from Roininen, Lähteenmäki, & Tuorila (1999).
+Participants indicated their agreement with 8 items (4 reverse-coded) on a scale from 1 = *strongly disagree* to 7 = *strongly agree*.</br>
+- E.g., “I am very particular about the healthiness of food I eat”
+
+First, we re-coded the items 1, 3, 7, and 8, so that high values indicated a high general health interest.
+```{r}
+dat <- 
+  dat %>% 
+  mutate(GHI_1_r = item.reverse(GHI_1, min = 1, max = 7),
+         GHI_3_r = item.reverse(GHI_3, min = 1, max = 7),
+         GHI_7_r = item.reverse(GHI_7, min = 1, max = 7),
+         GHI_8_r = item.reverse(GHI_8, min = 1, max = 7)
+  )
+
+```
+
+#### Scale reliability
+
+```{r}
+dat %>% 
+  select(GHI_1_r, GHI_2, GHI_3_r, GHI_4, GHI_5, GHI_6, GHI_7_r, GHI_8_r) %>% 
+  item.alpha()
+```
+
+#### Calculate the mean GHI scores
+
+```{r}
+dat <-
+  dat %>% 
+  mutate(GHI = rowMeans(.[ , c('GHI_1_r', 'GHI_2', 'GHI_3_r', 'GHI_4', 'GHI_5', 'GHI_6', 'GHI_7_r', 'GHI_8_r')]))
+```
+
+### Body mass index (BMI)
+
+We calculated the body mass index (BMI) by dividing weight in kilograms by size in metres squared.
+
+```{r}
+dat <- 
+  dat %>% 
+  mutate(BMI = weight / (size/100)^2)
+```
+
+# Save processed data
+
+Remove all unneeded variables and save the processed data as a CSV.
+
+```{r}
+dat %>% 
+  select(id, condition, random_colour, random_context, BMI, causal_HT, GHI,
+         starts_with(c('mean_onl', 'base', 'real', 'ht_rel')),
+         belief_ht_overall_R,
+         -contains(c('caf', 'area'))
+         )%>%
+  write_csv2('Data/Study2_data_processed.csv')
+```

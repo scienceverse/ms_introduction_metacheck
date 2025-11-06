@@ -1,0 +1,285 @@
+---
+title: "Post hoc analyses for the field study"
+subtitle: "Homeostatic regulation of energetic arousal during acute social isolation- evidence from the lab and the field"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r}
+
+rm(list=ls())
+
+library(readxl)
+library(mousetrap)
+library(dplyr)
+library(misty)
+library(lme4)
+library(lmerTest)
+library(interactions)
+
+library(Hmisc)
+
+# setwd("my path")
+
+dat <- read_excel("field_data_2022-03-07.xlsx")
+
+```
+
+# Demographic characteristics (SM Table 1)
+
+```{r}
+
+dat_demo <- dat[, c("ID", "gender", "age", "Living_cond", "UCLA_Loneliness", "SRQ_sociability", "PSS_chronic_stress")]
+dat_demo <- unique(dat_demo)
+
+dat_demo$Living_cond <- as.character(dat_demo$Living_cond)
+describe(dat_demo)
+
+mean(dat_demo$age, na.rm =TRUE)
+sd(dat_demo$age, na.rm =TRUE)
+
+mean(dat_demo$UCLA_Loneliness, na.rm =TRUE)
+sd(dat_demo$UCLA_Loneliness, na.rm =TRUE)
+
+mean(dat_demo$SRQ_sociability, na.rm =TRUE)
+sd(dat_demo$SRQ_sociability, na.rm =TRUE)
+
+mean(dat_demo$PSS_chronic_stress, na.rm =TRUE)
+sd(dat_demo$PSS_chronic_stress, na.rm =TRUE)
+
+```
+
+# DV descriptive statistics (SM Table 8)
+
+```{r, message=FALSE, warning=FALSE}
+
+dat$MP <- as.factor(dat$MP)
+
+DV <- c("stress_VAS","MDBF_valence_mood","MDBF_calmness_mood", "MDBF_energy_mood",   "fatigue_VAS",
+        "desire_soc_VAS", "loneliness_VAS" )
+
+for (i in 1: length(DV)){
+  
+  t <- dat[, c("ID", "Condition", "MP", DV[i])]
+  names(t) <- c("ID","Condition", "MP", "x")
+  t <- t %>% 
+    group_by(ID, Condition, MP) %>%
+    summarise(x = mean(x)) %>%
+    ungroup() %>%
+    group_by(Condition, MP) %>%
+    summarise(M = mean(x), SD_b = sd(x), N = length(x)) %>%
+    mutate (CI_down = M - qnorm(0.975)*SD_b/sqrt(N), CI_up = M + qnorm(0.975)*SD_b/sqrt(N)) %>%
+    ungroup %>%
+    group_by(Condition) %>%
+    mutate(M_ov = mean(M, na.rm=TRUE), SD_ov = mean(SD_b, na.rm=TRUE),  
+           CI_down_ov = mean(CI_down, na.rm=TRUE), CI_up_ov = mean(CI_up, na.rm=TRUE))
+  
+  t$var <- DV[i]
+  
+  if (i==1){
+    Mt <- t
+  }else{
+    Mt <- rbind(Mt,t)
+  }
+}
+
+# Per condition and hour
+Mt[c(1:7,12)]
+
+# Per condition
+unique(Mt[c(1,5,8:12)])
+```
+
+
+# Exploratory analyses with gender (SM Table 9)
+
+## Prepare variables
+
+```{r}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Grouping and independent variables ---
+
+# subject number of each participant
+dat$ID <- as.factor(dat$ID)
+
+# Condition - "Baseline" is a reference category compared to "Isolation"
+# express the conditions numerically before participant mean centering (PMC)
+dat$cond_num[dat$Condition=="Baseline"] <- 0
+dat$cond_num[dat$Condition=="Isolation"] <- 1
+
+# Gender - "F" (treated as the reference factor) and "M"
+dat$gender <- as.factor(dat$gender)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Participant mean centering (PMC) - level 1 variables
+
+# Condition
+dat <- scale_within(dat, variables="cond_num",  within="ID",prefix = "pmc_", center = TRUE, scale = FALSE)
+
+# Freetime
+dat <- scale_within(dat, variables="freetime",  within="ID",prefix = "pmc_", center = TRUE, scale = FALSE)
+
+
+```
+
+## Run models
+
+### 1. Loneliness
+
+
+```{r}
+
+mod.loneliness.g <- lmer(loneliness_VAS ~ pmc_cond_num +  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num +  ema_time  + pmc_freetime | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.loneliness.g)
+
+
+mod.loneliness.g <- lmer(loneliness_VAS ~ pmc_cond_num *  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num +  ema_time   | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.loneliness.g)
+
+
+```
+
+### 2. Desire for social contact
+
+
+```{r}
+
+mod.desire_soc.g <- lmer(desire_soc_VAS ~ pmc_cond_num +  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num +  ema_time  + pmc_freetime | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.desire_soc.g)
+
+
+mod.desire_soc.g <- lmer(desire_soc_VAS ~ pmc_cond_num *  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num +  ema_time  + pmc_freetime   | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.desire_soc.g)
+
+```
+
+
+### 3. Stress
+
+```{r}
+
+mod.stress.g <- lmer(stress_VAS ~ pmc_cond_num +  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + pmc_freetime | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.stress.g)
+
+
+mod.stress.g <- lmer(stress_VAS ~ pmc_cond_num *  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + pmc_freetime   | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.stress.g)
+
+
+```
+
+
+### 4. MDBF, mood valence
+
+```{r}
+
+mod.valence_mood.g <- lmer(MDBF_valence_mood ~ pmc_cond_num +  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + pmc_freetime | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.valence_mood.g)
+
+
+mod.valence_mood.g <- lmer(MDBF_valence_mood ~ pmc_cond_num *  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + pmc_freetime   | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.valence_mood.g)
+
+```
+
+
+### 5. MDBF, calmness
+
+```{r}
+
+mod.calmness_mood.g <- lmer(MDBF_calmness_mood ~ pmc_cond_num +  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + pmc_freetime | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.calmness_mood.g)
+
+
+mod.calmness_mood.g <- lmer(MDBF_calmness_mood ~ pmc_cond_num *  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + pmc_freetime   | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.calmness_mood.g)
+
+```
+
+
+### 6. MBDF, Energy mood
+
+```{r}
+
+mod.energy_mood.g <- lmer(MDBF_energy_mood ~ pmc_cond_num +  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + ema_time  + pmc_freetime | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.energy_mood.g)
+
+
+mod.energy_mood.g <- lmer(MDBF_energy_mood ~ pmc_cond_num *  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + ema_time  + pmc_freetime  | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.calmness_mood.g)
+
+```
+
+### 7. Fatigue
+
+```{r}
+
+mod.fatigue.g <- lmer(fatigue_VAS ~ pmc_cond_num +  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + ema_time | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.fatigue.g)
+
+
+mod.fatigue.g <- lmer(fatigue_VAS ~ pmc_cond_num *  gender +
+                           ema_time + pmc_freetime +
+                           ( pmc_cond_num + ema_time   | ID), data = dat, 
+                         REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(mod.fatigue.g)
+
+
+```
+
+

@@ -1,0 +1,6249 @@
+﻿# Title  Sex and Religion  7 June 2014
+# This R script for "Religion and Parental Cooperation: an empirical test of Slone’s sexual signaling model"
+# The study will appear in a collection of essays edited by Jason Slone, (information to follow)
+# For information please contact: Joseph Bulbulia:
+
+# Bulbulia, J. A., Shaver, J., *Greaves, L., Sosis, R., & Sibley, C. G. (2015). Religion and parental 
+# cooperation: an empirical test of Slone’s sexual signaling model. In D. Slone & J. Van Slyke (Eds.), 
+# The Attraction of Religion: A Sexual Selectionist Account (pp. 29-62). Bloomsbury Press. 
+
+#Joseph Bulbulia
+#joseph.bulbulia@vuw.ac.nz
+#Religious Studies
+#Faculty of Humanities and Social Sciences
+#Victoria University
+#PO Box 600
+#Wellington, NZ, 6140
+
+
+========================================================
+
+29 Zaara St Newcastle NSW 2300
+EthL2.Euro.T1
+
+
+#################
+### PACKAGES ####
+##################
+
+#install.packages("glmmADMB",repos=c("http://glmmadmb.r-forge.r-project.org/repos", getOption("repos")),type="source")
+#install.packages("coefplot2",repos="http://www.math.mcmaster.ca/bolker/R",type="source")
+#library("devtools"); install_github("lme4",user="lme4")
+#install.packages("lubridate")
+library(car)
+library(coefplot2)
+library(corrgram)
+library(data.table)
+library(ggplot2)
+library(gmodels)
+library(gridExtra)
+require(Hmisc)
+require(knitr)
+library(mice)
+library(MCMCglmm)
+library(MCMCpack)
+library(plyr)
+require(xtable)
+
+
+###################################
+#### Notes on citing R packages
+##################################
+
+# Select packages to cite:
+#citPkgs <- names(sessionInfo()$otherPkgs)
+# Write the bibtex file:
+#write_bib(citPkgs, file="R-Pckgs")
+
+###############################
+# Information about the NZAVS
+##############################
+
+# TITLE:
+# The New Zealand Attitudes and Values Study 
+# Supporting Information for Research Collaboration 
+# NZAVS 2012 Time 3.5 Data
+# 
+# This is the base syntax file for importing and analyzing
+# anonymized data from the 2012 (Time 3.5) New Zealand Attitudes
+# and Values Study in Mplus. This is designed to complement the 
+# SPSS Base Dataset containing the same variables. For a full 
+# list of the variables and item labels contained in this wave
+# of the study please visit the NZAVS website or contact me directly.
+# 
+# The Time 3.5 NZAVS survey was designed to provide more in-depth
+# measures about specific constructs in addition to those tracked 
+# each year in the full NZAVS questionnaire. These measures were 
+# assessed only at this mid-year time point, and participants from
+# different demographic groups completed different version of this 
+# questionnaire. People who affiliated with a religion completed 
+# additional questions about their religious attitudes and beliefs.
+# Maori completed a version of the questionnaire containing the 
+# MMM-ICE. Pacific peoples completed a version of the questionnaire
+# containing the PIWBS. These data should not be considered 
+# representative and were administered using an online survey. 
+# 
+# Updated February 2012
+# 
+# http://www.psych.auckland.ac.nz/uoa/NZAVS
+# Dr. Chris Sibley, c.sibley@auckland.ac.nz
+# 
+
+
+
+
+```{r} 
+
+
+## Read in data from machine, recode missing values
+system.time(
+  longi4 <- as.data.frame(read.table("/Users/josephbulbulia/Dropbox/0R/DATA/NZAVSdata/NZLong/Data/NZAVSLongitudinalSPSSData.csv",
+                                     header=TRUE,
+                                     sep=",",
+                                     na = -9999)))
+                                     
+
+
+
+##################################################################################################
+# Note, the coding of these data is explicit and a bit inelegant: I've aimed for clarity.
+# After model five below, there is a record of all the analyses that were done, including those
+# not reported in the article. There are no surprises there and nothing that would challenge our 
+# central (and rather modest) inferences in the published chapter.
+##################################################################################################
+
+
+l <- as.data.frame(longi4)
+
+# Get territory
+l$Territorial.Authority.T3 <- as.factor(as.character(l$Territorial.Authority.T3))
+
+# Remove any dataset with this name.
+rm(sgot)
+
+# Create new data set for id variables
+sgot <- data.frame(longi4)
+
+# need to count the rows to recover observations
+ssgot$Id <- 1:nrow(ssgot)
+
+
+ssgot$Urban <- as.factor(as.character(l$Territorial.Authority.T3))
+
+# Check data
+head(ssgot)
+
+
+## Now we write a function for coding urban as 0 if rural and 1 if urban
+
+
+ssgot$Urban <- ifelse(   ssgot$Urban ==  5 |
+                         ssgot$Urban ==  6 |
+                         ssgot$Urban ==  7 |
+                         ssgot$Urban ==  8 |
+                         ssgot$Urban == 16 |
+                         ssgot$Urban == 23 |
+                         ssgot$Urban == 31 |
+                         ssgot$Urban == 40 |
+                         ssgot$Urban == 44 |
+                         ssgot$Urban == 45 | 
+                         ssgot$Urban == 46 |
+                         ssgot$Urban == 47 |
+                         ssgot$Urban == 52 |
+                         ssgot$Urban == 60 | 
+                         ssgot$Urban == 71, 
+                       "Urban", "Rural")
+
+
+## Make sure it is factor
+ssgot$Urban <- as.factor(ssgot$Urban)
+str(ssgot$Urban)
+
+
+## now add religious id for T3
+ssgot$rels3 <- as.factor(l$Religious.T3)
+table(ssgot$rels3)
+str(sgot$rels3)
+
+## now add partner for T3
+ssgot$partner3 <- as.factor(l$Partner.T3)
+
+#Check 
+table(ssgot$partner3)
+str(ssgot$partner3)
+
+# Employment Time 3
+ssgot$employ <- as.factor(l$Employed.T3)
+table(ssgot$employ)
+str(ssgot$employ)
+
+# Income Time 3
+ssgot$income3 <- l$Household.INC.T3
+
+
+
+# Gender Time 3
+ssgot$gen3 <- as.factor(l$Gender.T3)
+table(l$gen3)
+
+
+# Children Time 3
+ssgot$children3 <-as.numeric(l$ChildrenNum.T3)
+ssgot$children3c <- scale(l$ChildrenNum.T3, scale=FALSE, center=TRUE)
+table(ssgot$children3)
+#hist(sgot$children3)
+
+#  Children at home Time 3
+ssgot$childrenHome3 <-as.numeric(l$ChildrenHome.T3)
+table(sgot$childrenHome3)
+
+#  Age Time 3
+
+ssgot$age3 <- as.numeric(l$Age.T3)
+summary(ssgot$age3)
+
+
+# Ethnicity Time 3
+ssgot$ethn3 <- as.factor(l$EthL3.NZEuro.T3)
+table(ssgot$ethn3)
+
+
+# Politics Time 3 (scale and center)
+ssgot$pol3 <- as.numeric(l$Pol.Orient.T3)
+table(ssgot$pol3)
+#hist(sgot$pol3)
+ssgot$pol3c <- scale(ssgot$pol3, center=TRUE, scale=TRUE)
+
+###################################
+###################################
+###################################
+
+#TIME 3.5
+
+
+library(car)
+
+# Earlier the data had a mistaken 2 coded, this should be sorted but if not:
+
+ssgot$rels35 <- recode(l$Religious.T35, "2 = 1")
+table(ssgot$rels35)
+str(ssgot$rels35)
+
+
+# Check how many NAs
+p <- 2782 + 1675  
+4514 - p 
+
+# there are 57 NAs
+
+
+#create gender variable 3.5 
+ssgot$gen35 <- l$Gender.T35
+ssgot$gen3 <- as.numeric(l$Gender.T35)
+
+
+# Check
+table(ssgot$gen35)
+str(ssgot$gen35[110:120])
+ssgot$gen35<-factor(ssgot$gen35)
+
+# Time 3.5. denomination large
+ssgot$denom<- as.factor(l$Religion.Denoms.T35)
+table(ssgot$denom)
+
+# Time 3.5 age
+ssgot$age35 <- as.numeric(as.character(l$Age.T35))
+summary(ssgot$age35)
+ssgot$age35c <- scale(ssgot$age35, center=TRUE, scale=FALSE)
+
+
+##############################################
+##Make data frame 
+##############################################
+
+dim(ssgot)
+head(ssgot)
+
+ssgot$lincome3c  <-  scale(log((l$Household.INC.T3)+1), center = TRUE, scale = TRUE)
+ssgot$incomeoverten <- (l$Household.INC.T3)/(10000)
+
+
+ssgot$rels35 <- factor(l$Religious.T35)
+str(ssgot$rels35)
+ssgot$rels35[1:100]
+
+ssgot$edu1 <- as.factor(l$EduOrdinal.T1)
+str(ssgot$edu1)
+
+
+# church
+ssgot$church<- l$Religion.Church.T35 
+mean(ssgot$church, na.rm=TRUE)
+
+
+sd(ssgot$church, na.rm=TRUE)
+table(ssgot$church)
+
+## Scripture
+table(l$Religion.Scripture.T35)
+
+
+# Prayer
+ssgot$pray <-l$Religion.Prayer.T35
+mean(ssgot$pray , na.rm=TRUE)
+sd(ssgot$pray , na.rm=TRUE)
+#boxplot(ssgot$pray)
+
+
+## Center
+ssgot$prayC <- scale(ssgot$pray, center=TRUE, scale=FALSE)
+ssgot$churchC <- scale(ssgot$church, center=TRUE, scale=TRUE)
+summary(ssgot$edu1)
+
+
+## NZ DEP
+ssgot$NZDEP3 <- l$NZDep.T3
+ssgot$NZDep3C <- scale(ssgot$NZDEP3, center =TRUE, scale =FALSE)
+summary(ssgot$NZDep3C)
+
+
+library(data.table)
+
+# scripture
+
+ssgot$script <- l$Religion.Scripture.T35
+mean(ssgot$script, na.rm=TRUE)
+table(ssgot$script)
+hist(ssgot$script)
+
+## Large denoms
+
+# Time3.5 denominations censu  (blows up models!)
+ssgot$ldenom<- as.factor(l$Religion.L4.Cats.T35)
+table(ssgot$ldenom)
+
+str(ssgot$ldenom)
+
+## Small denoms
+sgot$denom<- as.factor(l$Religion.Denoms.T35)
+table(sgot$denom)
+
+
+# Religious Identification 
+
+ssgot$rimp3 <- l$Religion.Identification.T35
+summary(ssgot$rimp3)
+ssgot$rimp3C <- scale(ssgot$rimp3, center = TRUE, scale = FALSE)
+ssgot$rimp35 <- l$Religion.Identification.T35
+ssgot$rimp35C <- scale(ssgot$rimp35, center = TRUE, scale = FALSE)
+summary(ssgot$rimp35C)
+
+
+## Belief in God
+
+ssgot$belief <- l$Believe.God.T35
+summary(ssgot$belief)
+#hist(ssgot$belief)
+ssgot$beliefS <- scale(l$Believe.God.T35, center=TRUE, scale=TRUE)
+
+# No longer exists
+#head(l$REL.COLLNARC.T35)
+
+# Create Religious ingroup ID variable
+ta<- cbind(l$RelCollectNarc01.T35, l$RelCollectNarc02.T35, l$RelCollectNarc03.T35)
+
+
+# Check
+
+head(ta)
+rmean <-rowMeans(ta, dims=1)
+head(rmean)
+ssgot$relnar <- as.numeric(rmean)# 
+ssgot$relnar 
+head(ssgot$relnar)
+
+ssgot$relnarc <- scale(ssgot$relnar, center=TRUE, scale=TRUE)
+summary(ssgot$relnar)
+
+# Parents religious
+ssgot$parRel35 <- as.factor(l$ParentsReligious.T35)
+ssgot$gen35 <-  as.factor(l$Gender.T35)
+ssgot$gen3 <-  as.factor(l$Gender.T3)
+ssgot$gen35S <-  as.factor(l$Gender.T35)
+
+
+
+## Contrast code ethn  (For some reason these get stripped later, so we have to put them back)
+head(ssgot)
+contrasts(ssgot$gen35S) <- contr.sum(2)
+
+
+## Contrast code ethn  (For some reason these get stripped later, so we have to put them back)
+contrasts(ssgot$ethn3) <- contr.sum(2)
+str(ssgot$gen35S)
+
+
+#########  Key subset   RELIGION ONLY GORUP  #####################
+head(ssgot)
+
+relgot <-subset(ssgot, rels35 == 1)
+head(relgot)
+
+######################################################################
+
+
+
+head(relgot)
+
+
+
+#########################################
+# descriptive 
+#########################################
+head(ssgot)
+
+library(xtable)
+library(gmodels)
+
+mytable <- table(ssgot$rels35, ssgot$gen35)
+mytable
+#Prop.Table(mytable)
+prop.test(mytable)
+
+
+
+
+tabs <- with(ssgot,CrossTable(children3, Urban))
+table(tabs)
+mytable<- table(ssgot$children3,ssgot$Urban)
+dim(ssgot)
+
+
+prop.test(mytable)
+
+
+
+
+########################################
+## Initial exploration of the data
+### Check differences for urban v. rural in expected children, first in the general population
+
+summary(glm(data=ssgot, children3 ~ factor(Urban), na.action=na.omit,family="quasipoisson"))
+
+## Next in the religious subsample
+summary(glm(data=relgot, children3 ~ factor(Urban), na.action=na.omit, family ="quasipoisson"))
+
+
+## We use a poisson distribution  because this is a rate parameter, 
+## and we exponentiate to recover the data scale.
+
+#General sample
+#Rural general
+exp(.84220)
+
+## Urban
+exp(.84220-.25275)
+
+## Difference
+exp(.84220)- exp(.84220-.25275)
+
+#Religion religion subset
+## Urban
+exp(.89785)
+## Rural
+exp(.89785-.23068)
+
+## Difference
+exp(.89785)-
+exp(.89785-.23068)
+
+chisq.test(mytable)
+#	Pearson's Chi-squared test with Yates' continuity correction
+#data:  mytable
+#X-squared = 10.3172, df = 1, p-value = 0.001318
+
+xtabs(~rels35 + gen35, data = ssgot)
+table(relgot$partner)
+head(ssgot)
+
+
+### Note about employment and education (we do not generally use these varaibles in the NZAVS because it is not as inforamtive as Deprivation)
+
+## Exploration of the data
+str(relgot)
+library(xtable)
+library(gmodels)
+
+
+summary(ssgot$ethn3)
+with(relgot, CrossTable(gen35, children3))
+with(relgot, CrossTable(employ, gen35))
+
+with(relgot, CrossTable(church, gen35))
+plot <- with(relgot, CrossTable(children3, gen35))
+boxplot(relgot$gen35, relgot$children3, na.action = na.omit)
+head(relgot)
+
+
+
+## Summaries
+library(ggplot2)
+library(plyr)
+
+ddply(relgot, "gen3", summarise, children3.mean=mean(children3, na.rm =TRUE))
+
+ddply(relgot, "partner3", summarise, children3.mean=mean(children3, na.rm =TRUE))
+
+ddply(relgot, "ethn3", summarise, children3.mean=mean(children3, na.rm =TRUE))
+
+
+
+## Here is a useful function for extracting datacolumns and excluding missing data
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+%
+nrow(relgot)
+
+roo<- completeFun(relgot, c("Urban"))
+nrow(relgot)- nrow(roo)
+
+
+
+## Again we look at the effects of "urban which appear large"
+summary(lm(data=roo, children3 ~ Urban, na.action=na.omit))
+summary(aov(data=roo, children3 ~ Urban, na.action=na.omit))
+
+ddply(ssgot, "Urban", summarise, children3.mean=mean(children3, na.rm =TRUE))
+
+ddply(relgot, "Urban", summarise, children3.mean=mean(children3, na.rm =TRUE))
+
+
+
+############# Some Exploratory graphs
+
+pr <- ggplot(relgot, aes(x=children3, fill = gen3)) + geom_histogram(binwidth=1, position = "dodge", alpha=.5)  + facet_grid(~gen3)
+pr
+
+
+pr <- ggplot(relgot, aes(x=children3, fill = gen3)) + geom_density(position = "dodge", alpha=.1)   + facet_grid(~gen3)
+pr
+
+pr + geom_vline(data=relgottn, aes(xintercept=children3.mean,  colour=gen3),
+               linetype="dashed", size=1)
+
+pr <- ggplot(relgot, aes(x=partner3, fill = gen3)) + geom_density(position = "dodge", alpha=.1) 
+pr + geom_vline(data=relgottn, aes(xintercept=children3.mean,  colour=gen3),
+                linetype="dashed", size=1)
+
+
+head(ssgot)
+sr <- ggplot(ssgot, aes(x=children3, fill = rels3)) + geom_histogram(binwidth=1, position = "dodge", alpha=.5, frequency =TRUE)
+sr + facet_grid(~gen3)
+ ggplot(ssgot, aes(x=children3, fill = rels3)) + geom_histogram(position = "dodge", alpha=.5, frequency =TRUE)
+ ggplot(ssgot, aes(x=rels3, y = children3, fill = rels3)) + geom_boxplot(notch=TRUE, na.rm =TRUE)
+
+
+head(relgot)
+
+
+#####################
+## More exploration
+#####################
+
+
+library(ggplot2)
+ggplot(relgot, aes(x=children3)) + geom_density()
+
+hist(men$children3, freq = TRUE)
+with(ssgot, CrossTable(rels35, gen35E))
+
+
+with(ssgot, CrossTable(children3,rels35))
+with(ssgot, chisq.test(children3,rels35))
+with(roo, chisq.test(Urban,children3))
+
+
+numb <- subset(relgot, children3 != 0 & gen35 == 1 & partner3 == 1)
+nrow(numb)
+
+       head(relgot)
+
+
+head(relgot)
+
+with(ssgot, CrossTable(ethn3, rels35))
+with(ssgot, (ethn3, rels35))
+
+
+mean(relgot$children3, na.rm=TRUE)
+mean(ssgot$children3, na.rm=TRUE)
+
+
+library(gmodels)
+with(relgot, CrossTable(church, gen35))
+
+
+
+### Political orientation, summaries
+
+with(relgot, CrossTable(pol3, rels35))
+mean(ssgot$pol3, na.rm=TRUE)
+sd(ssgot$pol3, na.rm=TRUE)
+mean(relgot$pol3, na.rm=TRUE)
+sd(relgot$pol3, na.rm=TRUE)
+
+##################################
+
+head(relgot)
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+
+
+head(relgot)
+telgot <-  completeFun(relgot, c("gen35S","ldenom")
+)
+nrow(telgot)
+head(telgot)
+
+## Code Denom
+str(telgot$Urban)
+contrasts(telgot$Urban) <- contr.sum(2)
+
+
+## Now we get data for imputing missing values. Note: will not impute "children" or "children at home". Children is an outcome variable and missingess can be estimated during MCMC. Children at Home is a random effect, and will be estiamted during MCMC. 
+
+
+nrow(telgot)
+head(telgot)
+amdata <- telgot[ , c("Id", 
+                         "age35",
+                         "gen35S", 
+                         "ethn3", 
+                         "partner3",
+                         "pol3", 
+                         "rimp35",
+                         "children3",
+                         "belief",
+                         "relnar", 
+                         #"income3",
+                         "pray",
+                         "church",
+                         #"denom",
+                         "ldenom",
+                          "NZDEP3",
+                          "Urban",
+                          "childrenHome3"
+                         # "script"
+                         )]
+
+head(amdata)
+nrow(amdata)
+str(amdata)
+
+
+
+library(mice)
+head(amdata)
+str(amdata)
+
+# leave out Children as these values will be imputed during MCMC
+head(amdata)
+dim(amdata)
+# We do not estimate children because it is a key variable of theortetical interest
+mi <- mice(amdata[,-c(8,16)])
+#head(mi)
+
+
+#plot(mi)
+now<- complete(mi)
+head(now)
+#add children back (we do not estimate, but let MCMC do this)
+head(amdata)
+cnow <- cbind(now[],amdata$childrenHome3,amdata$children3)
+head(cnow)
+
+head(cnow)
+nrow(cnow)
+
+## Time to get some tables for the data (including the newly imputed data).
+
+library(stargazer)
+head(now)
+starnow <- cnow[,c(2,6,7,8,9,10,11,13,16)]
+head(starnow)
+colnames(starnow) <- c("Age","Conservativism", "Religious Identification","Belief", "Religious In-group Values", "Pray","Church", "NZDep","Children")
+stargazer(starnow,summary=TRUE, omit.summary.stat=c("max","min"), type="text")
+
+stargazer(starnow,summary=TRUE, omit.summary.stat=c("max","min","n"))
+str(cnow)
+
+head(cnow)
+names(cnow)[16] <- "children"
+names(cnow)[15] <- "childrenHome"
+names(cnow)[3] <- "gender"
+
+head(cnow)
+ddply(cnow, "gender", summarise, children.mean=mean(children, na.rm =TRUE))
+
+ddply(cnow, "partner3", summarise, children.mean=mean(children, na.rm =TRUE))
+
+ddply(cnow, "ethn3", summarise, children.mean=mean(children, na.rm =TRUE))
+
+ddply(cnow, "gender", summarise, partner3.mean=mean(childrenHome, na.rm =TRUE))
+
+
+library(gmodels)
+
+with(cnow, CrossTable(ethn3))
+with(cnow, CrossTable(children, gender))
+
+
+### Pols
+with(relgot, CrossTable(pol3, rels35))
+
+
+#######################################################################################################################################
+# cor matrix: Next we need a correlation matrix. Note that in the publication the only correlation matrix is the simple table
+
+########################################################################################################################################
+
+######## Imputation
+
+
+
+#install.packages("lubridate")
+
+require(Hmisc)
+require(xtable)
+
+
+corstarsl <- function(x){ 
+  require(Hmisc) 
+  x <- as.matrix(x) 
+  R <- rcorr(x)$r 
+  p <- rcorr(x)$P 
+  
+  ## define notions for significance levels; spacing is important.
+  mystars <- ifelse(p < .001, "***", ifelse(p < .01, "** ", ifelse(p < .05, "* ", " ")))
+  
+  ## trunctuate the matrix that holds the correlations to two decimal
+  R <- format(round(cbind(rep(-1.11, ncol(x)), R), 2))[,-1] 
+  
+  ## build a new matrix that includes the correlations with their apropriate stars
+  Rnew <- matrix(paste(R, mystars, sep=""), ncol=ncol(x)) 
+  diag(Rnew) <- paste(diag(R), " ", sep="") 
+  rownames(Rnew) <- colnames(x) 
+  colnames(Rnew) <- paste(colnames(x), "", sep="") 
+  
+  
+  ## remove upper triangle
+  Rnew <- as.matrix(Rnew)
+  Rnew[upper.tri(Rnew, diag = TRUE)] <- ""
+  Rnew <- as.data.frame(Rnew) 
+  
+  ## remove last column and return the matrix (which is now a data frame)
+  Rnew <- cbind(Rnew[1:length(Rnew)-1])
+  return(Rnew) 
+}
+
+head(cnow)
+cornow <- cnow
+head(cornow)
+colnames(cornow) <- c("id", "Age","Gender","Eth","Partn","Consrv","RelImp","Belief",
+                      "RelGrp","Pray","Church","Denom","NZDep", "Urban","ChildHome","Child")
+head(cornow)
+
+
+forcor <- cornow[,c(2,6:11,13)]
+head(forcor)
+str(forcor)
+sforcor <- scale(forcor)
+str(sforcor)
+head(sforcor)
+cor(sforcor)
+
+############################################
+##  USE
+############################################
+xtable(corstarsl(sforcor))
+########################################
+
+## Here we check variance inflation factors. The script below is from:
+
+# 
+# @book{zuur2013beginner,
+#   Author = {Zuur, AF and Hilbe, JM and Ieno, EN},
+# 	Publisher = {Highland Statistics},
+# 	Series = {Newburgh, UK},
+# 	Title = {A beginner's guide to GLM and GLMM with R},
+# 	Year = {2013}}
+# They should be cited.
+
+
+
+
+corvif <- function(dataz) {
+  dataz <- as.data.frame(dataz)
+  #correlation part
+  #cat("Correlations of the variables\n\n")
+  #tmp_cor <- cor(dataz,use="complete.obs")
+  #print(tmp_cor)
+  #vif part
+  form    <- formula(paste("fooy ~ ",paste(strsplit(names(dataz)," "),collapse=" + ")))
+  dataz   <- data.frame(fooy=1,dataz)
+  lm_mod  <- lm(form,dataz)
+  
+  cat("\n\nVariance inflation factors\n\n")
+  print(myvif(lm_mod))
+}
+
+
+
+#Support function for corvif. Will not be called by the user
+myvif <- function(mod) {
+  v <- vcov(mod)
+  assign <- attributes(model.matrix(mod))$assign
+  if (names(coefficients(mod)[1]) == "(Intercept)") {
+    v <- v[-1, -1]
+    assign <- assign[-1]
+  } else warning("No intercept: vifs may not be sensible.")
+  terms <- labels(terms(mod))
+  n.terms <- length(terms)
+  if (n.terms < 2) stop("The model contains fewer than 2 terms")
+  if (length(assign) > dim(v)[1] ) {
+    diag(tmp_cor)<-0
+    if (any(tmp_cor==1.0)){
+      return("Sample size is too small, 100% collinearity is present")
+    } else {
+      return("Sample size is too small")
+    }
+  }
+  R <- cov2cor(v)
+  detR <- det(R)
+  result <- matrix(0, n.terms, 3)
+  rownames(result) <- terms
+  colnames(result) <- c("GVIF", "Df", "GVIF^(1/2Df)")
+  for (term in 1:n.terms) {
+    subs <- which(assign == term)
+    result[term, 1] <- det(as.matrix(R[subs, subs])) * det(as.matrix(R[-subs, -subs])) / detR
+    result[term, 2] <- length(subs)
+  }
+  if (all(result[, 2] == 1)) {
+    result <- data.frame(GVIF=result[, 1])
+  } else {
+    result[, 3] <- result[, 1]^(1/(2 * result[, 2]))
+  }
+  invisible(result)
+}
+#END VIF FUNCTIONS
+# Exlcude NA's
+
+stargazer(test)
+# Create Myvars 
+MyVar <- c("Age","Gender", "Eth", "Partn", "Consrv", "RelImp", "Belief", "RelGrp", "Pray", "Church", "NZDep","Urban")
+dim(now)
+
+head(now)
+cordat <- now
+head(cordat)
+corvarb <- cordat[,c(2,6,7,8,9,10,11,13)]
+head(corvarb)
+colnames(corvarb) <- c("Age",  "Consrv", "RelImp", "Belief", "RelGrp", "Pray", "Church", "NZDep")
+
+MyVar <- c("Age",  "Consrv", "RelImp", "Belief", "RelGrp", "Pray", "Church", "NZDep")
+
+
+  
+###USE
+stargazer(corvarb, summary=TRUE, title="VIF test: inflation of predictors", type="text")
+
+
+# Check VIF
+
+stargazer(corvif(corvarb[,MyVar]), summary =FALSE,title="VIF test: inflation of predictors")
+
+library(stargazer)
+head(cornow)
+starnow <- cornow[,c(2,6,7,8,9,10,11,13,16)]
+head(starnow)
+names <- c("Age","Conservativism","Belief", "Rel_Group_Vals","Pray","Church","NZDep","Children")
+colnames(starnow) <- c("Age","Conservativism","Religious_Ident","Belief", "Rel_Group_Vals","Pray","Church","NZDep","Children")
+stargazer(starnow,summary=TRUE, omit.summary.stat=c("max","min","n"), type="text")
+
+corvif(starnow[,])
+
+
+
+
+# 
+#            GVIF
+# Age    1.160948
+# Gender 1.110915
+# Eth    1.019747
+# Partn  1.156299
+# Consrv 1.099262
+# RelImp 1.782577
+# Belief 1.380340
+# RelGrp 1.359308
+# Pray   1.172733
+# Church 1.258573
+# NZDep  1.071983
+# Urban  1.034901
+# 
+
+
+
+
+
+
+######################################################################################
+# Is a multi-level model needed?  We can assess this queston using the ICC
+#######################################################################################
+check if multilevel model needed
+library(multilevel)
+library(car)
+
+head(cornow)
+testml <- aov(Child ~ as.factor(Denom), data=cornow)
+testm2 <- aov(Pray ~ as.factor(Denom), data=cornow)
+testm3 <- aov(Church ~ as.factor(Denom), data=cornow)
+testm4 <- aov(Belief ~ as.factor(Denom), data=cornow)
+testm5 <- aov(Consrv ~ as.factor(Denom), data=cornow)
+testm6 <- aov(RelGrp ~ as.factor(Denom), data=cornow)
+
+
+
+round(ICC1(testml), 2) # .05   how much of the variance is explained by group membership
+round(ICC2(testml), 2) #  .63  0.6318678  group mean reliability
+
+
+round(ICC1(testm2), 2)  # .07 how much of the variance is explained by group membership
+round(ICC2(testm2) , 2)  #  .77 group mean reliability
+
+round(ICC1(testm3) , 2) # .11 how much of the variance is explained by group membership
+round(ICC2(testm3) , 2)  # .84  group mean reliability
+
+round(ICC1(testm4), 2)  #  .22 how much of the variance is explained by group membership
+round(ICC2(testm4)  , 2) # .92  group mean reliability
+
+
+round(ICC1(testm5), 2)  #  .9 how much of the variance is explained by group membership
+round(ICC2(testm5)  , 2) # .82  group mean reliability
+
+
+round(ICC1(testm6), 2)  #  .1 how much of the variance is explained by group membership
+round(ICC2(testm6)  , 2) # .82  group mean reliability
+
+stargazer(cbind(ta,ma), summary=F)
+
+head(cornow)
+corn <- cornow[,c(2,6:11,13)]
+head(corn)
+# 
+# library(elipse)
+# R = cor(corn)
+# R <- round(R, 3)
+# 
+# plotcorr(R,col = colorRampPalette(c("firebrick3", "white", "navy"))(10))
+# plotcorr(R, col = colorRampPalette(c("#E08214", "white", "#8073AC"))(10), type = "lower")
+
+corrn <- corn[,-c(3)]
+
+head(cnow)
+
+
+### Correlation matrices (pretty but not used)
+library(corrgram)
+corrgram(cornow, order=TRUE, lower.panel=panel.shade,
+         upper.panel=panel.pie, text.panel=panel.txt,
+         main="Correlation of Modelled Variables")
+%
+
+corrgram(corn, order=TRUE, lower.panel=panel.shade,
+         upper.panel=panel.shade, text.panel=panel.txt, dir="left",
+         main="Correlation of Religion Variables")
+
+
+
+corrgram(cornow, order=NULL, lower.panel=panel.shade,
+         upper.panel=NULL, text.panel=panel.txt,
+         main="Religion Variables (unsorted)")
+
+corrgram(cornow, order=TRUE, lower.panel=panel.ellipse,
+         upper.panel=panel.pts, text.panel=panel.txt,
+         diag.panel=panel.minmax, 
+         main="Religion Variables")
+
+
+#### TEST
+corrgram(cornow, order=TRUE, lower.panel=panel.shade,
+         upper.panel=panel.pie, text.panel=panel.txt,
+         main="Correlation of Religion Variables")
+
+# 
+ head(cornow)
+colnames(cornow) <- c("Id", "Age","Gender","Eth","Prtnr","Consrv","RelImp","Belief",
+                        "RelGrp" ,"Pray" ,"Church","Denom","NZDep","Urban","ChildHome", "Child")
+head(cornow)
+str(cornow)
+%
+#scale varaibles
+
+
+## Note, NZAVS guidlines -- generally we don't use Income.  Education not needed
+cornow$AgeC <- as.integer(scale(cornow$Age, center = TRUE, scale = FALSE))
+
+## We want to center zero a 20, to get the full range fertility 
+
+## 
+
+
+
+# Get standard deviation of agey, we want to use a more sensible zero that the sample mean
+mage<- mean(cornow$Age)
+sdage <- sd(cornow$Age)
+
+# mage-sdage  New Centered age is 34 years old
+
+
+
+cornow$AgeCy <-  cornow$AgeC + sdage
+mean(cornow$AgeCy)  # 15.8361
+  
+str(cornow)
+
+
+### Now we make sure all the data are in shape for modelling.
+
+
+contrasts(cornow$Urban) <- contr.sum(2)
+contrasts(cornow$Urban)
+
+cornow$PrayC <- as.integer(scale(cornow$Pray, center = TRUE, scale = FALSE))
+cornow$ChurchC <- as.integer(scale(cornow$Church, center = TRUE, scale = FALSE))
+cornow$RelImpC <- as.numeric(scale(cornow$RelImp, center = TRUE, scale = FALSE))
+cornow$BeliefC <- scale(cornow$Belief, center = TRUE, scale = FALSE)
+cornow$ConsrvC <- scale(cornow$Consrv, center =TRUE, scale = FALSE)
+cornow$NZDepC <- scale(cornow$NZDep, center =TRUE, scale = FALSE)
+cornow$RelGrpC <- scale(cornow$RelGrp, center =TRUE, scale = FALSE)
+
+# Scales as well as center to improve MCMC Mixing
+
+cornow$PrayS <- (scale(cornow$Pray, center = TRUE, scale = TRUE))
+cornow$ChurchS <- (scale(cornow$Church, center = TRUE, scale = TRUE))
+cornow$RelImpS <- scale(cornow$RelImp, center = TRUE, scale = TRUE)
+cornow$BeliefS <- scale(cornow$Belief, center = TRUE, scale = TRUE)
+
+### We don't use reprot these exogenous variables -- though when trying them, they make no difference to inference(and not significant.)
+#cornow$Edu <- as.factor(cornow$Edu)
+#cornow$InC <- scale(cornow$Inc, center =TRUE, scale = FALSE)
+#cornow$ChildC <- scale(cornow$Children, center =TRUE, scale = FALSE)  # Note we estiamte children as multivariate normal during MCMC so no need to impute using a non-bayesian algorthim. 
+
+cornow$ConservS <- scale(cornow$Consrv, center =TRUE, scale = TRUE)
+cornow$NZDepS <- scale(cornow$NZDep, center =TRUE, scale = TRUE)
+cornow$RelGrpS <- scale(cornow$RelGrp, center =TRUE, scale = TRUE)
+cornow$ConsrvS <- scale(cornow$Consrv, center =TRUE, scale = TRUE)
+
+head(cornow)
+
+contrasts(cornow$Prtnr) <- contr.sum(2)
+contrasts(cornow$Eth) <- contr.sum(2)
+contrasts(cornow$Urban) <- contr.sum(2)
+contrasts(cornow$Gender) <- contr.sum(2)
+cornow$Id <- as.factor(cornow$Id)
+
+
+##  Do correlation plot
+library(corrgram)
+corrgram(corn, order=TRUE, lower.panel=panel.shade,
+         upper.panel=panel.pie, text.panel=panel.txt,
+         main="Correlation of Modelled Variables")
+#
+corrgram(corn, order=TRUE, lower.panel=panel.ellipse,
+upper.panel=panel.pts, text.panel=panel.txt,
+diag.panel=panel.minmax, main="Correlation of Modelled Variables")
+
+
+
+
+###########################
+### Bayesian estimation 
+###########################
+
+
+
+
+## P.108 Jarrod Hadfield Course Notes:  This is the key methods bit
+# We can then test for zero-flation by constraining the over-dispersion to be the same 
+# for both process using a trait by units interaction in the R-structure, and by setting up 
+# the contrasts so that the zero-altered regression coecients are expressed as di↵erences 
+# from the Poisson regression coecients. 
+# When this di↵erence is zero the variable causes no zero-flation, when it is negative it 
+# causes zero-inflation and when it is positive it causes zero-deflation:
+
+
+##p.101 Setting V=diag(2) and nu=0.002 we have the inverse-gamma prior with shape=scale=0.001 #for the residual component of the Poisson pro- cess which captures over-dispersion:
+
+library(MCMCglmm)
+library(coefplot2)
+
+### make correlation matrix
+#correlation.matrix <- cor(attitude[,c("rating","complaints","privileges")])
+head(data)
+require(Hmisc) 
+
+
+this <- data[,c("Age","Consrv","Belief","RelGrp","Pray","Church","NZDep","Child","ChildHome")]
+this <- na.exclude(this)
+
+# Function defined above
+xtable(corstarsl(this))
+#stargazer(this, title="Correlation Matrix of Continuous Model Variables", type="text", align=FALSE, summary=FALSE)
+
+
+## Note that in the end we did not use freq estimators, in keeping with the NZAVS 14 April 2014 protocols. 
+
+
+
+
+
+# Check data
+head(cornow)
+
+# Fix bug in MCMCglmm
+mod$Residual.nrt <- 2
+
+
+
+
+# Note this is overlill, just doesn't help with mixing 
+# prior5 =list(B= list(mu = c(rep(0,10),rep(0,10)), V= diag(20)*100), #*(1 + pi^2/3), 
+#                            R = list(V = diag(2), nu = 2.002, fix =2),
+#                            G = list( G1 = list(V = diag(2)*.02, nu = 3)))
+
+
+# #  P11
+# MCMCglmm uses an inverse Wishart prior for the (co)variances and a normal prior for the fixed e↵ects. 
+# 
+# inverse Wishart takes two scalar param- eters, V and nu. The distribution tends to a point mass on V as the degree of belief parameter, nu goes to infinity. The distribution tends to be right skewed when nu is not very large, with a mode of V⇤nu but a mean of V⇤nu (which is not defined for nu < 2).1 nu+2
+# # 
+# NOt a lot of information in the data for the marginal distribution for children, hence we use stronger priors
+##
+##
+##  prior1.1<-list(G=list(
+#+            G1=list(V=matrix(p.var/2),n=1)),
+#+            R=list(V=matrix(p.var/2),n=1))
+
+data  <- cornow
+nittA <- 55000
+nittC <- 505000
+burnin <- 5000
+thin <- 10
+
+
+
+
+############################################
+## Models
+############################################
+
+####################################################################################
+## rel ingroup and prayer, what predicts it? 
+####################################################################################
+
+# Prior for Poiss, Zap, and Gauss modesl  # We use "~us variance to model how belief and in-group commiment might covary"
+priorPsych = list( 
+             R = list(V = diag(2)*.02, nu = 3),
+             G = list( G1 = list(V = diag(2) *.02, nu = 3)))
+
+
+# Note we tested censored regression because religious belief looks to be subject to ceiling effects (raw data)# Makes no diff.
+# modtest <-  MCMCglmm(RelImp ~ 1, data=data)
+# head(data, 18)
+# head(data)
+# data$Beliefmax <- data$Belief #ifelse(data$Belief <= 7, 7, data$Belief)
+# data$Beliefmin <- rep(1, nrow(data)) #ifelse(data$Belief <= 1, 1, data$Belief)
+# head(data)
+# hist(data$Belief)
+
+                    
+###We use different
+
+# No evidence of covariation so we fit the simpler IDH model
+mod1 <-  MCMCglmm(cbind(cbind(Beliefmin, Beliefmax),  RelGrp)  ~ 
+                    trait -1  + 
+                    trait:PrayS + 
+                    trait:ChurchS +  
+                    trait:Gender +   
+                    trait:Prtnr +  
+                    trait:AgeC  +   
+                    trait:Eth +  
+                    trait:ConsrvS + 
+                    trait:NZDepS +   
+                    trait:Urban,   
+                  random = ~us(trait):Denom, 
+                  family=c("cengaussian","gaussian"),
+                  rcov = ~ us(trait):units,  
+                  prior=priorPsych,
+                  nitt=nittA,
+                #  pl=TRUE,
+                #  pr=TRUE,
+                  data=data)
+
+
+# Prior for Poiss, Zap, and Gauss modesl  # We use "~us variance to model how belief and in-group commiment might covary"
+# 
+# 
+# testmod1 <-  MCMCglmm(cbind(cbind(BeliefCenpoint, Belief))  ~ PrayS +
+#                         ChurchS +  
+#                         Gender +   
+#                         Prtnr +  
+#                         AgeC  +   
+#                         Eth +  
+#                         ConsrvS + 
+#                         NZDepS +   
+#                         Urban,   
+#                         random = ~Denom, 
+#                   family=c("cengaussian"),
+#                   rcov = ~ units,  
+#               #    prior=priorPsych,
+#                   nitt=nitt,
+#                   pl=TRUE,
+#                   pr=TRUE,
+#                   data=data)
+# 
+# plot(testmod1)
+
+#### FIT EASIER MODEL TO SEE THAT cengauss does not effect inferene
+
+  
+
+mod1_simp <-  MCMCglmm(cbind(Belief,  RelGrp)  ~ 
+                    trait -1  + 
+                    trait:PrayS + 
+                    trait:ChurchS +  
+                    trait:Gender +   
+                    trait:Prtnr +  
+                    trait:AgeC  +   
+                    trait:Eth +  
+                    trait:ConsrvS + 
+                    trait:NZDepS +   
+                    trait:Urban,   
+                  random = ~us(trait):Denom, 
+                  family= rep("gaussian",2),
+                  rcov = ~ us(trait):units,  
+                  prior=priorPsych,
+                  nitt=nittA,
+                # pl=TRUE,
+                # pr=TRUE,
+                  data=data)
+
+
+
+summary(mod1_simp)
+
+
+summary(mod1_simp)
+
+coefplot2(mod1_simp$Sol, intercept=TRUE)
+coefplot2(mod1$VCV, var.inx=c(1:3))
+
+plot(mod1$Sol)
+
+  
+abbfun <- function(x) {
+   gsub("(Sol\\.)*(trait|at.level\\(trait, 1\\):)*","",
+        gsub("trait_za","za",x))
+}   
+
+vn1 <- abbfun(rownames(coeftab(mod1)))
+vnn1 <- vn1[1:20]
+# insrt<- rep(c("Prayer(S)","Church(S)","Gender","Partner","Age(C)","NZ Euro", "Conservative(S)","NZDep(S)","Urban"),2)
+
+vars1  <- c(("Intercept:Belief"), "Intercept:Grp", 
+            "Bel:Prayer(S)",
+            "Grp:Prayer(S)",
+            "Bel:Church(S)",
+            "Grp:Church(S)",
+            "Bel:Gender",
+            "Grp:Gender",
+            "Bel:Partner",
+            "Grp:Partner",
+            "Bel:Age(C)",
+            "Grp:Age(C)",
+            "Bel:NZ Euro",
+            "Grp:NZ Euro",
+            "Bel:Conservative(S)",
+            "Grp:Conservative(S)",
+            "Bel:NZDep(S)",
+            "GrpNZDep(S)",
+            "Bel:Urban",
+            "Grp:Urban")
+
+
+
+
+# varss  <- c( "Intercept:Grp" ,"Prayer (S)","Church (S)","Gender","Partner","Age (C)","NZ Euro", "Conservative (S)","NZDep (S)","Urban","Z_Prayer (S)","Z_Church (S)","Z_Gender","Z_Partner","Z_Age (C)","Z_NZ Euro", "Z_Conservative (S)","Z_NZDep (S)","Z_Urban")
+
+
+######USEE THIS #############
+coefplot2(mod1_simp$Sol,
+           intercept =TRUE,
+          # merge.names=FALSE,
+           varnames=vars1,
+          col=c("gray","gray", "red","blue", "red","blue","red","blue", "green","green",rep("gray",10)))
+
+######USEE THIS #############
+
+# NO Diff between cengaussian and Gaussian
+coefplot2(list("Gaussian"=mod1_simp$Sol,"CenGaussian"= mod1$Sol),
+           intercept =TRUE,
+           merge.names=FALSE,
+           #varnames=vars,
+           legend=TRUE,legend.x="right")
+
+
+summary(mod1_simp)
+coefplot2(mod1_simp)
+#
+
+
+
+# Diagnostics: non normality (latent normal) but lower dispersion.
+ mcmc.units <- colMeans(mod1$Liab) - predict(mod1,   marginal = NULL, type = "terms")
+ par(mfrow=c(1,2))
+ qqnorm(mcmc.units) ; qqline(mcmc.units)
+ hist(mcmc.units, col = grey(.6), main = "Over-dispersion")
+%
+head(mod1_simp$Liab)
+
+# Diagnostics # normality but greater dispersion 
+ mcmc.units <- colMeans(mod1_simp$Liab) - predict(mod1_simp,   marginal = NULL, type = "terms")
+ par(mfrow=c(1,2))
+ qqnorm(mcmc.units) ; qqline(mcmc.units)
+ hist(mcmc.units, col = grey(.6), main = "Over-dispersion")
+%
+
+# enom  0.51509  0.7521  0.9243  1.1348  1.7038
+# RelGrp:Belief.Denom -0.53617 -0.3243 -0.2436 -0.1725 -0.0541
+# Belief:RelGrp.Denom -0.53617 -0.3243 -0.2436 -0.1725 -0.0541
+# RelGrp:RelGrp.Denom  0.08301  0.1432  0.1879  0.2497  0.4274
+# Belief:Belief.units  1.83827  1.9239  1.9715  2.0191  2.1152
+# RelGrp:Belief.units  0.30745  0.3625  0.3937  0.4234  0.4830
+# Belief:RelGrp.units  0.30745  0.3625  0.3937  0.4234  0.4830
+# RelGrp:RelGrp.units  1.49955  1.5707  1.6103  1.6495  1.7267
+
+
+# 
+summary(mod1_simp$Sol)
+#Belief effects vary across denominations
+mean((mod1_simp$VCV[, 8])/(rowSums(mod1_simp$VCV)) )  # Expected correlation for belief by denominations = 002  
+
+#RelGR/belief covariance 
+# #Belief effects vary across denominations
+# mean((mod1_simp$VCV[, 1])/(rowSums(mod1$VCV)) )  # Expected correlation for denominations = 09  
+# 
+# #RelGR effects vary across denominations
+# mean((mod1_simp$VCV[, 2])/(rowSums(mod1$VCV)) )  # Expected correlation for denominations = 19 
+
+
+ 
+# #########  Extracting means + standard errors of means for the table
+library(MCMCpack)
+library(Hmisc)
+
+
+## Here we yank the posterior means (above we used the modes.)
+tab <- summary(mod1_simp)
+reg <- as.data.frame(tab$solutions)
+reg
+rreg <- round(reg,4)
+rreg
+rreg <- rreg[,-c(4)]
+rreg
+
+# mod1se <- mod1se[c(1, 3:11, 2, 12:20),]
+# mod1se
+
+# put BELIEF AND GROUP TOGETHER ODD Numbering
+col1.1 <- rreg[c(1,3,5,7,9,11,13,15,17,19), ]
+col2.1 <- rreg[c(2,4,6,8,10,12,14,16,18,20), ]
+col1.1
+col2.1
+
+
+# 
+# library(stargazer)
+# head(now)
+# starnow <- now[,c(2,6,7,8,9,10,13)]
+# head(starnow)
+# colnames(starnow) <- c("Age","Conservativism","Religious Ident","Rel Group Vals","NZDep")
+# stargazer(starnow,summary=TRUE, omit.summary.stat=c("max","min","n"), type="text")
+
+
+
+
+
+
+varss  <- c( "Intercept:Grp" ,"Prayer (S)","Church (S)","Gender","Partner","Age (C)","NZ Euro", "Conservative (S)","NZDep (S)","Urban","Z_Prayer (S)","Z_Church (S)","Z_Gender","Z_Partner","Z_Age (C)","Z_NZ Euro", "Z_Conservative (S)","Z_NZDep (S)","Z_Urban")
+
+
+table1 <- cbind(col1.1,col2.1)
+table1 
+rownames(table1) <- c("Intercept","Pray(S)","Church(S)","Gender","Partner","Age(C)","NZ Euro", "Conservative(S)","NZDep(S)","Urban")
+table1
+
+
+colnames(table1)[1] <- "Belief"
+colnames(table1)[5] <- "RelGrp"
+table1
+
+star1 <- stargazer(table1,summary=FALSE, type="text")
+star1 <- stargazer(cbind(table1),summary=FALSE)
+
+
+
+
+coefplot2(mod1$Sol, var.idx=c(1:20))
+
+
+
+
+
+###############################################################
+## Do Women Pray More than Men 
+#################################################################
+priorPray = list( 
+             R = list(V = diag(1)*.02, nu = 2),
+             G = list( G1 = list(V = diag(1) *.02, nu =3),
+                       G2 = list(V = diag(1) *.02, nu= 3)))
+
+mod2 <-  MCMCglmm(Pray ~  trait *(Gender +
+                                    BeliefS + 
+                                    Prtnr + 
+                    AgeC +  
+                    Eth + 
+                    ConsrvS + 
+                    NZDepS +  
+                    Urban), 
+                  random = ~ trait:Denom + trait:ChildHome,
+                  family = "zapoisson",
+                  rcov = ~ trait:units, 
+                  prior=priorPray ,
+                  nitt=nittA,
+                  thin=thin,
+                  burnin=burnin,
+                #  pr = TRUE,
+               #   pl = TRUE,
+               #  saveX =TRUE,
+               #  saveZ = TRUE,
+                  data=data)
+
+
+
+
+## ICC  family/family + units
+
+
+summary(mod2)
+
+
+
+mean((mod2$VCV[, 1])/(rowSums(mod2$VCV)) )  # Expected correlation for denominations = .11
+mean((mod2$VCV[, 3]/(rowSums(mod2$VCV)) ))  # Expected correlation for denominations = .02
+
+# 
+#  names2<- c(("Intercept"),"ZA_Intercept","Men","Belief(S)", "Partner","Age(C)","NZ Euro", "Conservative(S)","NZDep(S)","Urban", "Men X Belief(S)","ZA_Men","ZA_Belief(S)", "ZA_Partner","ZA_Age(C)","ZA_NZ Euro", "ZA_Conservative(S)","ZA_NZDep(S)","ZA_Urban", "ZA_Men X Belief(S)")
+
+
+names2<- c(("Intercept"),"ZA_Intercept","Men","Belief(S)", "Partner","Age(C)","NZ Euro", "Conservative(S)","NZDep(S)","Urban","ZA_Men","ZA_Belief(S)", "ZA_Partner","ZA_Age(C)","ZA_NZ Euro", "ZA_Conservative(S)","ZA_NZDep(S)","ZA_Urban")
+
+coefplot2(mod2$Sol, intercept = TRUE,
+          varnames= names2,
+          col=c("gray","gray","red","red", rep("gray",6),"red","red", rep("gray",6)))
+)
+
+#
+coefplot2(mod2,  var.idx=c(1:18))
+coefplot2(mod2, var.idx=c(1:18))
+summary(mod2)
+plot(mod2)
+#exp(.35)
+
+
+# Diagnostics
+ mcmc.units <- colMeans(mod2$Liab) - predict(mod2,   marginal = NULL, type = "terms")
+ par(mfrow=c(1,2))
+ qqnorm(mcmc.units) ; qqline(mcmc.units)
+ hist(mcmc.units, col = grey(.6), main = "Over-dispersion")
+%
+
+ 
+# #########  Extracting means + standard errors of means for the table
+library(MCMCpack)
+library(Hmisc)
+
+
+## Here we yank the posterior means (above we used the modes.)
+tab2 <- summary(mod2)
+reg2 <- as.data.frame(tab2$solutions)
+reg2
+rreg2 <- round(reg2,4)
+rreg2
+rreg2 <- rreg2[,-c(4)]
+rreg2
+
+# mod1se <- mod1se[c(1, 3:11, 2, 12:20),]
+# mod1se
+
+# put BELIEF AND GROUP TOGETHER ODD Numbering
+col1.2 <- rreg2[c(1,3:10), ]
+col2.2 <- rreg2[c(2,11:18), ]
+col1.2
+col2.2
+
+
+# 
+# library(stargazer)
+# head(now)
+# starnow <- now[,c(2,6,7,8,9,10,13)]
+# head(starnow)
+# colnames(starnow) <- c("Age","Conservativism","Religious Ident","Rel Group Vals","NZDep")
+# stargazer(starnow,summary=TRUE, omit.summary.stat=c("max","min","n"), type="text")
+
+
+
+table2 <- cbind(col1.2,col2.2)
+table2 
+# rownames(table2) <- c("Intercept","Men","Belief(S)", "Partner","Age(C)","NZ Euro", "Conservative(S)","NZDep(S)","Urban", "Men X Belief(S)")
+
+rownames(table2) <- c("Intercept","Men","Belief(S)", "Partner","Age(C)","NZ Euro", "Conservative(S)","NZDep(S)","Urban")
+table2
+
+
+table1
+colnames(table2)[1] <- "Pray Means"
+colnames(table2)[5] <- "Zero_Pray"
+table2
+
+star2 <- stargazer(table2,summary=FALSE, type="text")
+star2
+
+star2.a<- stargazer(table2,summary=FALSE, align=FALSE)
+
+
+
+
+
+
+
+
+
+
+
+####################################################################################
+## rel ingroup and prayer, what predicts it? 
+####################################################################################
+
+####################################################################
+## Do men church more?   No Singles
+####################################################################
+head(data)
+
+cor
+%%
+  
+priorChurch = list( 
+             R = list(V = diag(1)*.02, nu = 2),
+             G = list( G1 = list(V = diag(1) *.02, nu =3),
+                       G2 = list(V = diag(1) *.02, nu= 3)))
+
+#We just have to be careful about how we express the results. Stating that the family variance is 0.749 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as: p.50
+%
+head(data)
+mod3 <-  MCMCglmm(Church ~  trait *(Gender +
+                                      RelGrpS + 
+                                     Prtnr + 
+                    AgeC +  
+                    Eth + 
+                    ConsrvS+ 
+                    NZDepS +  
+                    Urban), 
+                  random = ~ trait:Denom + trait:ChildHome,
+                  family = "zapoisson",
+                  rcov = ~ trait:units, 
+                  prior=priorChurch ,
+                  nitt=nittA,
+                  thin=thin,
+                  burnin=burnin,
+                #  pr = TRUE,
+              #    pl = TRUE,
+               #  saveX =TRUE,
+               #  saveZ = TRUE,
+                  data=data)
+
+
+
+
+coefplot2(mod3$VCV, var.idx =c(1:3))
+summary(mod3t$VCV)
+summary(mod3)
+
+
+## ICC  family/family + units
+
+## Intraclass Correlation
+mean((mod3$VCV[, 1])/(rowSums(mod3$VCV)) )  # Expected correlation for denominations = 40   0.31
+mean((mod3$VCV[, 2]/(rowSums(mod3$VCV)) ))  # Expected correlation for children home = 40   0.04
+
+
+names3<- c(("Intercept"),"ZA_Intercept","Men","RelGrp(S)", "Partner","Age(C)","NZ Euro", "Conservative(S)","NZDep(S)","Urban","ZA_Men","ZA_RelGrp(S)", "ZA_Partner","ZA_Age(C)","ZA_NZ Euro", "ZA_Conservative(S)","ZA_NZDep(S)","ZA_Urban")
+
+coefplot2(mod3$Sol,intercept=TRUE,
+          varnames=names3,
+          col=c("gray","gray","red","red", rep("gray",6),"red","red", rep("gray",6)))
+
+
+coefplot2(mod3$VCV, var.idx=c(1:16))
+summary(mod3)
+plot(mod3)
+
+
+# #########  Extracting means + standard errors of means for the table
+library(MCMCpack)
+library(Hmisc)
+
+
+## Here we yank the posterior means (above we used the modes.)
+tab3 <- summary(mod3)
+reg3 <- as.data.frame(tab3$solutions)
+reg3
+rreg3 <- round(reg3,4)
+rreg3
+rreg3 <- rreg3[,-c(4)]
+rreg3
+
+
+# put BELIEF AND GROUP TOGETHER ODD Numbering
+col1.3 <- rreg3[c(1,3:10), ]
+col2.3 <- rreg3[c(2,11:18), ]
+col1.3
+col2.3
+
+
+
+
+
+table3 <- cbind(col1.3,col2.3)
+table3 
+rownames(table3) <- c("Intercept","Gender","RelGroup(S)", "Partner","Age","NZ Euro", "Conservative(S)","NZDep(S)","Urban")
+table3
+
+
+
+colnames(table3)[1] <- "Church Means"
+colnames(table3)[5] <- "Zero_Church"
+table3
+
+star3 <- stargazer(table3,summary=FALSE, type="text")
+
+
+star3.a<- stargazer(table3,summary=FALSE)
+
+
+
+
+
+
+
+####################################################################################
+## Children Generally within Religion
+####################################################################################
+head(ssgot)
+dim(ssgot)
+head(ssgot)
+datafull <- ssgot[,c(2,3,5,9,11,13,14,16,17,19,28)]
+nrow(datafull     )
+head(datafull)
+str(datafull)
+
+colnames(datafull) <- c("Id","Urban","Partner","Children","ChildrenHome", "Ethnic","Conservative","Religious","Gender", "Age","NZDep")
+
+
+library(mice)
+
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+dfull <- completeFun(datafull,c( "Gender","Religious"))
+nrow(dfull)
+head(dfull)
+
+hist(dfull$Children)
+
+sum(nrow(subset(dfull, Children == 0)))/sum(nrow(dfull)) #.24
+
+# leave out Children as these values will be imputed during MCMC
+mifull <- mice(dfull[,-c(4)])
+#head(mi)
+
+
+#plot(mi)
+f.now<- complete(mifull)
+
+head(f.now)
+f.cnow <- f.now
+
+f.cnow$Children <- dfull$Children
+head(f.cnow)
+
+with(f.cnow, CrossTable(Children,Religious))
+with(data, CrossTable(Child,Gender))
+
+with(f.cnow, CrossTable(Religious, Children))
+with(data, CrossTable(Eth))
+
+with(data, CrossTable(Pray,Gender))
+
+head(data)
+
+tmean <- subset(f.cnow, Religious ==1)
+mean(tmean$Children, na.rm=TRUE)
+mean(data$Child, na.rm=TRUE)
+
+
+f.cnowS <- f.cnow[,-c(1,4)]
+library(stargazer)
+stargazer(f.cnow, type ="text",omit.summary.stat=c("max","min","n"), digits=2)
+stargazer(f.cnowS, omit.summary.stat=c("max","min","n"), digits=2)
+stargazer(f.cnowS, omit.summary.stat=c("max","min","n"), digits=2, type="text")
+
+stargazer(f.cnowS, omit.summary.stat=c("max","min","n"), digits=2, type="text")
+
+
+
+head(cnow)
+ddply(f.cnow, "Gender", summarise, Children.mean=mean(Children, na.rm =TRUE))
+
+ddply(f.cnow, "Partner", summarise, children.mean=mean(Children, na.rm =TRUE))
+
+ddply(f.cnow, "Ethnic", summarise, children.mean=mean(Children, na.rm =TRUE))
+
+ddply(f.cnow, "Religious", summarise, Children.Mean=mean(Children, na.rm =TRUE), SD=sd(Children, na.rm =TRUE))
+
+ddply(f.cnow, "Religious", summarise, Age.Mean=mean(Age), SD=sd(Age))
+
+
+
+head(data)
+
+staruse <- data[,c(2,3,4,5,6,7,9,10,11,12,14,15,16,17)]
+stargazer(staruse,  omit.summary.stat=c("max","min","n"), digits=2, type="text")
+stargazer(staruse,  omit.summary.stat=c("max","min","n"), digits=2)
+
+# transform from integer
+data$NZDep3 <- as.numeric(as.character(data$NZDep3))
+str(cnow)
+
+
+## Religon only
+ddply(data, "Gender", summarise, P.Mean=mean(Pray), SD=sd(Pray))
+ddply(data, "Gender", summarise, C.Mean=mean(Church), SD=sd(Church))
+ddply(data, "Gender", summarise, C.Mean=mean(Child,na.rm=TRUE), SD=sd(Child,na.rm=TRUE))
+ddply(data, "Gender", summarise, B.Mean=mean(Belief), SD=sd(Belief))
+ddply(data, "Gender", summarise, ch.Mean=mean(ChildHome, na.rm=TRUE), SD=sd(ChildHome, na.rm=TRUE))
+
+ddply(f.cnow, "Religious", summarise,  NZDep.mean=mean(NZDep), SD=sd(NZDep))
+1647-568
+
+ddply(cnow, summarise, NZDep.Mean=mean(NZDEP3), SD=sd(NZDEP3))
+
+
+head(data)
+stard <- data[,c(2,3,4,5,6,8,9,10,11,13,14,15,16)]
+
+stargazer(stard, omit.summary.stat=c("max","min","n"), type ="text", digits=2) 
+stargazer(stard, omit.summary.stat=c("max","min","n"),  digits=2) 
+
+library(gmodels)
+
+with(data, CrossTable(ChildHome))
+
+with(data, CrossTable(Urban))
+with(f.cnow, CrossTable(Urban))
+
+with(f.cnow, CrossTable(Ethnic))
+with(f.cnow, CrossTable(Gender))
+
+with(f.cnow, CrossTable(Religious))
+
+with(f.cnow, CrossTable(Partner))
+with(data, CrossTable(Prtnr))
+
+stargazer(f.cnowS, digits=2)
+
+
+head(cnow)
+
+
+
+colnames(cnow) <- c("id", "Age","Gender","Eth","Partn","Consrv","RelImp","Belief",
+                      "RelGrp","Pray","Church","Denom","NZDep", "Urban","ChildHome","Child")
+head(cnow)
+
+ccnow <- cnow[,-c(1,3,4,5,7,12,14)]
+head(ccnow)
+
+
+############################################
+##  USE
+############################################
+xtable(corstarsl(ccnow))
+ts <- corstarsl(ccnow)
+
+ts
+stargazer(ts, summary=FALSE, type = "text")
+##############################
+
+library(corrgram)
+corrgram(f.cnow, order=TRUE, lower.panel=panel.shade,
+         upper.panel=panel.pie, text.panel=panel.txt,
+         main="Correlation of Modelled Variables")
+
+corrgram(ccnow, order=TRUE, lower.panel=panel.shade,
+         upper.panel=panel.pie, text.panel=panel.txt,
+         main="Correlation of Modelled Variables")
+
+
+
+ f.cnow$Partner<- as.factor(f.cnow$Partner)
+ f.cnow$Ethnic<- as.factor(f.cnow$Ethnic)  
+# sum(nrow(subset(f.cnow, Children ==0)))/sum(nrow(f.cnow)) #.24
+ str(f.cnow)
+
+
+#add children back (we do not estimate, but let MCMC do this)
+
+
+
+contrasts(f.cnow$Urban  )  <- contr.sum(2)
+
+contrasts(f.cnow$Partner ) <- contr.sum(2)
+
+
+contrasts(f.cnow$Ethnic  )  <- contr.sum(2)
+
+
+contrasts(f.cnow$Religious)  <- contr.sum(2)
+
+contrasts(f.cnow$Gender)  <- contr.sum(2)
+
+
+f.cnow$AgeC    <- scale(f.cnow$Age  , center =TRUE, scale =FALSE)
+
+f.cnow$ConservativeS     <- scale(f.cnow$Conservative , center =TRUE, scale =TRUE)
+f.cnow$NZDepS    <- scale(f.cnow$NZDep  , center =TRUE, scale =TRUE)
+
+head(f.cnow)
+str(f.cnow)
+# Descriptive Data
+with(f.cnow, CrossTable(Children, Religious))
+head(f.cnow)
+f.cnowS <- f.cnow[,-c(1,4)]
+library(stargazer)
+stargazer(f.cnowS, type="text")
+
+stargazer(f.cnowS, type ="text", digits=2)
+
+
+
+
+priorFull = list( 
+             R = list(V = diag(1), nu = 3))
+
+modFpois <-  MCMCglmm(Children ~  1, 
+                  family = "poisson", 
+                  rcov = ~ trait:units, 
+                  prior=priorFull, 
+                  nitt=nitt,
+                  thin=thin,
+                  burnin=burnin,
+                  pr = TRUE,
+                 pl = TRUE,
+                 saveX =TRUE,
+                 saveZ = TRUE,
+                 data=f.cnow)
+
+str(f.cnow)
+
+
+modFul <-  MCMCglmm(Children ~  trait * (Religious + 
+                                      Gender +  
+                                      AgeC +  
+                                      Ethnic + 
+                                      Partner +
+                                      ConservativeS+ 
+                                      NZDepS +  
+                                      Urban), 
+                  family = "zapoisson", 
+                  rcov = ~ trait:units, 
+                  prior=priorFull ,
+                  nitt=50000,
+                  thin=thin,
+                  burnin=burnin,
+                  #pr = TRUE,
+                  #pl = TRUE,
+                  #saveX =TRUE,
+                  #saveZ = TRUE,
+                  data=f.cnow)
+
+
+nrow(f.cnow)
+
+
+
+# Diagnostics
+ mcmc.units <- colMeans(modFul$Liab) - predict(modFul,   marginal = NULL, type = "terms")
+ par(mfrow=c(1,2))
+ qqnorm(mcmc.units) ; qqline(mcmc.units)
+ hist(mcmc.units, col = grey(.6), main = "Over-dispersion")
+
+plot(modFpois)
+#
+summary(modFul)
+summary(modFul)
+
+namesF <- c(("Intercept"),"ZA_Intercept","Religious","Gender","Age(C)","NZ Euro", "Partner", "Conservative(S)","NZDep(S)","Urban","ZA_Religious","ZA_Gender","ZA_Age(C)","ZA_NZ Euro", "ZA_Partner", "ZA_Conservative(S)","ZA_NZDep(S)","ZA_Urban")
+
+coefplot2(modFul$Sol, intercept=TRUE, 
+          varnames = namesF,   col=c("gray","gray","red",rep("gray",7),"red",rep("gray",7))
+)
+
+coefplot2(modFul$VCV, intercept=TRUE)
+
+
+
+## ICC  family/family + units
+
+## Intraclass Correlation
+head(data)
+mean(data$Church)
+sd(data$Church)
+mean(exp(rowSums(modFul$VCV)))  # 1.068  dispersion
+
+#
+
+# Check contrasts in religion coding to make sure it is sume (-1,1)
+str(f.cnow)
+%%
+# Magnitiude of difference in children comparing religious and non religious people
+summary(modFul)
+## not religious expected offspring   1.94
+
+## Note that you vary the coding scheme to recover expected outcomes for different effects.
+
+round(mean(exp(
+    modFul$Sol[,1] * 1 + #intercept
+    modFul$Sol[,3] * 1 +  #rel
+    modFul$Sol[,4] * 0  + # gen
+    modFul$Sol[,5] * 0 +  #age
+    modFul$Sol[,6] * 0  + #eth
+    modFul$Sol[,7] * 1 + #part
+    modFul$Sol[,8] * 0 + #cons
+    modFul$Sol[,9] * 0 +  #dep
+    modFul$Sol[,10] * 0  #urban
+)),2)
+
+%
+
+#Religous expected offspring  2.42
+round(mean(exp(
+    modFul$Sol[,1] * 1 + #intercept
+    modFul$Sol[,3] * 0 +  #rel
+    modFul$Sol[,4] * 0  + # gen
+    modFul$Sol[,5] * 0 +  #age
+    modFul$Sol[,6] * 0  + #eth
+    modFul$Sol[,7] * 1 + #part
+    modFul$Sol[,8] * 0 + #cons
+    modFul$Sol[,9] * 0 +  #dep
+    modFul$Sol[,10] *0  #urban
+)),2)
+
+
+
+## nonreligious and religious expected zeros (no diff)  =.48
+round(mean(exp(-exp(
+    modFul$Sol[,2] * 1 + #intercept
+    modFul$Sol[,11] * 1 +  #rel
+    modFul$Sol[,12] * 0  + # gen
+    modFul$Sol[,13] * 0 +  #age
+    modFul$Sol[,14] * 0  + #eth
+    modFul$Sol[,15] * 1 + #part
+    modFul$Sol[,16] * 0 + #cons
+    modFul$Sol[,17] * 0 +  #dep
+    modFul$Sol[,18] * 0  #urban
+))),2)
+
+
+ 
+# #########  Extracting means + standard errors of means for the table
+library(MCMCpack)
+library(Hmisc)
+
+
+## Here we yank the posterior means (above we used the modes.)
+tabF <- summary(modFul)
+regF <- as.data.frame(tabF$solutions)
+regF
+rregF <- round(regF,4)
+rregF
+rregF <- rregF[,-c(4)]
+rregF
+
+# mod1se <- mod1se[c(1, 3:11, 3, 13:20),]
+# mod1se
+
+# put BELIEF AND GROUP TOGETHER ODD Numbering
+col1.F <- rregF[c(1,3:10), ]
+col2.F <- rregF[c(2,11:18), ]
+col1.F
+col2.F
+
+
+tableF <- cbind(col1.F,col2.F)
+tableF
+rownames(tableF) <- c("Intercept","Religious","Gender","Age(C)","NZ Euro", "Partner", "Conservative(S)","NZDep(S)","Urban")
+tableF
+
+
+tableF
+colnames(tableF)[1] <- "Children"
+colnames(tableF)[5] <- "Zero_Children"
+tableF
+
+starF <- stargazer(tableF,summary=FALSE)
+starF <- stargazer(tableF,summary=FALSE, type="text")
+
+
+starF.a<- stargazer(tableF,summary=FALSE)
+
+
+
+summary(mod5)
+
+#######################################
+## Children within Religion
+#######################################
+
+
+data$Gender)
+
+prior1 = list( 
+             R = list(V = diag(1)*.02, nu = 3),
+             G = list( G1 = list(V = diag(1) *.02, nu = 3)))
+
+prior2 = list( 
+             R = list(V = diag(1)*.02, nu = 3),
+             G = list( G1 = list(V = diag(2) *.02, nu = 3)))
+
+
+
+
+mod5pois <-  MCMCglmm(Child ~  1, 
+                  random = ~ trait:Denom,
+                  family = "poisson", 
+                  rcov = ~ trait:units, 
+                  prior=prior, 
+                  nitt=nitt,
+                  thin=thin,
+                  burnin=burnin,
+                  pr = TRUE,
+                  pl = TRUE,
+                 # saveX =TRUE,
+                  #saveZ = TRUE,
+                  data=data)
+
+
+str(data)
+
+
+  
+head(amdata)
+mitest <- mice(amdata[,-c(16)])
+ddat<- complete(mitest)
+head(ddat)  
+
+colnames(ddat) <- c("Id","Age","Gender","Eth","Prtnr", "Consrv", "Child", "Relimp","Belief","RelGrp","Pray","Church","Denom","NZDep","Urban")
+
+library(arm)
+Child,
+%
+dota <- transform(subset(ddat,select=c(Id,Age,Gender,Eth,Prtnr,Consrv,Child,Belief,RelGrp,Pray,Church,Denom,NZDep,Urban)),
+                 Id=factor(Id),
+                 Age=rescale(Age,"center"),
+                 Gender=rescale(Gender, binary.inputs= "center"),
+                 Eth=rescale(Eth, "center"),
+                 Prtnr=rescale(Prtnr,"center"),
+                 Belief=rescale(Belief, "full"),
+                 RelGrp=rescale(RelGrp, "full"),
+                 Pray=rescale(Pray,"full"),
+                 Church=rescale(Church,"full"),
+                 Denom=factor(Denom),
+                 Consrv = rescale(Consrv, "full"),
+                 NZDep=rescale(NZDep,"full"))
+                 
+                 
+str(doata)
+head(dota)
+nrow(dota)
+sum(is.na(dota))
+
+prior1 = list( 
+             R = list(V = diag(1)*.02, nu = 3),
+             G = list( G1 = list(V = diag(1) *.02, nu = 3)))
+
+head(dota)
+
+mod5tt <-  MCMCglmm(Child ~            Pray + 
+                                      Church +  
+                                      Gender + 
+                                      Age +  
+                                      Eth + 
+                                      Prtnr +
+                                      Consrv + 
+                                      NZDep +  
+                                      Urban, 
+                  random = ~ Denom,
+                  family = "poisson", 
+                  rcov = ~ trait:units, 
+                  prior=prior1,
+                 data=dota)
+
+
+  
+  
+mod5 <-  MCMCglmm(Child ~  trait * (  PrayS + 
+                                      ChurchS +  
+                                      Gender + 
+                                      AgeC +  
+                                      Eth + 
+                                      Prtnr +
+                                      ConsrvS + 
+                                      NZDepS+  
+                                      Urban), 
+                  random = ~ trait:Denom,
+                  family = "zapoisson", 
+                  rcov = ~ trait:units, 
+                  prior=prior,
+                  #nitt= 200000,  # Mixing is an issue
+                  #thin=thin,
+                  #burnin=burnin,
+                  slice =FALSE,
+                  #pr = TRUE,
+                 # pl = TRUE,
+                  #saveX =TRUE,
+                  #saveZ = TRUE,
+                 data=data)
+
+rm(mod5t)
+
+head(telgot)
+%
+
+                 
+%mod$Residual.nrt <- 2
+mod5ttt$Residual.nrt  <- 2
+summary(mod5ttt)
+coefplot2(mod5ttt$VCV)
+summary(mod5)
+coefplot2(list(mod5t,mod5tt), intercept=TRUE,merge.names=FALSE)
+
+
+
+mod5 <-  MCMCglmm(Child ~  trait * (  PrayS + 
+                                      ChurchS +  
+                                      Gender + 
+                                      AgeC +  
+                                      Eth + 
+                                      Prtnr +
+                                      ConsrvS + 
+                                      NZDepS+  
+                                      Urban), 
+                  random = ~ trait:Denom,
+                  family = "zapoisson", 
+                  rcov = ~ trait:units, 
+                  prior=prior1,
+                  nitt= 500000,  # Mixing is an issue
+                  #thin=thin,
+                  #burnin=burnin,
+                  slice =FALSE,
+                  #pr = TRUE,
+                 # pl = TRUE,
+                  #saveX =TRUE,
+                  #saveZ = TRUE,
+                 data=data)
+
+str(data)
+
+
+summary(mod5)
+
+str(data)
+mean(data$Church) 
+sd(data$Pray)
+## not religious expected offspring   1.94
+round(mean(exp(
+    mod5$Sol[,1] * 1 + #intercept
+    mod5$Sol[,3] * 1 +  #pray
+    mod5$Sol[,4] * 0  + # church
+    mod5$Sol[,5] * 0 +  #men
+    mod5$Sol[,6] * 0  + #age
+    mod5$Sol[,7] * 0 + #eth
+    mod5$Sol[,8] * 1 + #part
+    mod5$Sol[,9] * 0 +  #cons
+    mod5$Sol[,10] * 0 + #nzdep
+    mod5$Sol[,11] * 1  #urban
+)),2)
+%
+round(mean(exp(-exp(
+    mod5$Sol[,2] * 1 + #intercept
+    mod5$Sol[,12] *0 +  #pray
+    mod5$Sol[,13] * 1  + # church
+    mod5$Sol[,14] * 0 +  #men
+    mod5$Sol[,15] * 0  + #age
+    mod5$Sol[,16] * 0 + #eth
+    mod5$Sol[,17] * 1 + #part
+    mod5$Sol[,18] * 0 +  #cons
+    mod5$Sol[,19] * 0 + #nzdep
+    mod5$Sol[,20] * 1  #urban
+))),2)
+
+sd(data$Church)
+
+
+
+
+
+
+## Prior for Poiss, Zap, and Gauss modesl
+
+head(data)
+str(data)
+ddata <- data
+ddata$Pray <- as.numeric(as.character(ddata$Pray))
+ddata$Church <- as.numeric(as.character(ddata$Church))
+
+
+coefplot2(mod5$Sol, intercept =TRUE)
+summary(mod5)
+
+data)
+
+names5 <- c(("Intercept"),"ZA_Intercept", "Prayer(C)","Church(C)","Gender","Age(C)","NZEuro","Partner", "Conservative (C)","NZDep(C)","Urban", "ZA_Prayer(C)","ZA_Church(C)","ZA_Gender","ZA_Age(C)","ZA_NZEuro","ZA_Partner", "ZA_Conservative (C)","ZA_NZDep(C)","ZA_Urban")
+
+coefplot2(mod5$Sol, intercept=TRUE, 
+          varnames = names5, 
+          col = c("gray","gray","red","red","green","gray","gray","gray","gray","gray","gray",'red','red',"green","gray","gray","gray","gray","gray","gray"))
+          
+          
+
+
+## not religious expected offspring   1.94
+round(mean(exp(
+    mod5$Sol[,1] * 1 + #intercept
+    mod5$Sol[,3] * 0 +  #pray
+    mod5$Sol[,4] * 1  + # church
+    mod5$Sol[,5] * 0 +  #men
+    mod5$Sol[,6] * 0  + #age
+    mod5$Sol[,7] * 0 + #eth
+    mod5$Sol[,8] * 1 + #part
+    mod5$Sol[,9] * 0 +  #cons
+    mod5$Sol[,10] * 0 + #nzdep
+    mod5$Sol[,11] * 1  #urban
+)),2)
+%
+round(mean(exp(-exp(
+    mod5$Sol[,2] * 1 + #intercept
+    mod5$Sol[,12] * 0 +  #pray
+    mod5$Sol[,13] * 0  + # church
+    mod5$Sol[,14] * 0 +  #men
+    mod5$Sol[,15] * 0  + #age
+    mod5$Sol[,16] * 0 + #eth
+    mod5$Sol[,17] * 1 + #part
+    mod5$Sol[,18] * 0 +  #cons
+    mod5$Sol[,19] * 0 + #nzdep
+    mod5$Sol[,20] * 1  #urban
+))),2)
+
+          mean(data$Church)  
+  sd(data$Church)
+mean(data$Pray) 
+sd(data$Pray)
+
+
+library(coefplot2)
+
+summary(mod5)
+coefplot2(mod5, var.idx=c(1:20))
+coefplot2(mod5$VCV, var.idx=c(1:2))
+
+
+coefplot2(mod5$Sol, col=(c("red","blue")),var.idx=c(3,4,12,13))
+
+# Denomination effects
+ic.5 <- (mod5$VCV[, 2])/(rowSums(mod5$VCV)) # Expected correlation for denominations = .13
+round(mean(ic.5),2) # 56
+plot(ic.5)
+#plot(mod5)
+
+
+zBack  <- fun{x,mu,sd}(x-mu/sd)
+zBack(1.2,8,7)
+
+
+# #########  Extracting means + standard errors of means for the table
+library(MCMCpack)
+library(Hmisc)
+
+
+## Here we yank the posterior means (above we used the modes.)
+tab <- summary(mod5)
+reg <- as.data.frame(tab$solutions)
+reg
+rreg <- round(reg,4)
+rreg
+rreg <- rreg[,-c(4)]
+rreg
+
+# mod1se <- mod1se[c(1, 3:11, 2, 12:20),]
+# mod1se
+
+mod5tab <- rreg[c(1, 3:11, 2, 12:20),]
+col1.5 <- mod5tab[c(1:10),]
+col2.5 <- mod5tab[c(11:20),]
+
+
+
+
+table5 <- cbind(col1.5,col2.5)
+table5
+rownames(table5) <- c("Intercept","Prayer(S)","Church(S)","Gender","Age(S)","NZ Euro","Partner", "Conservative (S)","NZDep(S)","Urban")
+table5
+
+
+colnames(table5)[1] <- "Children"
+colnames(table5)[5] <- "Zero_Children"
+table5
+
+stargazer(table5, summary =FALSE, type="text")
+
+stargazer(table5, summary =FALSE)
+
+star1 <- stargazer(table5,summary=FALSE, type="text")
+
+
+
+
+# Diagnostics
+ mcmc.units <- colMeans(mod5C$Liab) - predict(mod5C, 	marginal = NULL, type = "terms")
+ par(mfrow=c(1,2))
+ qqnorm(mcmc.units) ; qqline(mcmc.units)
+ hist(mcmc.units, col = grey(.6), main = "Over-dispersion")
+%
+
+
+# Check plots
+plot(mod5C)
+#
+#mod5$Residual$nrt <- 2  # this is from a bug in mcmcglmm at the time. (2012)
+summary(mod5C$Sol)
+summary(mod5$VCV)
+summary(mod5)
+#
+
+
+
+
+sd(cornow$Pray)
+rm(mm)
+summary(mod5)
+rm(lm)
+lm <-  with(cornow, expand.grid(
+        Child = 0, 
+        PrayC = seq(0, 2, by =.1),
+        ChurchC = 0, 
+        #PrayC= 0,
+        #ChurchC = seq(-2,0, by=.25),# Someone who goes to church every week
+        Gender = 0,
+        AgeCy = 0, 
+        Eth = 0,
+        Prtnr =1,
+        ConsrvC = 0,
+        NZDepC = 0,
+        Urban  =1   
+ ))
+
+#check
+#lm
+
+mm<- model.matrix(Child ~ PrayC + ChurchC + Gender + AgeCy + Eth + Prtnr + ConsrvC+ NZDepC + Urban, data=lm)
+mm
+
+
+
+#residual variance
+
+# od.mcmc5 <- mean(mod5C$VCV[,1])
+# head(od.mcmc5)
+
+
+wm <- as.data.frame(mm)
+mm
+
+dim(wm)
+
+
+#########  Extracting means + standard errors of means for the plot
+library(MCMCpack)
+library(Hmisc)
+
+
+## Here we yank the posterior means (above we used the modes.)
+rm(mod5se)
+qreg <- summary(mod5$Sol)
+str(qreg)
+mod5se <-as.data.frame(qreg$statistics)
+
+
+# put ZA's with each other
+mod5se <- mod5se[c(1, 3:11, 2, 12:20),]
+
+# Yank Mean + Time-series SE
+ymod5se  <- mod5se[, c(1,4)]
+ymod5se
+rm(meanprP)
+meanprP
+
+#Get col means
+meanprP  <-  matrix(mod5se[1:10,1])
+
+#Get TIme-serioes
+diffP
+mod5se
+diffP <- matrix(mod5se[1:10,4])
+lop <-  meanprP - diffP
+hip <-  meanprP + diffP
+
+head(meanprPZ)
+meanprPZ  <-  matrix(mod5se[11:20,1])
+diffPZ <- matrix(mod5se[11:20,4])
+
+## create interval, not we will be exponentiating these numbers, so lo and hi don't have the same meaning.
+
+lopZ <-  meanprPZ - diffP
+hipZ <-  meanprPZ + diffP
+
+# print to check
+lopZ
+hipZ
+
+## Note you can get the same values using the coefplot2 package.  Just create a df, and yank, but remember that for matrix math you need to put the data into matrices.
+##coeftab(mod5$Sol,quantiles = TRUE, cmult=1.96) # quantiles =FALSE,clevel=c(.5,0,.95),cmult=1.96)
+
+
+rm(W)
+W  <- as.matrix(mm)
+W
+
+
+## Recover data scale for the Poisson process. 
+exp(1)
+
+
+childrenPm <- exp(((W %*% meanprP)) )
+plo <-  (exp(W %*% lop ) )
+phi <-  (exp(W %*% hip  ))
+
+## Recover data scale for zero-inflation
+zchildrenPm <-  (exp(-exp((W %*% meanprPZ) )))   
+zplo <-  (exp(-exp((W %*% lopZ) )))
+zphi <- (exp(-exp((W %*% hipZ) ))) 
+
+## Data frame
+wm <- as.data.frame(mm)
+
+## Check
+head(wm)
+
+## Chuck predited values into the data frame
+wm$children <- as.numeric(childrenPm)
+
+# Check
+head(wm)
+
+# Works, next...
+wm$upper  <- as.numeric(plo)
+wm$lower <-as.numeric(phi)
+wm$zerochildren <- as.numeric(zchildrenPm)
+wm$zeroupper  <- as.numeric(zplo)
+wm$zerolower <-as.numeric(zphi)
+
+
+head(wm)
+colnames(wm) <- c("Intcpt","Pray","Church","Gender","Age","Eth","Part","Cons","NZDep",'Urban',"Children","Upper","Lower", 
+                  "ZeroChildren","ZeroUpper","ZeroLower")
+dim(wm)
+str(wm)
+head(wm)
+
+
+
+## Ok onto the plots
+
+library(ggplot2)
+%%
+p <- ggplot(wm, aes(x= Pray,y= Children)) + geom_point()
+p1 <- p + geom_errorbar(aes(ymin = Lower, ymax = Upper) ,alpha=.3, colour="blue") + scale_y_continuous(limits=c(2.2,2.65)) + theme_bw() + labs(title = "Weekly prayer and expected fertility")
+p1
+
+
+zp <- ggplot(wm, aes(x= Pray,y= ZeroChildren)) + geom_point()
+zp1 <- zp + geom_errorbar(aes(ymin = ZeroLower, ymax = ZeroUpper) ,alpha=.3, colour=" blue")  + scale_y_continuous(limits=c(.3,.45))+ theme_bw() + 
+  labs(title = "Weekly prayer and expected prob of zero children")
+
+zp1
+
+
+
+library(gridExtra)
+
+mygrid <- grid.arrange(p1, zp1, nrow=2) 
+
+
+
+summary(mod5)
+rm(clm)
+clm <-  with(cornow, expand.grid(
+        Child = 0, 
+        #PrayC = seq(0, 50, by =1),
+       # ChurchC = 0, 
+        PrayC= 0,
+        ChurchC = seq(0,2, by=.1),# Someone who goes to church every week
+        Gender = 0,
+        AgeCy = 0, 
+        Eth = 0,
+        Prtnr =1,
+        ConsrvC = 0,
+        NZDepC = 0,
+        Urban  =1   
+ ))
+
+#check
+#lm
+
+cmm<- model.matrix(Child ~ PrayC + ChurchC + Gender + AgeCy + Eth + Prtnr + ConsrvC+ NZDepC + Urban, data=clm)
+cmm
+
+
+#residual variance
+
+#od.mcmc5 <- mean(mod5C$VCV[,1])
+#head(od.mcmc5)
+
+
+cwm <- as.data.frame(cmm)
+cmm
+
+dim(cwm)
+
+
+
+qreg <- summary(mod5C$Sol)
+str(qreg)
+mod5se <-as.data.frame(qreg$statistics)
+
+# put ZA's with each other
+mod5se <- mod5se[c(1, 3:11, 2, 12:20),]
+
+# Yank Mean + Time-series SE
+ymod5se  <- mod5se[, c(1,4)]
+ymod5se
+meanprP
+
+#Get col means
+meanprP  <-  matrix(mod5se[1:10,1])
+
+#Get TIme-serioes
+diffP
+diffP <- matrix(mod5se[1:10,4])
+lop <-  meanprP - diffP
+hip <-  meanprP + diffP
+
+
+meanprPZ  <-  matrix(mod5se[11:20,1])
+diffPZ <- matrix(mod5se[11:20,4])
+
+## create interval, not we will be exponentiating these numbers, so lo and hi don't have the same meaning.
+
+lopZ <-  meanprPZ - diffP
+hipZ <-  meanprPZ + diffP
+
+# print to check
+lopZ
+hipZ
+
+## Note you can get the same values using the coefplot2 package.  Just create a df, and yank, but remember that for matrix math you need to put the data into matrices.
+
+##coeftab(mod5$Sol,quantiles = TRUE, cmult=1.96) # quantiles =FALSE,clevel=c(.5,0,.95),cmult=1.96)
+
+
+rm(cW)
+cW  <- as.matrix(cmm)
+cW
+
+cchildrenPm <- exp(((cW %*% meanprP)) )
+cplo <-  (exp(cW %*% lop ) )
+cphi <-  (exp(cW %*% hip) )
+
+
+## Recover data scale for zero-inflation
+czchildrenPm <-  (exp(-exp((cW %*% meanprPZ) )))   
+czplo <-  (exp(-exp((cW %*% lopZ) )))
+czphi <- (exp(-exp((cW %*% hipZ) ))) 
+
+## Data frame
+cwm <- as.data.frame(cmm)
+
+## Check
+head(cwm)
+
+## Chuck predited values into the data frame
+cwm$children <- as.numeric(cchildrenPm)
+
+# Check
+head(cwm)
+
+# Works, next...
+cwm$upper  <- as.numeric(cplo)
+cwm$lower <-as.numeric(cphi)
+cwm$zerochildren <- as.numeric(czchildrenPm)
+cwm$zeroupper  <- as.numeric(czplo)
+cwm$zerolower <-as.numeric(czphi)
+
+
+head(cwm)
+colnames(cwm) <- c("Intcpt","Pray","Church","Gender","Age","Eth","Part","Cons","NZDep",'Urban',"Children","Upper","Lower", 
+                  "ZeroChildren","ZeroUpper","ZeroLower")
+dim(cwm)
+str(cwm)
+head(cwm)
+
+
+
+## Ok onto the plots
+
+library(ggplot2)
+
+
+
+library(ggplot2)
+p <- ggplot(wm, aes(x= Pray,y= Children)) + geom_point()
+p1 <- p + geom_errorbar(aes(ymin = Lower, ymax = Upper) ,alpha=.3, colour="blue") + scale_y_continuous(limits=c(2.2,2.6)) + theme_bw() + labs(title = "Weekly prayer rate and expected fertility")
+p1
+
+
+zp <- ggplot(wm, aes(x= Pray,y= ZeroChildren)) + geom_point()
+zp1 <- zp + geom_errorbar(aes(ymin = ZeroLower, ymax = ZeroUpper) ,alpha=.3, colour=" blue")  + scale_y_continuous(limits=c(.3,.55))+ theme_bw() + 
+  labs(title = "Weekly prayer rate and probability of no children")
+
+zp1
+
+%%
+cp <- ggplot(cwm, aes(x= Church,y= Children)) + geom_point()
+cp
+cp1 <- cp + geom_errorbar(aes(ymin = Lower, ymax = Upper) ,alpha=.3, colour="red") + theme_bw() + scale_y_continuous(limits=c(2.2,2.6)) +labs(title = "Monthly church rate and expected fertility")
+cp1
+
+
+czp <- ggplot(cwm, aes(x= Church,y= ZeroChildren)) + geom_point()
+czp1 <- czp + geom_errorbar(aes(ymin = ZeroLower, ymax = ZeroUpper) ,alpha=.3, colour="red") + theme_bw()  +scale_y_continuous(limits=c(.3,.55))+ labs(title = "Monthly church rate and probability of no children")
+czp1
+
+
+
+
+library(gridExtra)
+mygrid <- grid.arrange(p1,cp1,zp1,czp1, clip=TRUE, nrow=2) 
+
+
+
+
+####################################################################################################################
+## BELOW CAN BE IGNORED  THIS IS ALL OLD ANLAYSIS. I leave it so  that you can follow the process of our thinking.
+######################################################################################################################
+
+
+
+#############################################
+# compare religious and not religious people
+#############################################
+head(ssgot)
+
+subg  <- subset(ssgot, is.na(gen3) ==FALSE & is.na(gen35)==FALSE & is.na(rels3) ==FALSE)
+
+nrow(subg)
+head(subg)
+
+fdata <- subg[ , c("id",
+                      "age3", 
+                      "gen3",
+                      "ethn3", 
+                      "partner3",
+                      "pol3", 
+                       "rels3",
+                      "children3",                       
+                      "NZDEP3"
+)]
+
+head(ssgot)
+
+nrow(fdata)
+head(fdata)
+
+
+
+#####################################
+# AMELIA MODELS
+#####################################
+
+
+
+
+## make prediction data frame
+#newdat <- expand.grid(age=c(8,10,12,14), Sex=c("Male","Female"))
+## design matrix (fixed effects)
+mm <- model.matrix(delete.response(terms(fm2)),newdat)
+## linear predictor (for GLMMs, back-transform this with the
+##  inverse link function (e.g. plogis() for binomial, beta;
+##  exp() for Poisson, negative binomial
+newdat$children <- mm %*% fixef(fm2)
+
+predvar <- diag(mm %*% vcov(fm2) %*% t(mm))
+newdat$SE <- sqrt(predvar) 
+newdat$SE2 <- sqrt(predvar+fm2$alpha^2)
+#(Probably overly complicated) ggplot code:
+head(dat)
+
+library(ggplot2) 
+pd <- position_dodge(width=0.4)
+theme_update(theme_bw())
+g0 <- ggplot(dat,aes(x=pray,y=children3,colour=gen35))+
+  stat_sum(alpha=0.2,aes(size=..n..))+
+  scale_size_continuous(breaks=1:4,range=c(2,5))
+g0
+g1 <- g0+geom_line(data=newdat,position=pd)+
+  geom_point(data=newdat,shape=17,size=3,position=pd)
+g1 + geom_linerange(data=newdat,
+                    aes(ymin=children-2*SE,ymax=children+2*SE), position=pd)
+
+
+
+## prediction intervals 
+g1 + geom_linerange(data=newdat,
+                    aes(ymin=pred-2*SE2,ymax=pred+2*SE2), position=pd)
+
+
+data <- na.omit(relgot)
+
+newdat <-
+  with(data, expand.grid(
+    pray = seq(min(pray), max(pray), length = 10),
+    Gen35 = levels(factor(gen35)),
+    church= seq(min(church),max(church), length=5),
+    children3= seq(min(children3), max(children3), length = 10)
+  ))
+
+#NZDepT35
+fm2 <- glmmadmb(children3 ~ gen35 + prayS + churchS, random = ~ gen35|denom,  data = dat, family="nbinom1",zeroInflation = TRUE)
+fm2 <- lmer(children3 ~ gen35 + prayS + churchS + 1|gen35,  data = dat, family="poisson")
+summary(fm2)
+
+rm(newdat)
+newdat <-
+  with(data, expand.grid(
+    prayS = seq(0,2, by = .1),
+    #seq(min(pray), max(pray), length = 10),
+    gen35 = levels(factor(gen35)),
+    churchS= seq(0,2, by =.1),
+    children3=0,
+    age35c=0
+    #denom= levels(factor(denom))    
+    #children3= seq(min(children3), max(children3), length = 10)
+  ))
+
+
+head(newdat)
+
+newdat$childrenborn <- stats::predict(fm2, newdata=newdat, type = "response")
+
+
+
+library(ggplot2)
+qplot(prayS,childrenborn, data=newdat, colour=gen35) + geom_point()+theme_bw()
+qplot(churchS,childrenborn, data=newdat, colour=gen35) + geom_point()+theme_bw()
+#qplot(time, arousal, data=grid, colour=factor(role)) + geom_line(data=grid)
+
+#Aerr <- stats::predict(fm2, newdata=newdat,  se = TRUE)
+#Aerr <- stats::predict(fm2, newdata=newdat,  se = TRUE)
+#head(Aerr)
+
+library(MCMCglmm)
+
+prior.1 =
+  list(
+    R = list(
+      V = diag(2), nu = 0.002, fix =2),
+    G = list(
+      G1 = list(V = diag(4)*.002, nu = 4)))
+%
+# Subcripts too long to print so we relable them
+
+#head(cornow)
+#head(cornow)
+
+# Not mixing, adust constrasts
+
+
+k<-rpois(1000,3)
+hist(k)
+
+
+
+test7a<-  MCMCglmm(Child ~   PrayS  + ChurchS + Gender + Age + Eth + Prtnr + Consrv + NZDepS), random= ~idh(trait:Gender):Denom,
+                  family = "zapoisson", rcov = ~idh(trait):units, prior=prior.1, data = cornow, pl=FALSE,pr=FALSE, saveX=FALSE)
+
+test7<-  MCMCglmm(Church ~  trait * ( RelImpS  + RelGrpS + Gender + Age + Eth + Prtnr + Consrv + NZDepS), random= ~idh(trait:Gender):Denom,
+                  family = "zapoisson", rcov = ~idh(trait):units, prior=prior.1, data = cornow, pl=FALSE,pr=FALSE, saveX=FALSE)
+
+
+test7$Residual$nrt <- 2  
+coefplot2(test7$Sol, intercept =TRUE)
+#
+#summary(test7$Sol)
+summary(test7)
+summary(test7$Sol)[1:3]
+coefplot2(test7,intercept =TRUE)
+#
+plot(test7)
+#
+# qreg <- summary(test7)
+# str(qreg)
+# 
+# 
+# #List of 6 
+# # $ statistics: num [1:3, 1:4] 0.3479 0.9029 0.3413 0.2602 0.0391 ... 
+# #  ..- attr(*, "dimnames")=List of 2 
+# #  .. ..$ : chr [1:3] "(Intercept)" "x" "sigma" 
+# #  .. ..$ : chr [1:4] "Mean" "SD" "Naive SE" "Time-series SE" 
+# # $ quantiles : num [1:3, 1:5] -0.139 0.825 0.257 0.168 0.878 ... 
+# #  ..- attr(*, "dimnames")=List of 2 
+# #  .. ..$ : chr [1:3] "(Intercept)" "x" "sigma" 
+# #  .. ..$ : chr [1:5] "2.5%" "25%" "50%" "75%" ... 
+# ... 
+# # - attr(*, "class")= chr "summary.mcmc" 
+# 
+# toLatex(qreg$solutions,file="")
+# 
+# Table(qreg$quantiles,file="") 
+
+
+library(xtable)
+library(Hmisc)
+library(texreg)
+library(coefplot2)
+
+
+
+
+coefplot2(test2, intercept=TRUE,)
+
+library(coefplot)
+ploto <- coefplot(test2, lwdInner=1, lwdOuter=.5, pointsize = .5, fillColor= "empty", secret.weapon=F)
+multiplot(glm.nb, glm.out, lwdInner=1, lwdOuter=.5, pointSize = 2, )
+ploto
+rm(plot)
+plotcoef(test2)
+
+extract.coef(test2)
+
+tab <- round(coeftab(test2, ptype="fixef", digits=3, quantiles=FALSE, ),2)
+tab
+
+library(gridExtra)
+grid <- tableGrob(tab,  nrow=1)
+
+gridd <- grid.arrange(plot, grid,  nrow=1)
+griddd <- grid + labs(title = "Children")
+
+gridd
+
+
+xtable(tab)
+
+tsum <- summary(test2)
+coeftab(mod5$Sol,quantiles = TRUE, cmult=1.96) # quantiles =FALSE,clevel=c(.5,0,.95),cmult=1.96)
+
+latex(obsum)
+screenreg(list(obsum))
+exp(.69 )
+
+
+# look at people under 42
+
+mean(relgot$age35, na.rm=T)
+
+test3 <-  glmmadmb(children3 ~  gen35 + age35c + ethn3 + pol3c + factor(edu3) + lincome3c + prayS + churchS, random = ~gen35|denom,  
+                   family="nbinom1",zeroInflation = TRUE, data = now)
+
+
+## Check young people
+now2 <- subset(now, age35c <= -8)
+nrow(now2) # 453
+
+
+test3 <-  glmmadmb(children3 ~  gen35 + age35c + ethn3 + pol3c + factor(edu3) + lincome3c + prayS + churchS, random = ~gen35|denom,  
+                   family="nbinom1",zeroInflation = TRUE, data = now2)
+
+ gap <- summary(test2)
+tableGrob(gap, nrow=1, as.table=TRUE, main="test main",
+sub=textGrob("test sub", gp=gpar(font=2)))
+
+
+plogis(-4)
+
+summary(test2)
+
+#warnings()
+#remove(combined.results)
+#combined.results <- mi.meld(q = b.out, se = se.out)
+#combined.results
+
+
+
+
+#####################################
+# MODESL REL NOT REL
+#####################################
+
+library(MCMCglmm)
+library(coefplot2)
+#intercpet only
+
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+
+
+
+#~cor(trait):units
+
+### p.108 course notesWe can then test for zero-flation by constraining the over-dispersion to be the same for both process using a trait by units interaction in the R-structure, and by setting up the contrasts so that the zero-altered regression coecients are expressed as di↵erences from the Poisson regression coecients. When this di↵erence is zero the variable causes no zero-flation, when it is negative it causes zero-inflation and when it is positive it causes zero-deflation:
+
+#
+#
+#
+#mean(exp(modF.1$Sol[,1] + modF.1$Sol[,3]*1 + modF.1$Sol[,4] +  modF.1$Sol[,5]*0  +  modF.1$Sol[,6]*0 + modF.1$Sol[,7]*0 ) )
+
+
+#(exp(modF.1$Sol[,1] + modF.1$Sol[,3] + modF.1$Sol[,4]*1 +  modF.1$Sol[,5]*0  +  modF.1$Sol[,6]*0 + modF.1$Sol[,7]*0 ) )
+
+
+#HURDLE
+#summary(modF.1 <- (MCMCglmm(children3 ~ trait - 1 +  at.level(trait, 1):gen35  + at.level(trait, 1):age35c +  at.level(trait, 1):ethn3 +  at.level(trait, 1):rels35 + at.level(trait, 1):pol3c, rcov = ~idh(trait):units, data = cagot, family = "hupoisson",  nitt=13000, prior = prior.01) ) )
+
+#mean(exp(modF.1$Sol[,1] + modF.1$Sol[,3] + modF.1$Sol[,4]*1 +  modF.1$Sol[,5]*0  +  modF.1$Sol[,6]*0 + modF.1$Sol[,7]*0 ) )
+
+# zero inflation in hurdle model
+#c2 <- (16 * sqrt(3)/(15 * pi))^2
+
+#HPDinterval(plogis(modF.1$Sol[, 2]/sqrt(1 + c2)))
+
+
+### THEORETICAL MODEL ###   USE 
+
+# prior for poisson
+prior.ch  =
+    list(R = list(V = diag(2), nu = 0.02, fix = 2))
+
+table(sagot$children3)
+
+summary(modF.1I <- (MCMCglmm(children3 ~  trait, rcov = ~idh(trait):units,  data = sagot, family = "zapoisson",   prior = prior.ch) ) )
+
+
+
+### USE
+
+summary(modF.1 <- (MCMCglmm(children3 ~  trait *( gen35  + age35c +  ethn3 +   pol3c+ rels35), rcov = ~idh(trait):units,  data = sagot, family = "zapoisson",   prior = prior.ch) ) )
+
+
+exp(mean((modF.1$Sol[,1] + modF.1$Sol[,3]*1 + modF.1$Sol[,4] +  modF.1$Sol[,5]*0  +  modF.1$Sol[,6]*1 + modF.1$Sol[,7]*1 +  modF.1$Sol[,8]*1 ) ))
+
+plot(modF.1)
+#
+#)
+
+
+head(relgot)
+
+#######################################################
+# religious importance   NO -- EXPLORATION
+##############
+
+exp(.13)
+
+
+
+######################################################################
+##  Does religion predict CHILDREN  FULL MODEL USE  (no interaction)  EXPLORE
+########################################################
+
+# Cautious here
+
+#########################################################################
+## Do religious women have more children ?  ignore
+#########################################################################
+
+
+
+#########################################################women#####
+#  Do religious men have more children?   ingnore 
+#######
+
+#Says that religious importance predicts fertility in men but not women
+
+
+
+
+
+###############################################################################
+###############################################################################
+##############################################################################
+
+
+################################################################################
+######  Analysis of religion  Do religious men and women express different signals
+###############################################################################
+
+
+
+
+# GENDER OF SUBSAMPLE
+table(relgot$gen35)
+exp(.63 + .13)
+
+#head(relgot)
+dim(relgot)
+rre#GENDER
+head(relgot)
+
+a <- relgot$gen3
+
+b <- subset(a, a==1)#male
+c <- subset(a, a==0)#female
+d <- subset(a, is.na(a))
+#length(d)
+length(b) # male is 1568
+length(c) # female is 2813
+length(b)/(length(b)+length(c)) #ratio of men/women [1] 33
+length(c)/(length(b)+length(c)) #ratio of women/men [1] 67
+
+
+
+## obtain cases
+#corgot <- completeFun(relgot, c("parentsRel", "rels"))
+
+
+
+#summary(glm(rels ~ parentsRel, data = corgot, family = "binomial"))
+
+#plogis(1.84) # Simple effect (.86)
+#plogis(-1.933) # probablity of being religious at all .12
+
+
+######################
+# Tests
+#####################
+
+mean(relgot$belief, na.rm =TRUE)
+
+gen0 <- subset(relgot, gen35 ==0)
+gen1 <- subset(relgot, gen35 ==1)
+
+
+
+# yes
+t.test(as.numeric(gen0$belief),as.numeric(gen1$belief), na.rm=TRUE)
+
+# Not significant pray
+t.test(as.numeric(gen0$pray),as.numeric(gen1$pray), na.rm=TRUE)
+
+# yes
+t.test(as.numeric(gen0$church),as.numeric(gen1$church), na.rm=TRUE)
+
+# Not significant script -- no
+t.test(as.numeric(gen0$script),as.numeric(gen1$script), na.rm=TRUE)
+
+# Importance  No 
+t.test(as.numeric(gen0$rimp35),as.numeric(gen1$rimp35), na.rm=TRUE)
+
+# #relnar
+t.test(as.numeric(relmen$relnar),as.numeric(relfem$relnar), na.rm=TRUE)
+
+data:  as.numeric(relmen$relnar) and as.numeric(relfem$relnar)
+t = 1.8753, df = 979.32, p-value = 0.06104
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -0.006792002  0.299442177
+sample estimates:
+mean of x mean of y 
+ 3.714579  3.568254
+
+
+
+boxplot(gen0$belief, gen1$belief)
+
+
+
+
+
+###################################
+# Function for creating dataframe
+# ALL cases for predictor variables      
+###################################
+
+#NOTE WE DO NOT INCLUDE INCOME BECAUSE IT COMPROMISES DATA
+
+
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+
+
+
+
+#completeFun(DF, "y")
+
+
+head(relgot)
+
+
+rrelwork  <- completeFun(relgot, c("id", "partner3", "employ",  "gen35", "children3", "age35c", "ethn3", "pol3",  "beliefc",  "relnarc", "rimp35c", "denom"))
+
+
+
+
+
+nrow(rrelwork)
+ 
+
+mens <- subset(rrelwork, gen35==1)
+fems <- subset(rrelwork, gen35==0)
+
+
+nrow(rrelwork) # 1138
+
+
+library(MCMCglmm)
+library(coefplot2)
+library(MuMIn)
+
+
+prior.11 =
+    list(R = list(V = 1, nu = 0.002),
+         G = list(
+         G1 = list( V= 1, nu = .002)))
+
+#zero poiss
+prior.1 =
+    list(R = list(V = diag(1), nu = 0.002, fix = 1),
+         G = list(
+         G1 = list( V= diag(2)*.002, nu = 3)))
+
+
+
+
+
+#head(rrelwork)
+ #     summary(relwork$church)
+
+
+## Sample without NAs in the predictors
+
+margot <- completeFun(relgot, c("id", "beliefc", "age35c","gen35", "rels35", "partner3", "gen35", "ethn3", "pol3c", "rimp3", "relnarc","prayS", "churchS", "beliefc", "children3c", "denom","Religion.L2.Cats.T35","Religion.L3.Cats.T35","Religion.L4.Cats.T35"))
+
+
+
+
+
+
+head(relgot)
+
+nrow(margot)
+
+head(margot)
+
+#full    PRAYER IS ABOUT CHILDREN
+
+#summary(modR <- (MCMCglmm(children3 ~  gen35 + age35c +  ethn3  + beliefc  + rimp3 + pol3c + relnarc + prayS + churchS,  family = "gaussian",  nitt=13000, prior = prior.11, data = margot ) ) )
+
+
+summary(modN.I <- (MCMCglmm(belief ~ 1, random =  ~idh(gen35):denom, rcov = ~units,  family = "ordinal",  data = margot, prior = prior.1)))
+
+summary(modN.I)
+
+
+
+summary(modN <- (MCMCglmm(belief ~  gen35 + age35c +  ethn3  + partner3   + pol3c + children3c + prayS + churchS, ~idh(gen35):denom, rcov = ~units,  family = "ordinal", prior = prior.1, data = margot)))
+
+
+summary(modN)
+
+coefplot2(modN, intercept=TRUE)
+
+
+#summary(modN <- (MCMCglmm(rimp35 ~  gen35 + age35c +  ethn3  + partner3   + pol3c + children3c + prayS + churchS, ~idh(gen35):denom, rcov = ~units,  family = "gaussian", prior = prior.1, data = margot )))
+
+
+summary(modN)
+
+
+
+
+
+str(margot)
+
+## Church is about ingroup commitment
+
+
+round((eta<-mean(modN$Sol[,1] * 1 + modN$Sol[,2] * 1  + modN$Sol[,3]* 0 + modN$Sol[,4] * 0  + modN$Sol[,5] * 0  + modN$Sol[,6] * 0 + modN$Sol[,7] * 0  + modN$Sol[,8] * 1  + modN$Sol[,9] * 1)+ 1),2)
+HPDinterval(((modN$Sol[,1] * 1 + modN$Sol[,2] * 1  + modN$Sol[,3]* 0 + modN$Sol[,4] * 0  + modN$Sol[,5] * 0  + modN$Sol[,6] * 0 + modN$Sol[,7] * 0  + modN$Sol[,8] * 1 + modN$Sol[,9] * 1 )+ 1))
+
+
+2head(margot)
+summary(modN)
+
+
+head(margot)
+
+
+#zero poiss
+prior.1R =
+    list(R = list(V = diag(1), nu = 0.002),
+         G = list(
+         G1 = list( V= diag(2)*.002, nu = 3)))
+
+
+
+summary(modR.I <- (MCMCglmm(relnar ~ 1, random =  ~idh(gen35):denom, rcov = ~units,  family = "gaussian", prior = prior.1R, data = margot )))
+
+
+
+
+
+
+summary(modR <- (MCMCglmm(relnar ~   gen35 + age35c +  ethn3  + partner3   + pol3c + children3c + prayS + churchS, ~idh(gen35):denom, rcov = ~units,  family = "gaussian", prior = prior.1R, data = margot, nitt=20000 )))
+
+summary(modR)
+
+
+### PREDICTIVE MODEL
+print((eta<-mean(modR$Sol[,1] * 1 + modR$Sol[,2] * 0  + modR$Sol[,3]* 0 + modR$Sol[,4] * 0  + modR$Sol[,5] * 0  + modR$Sol[,6] * 0 + modR$Sol[,7] * 0  + modR$Sol[,8] * 1 + modR$Sol[,9] * 0 )))
+
+
+HPDinterval((modR$Sol[,1] * 1 + modR$Sol[,2] * 0  + modR$Sol[,3]* 0 + modR$Sol[,4] * 0  + modR$Sol[,5] * 0  + modR$Sol[,6] * 0 + modR$Sol[,7] * 0  + modR$Sol[,8] * 1 + modR$Sol[,9] * 0 ))
+
+
+summary(modR)
+
+
+3
+
+summary(modR <- (MCMCglmm(rimp3 ~  gen35 + age35c +  ethn3  + partner3 +  beliefc  + relnarc + pol3c + children3c + prayS + churchS, random =  ~idh(gen35):denom, rcov = ~units,  family = "gaussian", prior = prior.1, data = margot )))
+
+
+#### GT
+
+summary(modR <- (MCMCglmm(rimp3 ~  gen35 + age35c +  ethn3  + partner3 +   pol3c + children3c + churchS), rcov = ~units, random = ~ as.factor(Religion.L2.Cats.T35),  family = "gaussian",  data = margot )))
+
+
+
+
+summary(modR <- (MCMCglmm(children3 ~ as.factor(Religion.L3.Cats.T35) , rcov = ~units,  family = "gaussian",  data = margot )))
+head(margot)
+
+
+
+summary(modR <- (MCMCglmm(children3 ~ as.factor(Religion.L4.Cats.T35) , rcov = ~units,  family = "gaussian",  data = margot )))
+
+coefplot2(modR, intercept=TRUE)
+
+
+head(margot)
+
+
+sgot$Religion.L2.Cats.T35
+
+
+
+
+coefplot2(modR, intercept=TRUE)
+
+
+
+
+set.seed(1)
+nn <- 100
+placements <- seq(0,10)
+foo <- data.frame(disorder=sample(c(0,1),size=nn,replace=TRUE),
+placement=sample(placements,size=nn,replace=TRUE),
+ethnic=sample(c("White","Black","Other"),size=nn,replace=TRUE))
+M <- glm(disorder~placement*ethnic, family=binomial, data=foo)
+#Plot the fits:
+
+plot(placements,
+predict(M,newdata=data.frame(ethnic="White",placement=placements),type="response"),
+type="o",pch=21,bg="white",ylab="",ylim=c(0,1))
+points(placements,
+predict(M,newdata=data.frame(ethnic="Black",placement=placements),type="response"),
+type="o",pch=21,bg="black")
+points(placements,
+predict(M,newdata=data.frame(ethnic="Other",placement=placements),type="response"),
+type="o",pch=21,col="red",bg="red")
+legend(x="topleft",pch=21,col=c("black","black","red"),pt.bg=c("white","black","red"),
+legend=c("White","Black","Other"))
+
+
+
+
+##############################################################################################################################################################################################################################!#######################
+
+say <- lm(church ~age35, data = relgot, na.action=na.omit)
+summary(say)
+
+
+rrelwork  <- completeFun(relgot, c("id", "partner3",  "gen35", "children3c", "age35c", "ethn3", "pol3c",  "beliefc",  "relnarc",  "denom", "rimp35c"))
+
+#nrow(rrelwork)
+
+
+ #gen35 + age35c +  ethn3  + partner3   + pol3c + children3c + prayS + churchS,
+
+
+prior.8 =
+    list(R = list(V = diag(1), nu = 0.002),
+         G = list(
+         G1 = list( V= diag(4)*.002, nu = 3)))
+
+
+
+
+
+
+summary(fit1.I <- MCMCglmm(church ~  trait, random =  ~idh(trait:gen35):denom, rcov = ~trait:units,  family = "zapoisson", prior = prior.8, data =rrelwork))
+
+summary(fit1.I <- MCMCglmm(church ~  trait*denom, rcov = ~trait:units,  family = "zapoisson", data =rrelwork))
+
+
+coefplot2(fit1.I$Sol, intercept=TRUE)
+        
+
+
+ggplot(childata1, aes(rimp35, fill = denom,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(denom ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Denom"))
+
+
+test <- MCMCglmm(church ~  age35c + rimp35 + as.factor(denom),  rcov = ~units,  family = "gaussian", data =rrelwork, nitt= 20000)
+
+
+coefplot2(test, intercept =TRUE)
+
+head(margot)
+
+Fit1.1 <- MCMCglmm(church ~  trait * (gen35 + age35c +  ethn3  + partner3  + pol3c + children3c + relnarc + beliefc), random =  ~idh(trait:gen35):denom, rcov = ~trait:units,  family = "zapoisson", prior = prior.8, data =rrelwork, nitt= 20000)
+
+
+coefplot2(fit1.1, intercept = TRUE)
+
+
+
+summary(fit1.1)
+plot(fit1.1$Sol)
+
+## USE
+round(mean(exp(fit1.1$Sol[,1] * 1 + fit1.1$Sol[,3] * 0  + fit1.1$Sol[,4]*0 + fit1.1$Sol[,5] * 0  + fit1.1$Sol[,6] * 0  + fit1.1$Sol[,7] * 0 + fit1.1$Sol[,8] * 0  + fit1.1$Sol[,9] * 0 +  fit1.1$Sol[,10] * 0)),2)
+
+
+
+round(HPDinterval(exp((fit1.1$Sol[,1] * 1+ fit1.1$Sol[,3] * 0  + fit1.1$Sol[,4]*0 + fit1.1$Sol[,5] * 0  + fit1.1$Sol[,6] * 0  + fit1.1$Sol[,7] * 0 + fit1.1$Sol[,8] * 0  + fit1.1$Sol[,9] * 0 +  fit1.1$Sol[,10] * 0))),2)
+
+
+
+## ZERO
+round(mean(exp(-exp((fit1.1$Sol[,2] * 1    + fit1.1$Sol[,11]* 0 + fit1.1$Sol[,12] * 0  + fit1.1$Sol[,13] * 0  + fit1.1$Sol[,14] * 0 + fit1.1$Sol[,15] * 0  + fit1.1$Sol[,16] * 0 +fit1.1$Sol[,17] * 0 + fit1.1$Sol[,18] * 0 )))),2)
+
+round(mean(exp(-exp((fit1.1$Sol[,2] * 1    + fit1.1$Sol[,11]*0  + fit1.1$Sol[,12] * 0 + fit1.1$Sol[,13] * 0  + fit1.1$Sol[,14] * 0 + fit1.1$Sol[,15] * 0  + fit1.1$Sol[,16] * 0 +fit1.1$Sol[,17] * 0 + fit1.1$Sol[,18] * 0)))),2)
+
+round(HPDinterval(exp(-exp((fit1.1$Sol[,2] * 1    + fit1.1$Sol[,11]*0 + fit1.1$Sol[,12] * 0  + fit1.1$Sol[,13] * 0  + fit1.1$Sol[,14] * 0 + fit1.1$Sol[,15] * 0  + fit1.1$Sol[,16] * 0 +fit1.1$Sol[,17] * 0 + fit1.1$Sol[,18] * 0)))),2)
+
+
+
+
+prior.8 =
+    list(R = list(V = diag(1), nu = 0.002),
+         G = list(
+         G1 = list( V= diag(4)*.002, nu = 3)))
+
+
+
+
+        
+
+
+fit1.2 <- MCMCglmm(pray ~  trait * (gen35 + age35c +  ethn3  + partner3  + pol3c + children3c + relnarc + beliefc), random =  ~idh(trait:gen35):denom, rcov = ~trait:units,  family = "zapoisson", prior = prior.8, data =rrelwork, nitt= 50000)
+
+
+
+fit1.2$Residual$nrt <- 2
+summary(fit1.2)
+#fix bug
+#fit1.2$Residual$nrt <- 2
+
+exp(.04)
+
+# 
+# women abv
+# 
+# is 5.70, 95% HPDinterval from 4.25 to  7.34; probability of zero prayer = .71, 95% HPDinterval from .60 to .81.
+# 
+# men average
+# is 4.07, 95% HPDinterval from 2.85  to 5.54; probability of zero prayer = .69, 95% HPDinterval from .56 to .82.
+# 
+# 
+# 
+# women sd
+# is  8.10, 95% HPDinterval from 5.91 to 10.49 ; probability of zero prayer = .46, 95% HPDinterval from .29 to .64.
+# 
+# 
+# men sd
+# is  5.78, 95% HPDinterval from 4.05  to 7.86 ; probability of zero prayer = .44, 95% HPDinterval from .25 to .64.
+
+
+## USE
+round(exp(mean(
+    fit1.2$Sol[,1] * 1 + #intercept
+    fit1.2$Sol[,3] * 1  +  #gen
+    fit1.2$Sol[,4] * 0 + # age
+    fit1.2$Sol[,5] * 0  + #ethn
+    fit1.2$Sol[,6] * 0  +# partner
+    fit1.2$Sol[,7] * 0 + #Pol
+    fit1.2$Sol[,8] * 0  + #children
+    fit1.2$Sol[,9] * 0 + #narc
+    fit1.2$Sol[,10] *0 #belief
+)
+),2)
+
+
+
+HPDinterval(exp(
+    fit1.2$Sol[,1] * 1 + #intercep
+    fit1.2$Sol[,3] * 1  +  #gen
+    fit1.2$Sol[,4]* 0 + # age
+    fit1.2$Sol[,5] * 0  + #ethn
+    fit1.2$Sol[,6] * 0  +# partner
+    fit1.2$Sol[,7] * 0 + #Pol
+    fit1.2$Sol[,8] * 0  + #children
+    fit1.2$Sol[,9] * 0 + #narc
+    fit1.2$Sol[,10] *0 #belief
+    ))
+
+## USE
+round(mean(exp(-exp(
+    fit1.2$Sol[,2] * 1 + #intercept
+    fit1.2$Sol[,11] * 1  +  #gen
+    fit1.2$Sol[,12]*0 + # age
+    fit1.2$Sol[,13] * 0  + #ethn
+    fit1.2$Sol[,14] * 0  +# partner
+    fit1.2$Sol[,15] * 0 + #Pol
+    fit1.2$Sol[,16] * 0  + #children
+    fit1.2$Sol[,17] * 0 + #narc
+    fit1.2$Sol[,18] *0 #belief
+))),2)
+
+
+HPDinterval(exp(-exp(
+    fit1.2$Sol[,2] * 1 + #intercept
+    fit1.2$Sol[,11] * 1  +  #gen
+    fit1.2$Sol[,12]* 0 + # age
+    fit1.2$Sol[,13] * 0  + #ethn
+    fit1.2$Sol[,14] * 0  +# partner
+    fit1.2$Sol[,15] * 0 + #Pol
+    fit1.2$Sol[,16] * 0  + #children
+    fit1.2$Sol[,17] * 0 + #narc
+    fit1.2$Sol[,18] *0 #belief
+    )))
+
+
+
+
+
+#mean(exp(-exp(fit1.2$Sol[,2] * 1   + fit1.2$Sol[,11]*0 + fit1.2$Sol[,12] * 0  + fit1.2$Sol[,13] * 0  + fit1.2$Sol[,14] * 0 + fit1.2$Sol[,15] * 0  + fit1.2$Sol[,16] * 0 +fit1.2$Sol[,17] * 0 + fit1.2$Sol[,18] * 0 )))
+
+
+
+summary(fit1.2)
+
+
+library(gmodels)
+
+summary(ssgot$ethn3)
+
+
+with(relgot, CrossTable(relnar, gen35))
+
+with(relgot, CrossTable(church, gen35))
+
+
+
+
+womsummary(fit1.1)
+
+
+summary(fit1.1)
+        
+# SUGGESTS RELIGION IS A SIGNAL    Men go to church but less
+summary(fit1.2I <- MCMCglmm(pray ~  trait, random =  ~idh(trait):denom, rcov = ~idh(trait):units,  family = "zapoisson", prior = prior.1, data =rrelwork))
+
+
+
+summary(fit1.2 <- MCMCglmm(pray ~  trait * (gen35 + partner3 + age35c + children3   + relnarc + beliefc + rimp35c +  pol3c), random =  ~idh(trait):denom, rcov = ~idh(trait):units,  family = "zapoisson", prior = prior.1, data =rrelwork))
+
+coefplot2(fit1.2, intercept = TRUE)
+
+
+summary(fit1.2)        
+
+#women
+print(exp(eta<-mean(fit1.2$Sol[,1]+ fit1.2$Sol[,3] *1 + fit1.2$Sol[,4]*0 + fit1.2$Sol[,5] + fit1.2$Sol[,6] + fit1.2$Sol[,7] + fit1.2$Sol[,8]+  fit1.2$Sol[,9] +  fit1.2$Sol[,10])))
+
+HPDinterval((exp(fit1.2$Sol[,1]+ fit1.2$Sol[,3] *1 + fit1.2$Sol[,4]*0 + fit1.2$Sol[,5] + fit1.2$Sol[,6] + fit1.2$Sol[,7] + fit1.2$Sol[,8]+  fit1.2$Sol[,9] +  fit1.2$Sol[,10])))
+
+
+
+mean((exp(-exp(fit1.2$Sol[,2]+ fit1.2$Sol[,11] *1 + fit1.2$Sol[,12]*0 + fit1.2$Sol[,13]*0 + fit1.2$Sol[,14]*0 + fit1.2$Sol[,15]*0 + fit1.2$Sol[,16]*0+  fit1.2$Sol[,17]*0 +  fit1.2$Sol[,18]*0))))
+
+
+HPDinterval((exp(-exp(fit1.2$Sol[,2]+ fit1.2$Sol[,11] *1 + fit1.2$Sol[,12]*0 + fit1.2$Sol[,13]*0 + fit1.2$Sol[,14]*0 + fit1.2$Sol[,15]*0 + fit1.2$Sol[,16]*0+  fit1.2$Sol[,17]*0 +  fit1.2$Sol[,18]*0))))
+
+
+
+
+########################
+########################CHILDREND 
+
+##### # USSEE ######## !!!  1
+
+
+# prior for poisson
+#prior.02  =
+   # list(R = list(V = diag(2), nu = 1.02, fix = 2))
+
+prior.02  =
+    list(R = list(V = diag(1), nu = 0.002, fix = 2),
+             G = list(
+                 G1 = list(V = diag(2)*.002, nu = 3)))
+
+
+############################################################################################### #############################################################
+
+summary(modF.1 <- (MCMCglmm(children3 ~ trait * ( gen35  + age35c + ethn3  + rels35 + pol3c), random = ~idh(trait):gen35,  rcov = ~trait:units, data = sagot, family = "zapoisson",  nitt=13000, prior=  prior.02,) ) )
+
+
+summary(modF.1 <- (MCMCglmm(children3 ~ trait * ( gen35  + age35c + ethn3  + rels35 + pol3c), random = ~idh(trait):gen35,  rcov = ~trait:units, data = sagot, family = "zapoisson",  nitt=13000, prior=  prior.02,) ) )
+
+
+
+
+coefplot2(modF.1, intercept =TRUE)
+
+1+1
+
+summary(modF.1)
+
+
+
+mean(eta <- exp(modF.1$Sol[,1] + modF.1$Sol[,3]*1 + modF.1$Sol[,4] +  modF.1$Sol[,5]*0  +  modF.1$Sol[,6]*1 + modF.1$Sol[,7]*0 ) )
+
+HPDinterval(eta)
+
+mean(eta <- exp(-exp(modF.1$Sol[,2] + modF.1$Sol[,8]*1 + modF.1$Sol[,9] +  modF.1$Sol[,10]  +  modF.1$Sol[,11]*1 + modF.1$Sol[,12]*0) ))
+
+HPDinterval(eta)
+
+#####
+
+
+#zero poiss
+prior.1 =
+    list(R = list(V = diag(2), nu = 0.002, fix = 1),
+         G = list(
+         G1 = list( V= diag(2)*.002, nu = 3)))
+
+prior.3 =
+    list(R = list(V = diag(2), nu = 0.002, fix = 1),
+         G = list(
+         G1 = list( V= diag(2)*.002, nu = 3),
+         G2 = list( V= diag(2) * .002, nu = 3)))
+
+
+
+### US structure
+#zero poiss
+prior.4 =
+    list(R = list(V = diag(1), nu = 0.002, fix = 1),
+         G = list(
+         G1 = list( V= diag(2)*.5, nu = 3)))
+
+
+
+## Binary
+prior.12 =
+    list(R = list(V = 1, nu = 0.02, fix = 1),
+         G = list(
+         G1 = list( V= 1, nu = .02)))
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+
+#####USE
+
+#childata  <- completeFun(relgot, c("id", "partner3", "employ",  "gen35", "prayS", "churchS",  "age35c", "ethn3", "pol3c",  "beliefc",  "denom"))
+
+childata  <- completeFun(relgot, c("id",  "gen35", "prayS", "churchS",  "age35c",  "denom"))
+
+
+nrow(childata)
+dim(childata)
+# "relnarc", "rimp35c",
+
+
+### WOW
+#interceptonly
+library(MCMCglmm)
+library(coefplot2)
+
+#summary(fit.callrel.Int<- MCMCglmm(children3 ~  trait, random =  ~idh(trait:gen35):denom, rcov = ~idh(trait):units,  family = "zapoisson", prior = prior.2, data = childata))
+
+#summary(fit.callrel<- MCMCglmm(children3 ~  trait * (age35c + ethn3 + church +  relnarc + beliefc + rimp35c +  pol3c +gen35*prayS +gen35*churchS), random =  ~idh(trait):denom, rcov = ~ idh(trait):units, prior = prior.1,  family = "zapoisson",  data = childata))
+
+
+#################################################################################
+#################################################################################
+
+
+#### Use
+rcov=~us(trait:at(sex, "M")):units+us(trait:at(sex, "F")):units
+
+# strong prior
+prior.3a =
+    list(R = list(V = diag(1), nu =.05),
+         G = list(
+         G1 = list( V= diag(4)*.002, nu = 5)))
+
+prior.3 =
+    list(R = list(V = diag(1), nu =.02),
+         G = list(
+         G1 = list( V= diag(4)*.002, nu = 5)))
+
+
+
+prior.4 =
+    list(R = list(V = diag(1), nu =.05),
+         G = list(
+         G1 = list( V= diag(2)*.02, nu =3)))
+
+
+
+#summary(modFC <- (MCMCglmm(children3 ~  trait * (gen35 + rim35 + beliefc + relnarc + prayS + churchS)), random = ~idh(trait:gen35):denom,  rcov = ~idh(trait):units,  data = childata, family = "poisson",   prior = prior.3,) ) )
+
+
+hist(childata2$prayS)
+childata2 <- subset(childata, prayS <2.5)
+
+
+
+summary(glm(children3~ age35c  + ethn3 + pol3c +  gen35 * prayS  + gen35 * churchS, data = childata, na.action=na.omit, family="poisson"))
+
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+
+#####USE
+
+#childata  <- completeFun(relgot, c("id", "partner3", "gen35", "prayS", "churchS",  "age35c", "ethn3",  "denom"))
+
+
+nrow(childata)
+
+
+#summary(modP <- (MCMCglmm(children3 ~ age35c +  ethn3 +  gen35 * prayS  + gen35 * churchS, random = ~idh(gen35):denom,  rcov=~trait:units,  data = childata, family = "poisson", prior=prior.4,   nitt = 50000) ) )
+
+
+
+
+
+M <- glm(children3 ~  age35c  + gen35 * prayS  + gen35 * churchS, family ="poisson", data = childata, na.action=na.omit) 
+
+                                        #test1 <- glm(rimp ~  age35 * denom, family ="poisson", data = childata, na.action=na.omit) 
+summary(test1)
+
+t1 <- predict(test1, type ="response")
+plot(t1)
+
+
+
+
+
+
+
+
+#summary(modF.1 <- (MCMCglmm(children3 ~ trait * ( gen35  + age35c + ethn3  + rels35 + pol3c), random = ~idh(trait):gen35,  rcov = ~trait:units, data = sagot, family = "zapoisson",  nitt=13000, prior=  prior.02,) ) )
+
+
+library(glmmADMB)
+#cAge +  lPincome + Euro + cEdu + Partner + Parent + cPolo + cSocdes * Reli, random = ~ 1|NZDep, data = smatap, family = "nbinom")
+
+childata3  <- completeFun(relgot, c("id", "partner3", "gen35", "prayS", "churchS",  "age35c", "ethn3",   "denom","children3"))
+
+help(glmm
+     
+summary(M4)
+
+M3 <- glmmadmb(as.integer(children3) ~ age35c  + gen35*prayS  + gen35*churchS, random = ~ 1|denom, data = childata3, family = "nbinom")
+
+     
+M4 <- glmmadmb(as.integer(children3) ~ age35c  + gen35*prayS  + gen35*churchS, random = ~ 1|denom, data = childata3, family = "poisson")
+
+summary(M4)
+coefplot2(M3, intercept=TRUE)
+
+
+hist(childata$children3)  
+
+summary(modFC)
+coefplot2(modF$Sol, intercept =TRUE)
+
+
+
+
+plot(modF)
+#
+
+round(mean(exp((modF$Sol[,1] * 1 + modF$Sol[,3] * 0  + modFC$Sol[,4]* 0 + modF$Sol[,5] * 0  + modF$Sol[,6] * 0 +  modF$Sol[,7] * 0  +  modF$Sol[,8] *0  +  modF$Sol[,9] * 0 +  modF$Sol[,10] *0))),2)
+
+HPDinterval(exp((modF$Sol[,1] * 1 + modF$Sol[,3] * 0  + modFC$Sol[,4]* 0 + modF$Sol[,5] * 0  + modF$Sol[,6] * 0 +  modF$Sol[,7] * 0  +  modF$Sol[,8] *0  +  modF$Sol[,9] * 0 +  modF$Sol[,10]  * 0)))
+
+
+round(mean(exp(-exp(modF$Sol[,2] * 1 +  modF$Sol[,11]* 0  + modF$Sol[,12]* 0 + modF$Sol[,13] * 0  + modF$Sol[,14] * 1 +  modF$Sol[,15] * 1  +  modF$Sol[,16] * 0  +  modF$Sol[,17] * 1  +  modF$Sol[,18] * 0))),2)
+
+HPDinterval((exp(-exp(modF$Sol[,2] * 1  + modF$Sol[,11]* 0  + modF$Sol[,12]* 0 + modFC$Sol[,13] * 0  + modF$Sol[,14] * 0 +  modF$Sol[,15] * 0   +  modF$Sol[,16] *   +  modF$Sol[,17] * 1 +  modF$Sol[,18] * 0))))
+
+
+
+#
+childata$cgen35 <- childata$gen35
+contrasts(childata$cgen35) <- contr.sum(2)
+str(childata$cgen35)
+head(childata$cgen35)
+
+#str(childata$gen35)
+#head(childata)
+exp(.04)
+
+prior.3 =
+    list(R = list(V = diag(1), nu =.02),
+         G = list(
+         G1 = list( V= diag(4)*.02, nu = 5)))
+
+# No th
+
+summary(modFa <- (MCMCglmm(children3 ~ -1 +  trait *  (gen35 + age35c + prayS  + churchS), random = ~idh(trait:gen35):denom,  rcov=~trait:units,  data = childata, family = "zapoisson",  prior = prior.3, nitt =20000) ) )
+
+
+
+
+# ######################################################################
+
+
+
+#################################################################################
+#################################################################################
+
+#summary(modFC <- (MCMCglmm(children3 ~   trait *  ( age35c + gen35*prayS  +gen35* churchS), random = ~idh(trait:gen35):denom,  rcov=~trait:units,  data = childata, family = "zapoisson",  prior = prior.3, nitt =500000) ) )
+
+summary(modFC)
+round(mean(exp((modFC$Sol[,1] * 1 + modFC$Sol[,3] * 0  + modFC$Sol[,4]* 1 + modFC$Sol[,5] * 0 + modFC$Sol[,6] * 0 +  modFC$Sol[,7] * 0  +  modFC$Sol[,8] *0))),2)
+
+HPDinterval(exp((modFC$Sol[,1] * 1 + modFC$Sol[,3] * 0  + modFC$Sol[,4]*1  + modFC$Sol[,5] * 0  + modFC$Sol[,6] * 0 +  modFC$Sol[,7] * 0  +  modFC$Sol[,8] *0)))
+
+
+round(mean(exp(-exp(modFC$Sol[,2] * 1  +  modFC$Sol[,9] * 0  +  modFC$Sol[,10] * 1 +  modFC$Sol[,11]* 0  + modFC$Sol[,12]* 0 + modFC$Sol[,13] * 0  + modFC$Sol[,14]*1 ))),2)
+
+HPDinterval((exp(-exp(modFC$Sol[,2] * 1  +  modFC$Sol[,9] * 0  +  modFC$Sol[,10] * 1 +  modFC$Sol[,11]* 0  + modFC$Sol[,12]* 0 + modFC$Sol[,13] * 0  + modFC$Sol[,14]*0))))
+
+
+newdata1 <- expand.grid(0:3, factor(0:1), 1:4)
+colnames(newdata1) <- c("child", "camper", "persons")
+newdata1$phat <- predict(m1, newdata1)
+
+ggplot(newdata1, aes(x = child, y = phat, colour = factor(persons))) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~camper) +
+  labs(x = "Number of Children", y = "Predicted Fish Caught")
+
+p <- predict(modFC)
+
+head(p)
+
+newdata1 <- expand.grid(factor(0:1), 1:20, 1:10)
+colnames(newdata1) <- c("gen35", "pray", "church")
+
+newdata1$children <- predict(modFC, newdata=NULL)
+
+
+
+ggplot(newdata1, aes(x = child, y = phat, colour = factor(persons))) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~camper) +
+  labs(x = "Number of Children", y = "Predicted Fish Caught")
+
+
+
+
+
+#################################################################################
+#################################################################################
+#
+#!!!USE USE USE!!!
+###############################################################################
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+datt <- transform(relgot,pray=scale(pray,center=TRUE,scale=FALSE), church=scale(church,center=TRUE,scale=FALSE))
+
+
+
+datt  <- completeFun(datt, c("id",  "gen35", "pray", "church",  "age35c",  "denom", "pol3c", "ethn3"))
+
+
+head(datt)
+
+
+prior.4 =
+    list(R = list(V = diag(1), nu =.02),
+         G = list(
+         G1 = list( V= diag(2)*.02, nu = 5),
+         G2 = list( V= diag(4)*.02, nu = 5)))
+
+
+mmodFC$Residual$nrt <- 2
+
+
+odat <- datt
+contrasts(odat$gen35) <- contr.sum(2)
+
+str(odat$gen35)
+head(odat$gen35)
+
+
+
+summary(odFC <- (MCMCglmm(children3 ~   trait *  ( age35c + ethn3 + pol3c + gen35*prayS  + gen35* churchS), random = ~ idh(trait):gen35 + idh(trait:gen35):denom,  rcov= ~trait:units,  data = datt, family = "zapoisson",  prior = prior.4) ) )
+
+
+
+summary(odFC <- (MCMCglmm(children3 ~   trait *  ( age35c + ethn3 + pol3c + at.level(gen35,1)*prayS  + at.level(gen35,1)* churchS), random = ~ idh(trait):gen35 + idh(trait:gen35):denom,  rcov= ~trait:units,  data = odat, family = "zapoisson",  prior = prior.4) ) )
+
+
+summary(odFCa <- (MCMCglmm(children3 ~   trait-1 *  ( age35c + ethn3 + pol3c + at.level(gen35,1)*prayS  + at.level(gen35,1)* churchS), random = ~ idh(trait):gen35 + idh(trait:gen35):denom,  rcov= ~trait:units,  data = odat, family = "zapoisson",  prior = prior.4) ) )
+
+
+
+
+
+
+
+
+coefplot2(odFC, intercept=TRUE)
+
+
+
+summary(mmodFC <- (MCMCglmm(children3 ~   trait *  ( age35c + ethn3 + pol3c + gen35*prayS  +gen35* churchS), 
+                            random = ~idh(trait:gen35):denom,  rcov= ~trait:units,  data = datt, family = "zapoisson",  prior = prior.3, nitt =100000) ) )
+
+summary(mmodFC)
+summary(mmodFC)
+
+
+library(glmmADMB)
+help(glmmADMB)
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+cdat <- completeFun(odat, c("children3"))
+
+head(cdat)
+nrow(cdat)                    
+library(glmmADMB)
+help(glmmADMB)
+#completeFun <- function(data, desiredCols) {
+ # completeVec <- complete.cases(data[, desiredCols])
+  #return(data[completeVec, ])
+#}
+
+#fm2 <- glmmadmb(children3 ~  gen35*pray + gen35*church, random = ~ 1|denom,  data = dat, family="poisson",zeroInflation = TRUE)
+
+fm2 <- glmmadmb(children3 ~  gen35 + age35c + ethn3 +pol3c + pray + church, random = ~ gen35|denom,  data = cdat, family="nbinom1",zeroInflation = TRUE)
+
+            
+
+#fm2 <- glmmadmb(children3 ~  gen35*pray + gen35*church, random = ~ 1|denom,  data = dat, family="poisson",zeroInflation = TRUE)
+
+fm3 <- glmmadmb(children3 ~  + at.level(gen35,1) + age35c + ethn3 +pol3c + pray + church, random = ~ gen35|denom,  data = cdat, family="nbinom1",zeroInflation = TRUE)
+
+
+
+summary(fm2)
+coefplot2(fm2, intercept=TRUE)
+
+
+summary(fm3)
+coefplot2(fm3, intercept=TRUE)
+
+
+#praysd <-  sd(relgot$pray, na.rm=T) - mean(relgot$pray, na.rm=T)
+#churchsd<- sd(relgot$church, na.rm=T)-mean(relgot$church, na.rm=T)
+
+churchsd
+#praysd
+
+# Women mean 
+## Z
+women average = 2.22 ; 95% HPDInterval from 1.89   to 2.56   
+women probability of zero  = .55 ; 95% HPDInterval from .46  to .63
+
+ # women sd prayer
+##Z
+women average =  2.36 ; 95% HPDInterval from 1.98   to  2.72
+women probability of zero  =.50  ; 95% HPDInterval from .40  to .60
+ 
+
+ # women sd church
+##Z
+women average =  2.37 ; 95% HPDInterval from 1.93   to  2.77
+women probability of zero  =.61  ; 95% HPDInterval from .52  to .71
+
+
+# men mean 
+## Z
+men average =  2.42 ; 95% HPDInterval from 2.08 to  2.72
+men probability of zero  = .60 ; 95% HPDInterval from .51  to .69
+
+ # men sd prayer
+##Z
+men average = 2.45  ; 95% HPDInterval from 2.02  to 2.89
+men probability of zero  =.55  ; 95% HPDInterval from .39  to .69
+
+
+ # men sd church
+##Z
+men average = 2.58  ; 95% HPDInterval from 2.11   to 2.94
+men probability of zero  =.65  ; 95% HPDInterval from .57 to .73
+
+
+summary(mmodFC)
+
+
+coefplot2(mmodFC$Sol)
+
+round(mean(exp((
+      mmodFC$Sol[,1] * 1 + # intercept
+      mmodFC$Sol[,3]* 0 + #age
+      mmodFC$Sol[,4] * 0  +#ethn
+                    mmodFC$Sol[,5] * 0 +  #pol
+                    mmodFC$Sol[ ,6] *  1 + #gen
+                    mmodFC$Sol[,7] * 0 +#pray
+                    mmodFC$Sol[,8] * 0 +#ch
+                    mmodFC$Sol[,9] *1  +#pray
+                     mmodFC$Sol[,10] *0  #chu
+                    ))),2)
+
+
+
+HPDinterval(exp(
+      mmodFC$Sol[,1] * 1 + # intercept
+      mmodFC$Sol[,3]* 0 + #age
+      mmodFC$Sol[,4] * 0  +#ethn
+                    mmodFC$Sol[,5] * 0 +  #pol
+                    mmodFC$Sol[ ,6] *  1 + #gen
+                    mmodFC$Sol[,7] * 0 +#pray
+                    mmodFC$Sol[,8] * 1 +#ch
+                    mmodFC$Sol[,9] *0  +#pray
+                     mmodFC$Sol[,10] *1  #chu
+                    ))
+
+
+
+
+round(mean(exp(-exp(
+      mmodFC$Sol[,2] * 1 + # intercept
+      mmodFC$Sol[,11]* 0 + #age
+      mmodFC$Sol[,12] * 0  +#ethn
+                    mmodFC$Sol[,13] * 0 +  #pol
+                    mmodFC$Sol[ ,14] * 1 + #gen
+                    mmodFC$Sol[,15] * 0 +#pray
+                    mmodFC$Sol[,16] * 1 +#ch
+                    mmodFC$Sol[,17] *0  +#pray
+                     mmodFC$Sol[,18] *1  #chu
+                    ))),2)
+
+
+
+
+HPDinterval(exp(-exp(
+      mmodFC$Sol[,2] * 1 + # intercept
+      mmodFC$Sol[,11]* 0 + #age
+      mmodFC$Sol[,12] * 0  +#ethn
+                    mmodFC$Sol[,13] * 0 +  #pol
+                    mmodFC$Sol[ ,14] * 1 + #gen
+                    mmodFC$Sol[,15] * 0 +#pray
+                    mmodFC$Sol[,16] * 1 +#ch
+                    mmodFC$Sol[,17] * 0  +#pray
+                     mmodFC$Sol[,18] *1  #chu
+                    )))
+
+#
+
+coefplot2(mmodFC$Sol, intercept =TRUE)
+
+library(MCMCglmm)
+prior.3 =
+    list(R = list(V = diag(2), nu =.02, fix =2),
+         G = list(
+         G1 = list( V= diag(4)*.02, nu = 5))
+         )
+                                        )#,
+        # G2 = list( V= diag(4)*.02, nu = 5)))
+
+
+
+summary(mmodF <- (MCMCglmm(children3 ~   
+                             trait *  (gen35 + age35c + ethn3 + pol3c + prayS +  churchS),
+                             random = ~idh(trait:gen35):denom,  rcov= ~idh(trait):units,  
+                             data = now, 
+                            family = "zapoisson",  prior = prior.3, 
+                            pr=TRUE)))
+#                          , nitt =100000)
+) )
+
+
+%
+mmodF$Residual$nrt<-2
+
+summary(mmodF)
+
+coefplot2(test1$Sol,intercept=TRUE)
+
+remove(newdat)
+rm(newdat)
+newdat <-
+  with(data, expand.grid(
+  prayS = seq(0,2, by = .1),
+      #seq(min(pray), max(pray), length = 10),
+  gen35 = levels(factor(gen35)),
+  churchS= seq(0,2, by =.1),
+  children3=0,
+  age35c=0,
+ethn3=0
+  #denom= levels(factor(denom))    
+  #children3= seq(min(children3), max(children3), length = 10)
+))
+
+head(newdat)
+str(newdat)
+
+
+nrow(newdat)
+?predict.MCMCglmm
+
+prior.3 =
+    list(R = list(V = diag(1), nu =.02),
+         G = list(
+         G1 = list( V= diag(2)*.02, nu=3)))
+
+
+
+test1$Residual$nrt<-2
+#??mcmcglmm
+
+
+X <- model.matrix(children3 ~ gen35 + age35c + ethn3 + pol3c + prayS +  churchS, newdat)
+
+head(X)
+Z <- predict(mmodF, type = 'terms', interval="confidence", level=0.95, marginal=mmodF$Random$X, newdata=newdat)
+
+head(Z)
+nrow(Z)
+tail(Z)
+nrow(Z)
+max(Z)
+
+
+nrow(Z)
+nrow(X)
+
+
+
+#X <- model.matrix(children3 ~ gen35 + age35c + ethn3 + pol3c + prayS +  churchS, newdat)
+head(X)
+head(Z)
+nrow((X))
+
+Z <- as.data.frame((exp(Z)))
+colnames(Z) <- c("children","lwr","upr")
+colnames(Z) <- "children"
+dim(Z)
+head(Z)
+tail(Z)
+
+dim(X)
+X <- as.data.frame(X)
+colnames(X)[2] <- "Gender"
+# Rename Men and Women
+X$Gender <- as.factor(as.character(X$Gender))
+levels(X$Gender)[levels(X$Gender)=="0"] <- "Women"
+levels(X$Gender)[levels(X$Gender)=="1"] <- "Men"
+
+head(X)
+head(Z)
+
+
+le <- cbind(X,Z)
+
+
+
+
+
+
+head(le)
+#mm <- model.matrix(terms(test$Sol),newdat)
+#head(X)
+#newdat$children <- X#exp(X %*% test$Sol)
+#head(newdat)
+
+#guass only
+#remove(newdat)
+#newdat <- data.frame(
+ #   newdat
+  #  , plo = newdat$children-2*sqrt(pvar1)
+   # , phi = newdat$children+2*sqrt(pvar1)
+   # , tlo = newdat$children-2*sqrt(tvar1)
+   # , thi = newdat$children+2*sqrt(tvar1)
+#)
+
+
+#pvar1 <- diag(mm %*% tcrossprod(vcov(fm4),mm))
+#tvar1 <- pvar1+VarCorr(fm1)$denom[1]  ## must be adapted for more complex models
+
+
+#plot confidence
+head(le)
+g2 <- ggplot(le, aes(x=prayS, y=children, color=Gender))+ geom_point()
+
+
+g2
+(position="identity", alpha=.3)+ geom_pointrange(aes(ymin = lwr, ymax = upr) ,alpha=.3, position="jitter")+ theme_bw()
+
+
+g2
+
+#g0 + scale_x_continuous(limits = c(0, 20)) +scale_y_continuous(limits=c(0,10))
+
+g0
+
+g1 <- g0+stat_sum(aes(group=pray,color=Gender), alpha=.5)#http://docs.ggplot2.org/current/stat_sum.html
+head(datt)
+g1
+
+#g1 <- ggplot(datme, aes(x=pray, y=children, color=Gender))+   geom_line( aes(ymin = lwr, ymax = upr)) + theme_bw()+scale_x_continuous(limits = c(0, 90))
+
+
+
+                                        #+ opts(title="CI based on fixed-effects uncertainty ONLY")#
+
+#g0 + geom_errorbar(aes(ymin = lwr, ymax = upr) ,alpha=.3)  
+o
+
+
+
+
+
+summary(mmodF)
+
+
+churchsd
+#praysd
+
+# Women mean 
+## Z
+women average =  2.20 ; 95% HPDInterval from 1.90  to   2.49
+women probability of zero  =  ; 95% HPDInterval from to
+
+ # women sd prayer
+##Z
+women average = 2.31 ; 95% HPDInterval from 1.98 to  2.61
+women probability of zero  = .49  ; 95% HPDInterval from .39  to .58
+ 
+
+ # women sd church
+##Z
+women average = 2.34 ; 95% HPDInterval from 1.99 to 2.68  
+women probability of zero  = .60 ; 95% HPDInterval from .51 to .67
+
+
+# men mean 
+## Z
+men average = 2.39 ; 95% HPDInterval from 2.04 to 2.76  
+men probability of zero  = .59 ; 95% HPDInterval from .50 to .66
+
+ # men sd prayer
+##Z
+men average = 2.51 ; 95% HPDInterval from 2.13  to  2.89  
+men probability of zero  = .54 ;  95% HPDInterval from .44 to .62
+
+
+
+ # men sd church
+##Z
+men average = 2.55 ; 95% HPDInterval from 2.15 to  2.99
+men probability of zero  = .64  ; 95% HPDInterval from .56 to .71
+
+
+summary(mmodF)
+coefplot(modF, intercept =TRUE)
+
+
+coefplot2(odF$Sol)
+
+
+
+round(mean(exp(
+      mmodF$Sol[,1] * 1 + # intercept
+      mmodF$Sol[,3]* 1 + # gen
+      mmodF$Sol[,4] * 0 + #age
+                    mmodF$Sol[,5] * 0 +  #ethn
+                    mmodF$Sol[ ,6] *  0 + #pol
+                    mmodF$Sol[,7] * 0 + #pray
+                    mmodF$Sol[,8] * 0#ch
+                    )), 2)
+
+
+
+HPDinterval(exp(
+      mmodF$Sol[,1] * 1 + # intercept
+      mmodF$Sol[,3]* 1 + # gen
+      mmodF$Sol[,4] * 0 + #age
+                    mmodF$Sol[,5] * 0 +  #ethn
+                    mmodF$Sol[ ,6] *  0 + #pol
+                    mmodF$Sol[,7] * 0 + #pray
+                    mmodF$Sol[,8] * 0 #ch
+                    ))
+
+
+
+
+round(mean(exp(-exp(
+      mmodF$Sol[,2] * 1 + # intercept
+      mmodF$Sol[,9]* 1 + # gen
+      mmodF$Sol[,10] * 0  +#age
+                    mmodF$Sol[,11] * 0 +  #ethn
+                    mmodF$Sol[ ,12] *  0 + #pol
+                    mmodF$Sol[,13] * 0 +#pray
+                    mmodF$Sol[,14] * 0 #ch
+                    ))),2)
+
+
+
+
+HPDinterval(exp(-exp(
+      mmodF$Sol[,2] * 1 + # intercept
+      mmodF$Sol[,9]* 1 + # gen
+      mmodF$Sol[,10] * 0  +#age
+                    mmodF$Sol[,11] * 0 +  #ethn
+                    mmodF$Sol[ ,12] *  0 + #pol
+                    mmodF$Sol[,13] * 0 +#pray
+                    mmodF$Sol[,14] * 0 #chch
+                    )))
+
+
+
+
+
+coefplot2(odF$Sol)
+
+
+#### DIFFS 
+wbase <- (exp(
+      mmodF$Sol[,1] * 1 + # intercept
+      mmodF$Sol[,3]* 0 + # gen
+      mmodF$Sol[,4] * 0 + #age
+                    mmodF$Sol[,5] * 0 +  #ethn
+                    mmodF$Sol[ ,6] *  0 + #pol
+                    mmodF$Sol[,7] * 0 + #pray
+                    mmodF$Sol[,8] * 0#ch
+                    ))
+
+mbase <- (exp(
+      mmodF$Sol[,1] * 1 + # intercept
+      mmodF$Sol[,3]* 1 + # gen
+      mmodF$Sol[,4] * 0 + #age
+                    mmodF$Sol[,5] * 0 +  #ethn
+                    mmodF$Sol[ ,6] *  0 + #pol
+                    mmodF$Sol[,7] * 0 + #pray
+                    mmodF$Sol[,8] * 0#ch
+                    ))
+
+dbase <- wbase - mbase
+
+ dbas<- mean(round(dbase,2))
+
+
+whp <- HPDinterval(exp(
+      mmodF$Sol[,1] * 1 + # intercept
+      mmodF$Sol[,3]* 0 + # gen
+      mmodF$Sol[,4] * 0 + #age
+                    mmodF$Sol[,5] * 0 +  #ethn
+                    mmodF$Sol[ ,6] *  0 + #pol
+                    mmodF$Sol[,7] * 0 + #pray
+                    mmodF$Sol[,8] * 0 #ch
+                    ))
+
+summary(mmodF$Sol)
+
+
+mhp <- HPDinterval(exp(
+      mmodF$Sol[,1] * 1 + # intercept
+      mmodF$Sol[,3]* 1 + # gen
+      mmodF$Sol[,4] * 0 + #age
+                    mmodF$Sol[,5] * 0 +  #ethn
+                    mmodF$Sol[ ,6] *  0 + #pol
+                    mmodF$Sol[,7] * 0 + #pray
+                    mmodF$Sol[,8] * 0 #ch
+                    ))
+
+p <- whp-mhp
+p
+head(p)
+dbas
+summary(mmodF)
+coefplot2(mmodF$VCV, intercept=TRUE)
+
+
+
+round(mean(exp(-exp(
+      mmodF$Sol[,2] * 1 + # intercept
+      mmodF$Sol[,9]* 1 + # gen
+      mmodF$Sol[,10] * 0  +#age
+                    mmodF$Sol[,11] * 0 +  #ethn
+                    mmodF$Sol[ ,12] *  0 + #pol
+                    mmodF$Sol[,13] * 0 +#pray
+                    mmodF$Sol[,14] * 0 #ch
+                    ))),2)
+
+
+
+
+HPDinterval(exp(-exp(
+      mmodF$Sol[,2] * 1 + # intercept
+      mmodF$Sol[,9]* 1 + # gen
+      mmodF$Sol[,10] * 0  +#age
+                    mmodF$Sol[,11] * 0 +  #ethn
+                    mmodF$Sol[ ,12] *  0 + #pol
+                    mmodF$Sol[,13] * 1 +#pray
+                    mmodF$Sol[,14] * 0 #chch
+                    )))
+
+
+
+
+summary(fm4)
+
+
+remove(newdat)
+newdat <- expand.grid(
+    pray=c(0,1,2,3),
+    gen35 = c("m","f"),
+    church=c(1:8),
+    age35c=0,
+    pol
+    children3 =0)
+
+
+
+
+
+###############
+
+
+
+#plot(modFC$Sol)
+
+logit(3.16)
+
+round(mean(exp(-exp(mmodFC$Sol[,2]*1 + mmodFC$[,15] * 1)))
+
+
+prior.3 =
+    list(R = list(V = diag(1), nu =.02),
+         G = list(
+         G1 = list( V= diag(4)*.002, nu = 5)))
+
+
+summary(modFCa <- (MCMCglmm(children3 ~  age35c  +  ethn3 +   gen35*prayS  + gen35*churchS, random = ~idh(gen35):denom,  rcov= ~units,  data = childata, family = "threshold",   prior = prior.3,  nitt =13000) ) )
+
+
+
+predicted <- predict(mmodF, data=newdata, type="terms", interval="confidence", level=0.90)
+%
+
+#hist(predicted)
+
+
+
+#childata$csgen35 <- contr.sum(childata$gen35)
+
+
+
+
+
+
+
+## Check zeros expected
+table(relgot$children3 ==0)
+
+nrow(relgot)
+e
+312/1003
+
+
+
+table(relgot$church ==0)
+774/1630
+
+ch <- as.data.frame(na.exclude(relgot$church))
+nrow(ch)
+
+
+ppois(0, mean(relgot$church, na.rm=TRUE))
+
+
+                                        # expect 12%
+
+#summary(modF <- (MCMCglmm(children3 ~ trait *( gen35 *(prayS + church)), random = ~idh(trait:gen35):denom,  rcov = ~idh(trait):units,  data = childata, family = "zipoisson",   prior = prior.zc) ) )
+
+
+
+#summary(modF <- (MCMCglmm(children3 ~ trait *( gen35 *(prayS + church)), random = ~idh(trait:gen35):denom,  rcov = ~idh(trait):units,  data = childata, family = "zipoisson",   prior = prior.zc) ) )
+
+
+
+#exp(-.11)
+
+
+summary(modF)
+
+
+coefplot2(modFC, intercept=TRUE)
+
+
+
+
+
+
+
+c2 <- (16 * sqrt(3)/(15 * pi))^2
+
+div <- sqrt(1 + c2)
+
+
+
+HPDinterval(eta <- exp(fit1.2$Sol[,1] * 1 + fit1.2$Sol[,3] * 1 + fit1.2$Sol[,4]*0 + fit1.2$Sol[,5] * 1  + fit1.2$Sol[,6] * 0  + fit1.2$Sol[,7] * 0 + fit1.2$Sol[,8] * 0  + fit1.2$Sol[,9] * 1 +  fit1.2$Sol[,10] * 0))
+
+div
+
+HPDinterval(ppois(0, ((fit1.2$Sol[,2] * 1   + fit1.2$Sol[,8]* 1 + fit1.2$Sol[,9] * 0  + fit1.2$Sol[,10] * 0  + fit1.2$Sol[,11] * 0 + fit1.2$Sol[,12] * 0/div))))
+
+
+
+
+
+
+
+
+
+
+
+# not sensible:
+#summary(fit.callrel3<- MCMCglmm(children3 ~  trait * (age35c + gen35 + ethn3 +  relnarc + beliefc + rimp35c +  pol3c + prayS + churchS), random = ~idh(trait):gen35 + idh(trait):denom, rcov = ~ idh(trait):units, prior = prior.3,  family = "zapoisson",  data = childata))
+
+
+
+coefplot2(modF.rel$Sol, intercept = TRUE)
+coefplot2(modF.rel$VCV, intercept = TRUE)
+
+
+
+### ????
+
+
+#summary(modF.relo <- (MCMCglmm(children3 ~  trait *( gen35 + age35c +  ethn3 +  pol3c  + rimp35c + relnarc + beliefc + prayS + churchS), random = ~idh(trait:gen35):denom,  rcov = ~idh(trait):units,  data = childata, family = "zapoisson",   prior = prior.3) ) )
+
+
+
+#summary(fit.relo)
+
+#coefplot2(modF.relo$Sol, intercept = TRUE)
+#coefplot2(modF.relo$VCV, intercept = TRUE)
+
+summary(test1)
+
+
+
+
+###########
+# PLOT
+############################
+
+
+#### GRAPH POSITIVE ONLY
+
+## Scale
+datt <- transform(relgot,pray=scale(pray,center=TRUE,scale=FALSE), church=scale(church,center=TRUE,scale=FALSE))
+
+
+
+datt  <- completeFun(datt, c("id",  "gen35", "pray", "church",  "age35c",  "denom", "pol3c", "ethn3"))
+
+
+dato <- subset(datt, children3 >0)
+
+summary(test1)
+%%
+
+test1 <- MCMCglmm(children3 ~ trait*( age35c + ethn3 + pol3c + gen35 * pray + gen35* church), data=datt, rcov= ~idh(trait):units, family = "zapoisson", nitt=20000)
+
+
+test1 <- MCMCglmm(children3 ~  age35c + gen35 + pray + church, data=datt, family = "poisson", nitt=100000)
+
+head(relgot)
+
+#fix bug in MCMCglmm
+test1$Residual$nrt<-2
+
+summary(test1)
+
+coefplot2(test1$Sol,intercept=TRUE)
+
+remove(newdat)
+newdat <- expand.grid(
+    prayS=seq(0:3),
+    gen35 = c("m","f"),
+    churchS=seq(0:3),
+    age35c=0,
+    children3 =0)
+
+head(newdat)
+str(newdat)
+
+
+nrow(newdat)
+
+Z <- predict.MCMCglmm(mmodF, type = 'terms', interval="confidence", level=0.95)
+head(Z)
+tail(Z)
+nrow(Z)
+max(Z)
+
+
+nrow(Z)
+nrow(X)
+
+head(prdicted)
+
+
+X <- model.matrix(children3 ~ age35c + gen35 + pray + church, datt)
+head(X)
+
+
+
+
+
+#X <- model.matrix((children3 ~  age35c + gen35 + pray + church), datt)
+head(X)
+head(Z)
+nrow((X))
+
+Z <- as.data.frame((exp(Z)))
+colnames(Z) <- c("children","lwr","upr")
+dim(Z)
+head(Z)
+tail(Z)
+
+dim(X)
+X <- as.data.frame(X)
+colnames(X)[3] <- "Gender"
+# Rename Men and Women
+X$Gender <- as.factor(as.character(X$Gender))
+levels(X$Gender)[levels(X$Gender)=="0"] <- "Women"
+levels(X$Gender)[levels(X$Gender)=="1"] <- "Men"
+
+head(X)
+head(Z)
+
+
+datme <- cbind(X,Z)
+
+
+
+
+
+head(datme)
+
+#mm <- model.matrix(terms(test$Sol),newdat)
+#head(X)
+#newdat$children <- X#exp(X %*% test$Sol)
+#head(newdat)
+
+#guass only
+#remove(newdat)
+#newdat <- data.frame(
+ #   newdat
+  #  , plo = newdat$children-2*sqrt(pvar1)
+   # , phi = newdat$children+2*sqrt(pvar1)
+   # , tlo = newdat$children-2*sqrt(tvar1)
+   # , thi = newdat$children+2*sqrt(tvar1)
+#)
+
+
+#pvar1 <- diag(mm %*% tcrossprod(vcov(fm4),mm))
+#tvar1 <- pvar1+VarCorr(fm1)$denom[1]  ## must be adapted for more complex models
+
+
+#plot confidence
+
+g0 <- ggplot(datme, aes(x=pray, y=children, color=Gender))+ geom_point(position="jitter", alpha=.3)+geom_pointrange(aes(ymin = lwr, ymax = upr) ,alpha=.3, position="jitter")+ theme_bw()
+
+
+
+g0 + scale_x_continuous(limits = c(0, 20)) +scale_y_continuous(limits=c(0,10))
+
+g1 <- g0+stat_sum(aes(group=pray,color=Gender), alpha=.5)#http://docs.ggplot2.org/current/stat_sum.html
+head(datt)
+g1
+
+#g1 <- ggplot(datme, aes(x=pray, y=children, color=Gender))+   geom_line( aes(ymin = lwr, ymax = upr)) + theme_bw()+scale_x_continuous(limits = c(0, 90))
+
+
+
+                                        #+ opts(title="CI based on fixed-effects uncertainty ONLY")#
+
+#g0 + geom_errorbar(aes(ymin = lwr, ymax = upr) ,alpha=.3)  
+o
+
+
+
+
+
+
+
+ + guides(fill=guide_legend(title="Gender"))
+
+
+
+childata1 <- childata
+head(childata)
+
+dpois(mean(childata$children3, na.rm=TRUE), (nrow(childata))
+)
+
+# Rename Men and Women
+levels(childata1$gen35)[levels(childata1$gen35)=="0"] <- "Women"
+
+levels(childata1$gen35)[levels(childata1$gen35)=="1"] <- "Men"
+
+
+library(ggplot2)
+p1 <- ggplot(childata1, aes(children3, fill = gen35,  na.rm=TRUE)) + geom_histogram() + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender")) +  theme(legend.position="none")
+
+
+library(ggplot2)
+
+p2 <- ggplot(childata1, aes(pray, fill = gen35,  na.rm=TRUE)) + geom_histogram(width = 1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+
+
+P3 <- ggplot(childata1, aes(church, fill = gen35,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+
+
+
+library(ggplot2)
+ggplot(childata1, aes(belief, fill = gen35,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+
+
+library(ggplot2)
+ggplot(childata1, aes(rimp3, fill = gen35,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+
+
+library(ggplot2)
+ggplot(childat1, aes(relnar, fill = gen35,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+
+### GRID
+head(childata)
+
+head(childata1)
+colnames(childata1)[6] <- "Children"
+colnames(childata1)[22] <- "Church"
+colnames(childata1)[23] <- "Pray"
+
+
+library(ggplot2)
+
+
+p1 <- ggplot(childata1, aes(Children, fill = gen35,  na.rm=TRUE)) + geom_histogram() + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender")) +  theme(legend.position="none")
+
+
+p1
+
+p2 <- ggplot(childata1, aes(Pray, fill = gen35,  na.rm=TRUE)) + geom_histogram(width = 1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))  +  theme(legend.position="none")
+
+p2
+p3 <- ggplot(childata1, aes(Church, fill = gen35,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+
+ggplot(childata1, aes(Church, fill = gen35,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(denom ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+p3
+
+ggplot(childata1, aes(rimp35, fill = denom,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(denom ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Denom"))
+
+
+ggplot(childata1, aes(rimp35, fill = denom,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(denom ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Denom"))
+
+
+
+
+grid <- grid.arrange(p1, p2, p3, nrow=1)
+gridd <- grid + labs(title = "Zero inflation")
+
+
+
+ggplot(childata1, aes(belief, fill = gen35,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+
+ggplot(childata1, aes(relnar, fill = gen35,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+
+
+ggplot(childata1, aes(rimp35, fill = gen35,  na.rm=TRUE)) + geom_histogram(width=1) + facet_grid(gen35 ~ ., margins = TRUE, scales = "free") + guides(fill=guide_legend(title="Gender"))
+
+
+head(childata)
+### What would a possion look like
+
+
+a
+datamat
+hist(datamat$col2)
+
+ggplot(datamat, aes(x=col1,y=col2)) + stat_bin)# + facet_grid(col1 ~ ., margins = TRUE, scales = "free") 
+
+
+library(arm)
+library(lme4)
+
+
+
+data <- relgot
+
+head(newdata)
+str(newdata)
+
+ddata <- transform(data,pray=scale(pray,center=TRUE,scale=FALSE), church=scale(church,center=TRUE,scale=FALSE))
+
+mean(ddata$pray,na.rm=TRUE)
+
+
+
+summary(mod1 <-  lm(children3 ~  gen35 * pray + gen35*church, data = newdata, na.action=na.omit))
+
+
+
+head(relgot)
+
+
+library(lme4)
+library(ggplot2) # Plotting
+
+
+# Create for modelling overdispersion
+ddata$obs_effect<-1:nrow(ddata)
+
+mdata <- (subset(relgot, children3>0))
+mdata$obs_effect<-1:nrow(mdata)
+
+nrow(mdata)
+
+head(relgot)
+dat <- completeFun(relgot,c("denom","gen35","prayS","pray","churchS","church", "children3"))
+
+fm4 <- glmer(
+    formula = children3 ~ age35c + gen35 + pray + church +(1|denom)
+    , data = mdata, na.action=na.omit, family="poisson"
+)
+
+
+summary(fm4)
+
+remove(newdat)
+newdat <- expand.grid(
+    pray=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
+    gen35 = c("m","f"),
+    church=c(1:20),
+    age35c=0,
+    children3 =0)
+
+head(newdat)
+str(newdat)
+
+rm(mm)
+
+
+
+mm <- model.matrix(terms(fm4),newdat)
+head(mm)
+newdat$children <- exp(mm %*% fixef(fm4))
+head(newdat)
+
+#guass only
+#remove(newdat)
+#newdat <- data.frame(
+ #   newdat
+  #  , plo = newdat$children-2*sqrt(pvar1)
+   # , phi = newdat$children+2*sqrt(pvar1)
+   # , tlo = newdat$children-2*sqrt(tvar1)
+   # , thi = newdat$children+2*sqrt(tvar1)
+#)
+
+
+#pvar1 <- diag(mm %*% tcrossprod(vcov(fm4),mm))
+#tvar1 <- pvar1+VarCorr(fm1)$denom[1]  ## must be adapted for more complex models
+
+
+#plot confidence
+g0 <- ggplot(newdat, aes(x=pray, y=children, colour=gen35))+
+    geom_smooth() + geom_point(position="jitter") #+ opts(title="CI based on fixed-effects uncertainty ONLY")#
+g0
+
+#g0 + geom_errorbar(aes(ymin = plo, ymax = phi))+
+#    opts(title="CI based on fixed-effects uncertainty ONLY")
+#plot prediction
+#g0 + geom_errorbar(aes(ymin = tlo, ymax = thi))+
+   # opts(title="CI based on FE uncertainty + RE variance")
+
+#summary(mod1)
+
+
+%
+relgot$obs_effect<-1:nrow(relgot)
+head(relgot)
+
+
+
+
+
+
+
+
+
+
+
+dat <- completeFun(relgot,c("denom","gen35","prayS","pray","churchS","church", "children3", "gen35"))
+
+rm(newdat)
+newdat <- expand.grid(
+    pray=seq(0,2,by=.1),
+    gen35c=c("Male","Female"),
+    church=seq(0,2,by=.1),
+    children3=0,
+    age35c=0,
+    pol3c=0
+)
+
+mm <- model.matrix(terms(fm1),newdat)
+head(mm)
+nrow(mm)
+
+newdat$children <-exp( mm %*% fixef(fm1))
+head(newdat)
+
+pvar1 <- diag(mm %*% tcrossprod(vcov(fm1),mm))
+tvar1 <- pvar1+VarCorr(fm1)$denom[1]  ## must be adapted for more complex models
+newdat <- data.frame(
+    newdat
+    , plo = newdat$children-2*sqrt(pvar1)
+    , phi = newdat$children+2*sqrt(pvar1)
+    , tlo = newdat$children-2*sqrt(tvar1)
+    , thi = newdat$children+2*sqrt(tvar1)
+)
+
+
+#plot confidence
+g0 <- ggplot(newdat, aes(x=pray, y=children, colour=gen35c))+geom_point()
+g0 + geom_errorbar(aes(ymin = plo, ymax = phi))+
+    opts(title="CI based on fixed-effects uncertainty ONLY")
+#plot prediction
+g0 + geom_errorbar(aes(ymin = tlo, ymax = thi))+
+    opts(title="CI based on FE uncertainty + RE variance")
+
+summary(fm2)
+
+
+head(relgot)
+
+
+library(glmmADMB)
+help(glmmADMB)
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+head(datcom)
+datm<- completeFun(dat, c("ethn3", "age35c", "pol3c", "lincome3c"))
+
+
+#fm2 <- glmmadmb(children3 ~  gen35*pray + gen35*church, random = ~ 1|denom,  data = dat, family="poisson",zeroInflation = TRUE)
+
+
+datm <- completeFun(datm, c(  "lincome3c", "age3c", "ethn3", "pol3c", "prayS", "churchS", "denom", "gen35"))
+
+
+#datcom$ageF <-datcom$age35c
+nrow(datm)
+
+fm2 <- glmmadmb(children3 ~ gen35 + age3c + ethn3 + pol3c + lincome3c+  prayS + churchS, random = ~ gen35|denom,
+                data = datm,
+                #family="poisson",
+                family="nbinom1",
+                zeroInflation = TRUE)
+
+
+
+
+# family="nbinom1"
+summary(fm2)
+coefplot2(fm2, intercept=TRUE)
+nrow(dat)
+
+
+
+
+#3
+#model.matrix(terms(fm2))
+
+rm(newdat)
+newdat <- expand.grid(
+    prayS=seq(0,2,by=.1),
+    #prayS=0,
+    #gen35=c(0,1),
+    gen35=.5,
+    ethn3 = 0,
+    churchS=0,
+    #churchS=seq(0,2,by=.1),
+    children3=0,
+    ageF=0,
+    #age35c=0,
+    pol3c=0
+)
+
+head(newdat)
+
+
+#newdat$children <- exp(mm %*% fixef(fm2))
+head(newdat)
+
+
+
+#library(glmmADMB)
+
+
+## design matrix (fixed effects)
+
+mm <- model.matrix(delete.response(terms(fm2)),newdat)
+head(mm)
+nrow(mm)
+
+## linear predictor (for GLMMs, back-transform this with the
+##  inverse link function (e.g. plogis() for binomial, beta;
+##  exp() for Poisson, negative binomial
+newdat$children3 <- mm %*% exp(fixef(fm2))
+rm(predvar)
+head(newdat)
+
+predvar <- diag(mm %*% vcov(fm2) %*% t(mm))
+newdat$SE <- sqrt(predvar)
+head(newdat)
+head(predvar)
+head(fm2$alpha^2)
+newdat$SE2 <- sqrt(predvar+fm2$alpha^2)
+
+
+
+pvar1 <- diag(mm %*% tcrossprod(vcov(fm2),mm))
+tvar1 <- pvar1+VarCorr(fm2)$denom[1]  ## must be adapted for more complex models
+#remove(newdata)
+newdat <- data.frame(
+    newdat
+   , plo = newdat$children -2*sqrt(pvar1)
+   , phi = newdat$children +2*sqrt(pvar1)
+    , tlo = newdat$children -2*sqrt(tvar1)
+    , thi = newdat$children +2*sqrt(tvar1)
+)
+head(newdat)
+
+remove(g0)
+rm(g1)
+rm(g2)
+#plot confidence
+# colour=gen35
+g0 <- ggplot(newdat, aes(x=prayS, y=children3)) + geom_point(position="", alpha=.3)+theme_bw()
+g0
+
+g2 <- ggplot(newdat, aes(x=prayS, y=children3, colour=gen35))+geom_smooth(se=FALSE) + geom_point(position="jitter", alpha=.3)+theme_bw()
+g2
+
+
+g3 <- ggplot(newdat, aes(x=churchS, y=children3, colour=gen35))+geom_smooth(se=FALSE) + geom_point(position="jitter", alpha=.3)+theme_bw()
+g3
+
+
+#plot confidence
+g0 <- ggplot(newdat, aes(x=churchS, y=children3, colour=gen35)) + geom_point(position="", alpha=.3)+theme_bw()
+g0
+
+g2 <- ggplot(newdat, aes(x=churchS, y=children3, colour=gen35))+geom_smooth(se=FALSE) + geom_point(position="jitter", alpha=.3)+theme_bw()
+g2
+
+
+g3 <- ggplot(newdat, aes(x=churchS, y=children3, colour=gen35))+geom_smooth(se=FALSE) + geom_point(position="jitter", alpha=.3)+theme_bw()
+g3
+
+
+
+summary(fm2)
+
+
+
+exp(.83)
+
+library(ggplot2) 
+#pd <- position_dodge(width=0.4)
+theme_update(theme_bw())
+rm(g0)
+
+rm(g1)
+rm(g2)
+
+head(mm)
+g0 <- ggplot(newdat,aes(x=prayS,y=children3))
+
+g0 <- g0 + geom_point(alpha=.3) +geom_line(alpha=.3) +  geom_linerange(data=newdat,
+                    aes(ymin=children3-2*SE,ymax=children3+2*SE), alpha=.9)+ theme_bw()
+
+g0
+
+## prediction intervals 
+g2 <- g0 + geom_linerange(data=newdat,
+                    aes(ymin=children3-2*SE2,ymax=children3+2*SE2, alpha=.2)) + theme_bw()
+
+
+g2
+
+head(mm)#,colour=factor(gen35
+g0 <- ggplot(newdat,aes(x=churchS,y=children3))
+             
+g0 + geom_point(alpha=.3)+ geom_linerange(data=newdat,
+                    aes(ymin=children3-2*SE,ymax=children3+2*SE), alpha=.9)+ theme_bw()
+
+
+## prediction intervals 
+g2 <- g1 + geom_linerange(data=newdat,
+                    aes(ymin=children3-2*SE2,ymax=children3+2*SE2)) + theme_bw()
+
+g2
+
+
+
+
+summary(fm2)
+stargazer(fixef(fm2))
+
+#g0 <- ggplot(newdat, aes(x=church, y=children, colour=children))+geom_point(position= "jitter")
+
+                                                 
+
+
+library(stargazer)
+library(texreg)
+
+texreg(fm2)
+
+
+#g0 + geom_errorbar(aes(ymin = plo, ymax = phi))+
+    opts(title="CI based on fixed-effects uncertainty ONLY")
+#plot prediction
+#g0 + geom_errorbar(aes(ymin = tlo, ymax = thi))+
+ #   opts(title="CI based on FE uncertainty + RE variance")
+
+summary(fm2)
+
+
+
+remove(g0)
+
+
+
+## make prediction data frame
+#newdat <- expand.grid(age=c(8,10,12,14), Sex=c("Male","Female"))
+## design matrix (fixed effects)
+mm <- model.matrix(delete.response(terms(fm2)),newdat)
+## linear predictor (for GLMMs, back-transform this with the
+##  inverse link function (e.g. plogis() for binomial, beta;
+##  exp() for Poisson, negative binomial
+newdat$children <- mm %*% fixef(fm2)
+
+predvar <- diag(mm %*% vcov(fm2) %*% t(mm))
+newdat$SE <- sqrt(predvar) 
+newdat$SE2 <- sqrt(predvar+fm2$alpha^2)
+#(Probably overly complicated) ggplot code:
+
+    head(dat)
+    
+library(ggplot2) 
+pd <- position_dodge(width=0.4)
+theme_update(theme_bw())
+g0 <- ggplot(dat,aes(x=pray,y=children3,colour=gen35))+
+    stat_sum(alpha=0.2,aes(size=..n..))+
+    scale_size_continuous(breaks=1:4,range=c(2,5))
+g0
+g1 <- g0+geom_line(data=newdat,position=pd)+
+      geom_point(data=newdat,shape=17,size=3,position=pd)
+g1 + geom_linerange(data=newdat,
+                    aes(ymin=children-2*SE,ymax=children+2*SE), position=pd)
+
+
+
+## prediction intervals 
+g1 + geom_linerange(data=newdat,
+                    aes(ymin=pred-2*SE2,ymax=pred+2*SE2), position=pd)
+
+
+data <- na.omit(relgot)
+
+newdat <-
+  with(data, expand.grid(
+  pray = seq(min(pray), max(pray), length = 10),
+  Gen35 = levels(factor(gen35)),
+  church= seq(min(church),max(church), length=5),
+  children3= seq(min(children3), max(children3), length = 10)
+))
+
+#NZDepT35
+fm2 <- glmmadmb(children3 ~ gen35 + prayS + churchS, random = ~ gen35|denom,  data = dat, family="nbinom1",zeroInflation = TRUE)
+
+fm2 <- lmer(children3 ~ gen35 + prayS + churchS + 1|gen35,  data = dat, family="poisson")
+summary(fm2)
+
+rm(newdat)
+newdat <-
+  with(data, expand.grid(
+  prayS = seq(0,2, by = .1),
+      #seq(min(pray), max(pray), length = 10),
+  gen35 = levels(factor(gen35)),
+  churchS= seq(0,2, by =.1),
+  children3=0,
+  age35c=0
+  #denom= levels(factor(denom))    
+  #children3= seq(min(children3), max(children3), length = 10)
+))
+
+
+head(newdat)
+
+newdat$childrenborn <- stats::predict(fm2, newdata=newdat, type = "response")
+
+
+#plot(fm2$residuals, fm2$fitted.values)
+
+library(ggplot2)
+qplot(prayS,childrenborn, data=newdat, colour=gen35) + geom_point()+theme_bw()
+qplot(churchS,childrenborn, data=newdat, colour=gen35) + geom_point()+theme_bw()
+#qplot(time, arousal, data=grid, colour=factor(role)) + geom_line(data=grid)
+
+#Aerr <- stats::predict(fm2, newdata=newdat,  se = TRUE)
+#Aerr <- stats::predict(fm2, newdata=newdat,  se = TRUE)
+#head(Aerr)
+
+
+
+
+%
+#stat="identity"
+
+
+
+
+
+
+####################################################################################################################################################################################################################################################################################################################################
+
+
+
+
+
+
+### WOMEN CHILDREN WHO PRAY
+
+
+
+
+print(fit.callrel)
+
+#
+#
+
+######################################################################################
+######################################################################################      
+######################################################################################   
+       
+t3_0 <-  as.data.frame(read.csv(file = "/Users/josephbulbulia/Dropbox/0R/DATA/2013/NZAVS/T_3_O/NZAVST32011.csv", header = TRUE, sep =","))    #NZAVS T3 (2011) Mplus Base Dataset.txt  
+
+       
+head(t3_0)
+t3dat<-data.frame(t3_0)
+head(t3dat)
+dim(t3dat)
+
+#Replace SPSS -9999 with "NA" so that R performs properly
+t3dat[t3dat == "-9999" ] = NA
+head(t3dat)
+
+# ReliIdT3  !Religion.Identification.T3
+# ReliGdT3  !Religion.Believe.God.T3 (1 yes, 0 no)
+# ReliSpT3  !Religion.Believe.Spirit.T3 (1 yes, 0 no)
+# RelCatT3  !Religion.Believe.Cats.T3
+#           !(1 = God & Spirit, 2 = God - No Spirit,
+#           !3 = Spirit - No God, 4 = Atheists & Agnostics) 
+rtdat3<-subset(t3dat, Religious.T3== 1)
+
+dim(rtdat3)
+
+t3church<- as.data.frame(as.numeric(rtdat3[ ,"Religion.Church.T3"]))
+dim(t3church)
+
+t3type<-as.data.frame(as.factor(rtdat3[ ,"Religion.L3.Cats.T3"]))
+       summary(t3type)
+       
+       rtdat3$w.Gender.T3
+       
+t3male<-as.data.frame(as.factor(rtdat3[ ,"Gender.T3"])) 
+
+       
+t3eth<- as.data.frame(as.factor(rtdat3[ ,"EthL2.Euro.T3"]))       
+       
+t3id<-as.data.frame(as.factor(rtdat3[ ,"Questionnaire.Num"]))
+       
+t3age<-as.data.frame(as.numeric(rtdat3[,"Age.T3"]))
+       
+t3strength<-as.data.frame(as.numeric(rtdat3[,"Religion.Identification.T3"])) 
+      colnames(t3strength)<-c("t3st")
+       library(arm)
+
+      t3strength$t3st<-rescale(t3strength$t3st)
+       
+       dim(t3strength)
+       
+       
+t3age<-scale(t3age, center =TRUE, scale=FALSE)
+
+t3reldata<-as.data.frame(cbind(t3id,t3church,t3type,t3male,t3eth,t3age,t3strength))     
+       
+       
+dim(t3reldata)    
+head(t3reldata)
+       
+t3work<-na.exclude(t3reldata)
+dim(t3work)
+colnames(t3work)<-c("id","church","denom","male","eth","age","strength")
+       head(t3work)
+       str(t3work)
+       t3work$male
+# ReliChT3  !Religion.Church.T3
+# CharitT3  !CharityDonate.T3
+# EthEurT3  !EthL2.Euro.T3 (1 NZ Euro, 0 other)
+      
+       
+#################################################
+#      model  t3
+#################################################
+#################################################
+prior_fit_t3c = 
+  list(R = list(V = diag(2), nu = 0.002, fix = 2),
+       G = list(
+         G1 = list( V= diag(2)*.002, nu = 3)))
+
+
+#Note idh fixes covariance to zero
+
+###LOOKS GOOD
+library(MCMCglmm)
+library(coefplot2)
+       
+       exp(-0.139121)
+       
+fit_7_t3c <- MCMCglmm(church ~ trait - 1  + at.level(trait, 1):male 
+                      + at.level(trait, 1):strength + at.level(trait, 1):age + at.level(trait, 1):eth, random =  ~idh(trait):denom, data=t3work, rcov = ~idh(trait):units, prior =prior_fit_t3c, family = "zapoisson", verbose = TRUE, nitt=50000)
+ t4
+
+       
+       
+fit_7_t3cI <- MCMCglmm(church ~ trait - 1  + at.level(trait, 1):male + + at.level(trait, 1):strength + at.level(trait, 1):age + at.level(trait, 1):eth, random =  ~idh(trait):denom, data=t3work, rcov = ~idh(trait):units, prior =prior_fit_t3c, family = "zipoisson", verbose = TRUE)
+
+       
+
+summary(fit_7_t3cI)
+coefplot2(fit_7_t3cI$Sol, intercept=TRUE)
+coefplot2(fit_7_t3cI$VCV, intercept=TRUE)
+plot(fit_7_t3cI)
+       
+
+fit_7_t3JH <- MCMCglmm(church ~ trait * (male + age + strength + eth), random = ~trait:denom, data=t3work, rcov = ~trait:units, family = "zapoisson", verbose = TRUE)
+       
+
+       
+summary(fit_7_t3JH)
+coefplot2(fit_7_t3JH$Sol, intercept=TRUE)
+coefplot2(fit_7_t3JH$VCV, intercept=TRUE)
+plot(fit_7_t3c)
+       
+exp(0.140778)
+
+##################################################################
+##################################################################
+
+
+
+## ZERO ALTERED(SAME BUT PREDICTIN NON-ZEROS: GENERALLY BETTER)
+# See Hadfield course notes p. 108, note use family "hupoisson"  # WORKS BETTER
+#This time with prayer   DO NOT USE THE HURDLE ASSUMPTIOSN PROB NOT MET
+
+
+prior_fit_8 = 
+  list(R = list(V = diag(2), nu = 0.002, fix = 2),
+       G = list(
+         G1 = list( V= diag(2)*.002, nu = 3),
+         G2 = list( V= diag(2)*.002, nu = 3)))
+
+
+# note that we fit for both men and women
+
+fit_8 <- MCMCglmm(pray ~ trait - 1 + at.level(trait, 1):rage + at.level(trait, 1:2):relgen + at.level(trait, 1):belief + at.level(trait, 1):reth, random = ~us(trait):relid + idh(trait):denom, data=relwork, rcov = ~idh(trait):units, prior = prior_fit_8, family = "hupoisson", verbose = TRUE)
+
+
+DIC(fit_8)
+summary(fit_8)
+coefplot2(fit_8$Sol, intercept=TRUE)
+coefplot2(fit_8$VCV, intercept=TRUE)
+plot(fit_8)
+
+
+
+# Checks p. 107 course notes
+
+c2 <- (16 * sqrt(3)/(15 * pi))^2
+HPDinterval(plogis(fit_8$Sol[, 2]/sqrt(1 + c2)))
+
+HPDinterval(ppois(0, exp(fit_8$Sol[, 1] + 0.5 *  fit_8$VCV[, 1])))
+c2 <- (16 * sqrt(3)/(15 * pi))^2
+HPDinterval(ppois(0, exp(fit_8$Sol[, 1] + fit_8$Sol[,4] + 0.5 * fit_8$VCV[, 1])))
+
+
+
+
+#
+##
+#
+#
+
+
+
+DIC(fit_2)
+summary(fit_2)
+coefplot2(fit_2$Sol, intercept=TRUE)
+Scoefplot2(fit_2$VCV, intercept=TRUE)
+plot(fit_2)
+autocorr(fit_2)
+
+
+# head(data)
+# 
+prior.
+a = list(
+  R = list(V =diag(4), nu=1.002),
+  G = list(
+    G1 = list( V= diag(4), nu = 5 ),
+    G2 = list( V= diag(4), nu=5)))
+
+ DIC(mod_A)
+ summary(mod_A)
+ coefplot2(mod_A, intercept=TRUE)
+ coefplot2(mod_A$VCV, intercept=TRUE)
+
+
+
+
+mod_A<- MCMCglmm(cbind(rimp,church,pray,script) ~ trait - 1, random = ~us(trait):relid + idh(trait):denom,  family= c("gaussian","poisson","poisson","poisson"), rcov= ~us(trait):units, data=relwork, prior=prior.a)
+
+
+
+
+mod_B<- MCMCglmm(cbind(rimp,church,pray,script) ~ trait - 1 + trait:rage + trait:relgen + trait:belief + trait:reth, random = ~us(trait):relid + idh(trait):denom,  family= c("gaussian","poisson","poisson","poisson"), rcov= ~us(trait):units, data=relwork, prior=prior.a)
+
+
+plot(mod_B$Sol)
+#
+DIC(mod_B)
+summary(mod_B)
+coefplot2(mod_B$Sol, intercept=TRUE)
+coefplot2(mod_B$VCV, intercept=TRUE)
+
+
+#SAME as b BUT WITH INTERACTION of belief and gender
+mod_B_2<- MCMCglmm(cbind(rimp,church,pray,script) ~ trait - 1 + trait:rage + trait:relgen * trait:belief + trait:reth, random = ~us(trait):relid + idh(trait):denom,  family= c("gaussian","poisson","poisson","poisson"), rcov= ~us(trait):units, data=relwork, prior=prior.a)
+
+
+
+
+DIC(mod_B_2)
+summary(mod_B_2)
+coefplot2(mod_B_2, intercept=TRUE)
+coefplot2(mod_B_2$VCV, intercept=TRUE)
+
+
+
+#
+# model but with poisson substitute relnar for rimp
+mod_C<- MCMCglmm(cbind(relnar,church,pray,script) ~ trait - 1 + trait:rage + trait:relgen + trait:belief + trait:reth, random = ~us(trait):relid + idh(trait):denom,  family= c("gaussian","poisson","poisson","poisson"), rcov= ~us(trait):units, data=relwork, prior=prior.a)
+
+DIC(mod_C)
+summary(mod_C)
+coefplot2(mod_$Sol, intercept=TRUE)
+coefplot2(mod_C$VCV, intercept=TRUE)
+
+
+#SAME as C BUT WITH INTERACTION of belief and gender
+
+mod_C_2<- MCMCglmm(cbind(relnar,church,pray,script) ~ trait - 1 + trait:rage + trait:relgen * trait:belief + trait:reth, random = ~us(trait):relid + idh(trait):denom,  family= c("gaussian","poisson","poisson","poisson"), rcov= ~us(trait):units, data=relwork, prior=prior.a)
+
+DIC(mod_C_2)
+summary(mod_C_2)
+coefplot2(mod_C_2$Sol, intercept=TRUE)
+coefplot2(mod_C_2$VCV, intercept=TRUE)
+
+
+
+
+
+
+# Same model as C but with close to god 
+
+prior.b = list( 
+  R = list(V = diag(5), nu=1.002),
+  G = list(  
+    G1 = list( V= diag(5)*.05, nu = 6 ),
+    G2 = list( V= diag(5)*.05, nu = 6)))
+
+
+
+mod_D<- MCMCglmm(cbind(relnar,rgolcon,church,pray,script) ~ trait - 1 + trait:rage + trait:relgen + trait:belief, random = ~us(trait):relid + idh(trait):denom,  family= c("gaussian","gaussian","poisson","poisson","poisson"), rcov= ~us(trait):units, data=relwork, prior=prior.b)
+
+
+summary(mod_D)
+coefplot2(mod_D$Sol, intercept=TRUE)
+coefplot2(mod_D$VCV, intercept=TRUE)
+
+
+
+
+prior.b = list( 
+  R = list(V =diag(5), nu=1.002),
+  G = list(  
+  	G1 = list( V= diag(5)*.05, nu = 5 ),
+    G2 = list( V= diag(5)*.05, nu=5)))
+
+
+mod_A <- MCMCglmm(cbind(quest,intrinsic,pextrinsic,sextrinsic) ~ trait - 1 + gen, random = ~us(trait):id + idh(trait):denom,  family=rep("gaussian",4), rcov= ~us(trait):units, data=work, prior=prior.a)
+
+
+mod_B <- MCMCglmm(cbind(harm,fairness,loyalty,authority,sanctity) ~ trait - 1 + gen, random = ~us(trait):id  + idh(trait):denom,  family=rep("gaussian",5), rcov= ~us(trait):units, data=work, prior = prior.b)
+
+
+mod_C <- MCMCglmm(loyalty ~ gen, family = "gaussian", data=work)
+mod_D <- MCMCglmm(cbind(pextrinsic,sextrinsic) ~ trait-1 + gen, rcov=~us(trait):units, family = rep("gaussian",2), data=work)
+
+
+coefplot2(mod_C$VCV, intercept=T)
+coefplot2(mod_C$Sol, intercept=T)
+
+coefplot2(mod_D$VCV, intercept=T)
+coefplot2(mod_D$Sol, intercept=T)
+
+
+
+
+prior = list( 
+  R = list(V =diag(4), nu=.02),
+	G = list(	
+		G1 = list( V= diag(4) * .5, nu = 5 ),
+		G2 = list( V= diag(4) * .5, nu = 5 ), 
+		G3 = list( V= diag(4) * .5, nu = 5 ),
+    G4 = list( V= diag(4) * .5, nu = 5 ),
+    G5 = list( V= diag(4) * .5, nu = 5 ) ) )
+
+
+prior2 = list( 
+  R = list(V =diag(4), nu=1, fix = 1),
+  G = list(	
+		G1 = list( V= diag(4) * .5, nu = 5 ),
+		G2 = list( V= diag(4) * .5, nu = 5 ), 
+		G3 = list( V= diag(4) * .5, nu = 5 ),
+    G4 = list( V= diag(4) * .5, nu = 5 ),
+    G5 = list( V= diag(4) * .5, nu = 5 ) ) )
+
+prior3 = list( 
+  R = list(V =diag(4), nu=5),
+  G = list(  
+		G1 = list( V= diag(4) * .5, nu = 5 ))
+)
+
+
+
+mod_1 <- MCMCglmm(cbind(quest,intrinsic,pextrinsic,sextrinsic) ~ trait - 1 + trait:harm + trait:fairness + trait:loyalty + trait:authority + trait:sanctity, random = ~us(trait):id, family=rep("gaussian",4), rcov= ~us(trait):units, data=work, prior = prior3)
+
+coefplot2(mod_1$VCV, intercept=T)
+coefplot2(mod_1$Sol, intercept=T)
+
+
+
+#Just the fixed effects
+mod_1 <- MCMCglmm(cbind(quest,intrinsic,pextrinsic,sextrinsic) ~ trait - 1 + trait:harm + trait:fairness + trait:loyalty + trait:authority + trait:sanctity,  family=rep("gaussian",4), rcov= ~us(trait):units, data=work)
+
+summary(mod_1)
+
+#
+coefplot2(mod_1$VCV, intercept=T)
+coefplot2(mod_1$Sol, intercept=T)
+
+
+library(MCMCglmm)
+library(coefplot2)
+head(data)
+
+prior.a = list( 
+  R = list(V =diag(4), nu=4, fix =1),
+  G = list(	
+		G1 = list( V= diag(4) * .5, nu = 5 ))
+  )
+
+
+mod_0 <- MCMCglmm(cbind(quest,intrinsic,pextrinsic,sextrinsic) ~ trait - 1, random = ~us(trait):id,  family=rep("gaussian",4), rcov= ~us(trait):units, data=work, prior =prior.a)
+
+coefplot2(mod_0$VCV, intercept=T)
+
+
+prior = list( 
+  R = list(V =diag(4), nu=.02),
+	G = list(	
+		G1 = list( V= diag(4) * .5, nu = 5 ),
+		G2 = list( V= diag(4) * .5, nu = 5 ), 
+		G3 = list( V= diag(4) * .5, nu = 5 ),
+    G4 = list( V= diag(4) * .5, nu = 5 ),
+    G5 = list( V= diag(4) * .5, nu = 5 ) ) )
+
+
+prior2 = list( 
+  R = list(V =diag(4), nu=1, fix = 1),
+  G = list(	
+		G1 = list( V= diag(4) * .5, nu = 5 ),
+		G2 = list( V= diag(4) * .5, nu = 5 ), 
+		G3 = list( V= diag(4) * .5, nu = 5 ),
+    G4 = list( V= diag(4) * .5, nu = 5 ),
+    G5 = list( V= diag(4) * .5, nu = 5 ) ) )
+
+
+
+mod_1 <- MCMCglmm(cbind(quest,intrinsic,pextrinsic,sextrinsic) ~ trait - 1, random = ~us(trait):harm + us(trait):fairness + us(trait):loyalty + us(trait):authority+ us(trait):sanctity, family=rep("gaussian",4), rcov= ~us(trait):units, data=work, prior = prior)
+
+
+
+
+
+
+
+
+summary(mod_1)
+
+coefplot2(mod_1$Sol, intercept = TRUE)
+coefplot2(mod_1$VCV, intercept = TRUE)
+plot(mod_1$VCV)
+#
+plot(mod_1$Sol)
+
+
+```
+
+
+RQue1T35  !RelQuest01.T35
+RQue2T35  !RelQuest02.T35
+RQue3T35  !RelQuest03.T35
+RInt1T35  !RelIntrin01.T35
+RInt2T35  !RelIntrin02.T35
+RInt3T35  !RelIntrin03.T35
+RExP1T35  !RelExtrnPers01.T35
+RExP2T35  !RelExtrnPers02.T35
+RExP3T35  !RelExtrnPers03.T35
+RExS1T35  !RelExtrnSoc01.T35
+RExS2T35  !RelExtrnSoc02.T35
+RExS3T35  !RelExtrnSoc03.T35
+
+MFHa1T35  !MFQ.harm01.T35
+MFHa2T35  !MFQ.harm02.T35
+MFHa3T35  !MFQ.harm03.T35
+MFHa4T35  !MFQ.harm04.T35
+MFHa5T35  !MFQ.harm05.T35
+MFHa6T35  !MFQ.harm06.T35
+MFFa1T35  !MFQ.fairness01.T35
+MFFa2T35  !MFQ.fairness02.T35
+MFFa3T35  !MFQ.fairness03.T35
+MFFa4T35  !MFQ.fairness04.T35
+MFFa5T35  !MFQ.fairness05.T35
+MFFa6T35  !MFQ.fairness06.T35
+MFIn1T35  !MFQ.ingroup01.T35
+MFIn2T35  !MFQ.ingroup02.T35
+MFIn3T35  !MFQ.ingroup03.T35
+MFIn4T35  !MFQ.ingroup04.T35
+MFIn5T35  !MFQ.ingroup05.T35
+MFIn6T35  !MFQ.ingroup06.T35
+MFAu1T35  !MFQ.authority01.T35
+MFAu2T35  !MFQ.authority02.T35
+MFAu3T35  !MFQ.authority03.T35
+MFAu4T35  !MFQ.authority04.T35
+MFAu5T35  !MFQ.authority05.T35
+MFAu6T35  !MFQ.authority06.T35
+MFPu1T35  !MFQ.purity01.T35
+MFPu2T35  !MFQ.purity02.T35
+MFPu3T35  !MFQ.purity03.T35
+MFPu4T35  !MFQ.purity04.T35
+MFPu5T35  !MFQ.purity05.T35
+MFPu6T35  !MFQ.purity06.T35
+
+RelIDT35  !Religion.Identification.T35
+
+
+```{r fig.width=7, fig.height=6}
+
+
+```
+
+
+
+### APPENDIX INFORATION ABOUT THE NZAVS
+# ======================================================================
+#   
+# BASE TEMPLATE FOR T3.5
+# 
+# ======================================================================
+#   
+#   DATA:
+#   
+#   FILE IS NZAVS T3.5 (2012) Mplus Base Dataset.txt;            
+# NOBSERVATIONS ARE 4515; 
+# !LISTWISE IS ON; 
+# !NGROUPS = XXX;                   !Number of groups in multi-group analysis 
+# 
+# VARIABLE:   
+#   
+#   IDVARIABLE IS subnum;
+# MISSING ARE ALL (-9999);
+# !TSCORES = TSCR035;               !defines TSCORES for time-varying growth models
+# !AUXILIARY = (m) AuxT4;           !specifies missing data covariate in LGM 
+# !AUXILIARY = GenT35 (DCAT)(DCON); !specifies auxiliary variables in a mixture model
+# !WEIGHT IS STATE_VAR;             !sample weight correction factor (integer weight).
+# !CLUSTER = CAU06T351;             !specifies Census Area Units as a Level 2 unit in MRCM
+# !BETWEEN = STATE_VAR;             !specifies BETWEEN (Level 2) variables in MRCM
+# !WITHIN = STATE_VAR;              !specifies WITHIN (Level 1) variables in MRCM
+# !CENSORED ARE STATE_VAR(b);       !used to test a Censor-Inflated Regression Model (bi)
+# !GROUPING IS STATE_VAR;           !(1 = Group1 2 = Group 2, etc) used in multi-group
+# 
+# NAMES ARE 
+# 
+# subnum    !Questionnaire.Num
+# TSCR035   !TSCORE count from Day 0 (where 0 = 30th June 2009)
+# MBU06T35  !MBU.2006.T35
+# MBU10T35  !MBU.2010.T35
+# CAU06T35  !CAU.2006.T35
+# MMICET35  !Completed.MMMICE.T35 (1 yes, 0 no)
+# PIWBST35  !Completed.PIWBS.T35 (1 yes, 0 no)
+# 
+# GenT35    !Gender.T35 (0 female, 1 male)
+# AgeT35    !Age.T35
+# NZDepT35  !NZDep Percentile Score T3 (1 affluent -- 10 deprived)
+# EthEuT35  !EthL2.Euro.T3 (1 NZ Euro, 0 other)
+# EthMaT35  !EthL2.Maori.T3 (1 Maori, 0 other)
+# EthPaT35  !EthL2.Pacific.T3 (1 Pacific, 0 other)
+# EthAsT35  !EthL2.Asian.T3 (1 Asian, 0 other)
+# EthOtT35  !EthL2.AllOther.T3 (1 other eth, 0 previously defined)
+# ReligT35  !Religious.T35 (1 yes, 0 no)
+# RelDsT35  !Religion.Denoms.T35
+# !(1 Anglican, 2 Catholic, 3 Presbyterian, Christian NFD, 
+#   !5 Christian Other, 6 Other Religion).
+# RelL2T35  !Religion.L2.Cats.T35 
+# !(-1 Outside Scope/Unreported, 0 Non-Religious, 
+#   !1 Christian, 2 Other Religion)
+# RelL3T35  !Religion.L3.Cats.T35 
+# !(-2 Outside Scope, -1 Unreported, 0  No Religion, 1  Anglican, 2  Catholic,
+#   !3  Presbyterian, 4  Methodist, 5  Baptist, 6  Mormon, 7  Ratana/Ringatu, 
+#   !8  Evan/Pentecostal, 9  Christian NFD, 10 Christian Other,  11 Buddhist, 
+#   !12 Hindu, 13 Other Religion)
+# RelL4T35  !Religion.L4.Cats.T35 (Coding of all distinct groups at Level 4)
+# !(-2 Outside scope, -1 Unreported, 0 No religion, 1 Anglican, 
+#   !2 Apostolic, 3 Assemblies of God, 4 Baha'i, 5 Baptist, 6 Born Again, 
+#   !7 Brethren, 8 Buddhist, 9 Catholic, 10 Christian Other, 11 Christian NFD, 
+#   !12 Church of Christ, 13 Congregationist, 14 Destiny Church, 15 Evan/BA/Fund, 
+#   !16 Freemason, 17 Hindu, 18 Jehova's Witness, 19 Jewish, 20 Lutheran, 
+#   !21 Maori Other Religion, 22 Methodist, 23 Mormon, 24 Muslim, 25 New Age, 
+#   !26 New Life, 27 Orthodox, 28 Other Religion, 29 Pagan, 30 Pentecostal, 
+#   !31 Presbyterian, 32 Quaker, 33 Ratana, 34 Reformed, 35 Ringatu, 
+#   !36 Salvation Army 37 Scientology, 38 Seventh Day Adventist, 39 Sikh 
+#   !40 Spiritual, 41 Union, 42 Wicca).
+# PRelgT35  !ParentsReligious.T35 (1 yes, 0 no)
+# NZDpRT35  !NZDep Raw Score T3
+# CityT35   !CityRegion.T3 (City Region Codes for 2006 areas)
+# !(1 Auckland; 2 Bay of Plenty; 3 Canterbury; 4 Gisborne; 5 Hawkes Bay
+#   !6 Manawatu-Wanganui; 7 Marlborough; 8 Nelson; 9 Northland; 10 Otago
+#   !11 Southland; 12 Tasman; 14 Waikato; 15 Wellington; 16 West Coast)
+# TerrtT35  !Territorial Area units for 2006 territorial authorities
+# !1 Far North District, 2 Whangarei District,3 Kaipara District, 
+# !4 Rodney District 5 North Shore City, 6 Waitakere City, 7 Auckland City, 
+# !8 Manukau City, 9 Papakura District, 10 Franklin District, 
+# !11 Thames-Coramandel District, 12 Hauraki District, 13 Waikato District, 
+# !15 Matamata-Piako District, 16 Hamilton, 17 Waipa District, 18 Otorohanga 
+# !District, 19 South Waikato District, 20 Waitomo District, 21 Taupo District, 
+# !22 Western Bay of Plenty District, 23 Tauranga City, 24 Rotorua District, 
+# !25 Whakatane District, 26 Kawerau District, 27 Opotiki District, 28 Gisborne 
+# !District, 29 Wairoa District, 30 Hastings District, 31 Napier City, 
+# !32 Central Hawke's Bay District, 33 New Plymouth District, 34 Stratford 
+# !District, 35 South Taranaki District, 36 Ruapehu District, 37 Wanganui 
+# !District, 38 Rangitikei District, 39 Manawatu District 40 Palmerston North
+# !City, 41 Tararu District, 42 Horowhenua District, 43 Kapiti Coast District, 
+# !44 Porirua City, 45 Upper Hutt City, 46 Lower Hutt City, 47 Wellington, 
+# !48 Masterton District, 49 Carterton District, 50 South Wairarapa District, 
+# !51 Tasman District, 52 Nelson City, 53 Marlborough District, 54 Kaikoura 
+# !District, 55 Buller District, 56 Grey District, 57 Westland District, 
+# !58 Hurunui District, 59 Waimakariri District, 60 Christchurch, 62 Selwyn 
+# !District, 63 Ashburton District, 64 Timaru District, 65 Mackenzie District, 
+# !66 Waimate District, 67 Chatham Islands Territory, 68 Waitaki District,
+# !69 Central Otago District, 70 Queenstown-Lakes District, 71 Dunedin City
+# !72 Clutha District, 73 Southland District, 74 Gore District, 
+# !75 Invercargill District, 999 Area Outside Territorial Authority
+# WardT35   !WardCode.T3 (Ward Codes for 2006 Areas)
+# EthCaT35  !Ethnic Categories (Priority coded) T3.5
+# !(1 NZ European, 2 Maori, 3 Pacific Nations, 4 Asian)
+# RelIDT35  !Religion.Identification.T35
+# RelGdT35  !Believe.God.T35 
+# RelSpT35  !Believe.Spirit.T35 
+# RelChT35  !Religion.Church.T35
+# RelPrT35  !Religion.Prayer.T35
+# RelScT35  !Religion.Scripture.T35
+# EtL01T35  !EthL3.NZEuro.T3
+# EtL02T35  !EthL3.NZer.T3
+# EtL03T35  !EthL3.EuroNFD.T3
+# EtL04T35  !EthL3.EuroOther.T3
+# EtL05T35  !EthL3.Maori.T3
+# EtL06T35  !EthL3.PacificNFD.T3
+# EtL07T35  !EthL3.Samoan.T3
+# EtL08T35  !EthL3.CookIsland.T3
+# EtL09T35  !EthL3.Tongan.T3
+# EtL10T35  !EthL3.Niuean.T3
+# EtL11T35  !EthL3.Tokelauan.T3
+# EtL12T35  !EthL3.Fijian.T3
+# EtL13T35  !EthL3.PacificOth.T3
+# EtL14T35  !EthL3.AsianNFD.T3
+# EtL15T35  !EthL3.SthEastAsn.T3
+# EtL16T35  !EthL3.Chinese.T3
+# EtL17T35  !EthL3.Indian.T3
+# EtL18T35  !EthL3.AsianOther.T3
+# EtL19T35  !EthL3.MiddleEastern.T3
+# EtL20T35  !EthL3.LatinAmerican.T3
+# EtL21T35  !EthL3.African.T3
+# EtL22T35  !EthL3.Other.T3
+# EtL23T35  !EthL3.Unreported.T3
+# EMP01T35  !Start Filler Variables 
+# EMP02T35
+# EMP03T35
+# EMP04T35
+# EMP05T35
+# EMP06T35
+# EMP07T35
+# EMP08T35
+# EMP09T35
+# EMP10T35
+# EMP11T35
+# EMP12T35
+# EMP13T35
+# EMP14T35
+# EMP15T35
+# EMP16T35
+# EMP17T35
+# EMP18T35
+# EMP19T35  !End Filler Variables
+# ElectT35  !2012 General Electorate Districts
+# !(1 Auckland Central, 2 Bay of Plenty, 3 Botany, 4 Christchurch Central, 
+# !5 Christchurch East, 6 Clutha-Southland, 7 Coramandel, 8 Dunedin North,
+# !9 Dunedin South, 10 East Coast, 11 East Coast Bays, 12 Epsom,
+# !13 Hamilton East, 14 Hamilton West, 15 Helensville, 16 Hunua, 17 Hutt South
+# !18 Ilam, 19 Invercargill, 20 Kaikoura, 21 Mana, 22 Mangere, 23 Manukau East, 
+# !24 Manurewa, 25 Maungakiekie, 26 Mt Albert, 27 Mt Roskill, 28 Napier, 
+# !29 Nelson, 30 New Lynn, 31 New Plymouth, 32 North Shore, 33 Northcote, 
+# !34 Northland, 35 Ohariu, 36 Otaki, 37 Pakuranga, 38 Palmerston North, 
+# !39 Papakura, 40 Port Hills, 41 Rangitata, 42 Rangitei, 43 Rimutaka, 44 Rodney, 
+# !45 Rongotai, 46 Rotorua, 47 Selwyn, 48 Tamaki, 49 Taranaki-King Country, 
+# !50 Taupo, 51 Tauranga, 52 Te Atatu, 53 Tukituki, 54 Waikato, 55 Waimakariri, 
+# !56 Wairarapa, 57 Waitakere, 58 Waitaki, 59 Wellington Central,60 West Coast
+# !-Tasman, 61 Whanganui, 62 Whangarei, 63 Wigram, 64 Hauraki-Waikato, 
+# !65 Ikaroa-Rawhiti, 66 Tamaki Makaurau, 67 Te Tai Hauauru, 68 Te Tai Tokerau, 
+# !69 Te Tai Tonga, 70 Waiariki)
+# RFun1T35  !RelFund01.T35
+# RFun2T35  !RelFund02.T35
+# RFun3T35  !RelFund03r.T35
+# RQue1T35  !RelQuest01.T35
+# RQue2T35  !RelQuest02.T35
+# RQue3T35  !RelQuest03.T35
+# RInt1T35  !RelIntrin01.T35
+# RInt2T35  !RelIntrin02.T35
+# RInt3T35  !RelIntrin03.T35
+# RExP1T35  !RelExtrnPers01.T35
+# RExP2T35  !RelExtrnPers02.T35
+# RExP3T35  !RelExtrnPers03.T35
+# RExS1T35  !RelExtrnSoc01.T35
+# RExS2T35  !RelExtrnSoc02.T35
+# RExS3T35  !RelExtrnSoc03.T35
+# RLoc1T35  !RelGodLOC01.T35
+# RLoc2T35  !RelGodLOC02.T35
+# RLoc3T35  !RelGodLOC03.T35
+# RNar1T35  !RelCollectNarc01.T35
+# RNar2T35  !RelCollectNarc02.T35
+# RNar3T35  !RelCollectNarc03.T35
+# PSop1T35  !PolSopSCORED01.T35 (1 correct, 0 error)
+# PSop2T35  !PolSopSCORED02.T35 (1 correct, 0 error)
+# PSop3T35  !PolSopSCORED03.T35 (1 correct, 0 error)
+# PSop4T35  !PolSopSCORED04.T35 (1 correct, 0 error)
+# PSop5T35  !PolSopSCORED05.T35 (1 correct, 0 error)
+# PSop6T35  !PolSopSCORED06.T35 (1 correct, 0 error)
+# PSop7T35  !PolSopSCORED07.T35 (1 correct, 0 error)
+# PSop8T35  !PolSop08.LieDetect.T35 (1 yes, 0 no)
+# PrLo1T35  !LOCpers01.T35
+# PrLo2T35  !LOCpers02.T35
+# PrLo3T35  !LOCpers03.T35
+# PoLo1T35  !LOCpol01.T35
+# PoLo2T35  !LOCpol02.T35
+# PoLo3T35  !LOCpol03.T35
+# HeLo1T35  !LOChealth01.T35
+# HeLo2T35  !LOChealth02.T35
+# HeLo3T35  !LOChealth03.T35
+# EtNa1T35  !EthCollectNarc01.T35
+# EtNa2T35  !EthCollectNarc02.T35
+# EtNa3T35  !EthCollectNarc03.T35
+# IWCm1T35  !IWAH.q1.community.T35
+# IWCm2T35  !IWAH.q2.community.T35
+# IWCm3T35  !IWAH.q3.community.T35
+# IWCm4T35  !IWAH.q4.community.T35
+# IWCm5T35  !IWAH.q5.community.T35
+# IWCm6T35  !IWAH.q6.community.T35
+# IWCm7T35  !IWAH.q7.community.T35
+# IWCm8T35  !IWAH.q8.community.T35
+# IWCm9T35  !IWAH.q9.community.T35
+# IWNZ1T35  !IWAH.q1.NZers.T35
+# IWNZ2T35  !IWAH.q2.NZers.T35
+# IWNZ3T35  !IWAH.q3.NZers.T35
+# IWNZ4T35  !IWAH.q4.NZers.T35
+# IWNZ5T35  !IWAH.q5.NZers.T35
+# IWNZ6T35  !IWAH.q6.NZers.T35
+# IWNZ7T35  !IWAH.q7.NZers.T35
+# IWNZ8T35  !IWAH.q8.NZers.T35
+# IWNZ9T35  !IWAH.q9.NZers.T35
+# IWAH1T35  !IWAH.q1.humanity.T35
+# IWAH2T35  !IWAH.q2.humanity.T35
+# IWAH3T35  !IWAH.q3.humanity.T35
+# IWAH4T35  !IWAH.q4.humanity.T35
+# IWAH5T35  !IWAH.q5.humanity.T35
+# IWAH6T35  !IWAH.q6.humanity.T35
+# IWAH7T35  !IWAH.q7.humanity.T35
+# IWAH8T35  !IWAH.q8.humanity.T35
+# IWAH9T35  !IWAH.q9.humanity.T35
+# MFHa1T35  !MFQ.harm01.T35
+# MFHa2T35  !MFQ.harm02.T35
+# MFHa3T35  !MFQ.harm03.T35
+# MFHa4T35  !MFQ.harm04.T35
+# MFHa5T35  !MFQ.harm05.T35
+# MFHa6T35  !MFQ.harm06.T35
+# MFFa1T35  !MFQ.fairness01.T35
+# MFFa2T35  !MFQ.fairness02.T35
+# MFFa3T35  !MFQ.fairness03.T35
+# MFFa4T35  !MFQ.fairness04.T35
+# MFFa5T35  !MFQ.fairness05.T35
+# MFFa6T35  !MFQ.fairness06.T35
+# MFIn1T35  !MFQ.ingroup01.T35
+# MFIn2T35  !MFQ.ingroup02.T35
+# MFIn3T35  !MFQ.ingroup03.T35
+# MFIn4T35  !MFQ.ingroup04.T35
+# MFIn5T35  !MFQ.ingroup05.T35
+# MFIn6T35  !MFQ.ingroup06.T35
+# MFAu1T35  !MFQ.authority01.T35
+# MFAu2T35  !MFQ.authority02.T35
+# MFAu3T35  !MFQ.authority03.T35
+# MFAu4T35  !MFQ.authority04.T35
+# MFAu5T35  !MFQ.authority05.T35
+# MFAu6T35  !MFQ.authority06.T35
+# MFPu1T35  !MFQ.purity01.T35
+# MFPu2T35  !MFQ.purity02.T35
+# MFPu3T35  !MFQ.purity03.T35
+# MFPu4T35  !MFQ.purity04.T35
+# MFPu5T35  !MFQ.purity05.T35
+# MFPu6T35  !MFQ.purity06.T35
+# 
+# !===MEASURES COMPLETED ONLY BY MAORI PARTICIPANTS===
+# 
+# MIwiT35   !Maori.IwiKNOW.T35 (1 yes, 0 no)
+# MHapuT35  !Maori.HapuKNOW.T35 (1 yes, 0 no)
+# MmareT35  !Maori.MaraeKNOW.T35 (1 yes, 0 no)
+# MmalcT35  !Maori.MaraeLOCATION.T35 (1 yes, 0 no)
+# MspkT35   !Maori.Speak.T35
+# MtvT35    !Maori.WatchMaoriTV.T35 (1 yes, 0 no)
+# MtvhrT35  !Maori.WatchMaoriTVHours.T35
+# MLbkT35   !Maori.learn_books.T35 (1 yes, 0 no)
+# MLmaT35   !Maori.learn_marae.T35 (1 yes, 0 no)
+# MLgpT35   !Maori.learn_grandparents.T35 (1 yes, 0 no)
+# MLfrdT35  !Maori.learn_friends.T35 (1 yes, 0 no)
+# MLnetT35  !Maori.learn_net.T35 (1 yes, 0 no)
+# MLkapT35  !Maori.learn_kapa.T35 (1 yes, 0 no)
+# MLkohT35  !Maori.learn_kohanga.T35 (1 yes, 0 no)
+# MLofmT35  !Maori.learn_othfam.T35 (1 yes, 0 no)
+# MLtvT35   !Maori.learn_tv.T35 (1 yes, 0 no)
+# MLprtT35  !Maori.learn_parents.T35 (1 yes, 0 no)
+# MGME1T35  !Maori.GME01.T35
+# MGME2T35  !Maori.GME02.T35
+# MGME3T35  !Maori.GME03.T35
+# MGME4T35  !Maori.GME04r.T35
+# MGME5T35  !Maori.GME05r.T35
+# MGME6T35  !Maori.GME06.T35
+# MGME7T35  !Maori.GME07r.T35
+# MGME8T35  !Maori.GME08r.T35
+# MCEA1T35  !Maori.CEAIE01r.T35
+# MCEA2T35  !Maori.CEAIE02r.T35
+# MCEA3T35  !Maori.CEAIE03r.T35
+# MCEA4T35  !Maori.CEAIE04.T35
+# MCEA5T35  !Maori.CEAIE05.T35
+# MCEA6T35  !Maori.CEAIE06.T35
+# MCEA7T35  !Maori.CEAIE07.T35
+# MCEA8T35  !Maori.CEAIE08r.T35
+# MISC1T35  !Maori.ISC01.T35
+# MISC2T35  !Maori.ISC02.T35
+# MISC3T35  !Maori.ISC03.T35
+# MISC4T35  !Maori.ISC04.T35
+# MISC5T35  !Maori.ISC05.T35
+# MISC6T35  !Maori.ISC06r.T35
+# MISC7T35  !Maori.ISC07.T35
+# MS1T35    !Maori.S01.T35
+# MS2T35    !Maori.S02r.T35
+# MS3T35    !Maori.S03.T35
+# MS4T35    !Maori.S04.T35
+# MS5T35    !Maori.S05.T35
+# MS6T35    !Maori.S06r.T35
+# MS7T35    !Maori.S07r.T35
+# MS8T35    !Maori.S08.T35
+# MSPC1T35  !Maori.SPC01r.T35
+# MSPC2T35  !Maori.SPC02r.T35
+# MSPC3T35  !Maori.SPC03r.T35
+# MSPC4T35  !Maori.SPC04r.T35
+# MSPC5T35  !Maori.SPC05.T35
+# MSPC6T35  !Maori.SPC06r.T35
+# MSPC7T35  !Maori.SPC07.T35
+# MSPC8T35  !Maori.SPC08.T35
+# MAB1T35   !Maori.AB01.T35
+# MAB2T35   !Maori.AB02.T35
+# MAB3T35   !Maori.AB03.T35
+# MAB4T35   !Maori.AB04.T35
+# MAB5T35   !Maori.AB05.T35
+# MAB6T35   !Maori.AB06.T35
+# MAB7T35   !Maori.AB07r.T35
+# MAB8T35   !Maori.AB08r.T35
+# MVEM1T35  !Maori.VEM01.T35
+# MVEM2T35  !Maori.VEM02.T35
+# MVEM3T35  !Maori.VEM03r.T35
+# MVEM4T35  !Maori.VEM04r.T35
+# MVEM5T35  !Maori.VEM05.T35
+# MVEM6T35  !Maori.VEM06r.T35
+# MVEM7T35  !Maori.VEM07r.T35
+# 
+# !===MEASURES COMPLETED ONLY BY PACIFIC PARTICIPANTS===
+# 
+# PWBF1T35  !Pacific.WBF01.T35
+# PWBF2T35  !Pacific.WBF02.T35
+# PWBF3T35  !Pacific.WBF03.T35
+# PWBF4T35  !Pacific.WBF04.T35
+# PWBF5T35  !Pacific.WBF05.T35
+# PWBF6T35  !Pacific.WBF06.T35
+# PWBF7T35  !Pacific.WBF07.T35
+# PWBS1T35  !Pacific.WBS01.T35
+# PWBS2T35  !Pacific.WBS02.T35
+# PWBS3T35  !Pacific.WBS03.T35
+# PWBS4T35  !Pacific.WBS04.T35
+# PWBS5T35  !Pacific.WBS05.T35
+# PWBS6T35  !Pacific.WBS06.T35
+# PWBS7T35  !Pacific.WBS07.T35
+# PPCB1T35  !Pacific.PCB01.T35
+# PPCB2T35  !Pacific.PCB02.T35
+# PPCB3T35  !Pacific.PCB03.T35
+# PPCB4T35  !Pacific.PCB04.T35
+# PPCB5T35  !Pacific.PCB05.T35
+# PPCB6T35  !Pacific.PCB06r.T35
+# PGME1T35  !Pacific.GME01.T35
+# PGME2T35  !Pacific.GME02.T35
+# PGME3T35  !Pacific.GME03.T35
+# PGME4T35  !Pacific.GME04.T35
+# PGME5T35  !Pacific.GME05.T35
+# PREL1T35  !Pacific.Rel01.T35
+# PREL2T35  !Pacific.Rel02.T35
+# PREL3T35  !Pacific.Rel03r.T35
+# PREL4T35  !Pacific.Rel04.T35
+# PREL5T35  !Pacific.Rel05.T35
+# PREL6T35  !Pacific.Rel06.T35
+# PCE1T35   !Pacific.CultEff01.T35
+# PCE2T35   !Pacific.CultEff02.T35
+# PCE3T35   !Pacific.CultEff03.T35
+# PCE4T35;  !Pacific.CultEff04r.T35
+# 
+# !CATEGORICAL ARE
+# !NOMINAL ARE
+# 
+# USEVARIABLE ARE
+# 
+# MFHa1T35 MFHa2T35 MFHa3T35 MFHa4T35 MFHa5T35 MFHa6T35 
+# MFFa1T35 MFFa2T35 MFFa3T35 MFFa4T35 MFFa5T35 MFFa6T35 
+# MFIn1T35 MFIn2T35 MFIn3T35 MFIn4T35 MFIn5T35 MFIn6T35 
+# MFAu1T35 MFAu2T35 MFAu3T35 MFAu4T35 MFAu5T35 MFAu6T35 
+# MFPu1T35 MFPu2T35 MFPu3T35 MFPu4T35 MFPu5T35 MFPu6T35 
+# RQue1T35 RQue2T35 RQue3T35 
+# RInt1T35 RInt2T35 RInt3T35 
+# RExP1T35 RExP2T35 RExP3T35 
+# RExS1T35 RExS2T35 RExS3T35;
+# 
+# USEOBSERVATIONS ARE (ReligT35 eq 1);
+# 
+# DEFINE: 
+# !=========================================================================================
+# !Define statements for creating scale mean scores. These create the same mean scores 
+# !(and names) as in the NZAVS T3.5 2012 SPSS Base File. As in the SPSS file, contrait items
+# !have already been recoded. (These statements also provide a quick reference guide for 
+# !estimating the same constructs as latent variables).
+# 
+# MFHAT35 = MEAN(MFHa1T35 MFHa2T35 MFHa3T35 
+# MFHa4T35 MFHa5T35 MFHa6T35);                    !T35.MFQ.HARM
+# MFFAT35 = MEAN(MFFa1T35 MFFa2T35 MFFa3T35
+# MFFa4T35 MFFa5T35 MFFa6T35);                    !T35.MFQ.FAIRNESS
+# MFINT35 = MEAN(MFIn1T35 MFIn2T35 MFIn3T35
+# MFIn4T35 MFIn5T35 MFIn6T35);                    !T35.MFQ.INGROUP
+# MFAUT35 = MEAN(MFAu1T35 MFAu2T35 MFAu3T35
+# MFAu4T35 MFAu5T35 MFAu6T35);                    !T35.MFQ.AUTHORITY
+# MFPUT35 = MEAN(MFPu1T35 MFPu2T35 MFPu3T35
+# MFPu4T35 MFPu5T35 MFPu6T35);                    !T35.MFQ.PURITY
+# RFUNT35 = MEAN(RFun1T35 RFun2T35 RFun3T35);                    !T35.REL.FUND
+# RQUET35 = MEAN(RQue1T35 RQue2T35 RQue3T35);                    !T35.REL.QUEST
+# RINTT35 = MEAN(RInt1T35 RInt2T35 RInt3T35);                    !T35.REL.INTRIN
+# REXPT35 = MEAN(RExP1T35 RExP2T35 RExP3T35);                    !T35.REL.EXTR_PERS
+# REXST35 = MEAN(RExS1T35 RExS2T35 RExS3T35);                    !T35.REL.EXTR_SOC
+# RNARCT35 = MEAN(RNar1T35 RNar2T35 RNar3T35);                   !T35.REL.COLLNARC
+# RGLOCT35 = MEAN(RLoc1T35 RLoc2T35 RLoc3T35);                   !T35.REL.GODLOC
+# IWAHT35 = MEAN(IWAH1T35 IWAH2T35 IWAH3T35 IWAH4T35 IWAH5T35 
+# IWAH6T35 IWAH7T35 IWAH8T35 IWAH9T35);           !T35.IWAH.Humanity
+# IWNZT35 = MEAN(IWNZ1T35 IWNZ2T35 IWNZ3T35 IWNZ4T35 IWNZ5T35
+# IWNZ6T35 IWNZ7T35 IWNZ8T35 IWNZ9T35);           !T35.IWAH.NewZealand
+# IWCMT35 = MEAN(IWCm1T35 IWCm2T35 IWCm3T35 IWCm4T35 IWCm5T35 
+# IWCm6T35 IWCm7T35 IWCm8T35 IWCm9T35);           !T35.IWAH.Community
+# PRLOT35 = MEAN(PrLo1T35 PrLo2T35 PrLo3T35);                    !T35.LOC.Personal
+# POLOT35 = MEAN(PoLo1T35 PoLo2T35 PoLo3T35);                    !T35.LOC.Political
+# HELOT35 = MEAN(HeLo1T35 HeLo2T35 HeLo3T35);                    !T35.LOC.Health
+# ETNAT35 = MEAN(EtNa1T35 EtNa2T35 EtNa3T35);                    !T35.EthnicNarcissism
+# PSOPT35 = MEAN(PSop1T35 PSop2T35 PSop3T35 PSop4T35 
+# PSop5T35 PSop6T35 PSop7T35);                    !T35.PolSop
+# MGMET35 = MEAN(MGME1T35 MGME2T35 MGME3T35 MGME4T35 
+# MGME5T35 MGME6T35 MGME7T35 MGME8T35);           !T35.Maori.GME
+# MCEAT35 = MEAN(MCEA1T35 MCEA2T35 MCEA3T35 MCEA4T35   
+# MCEA5T35 MCEA6T35 MCEA7T35 MCEA8T35);           !T35.Maori.CEAIE
+# MISCT35 = MEAN(MISC1T35 MISC2T35 MISC3T35 MISC4T35
+# MISC5T35 MISC6T35 MISC7T35);                    !T35.Maori.ISC
+# MST35 = MEAN(MS1T35 MS2T35 MS3T35 MS4T35 
+# MS5T35 MS6T35 MS7T35 MS8T35);                     !T35.Maori.S
+# MSPCT35 = MEAN(MSPC1T35 MSPC2T35 MSPC3T35 MSPC4T35
+# MSPC5T35 MSPC6T35 MSPC7T35 MSPC8T35);           !T35.Maori.SPC
+# MABT35 = MEAN(MAB1T35 MAB2T35 MAB3T35 MAB4T35
+# MAB5T35 MAB6T35 MAB7T35 MAB8T35);                !T35.Maori.AB
+# MVEMT35 = MEAN(MVEM1T35 MVEM2T35 MVEM3T35 MVEM4T35 
+# MVEM5T35 MVEM6T35 MVEM7T35);                    !T35.Maori.VEM
+# PWBFT35 = MEAN(PWBF1T35 PWBF2T35 PWBF3T35 PWBF4T35 
+# PWBF5T35 PWBF6T35 PWBF7T35);                    !T35.Pacific.WBF
+# PWBST35 = MEAN(PWBS1T35 PWBS2T35 PWBS3T35 PWBS4T35 
+# PWBS5T35 PWBS6T35 PWBS7T35);                    !T35.Pacific.WBS
+# PPCBT35 = MEAN(PPCB1T35 PPCB2T35 PPCB3T35 PPCB4T35 
+# PPCB5T35 PPCB6T35);                             !T35.Pacific.PCB
+# PGMET35 = MEAN(PGME1T35 PGME2T35 PGME3T35 PGME4T35 
+# PGME5T35);                                      !T35.Pacific.GME
+# PRELT35 = MEAN(PREL1T35 PREL2T35 PREL3T35 PREL4T35 
+# PREL5T35 PREL6T35);                             !T35.Pacific.REL
+# PCET35 = MEAN(PCE1T35 PCE2T35 PCE3T35 PCE4T35);                !T35.Pacific.CE
+# 
+# MODEL: 
+# 
+
+
+
+# 
+# URBAN CODING
+# 
+#                     IF (Terr06T1 EQ 1) THEN UrbanT1 = 0;  !1 Far North District
+#                   IF (Terr06T1 EQ 2) THEN UrbanT1 = 0;  !2 Whangarei District
+#                   IF (Terr06T1 EQ 3) THEN UrbanT1 = 0;  !3 Kaipara District
+#                   IF (Terr06T1 EQ 4) THEN UrbanT1 = 0;  !4 Rodney District
+#                   IF (Terr06T1 EQ 5) THEN UrbanT1 = 1;  !5 North Shore City
+#                   IF (Terr06T1 EQ 6) THEN UrbanT1 = 1;  !6 Waitakere City
+#                   IF (Terr06T1 EQ 7) THEN UrbanT1 = 1;  !7 Auckland City
+#                   IF (Terr06T1 EQ 8) THEN UrbanT1 = 1;  !8 Manukau City
+#                   IF (Terr06T1 EQ 9) THEN UrbanT1 = 0;  !9 Papakura District
+#                   IF (Terr06T1 EQ 10) THEN UrbanT1 = 0; !10 Franklin District
+#                   IF (Terr06T1 EQ 11) THEN UrbanT1 = 0; !!11 Thames-Coramandel District
+#                   IF (Terr06T1 EQ 12) THEN UrbanT1 = 0; !12 Hauraki District
+#                   IF (Terr06T1 EQ 13) THEN UrbanT1 = 0; !13 Waikato District
+#                   IF (Terr06T1 EQ 15) THEN UrbanT1 = 0; !15 Matamata-Piako District
+#                   IF (Terr06T1 EQ 16) THEN UrbanT1 = 1; !16 Hamilton City
+#                   IF (Terr06T1 EQ 17) THEN UrbanT1 = 0; !17 Waipa District
+#                   IF (Terr06T1 EQ 18) THEN UrbanT1 = 0; !18 Otorohanga District
+#                   IF (Terr06T1 EQ 19) THEN UrbanT1 = 0; !19 South Waikato District
+#                   IF (Terr06T1 EQ 20) THEN UrbanT1 = 0; !20 Waitomo District
+#                   IF (Terr06T1 EQ 21) THEN UrbanT1 = 0; !21 Taupo District
+#                   IF (Terr06T1 EQ 22) THEN UrbanT1 = 0; !22 Western Bay of Plenty District
+#                   IF (Terr06T1 EQ 23) THEN UrbanT1 = 1; !23 Tauranga City
+#                   IF (Terr06T1 EQ 24) THEN UrbanT1 = 0; !24 Rotorua District
+#                   IF (Terr06T1 EQ 25) THEN UrbanT1 = 0; !25 Whakatane District
+#                   IF (Terr06T1 EQ 26) THEN UrbanT1 = 0; !26 Kawerau District
+#                   IF (Terr06T1 EQ 27) THEN UrbanT1 = 0; !27 Opotiki District
+#                   IF (Terr06T1 EQ 28) THEN UrbanT1 = 0; !28 Gisborne District
+#                   IF (Terr06T1 EQ 29) THEN UrbanT1 = 0; !29 Wairoa District
+#                   IF (Terr06T1 EQ 30) THEN UrbanT1 = 0; !30 Hastings District
+#                   IF (Terr06T1 EQ 31) THEN UrbanT1 = 1; !31 Napier City
+#                   IF (Terr06T1 EQ 32) THEN UrbanT1 = 0; !32 Central Hawke's Bay District
+#                   IF (Terr06T1 EQ 33) THEN UrbanT1 = 0; !33 New Plymouth District
+#                   IF (Terr06T1 EQ 34) THEN UrbanT1 = 0; !34 Stratford District
+#                   IF (Terr06T1 EQ 35) THEN UrbanT1 = 0; !35 South Taranaki District
+#                   IF (Terr06T1 EQ 36) THEN UrbanT1 = 0; !36 Ruapehu District
+#                   IF (Terr06T1 EQ 37) THEN UrbanT1 = 0; !37 Wanganui District
+#                   IF (Terr06T1 EQ 38) THEN UrbanT1 = 0; !38 Rangitikei District
+#                   IF (Terr06T1 EQ 39) THEN UrbanT1 = 0; !39 Manawatu District
+#                   IF (Terr06T1 EQ 40) THEN UrbanT1 = 1; !40 Palmerston North City
+#                   IF (Terr06T1 EQ 41) THEN UrbanT1 = 0; !41 Tararu District
+#                   IF (Terr06T1 EQ 42) THEN UrbanT1 = 0; !42 Horowhenua District
+#                   IF (Terr06T1 EQ 43) THEN UrbanT1 = 0; !43 Kapiti Coast District
+#                   IF (Terr06T1 EQ 44) THEN UrbanT1 = 1; !44 Porirua City
+#                   IF (Terr06T1 EQ 45) THEN UrbanT1 = 1; !45 Upper Hutt City
+#                   IF (Terr06T1 EQ 46) THEN UrbanT1 = 1; !46 Lower Hutt City
+#                   IF (Terr06T1 EQ 47) THEN UrbanT1 = 1; !47 Wellington City
+#                   IF (Terr06T1 EQ 48) THEN UrbanT1 = 0; !48 Masterton District
+#                   IF (Terr06T1 EQ 49) THEN UrbanT1 = 0; !49 Carterton District
+#                   IF (Terr06T1 EQ 50) THEN UrbanT1 = 0; !50 South Wairarapa District
+#                   IF (Terr06T1 EQ 51) THEN UrbanT1 = 0; !51 Tasman District
+#                   IF (Terr06T1 EQ 52) THEN UrbanT1 = 1; !52 Nelson City
+#                   IF (Terr06T1 EQ 53) THEN UrbanT1 = 0; !53 Marlborough District
+#                   IF (Terr06T1 EQ 54) THEN UrbanT1 = 0; !54 Kaikoura District
+#                   IF (Terr06T1 EQ 55) THEN UrbanT1 = 0; !55 Buller District
+#                   IF (Terr06T1 EQ 56) THEN UrbanT1 = 0; !56 Grey District
+#                   IF (Terr06T1 EQ 57) THEN UrbanT1 = 0; !57 Westland District
+#                   IF (Terr06T1 EQ 58) THEN UrbanT1 = 0; !58 Hurunui District
+#                   IF (Terr06T1 EQ 59) THEN UrbanT1 = 0; !59 Waimakariri District
+#                   IF (Terr06T1 EQ 60) THEN UrbanT1 = 1; !60 Christchurch City
+#                   IF (Terr06T1 EQ 62) THEN UrbanT1 = 0; !62 Selwyn District
+#                   IF (Terr06T1 EQ 63) THEN UrbanT1 = 0; !63 Ashburton District
+#                   IF (Terr06T1 EQ 64) THEN UrbanT1 = 0; !64 Timaru District
+#                   IF (Terr06T1 EQ 65) THEN UrbanT1 = 0; !65 Mackenzie District
+#                   IF (Terr06T1 EQ 66) THEN UrbanT1 = 0; !66 Waimate District
+#                   IF (Terr06T1 EQ 67) THEN UrbanT1 = 0; !67 Chatham Islands Territory
+#                   IF (Terr06T1 EQ 68) THEN UrbanT1 = 0; !68 Waitaki District
+#                   IF (Terr06T1 EQ 69) THEN UrbanT1 = 0; !69 Central Otago District
+#                   IF (Terr06T1 EQ 70) THEN UrbanT1 = 0; !70 Queenstown-Lakes District
+#                   IF (Terr06T1 EQ 71) THEN UrbanT1 = 1; !71 Dunedin City
+#                   IF (Terr06T1 EQ 72) THEN UrbanT1 = 0; !72 Clutha District
+#                   IF (Terr06T1 EQ 73) THEN UrbanT1 = 0; !73 Southland District
+#                   IF (Terr06T1 EQ 74) THEN UrbanT1 = 0; !74 Gore District
+#                   IF (Terr06T1 EQ 75) THEN UrbanT1 = 0; !75 Invercargill District
+# )
+

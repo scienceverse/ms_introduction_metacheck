@@ -1,0 +1,311 @@
+---
+title: "AdCollab_TableMaker"
+output: html_document
+date: "2022-10-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load libraries.
+```{r, echo=FALSE}
+# load libraries
+library(dplyr)
+library(lubridate)
+library(lme4)
+library(MASS)
+library(ggeffects)
+library(lmerTest)
+library(mediation)
+library(readr)
+library(tidyr)
+library(corrr)
+library(corrplot)
+library(ggplot2)
+library(nlme)
+library(afex)
+library(lmerTest)
+library(MuMIn)
+library(sjstats)
+library(psych)
+library(sandwich)
+library(lmtest)
+library(car)
+library(fixest)
+library(broom.mixed)
+```
+
+Load models.
+```{r}
+setwd("~/Desktop/demrep")
+
+demrep_model1 <- readRDS("model_lmer1")
+demrep_model2 <- readRDS("model_lmer2")
+demrep_model3 <- readRDS("model_lmer3")
+demrep_model4 <- readRDS("model_lmer4")
+demrep_model5 <- readRDS("model_lmer5")
+demrep_model6 <- readRDS("model_lmer6")
+demrep_model7 <- readRDS("model_lmer7")
+demrep_model8 <- readRDS("model_lmer8")
+demrep_model9 <- readRDS("model_lmer9")
+demrep_model10 <- readRDS("model_lmer10")
+demrep_model11 <- readRDS("model_lmer11")
+demrep_model12 <- readRDS("model_lmer12")
+demrep_model13 <- readRDS("model_lmer13")
+demrep_model14 <- readRDS("model_lmer14")
+```
+
+```{r}
+setwd("~/Desktop/demrep_c")
+
+demrep_c_model1 <- readRDS("model_lmer1")
+demrep_c_model2 <- readRDS("model_lmer2")
+demrep_c_model3 <- readRDS("model_lmer3")
+demrep_c_model4 <- readRDS("model_lmer4")
+demrep_c_model5 <- readRDS("model_lmer5")
+demrep_c_model6 <- readRDS("model_lmer6")
+demrep_c_model7 <- readRDS("model_lmer7")
+demrep_c_model8 <- readRDS("model_lmer8")
+demrep_c_model9 <- readRDS("model_lmer9")
+demrep_c_model10 <- readRDS("model_lmer10")
+demrep_c_model11 <- readRDS("model_lmer11")
+demrep_c_model12 <- readRDS("model_lmer12")
+demrep_c_model13 <- readRDS("model_lmer13")
+demrep_c_model14 <- readRDS("model_lmer14")
+```
+
+```{r}
+setwd("~/Desktop/demrepParty")
+
+demrepParty_model1 <- readRDS("model_lmer1")
+demrepParty_model2 <- readRDS("model_lmer2")
+demrepParty_model3 <- readRDS("model_lmer3")
+demrepParty_model4 <- readRDS("model_lmer4")
+demrepParty_model5 <- readRDS("model_lmer5")
+demrepParty_model6 <- readRDS("model_lmer6")
+demrepParty_model7 <- readRDS("model_lmer7")
+demrepParty_model8 <- readRDS("model_lmer8")
+demrepParty_model9 <- readRDS("model_lmer9")
+demrepParty_model10 <- readRDS("model_lmer10")
+demrepParty_model11 <- readRDS("model_lmer11")
+demrepParty_model12 <- readRDS("model_lmer12")
+demrepParty_model13 <- readRDS("model_lmer13")
+demrepParty_model14 <- readRDS("model_lmer14")
+```
+
+```{r}
+setwd("~/Desktop/conservative")
+
+conservative_model1 <- readRDS("model_lmer1")
+conservative_model2 <- readRDS("model_lmer2")
+conservative_model3 <- readRDS("model_lmer3")
+conservative_model4 <- readRDS("model_lmer4")
+conservative_model5 <- readRDS("model_lmer5")
+conservative_model6 <- readRDS("model_lmer6")
+conservative_model7 <- readRDS("model_lmer7")
+conservative_model8 <- readRDS("model_lmer8")
+conservative_model9 <- readRDS("model_lmer9")
+conservative_model10 <- readRDS("model_lmer10")
+conservative_model11 <- readRDS("model_lmer11")
+conservative_model12 <- readRDS("model_lmer12")
+conservative_model13 <- readRDS("model_lmer13")
+conservative_model14 <- readRDS("model_lmer14")
+```
+
+```{r}
+setwd("~/Desktop/trump2016")
+
+trump2016_model1 <- readRDS("model_lmer1")
+trump2016_model2 <- readRDS("model_lmer2")
+trump2016_model3 <- readRDS("model_lmer3")
+trump2016_model4 <- readRDS("model_lmer4")
+trump2016_model5 <- readRDS("model_lmer5")
+trump2016_model6 <- readRDS("model_lmer6")
+trump2016_model7 <- readRDS("model_lmer7")
+trump2016_model8 <- readRDS("model_lmer8")
+trump2016_model9 <- readRDS("model_lmer9")
+trump2016_model10 <- readRDS("model_lmer10")
+trump2016_model11 <- readRDS("model_lmer11")
+trump2016_model12 <- readRDS("model_lmer12")
+trump2016_model13 <- readRDS("model_lmer13")
+trump2016_model14 <- readRDS("model_lmer14")
+```
+
+
+demrepParty models - percent decrease in false news sharing from treatment.
+```{r}
+fixef(demrepParty_model1)[3]/fixef(demrepParty_model1)[1]
+fixef(demrepParty_model2)[3]/fixef(demrepParty_model2)[1]
+fixef(demrepParty_model3)[3]/fixef(demrepParty_model3)[1]
+fixef(demrepParty_model4)[3]/fixef(demrepParty_model4)[1]
+fixef(demrepParty_model5)[3]/fixef(demrepParty_model5)[1]
+fixef(demrepParty_model6)[3]/fixef(demrepParty_model6)[1]
+fixef(demrepParty_model7)[3]/fixef(demrepParty_model7)[1]
+
+fixef(demrepParty_model8)[3]/fixef(demrepParty_model8)[1]
+fixef(demrepParty_model9)[3]/fixef(demrepParty_model9)[1]
+fixef(demrepParty_model10)[3]/fixef(demrepParty_model10)[1]
+fixef(demrepParty_model11)[3]/fixef(demrepParty_model11)[1]
+fixef(demrepParty_model12)[3]/fixef(demrepParty_model12)[1]
+fixef(demrepParty_model13)[3]/fixef(demrepParty_model13)[1]
+fixef(demrepParty_model14)[3]/fixef(demrepParty_model14)[1]
+```
+
+
+```{r}
+models <- c(demrep_model1, demrep_model2, demrep_model3, demrep_model4, demrep_model5, demrep_model6, demrep_model7, demrep_model8, demrep_model9, demrep_model10, demrep_model11, demrep_model12, demrep_model13, demrep_model14, demrep_c_model1, demrep_c_model2, demrep_c_model3, demrep_c_model4, demrep_c_model5, demrep_c_model6, demrep_c_model7, demrep_c_model8, demrep_c_model9, demrep_c_model10, demrep_c_model11, demrep_c_model12, demrep_c_model13, demrep_c_model14, demrepParty_model1, demrepParty_model2, demrepParty_model3, demrepParty_model4, demrepParty_model5, demrepParty_model6, demrepParty_model7, demrepParty_model8, demrepParty_model9, demrepParty_model10, demrepParty_model11, demrepParty_model12, demrepParty_model13, demrepParty_model14, conservative_model1, conservative_model2, conservative_model3, conservative_model4, conservative_model5, conservative_model6, conservative_model7, conservative_model8, conservative_model9, conservative_model10, conservative_model11, conservative_model12, conservative_model13, conservative_model14, trump2016_model1, trump2016_model2, trump2016_model3, trump2016_model4, trump2016_model5, trump2016_model6, trump2016_model7, trump2016_model8, trump2016_model9, trump2016_model10, trump2016_model11, trump2016_model12, trump2016_model13, trump2016_model14)
+
+names(models) <- c("demrep_model1", "demrep_model2", "demrep_model3", "demrep_model4", "demrep_model5", "demrep_model6", "demrep_model7", "demrep_model8", "demrep_model9", "demrep_model10", "demrep_model11", "demrep_model12", "demrep_model13", "demrep_model14", "demrep_c_model1", "demrep_c_model2", "demrep_c_model3", "demrep_c_model4", "demrep_c_model5", "demrep_c_model6", "demrep_c_model7", "demrep_c_model8", "demrep_c_model9", "demrep_c_model10", "demrep_c_model11", "demrep_c_model12", "demrep_c_model13", "demrep_c_model14", "demrepParty_model1", "demrepParty_model2", "demrepParty_model3", "demrepParty_model4", "demrepParty_model5", "demrepParty_model6", "demrepParty_model7", "demrepParty_model8", "demrepParty_model9", "demrepParty_model10", "demrepParty_model11", "demrepParty_model12", "demrepParty_model13", "demrepParty_model14", "conservative_model1", "conservative_model2", "conservative_model3", "conservative_model4", "conservative_model5", "conservative_model6", "conservative_model7", "conservative_model8", "conservative_model9", "conservative_model10", "conservative_model11", "conservative_model12", "conservative_model13", "conservative_model14", "trump2016_model1", "trump2016_model2", "trump2016_model3", "trump2016_model4", "trump2016_model5", "trump2016_model6", "trump2016_model7", "trump2016_model8", "trump2016_model9", "trump2016_model10", "trump2016_model11", "trump2016_model12", "trump2016_model13", "trump2016_model14")
+```
+
+```{r}
+all_coefs <- plyr::ldply(models, broom.mixed::tidy, .id = "model")
+head(all_coefs)
+
+unique(all_coefs$term)
+```
+
+```{r}
+setwd("~/Desktop")
+```
+
+headline_true:demrep
+```{r}
+simpdiscern_coefs <- all_coefs %>% dplyr::filter(term=="headline_true:demrep")
+simpdiscern_coefs <- simpdiscern_coefs %>% dplyr::select(model, estimate, std.error, p.value)
+#write.csv(simpdiscern_coefs, "simpdiscern_coefsSE.csv")
+```
+
+headline_true:treated
+```{r}
+discern_coefs <- all_coefs %>% dplyr::filter(term=="headline_true:treated")
+discern_coefs <- discern_coefs %>% dplyr::select(model, estimate, std.error, p.value)
+#write.csv(discern_coefs, "discern_coefsSE.csv")
+```
+
+```{r}
+min(discern_coefs$estimate)
+max(discern_coefs$estimate)
+```
+
+
+headline_true:treated:demrep
+```{r}
+mod_coefs <- all_coefs %>% dplyr::filter(term=="headline_true:treated:demrep")
+mod_coefs <- mod_coefs %>% dplyr::select(model, estimate, std.error, p.value)
+#write.csv(mod_coefs, "mod_coefsSE.csv")
+```
+
+treated
+```{r}
+false_coefs <- all_coefs %>% dplyr::filter(term=="treated")
+false_coefs <- false_coefs %>% dplyr::select(model, estimate, std.error, p.value)
+#setwd("~/Desktop")
+#write.csv(false_coefs, "false_coefsSE.csv")
+```
+
+
+Dem Coeff, SE, p:
+```{r}
+library(multcomp)
+
+DemCoeffs <- c()
+DemSEs <- c()
+DemPs <- c()
+
+for(i in 1:70){
+  testsum <- summary(glht(models[[i]], "headline_true:treated+headline_true:treated:demrep=0"))
+  DemCoeffs <- append(DemCoeffs, testsum$test$coefficients)
+  DemSEs <- append(DemSEs, testsum$test$sigma)
+  DemPs <- append(DemPs, testsum$test$pvalues[1])
+}
+
+model_names <- discern_coefs$model
+
+dem_discern_coeffs <- data.frame(model_names, DemCoeffs, DemSEs, DemPs)
+#write.csv(dem_discern_coeffs, "dem_discern_coeffsSE.csv")
+```
+
+```{r}
+min(dem_discern_coeffs$DemCoeffs)
+max(dem_discern_coeffs$DemCoeffs)
+```
+
+False-only Dem Coeff, SE, p:
+```{r}
+library(multcomp)
+
+DemCoeffs <- c()
+DemSEs <- c()
+DemPs <- c()
+
+for(i in 1:70){
+  testsum <- summary(glht(models[[i]], "treated+treated:demrep=0"))
+  DemCoeffs <- append(DemCoeffs, testsum$test$coefficients)
+  DemSEs <- append(DemSEs, testsum$test$sigma)
+  DemPs <- append(DemPs, testsum$test$pvalues[1])
+}
+
+model_names <- discern_coefs$model
+
+dem_false_coeffs <- data.frame(model_names, DemCoeffs, DemSEs, DemPs)
+#setwd("~/Desktop")
+#write.csv(dem_false_coeffs, "dem_false_coeffsSE.csv")
+```
+
+Effect on True News - Reps
+```{r}
+summary(demrep_model1)
+
+summary(glht(demrep_model1, "treated+headline_true:treated=0"))
+```
+
+```{r}
+Coeffs <- c()
+SEs <- c()
+Ps <- c()
+
+for(i in 1:70){
+  testsum <- summary(glht(models[[i]], "treated+headline_true:treated=0"))
+  Coeffs <- append(Coeffs, testsum$test$coefficients)
+  SEs <- append(SEs, testsum$test$sigma)
+  Ps <- append(Ps, testsum$test$pvalues[1])
+}
+
+model_names <- discern_coefs$model
+
+rep_true_coeffs <- data.frame(model_names, Coeffs, SEs, Ps)
+#setwd("~/Desktop")
+#write.csv(rep_true_coeffs, "rep_true_coeffsSE.csv")
+```
+
+
+Effect on True News - Dems
+```{r}
+summary(demrep_model1)
+
+summary(glht(demrep_model1, "treated+headline_true:treated+treated:demrep+headline_true:treated:demrep=0"))
+```
+
+```{r}
+Coeffs <- c()
+SEs <- c()
+Ps <- c()
+
+for(i in 1:70){
+  testsum <- summary(glht(models[[i]], "treated+headline_true:treated+treated:demrep+headline_true:treated:demrep=0"))
+  Coeffs <- append(Coeffs, testsum$test$coefficients)
+  SEs <- append(SEs, testsum$test$sigma)
+  Ps <- append(Ps, testsum$test$pvalues[1])
+}
+
+model_names <- discern_coefs$model
+
+dem_true_coeffs <- data.frame(model_names, Coeffs, SEs, Ps)
+#setwd("~/Desktop")
+#write.csv(dem_true_coeffs, "dem_true_coeffsSE.csv")
+```
+
+
+

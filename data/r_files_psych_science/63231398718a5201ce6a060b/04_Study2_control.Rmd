@@ -1,0 +1,239 @@
+---
+title: 'Study 2, additional and control analyses'
+author: "Sonja Kunz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    code_download: true
+---
+
+Load required packages:
+```{r, message=FALSE}
+library(tidyverse)
+library(misty)
+library(rstatix)
+library(knitr)
+library(Rmisc)
+library(xtable)
+```
+
+Import processed data.
+```{r}
+dat <- read.csv2('Data/Study2_data_processed.csv')
+```
+
+# Sample descriptives
+
+*Note that the following demographic variables were removed from the data sets, to guarantee anonymity: Gender, age, citizenship, job status, educational background.*
+
+```{r, echo=FALSE}
+dat %>%
+  summarise(mean = mean(BMI, na.rm = TRUE),
+            sd = sd(BMI, na.rm = TRUE),
+            min = min(BMI, na.rm = TRUE),
+            max = max(BMI, na.rm = TRUE)
+            ) %>%
+  kable(format = 'markdown', digits = 2, 
+        col.names = c('Mean BMI', 'Std. Dev.(BMI)', 'Min.(BMI)', 'Max.(BMI)'),
+        caption = 'Body mass index')
+
+```
+
+# Control analyses
+
+In these analyses, we checked whether the results of the main analyses remained stable when controlling for the belief in a causal health-taste relationship and the general health interest (GHI).
+
+Also, participants saw the food ratings from two contexts, "Cafeterias" and "Restaurants". We randomised which of the names was for the 1st and 2nd context, respectively. The variable `random_context` indicates how the contexts were named. Further, we randomised the background colours on which the 1st and 2nd context were presented (light pink and light green). The variable `random_colour` indicates which context had which colour. 
+
+To check whether these individual characteristics and randomisations affected the results, we ran the main analyses again (for details, see R markdown file `Study2_analyses.Rmd`), while including the (un)healthy-tasty belief and GHI as covariates and randomisations of context names and colours as factors.
+
+
+```{r, include=FALSE}
+# Turn the id and group variables into factors and add labels to the groups.
+dat <-
+  dat %>% 
+  mutate(id = factor(id),
+         condition = factor(condition, 
+                            levels = c('1', '2', '3'), 
+                            labels = c('Harmonious', 'Conflicting', 'Control')),
+         random_colour = factor(random_colour,
+                                 levels = c('1', '2'),
+                                 labels = c('1st context pink, 2nd context green', '1st context green, 2nd context pink')),
+         random_context = factor(random_context,
+                                 levels = c('1', '2'),
+                                 labels = c('1st context "Cafeterias", 2nd context "Restaurants"', '1st context "Restaurants", 2nd context "Cafeterias"'))
+  )
+```
+
+## Descriptive statistics of covariates
+
+```{r, echo=FALSE}
+dat %>%
+  summarise(mean = mean(causal_HT, na.rm = TRUE),
+            sd = sd(causal_HT, na.rm = TRUE),
+            min = min(causal_HT, na.rm = TRUE),
+            max = max(causal_HT, na.rm = TRUE)
+            ) %>%
+  kable(format = 'markdown', digits = 2, 
+        col.names = c('Mean belief', 'Std. Dev.(belief)', 'Min.(belief)', 'Max.(belief)'),
+        caption = 'Belief in a causal health-taste relationship')
+
+```
+
+
+```{r, echo=FALSE}
+dat %>%
+  summarise(mean = mean(GHI, na.rm = TRUE),
+            sd = sd(GHI, na.rm = TRUE),
+            min = min(GHI, na.rm = TRUE),
+            max = max(GHI, na.rm = TRUE)
+            ) %>%
+  kable(format = 'markdown', digits = 2, 
+        col.names = c('Mean GHI', 'Std. Dev.(GHI)', 'Min.(GHI)', 'Max.(GHI)'),
+        caption = 'General health interest')
+
+```
+
+## Perceived health-taste relationship within contexts
+
+```{r, include=FALSE}
+# Restructure data into long format for the mixed ANOVA, convert the context variable into a factor.
+dat_long <-
+  dat %>% 
+  select(id, condition, ht_rel_c1, ht_rel_c2, causal_HT, GHI, random_colour, random_context) %>% 
+  pivot_longer(cols = c('ht_rel_c1', 'ht_rel_c2'), 
+                       names_to = 'context',
+                       values_to = 'ht_rel') %>% 
+  mutate(context = rec(context, '"ht_rel_c1" = 1; "ht_rel_c2" = 2')) %>%
+  mutate(context =factor(context,
+                         levels = c('1', '2'),
+                         labels= c('1st Context', '2nd Context')))
+```
+
+### ANCOVA
+```{r}
+acv_ht_rel <-
+  anova_test(
+  data = dat_long, dv = ht_rel, wid = id,
+  between = c(condition, random_context, random_colour), covariate = c(causal_HT, GHI), within = context, type = 3, effect.size = 'pes')
+```
+
+```{r, echo=FALSE}
+options(dplyr.summarise.inform = FALSE) # Deactivate the warning message
+colnames(acv_ht_rel) <- c('Effect','df/nominator', 'df/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(acv_ht_rel) <- c('Causal HT belief', 'General health interest', 'Base rate manipulation','Context randomisation', 'Colour randomisation', 'Context', 'Base rate manipulation*Context randomisation','Base rate manipulation*Colour randomisation', 'Context randomisation*Colour randomisation','Causal HT belief*Context', 'General health interest*Context', 'Base rate manipulation*Context', 'Name randomisation*Context', 'Colour randomisation*Context', 'Base rate manipulation\\*Context randomisation*Colour randomisation', 'Base rate manipulation\\*Context randomisation*Context', 'Base rate manipulation\\*Colour randomisation*Context', 'Context randomisation\\*Colour randomisation*Context', 'Base rate manipulation\\*Context randomisation\\*Colour randomisation*Context')
+
+kable(acv_ht_rel[,-1],format = 'markdown',  digits = 2,
+      caption = 'Results of the ANCOVA testing the effect of base rate manipulation and context on the perceived health-taste relationship')
+```
+Most importantly, the main effect of base rate manipulation remained stable. There was a large effect of the belief in a causal health-taste relationship on the perceived health-taste relationship.
+
+There was an unexpected small interaction effect between base rate manipulation and colour randomisation. To follow up, we calculated pairwise comparisons of the health-taste relationship between base rate manipulations within each colour randomisation group.
+
+#### Follow-up: Pairwise comparisons
+
+```{r, echo=FALSE}
+ht_rel_pw <- 
+  dat_long %>%
+  group_by(random_colour) %>% 
+  pairwise_t_test(ht_rel ~ condition, p.adjust.method = "bonferroni")
+
+kable(ht_rel_pw[,-c(2, 5:6)], format = 'markdown', digits = 2,
+        caption = 'Pairwise comparisons of the perceived health-taste relationship between base rate manipulations within colour randomisation groups',
+        col.names = c('Colour randomisation', 'Base rate manipulation 1', 'Base rate manipulation 2', '$p$', 'Sign', '$p.adj$', 'Sign. adj.'))
+```
+
+#### Descriptive statistics
+
+```{r, echo=FALSE}
+# Check the mean, standard deviation, standard error and 95% confidence interval of the perceived health-taste relationship in each base rate manipulation and colour randomisation group.
+ht_rel_sum <- summarySE(dat_long, measurevar='ht_rel', groupvars=c('random_colour', 'condition'))
+ht_rel_sum %>% 
+  kable(format = 'markdown', digits = 2,
+        col.names = c('Colour randomisation', 'Condition', 'N', 'Mean relationship', 'Std. Dev.', 'Std. Error', '95% CI'), 
+        caption = 'Mean perceived health-taste relationship by base rate manipulation and colour randomisation')
+
+```
+
+According to pairwise comparisons, the perceived health-taste relationship did not differ between the harmonious and control base rate manipulation, when the first context had a pink and the second context had a green background colour. Otherwise, there were differences between all base rate manipulations in both groups.
+
+## Perceived health-taste relationship across contexts
+
+### ANCOVA
+
+```{r, message=FALSE}
+acv_ht_rel_ov <-
+  anova_test(
+    data = dat, dv = belief_ht_overall_R,
+    between = c(condition, random_context, random_colour), covariate = c(causal_HT, GHI), type = 3,
+    effect.size = 'pes')
+
+```
+
+```{r, echo=FALSE}
+
+colnames(acv_ht_rel_ov) <- c('Effect','df/nominator', 'df/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(acv_ht_rel_ov) <- c('Causal HT belief', 'General health interest', 'Base rate manipulation', 'Context randomisation', 'Colour randomisation',  'Base rate manipulation*Context randomisation', 'Base rate manipulation*Colour randomisation', 'Context randomisation*Colour randomisation', 'Base rate manipulation\\*Context randomisation*Colour randomisation')
+
+kable(acv_ht_rel_ov[,-1], format = 'markdown',  digits = 2,
+      caption = 'Results of the ANCOVA testing the effect of base rate manipulation on the perceived health-taste relationship across contexts')
+```
+Most importantly, the main effect of base rate manipulation on the perceived health-taste relationship across contexts remained stable. There was a medium-sized effect of the belief in a causal health-taste relationship on the perceived health-taste relationship. 
+
+There was an unexpected medium-sized interaction between base rate manipulation and colour randomisation. To follow up, we calculated pairwise comparisons of the health-taste relationship between base rate manipulations within each colour randomisation group.
+
+#### Follow-up: Pairwise comparisons
+
+```{r, echo=FALSE}
+ht_rel_ov_pw <- 
+  dat %>%
+  group_by(random_colour) %>% 
+  pairwise_t_test(belief_ht_overall_R ~ condition, p.adjust.method = "bonferroni")
+
+kable(ht_rel_pw[,-c(2, 5:6)], format = 'markdown', digits = 2,
+        caption = 'Pairwise comparisons of the perceived health-taste relationship between base rate manipulations within randomisation groups',
+        col.names = c('Colour randomisation', 'Base rate manipulation 1', 'Base rate manipulation 2', '$p$', 'Sign', '$p.adj$', 'Sign. adj.'))
+```
+
+#### Descriptive statistics
+
+```{r, echo=FALSE}
+# Check the mean, standard deviation, standard error and 95% confidence interval of the contingency belief in each base rate manipulation and colour randomisation group.
+ht_rel_ov_sum <- summarySE(dat, measurevar='belief_ht_overall_R', groupvars=c('random_colour', 'condition'))
+ht_rel_ov_sum %>% 
+  kable(format = 'markdown', digits = 2,
+        col.names = c('Colour randomisation', 'Base rate manipulation', 'N', 'Mean belief', 'Std. Dev.', 'Std. Error', '95% CI'), 
+        caption = 'Mean perceived health-taste relationship by base rate manipulation and colour randomisation')
+
+```
+
+According to pairwise comparisons, the perceived health-taste relationship did not differ between the harmonious and control base rate manipulation, when the first context had a pink and the second context had a green background colour. Otherwise, there were differences between all base rate manipulations in both groups.
+
+## Correlations between causal health-taste relationship and dependent variables
+
+There were medium-sized effects of the belief in a causal health-taste relationship on the perceived health-taste relationship. To follow up, we calculated Pearson correlations between the causal health-taste belief and the perceived health-taste relationship.
+
+```{r, echo=FALSE}
+dat_cor <- 
+  dat %>% 
+  select(causal_HT,
+         starts_with('ht_rel'),
+         belief_ht_overall_R)
+
+cor<-round(cor(dat_cor),2)
+upper<-cor
+upper[upper.tri(cor)]<-""
+upper<-as.data.frame(upper)
+upper
+```
+
+## Summary
+
+The results remained stable when controlling for general health interest, belief in a causal health-taste relationship and the randomisation of context names and background colours. 
+
+There were some unexpected influences of the context background colours on the differences between the control and harmonious base rate manipulation, but this did not change the main findings.
+
+General health interest did not affect the outcome variables in any way. The larger participants' general belief that a food made healthier is also tastier and vice versa, the more did they perceive a healthy-tasty relationship within each context as well as across contexts. 

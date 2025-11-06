@@ -1,0 +1,242 @@
+---
+title: "ITO exp. 3 power analysis"
+output: html_document
+---
+This file has a long running time because of the simulation. No need to run. Result reported in SI.
+
+# Setup
+```{r setup, include=FALSE}
+rm(list=ls()) # empty the workspace
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r load libraries, message = F, warning = F, echo=FALSE}
+library(tidyverse)
+library(lubridate)
+library(MASS)
+library(lme4)
+library(lmerTest)
+library(buildmer)
+library(DT)
+library(tidyboot)
+library(broom)
+library(stringr)
+library(sjPlot)# regression table
+
+# logistic mixed-effects regression
+library(reshape2)
+library(compiler)
+library(parallel)
+library(boot)
+library(lattice)
+
+# power analysis
+library(pwr)
+library(pwrFDR)
+library(simr)
+
+select <- dplyr::select
+```
+reference: https://lkumle.github.io/power_notebooks/Scenario3_notebook.html
+
+```{r record package version}
+used_packages <-loadedNamespaces()
+used_package_versions <- tibble(package = used_packages)%>%
+  rowwise()%>%
+  mutate(version=packageVersion(package))
+
+write_csv(used_package_versions, "./Experiment 3 pilot power analysis package version.csv")
+```
+
+# Import and tidy up data
+```{r import raw data}
+# prolific batch 1 (n=38)
+batch1 <- read_csv("./data/exp-3-pilot/00.exp3-pilot-raw-batch1.csv")%>%mutate(batch=1)
+batch1_attnchecks <- read_csv("./data/exp-3-pilot/01.exp3-pilot-attnchecks-batch1.csv")%>%mutate(batch=1)
+
+# bind all
+data <- rbind(batch1)
+attn_checks <- rbind(batch1_attnchecks)
+```
+
+```{r apply inclusion criteria}
+# filter based on color question
+L_filtered_id <- attn_checks %>%
+  filter(attn_check_1_response=="yellow") %>%
+  distinct(unique_id)
+
+# set up trial names, create and select relevant columns
+L_data <- data%>%
+  filter(unique_id %in% L_filtered_id$unique_id)%>%
+  mutate(data_type="within subjects",
+         manipulation_type = case_when(str_detect(trial_condition, "1 agent,")==TRUE ~ "baseline",
+                                       str_detect(trial_condition, "attention_checks")==TRUE ~ "attention_checks",
+                                 TRUE ~ "main"),
+         A_intentionality=case_when(str_detect(trial_condition, "intentional")==TRUE ~ "intentional drop",
+                                       str_detect(trial_condition, "no drop")==TRUE ~ "no drop-off",
+                                       TRUE ~ "accidental drop"),
+         B_intentionality=case_when(str_detect(trial_condition, "pickup")==TRUE ~ "intend to own",
+                                         str_detect(trial_condition, "walkaway")==TRUE ~ "no intent to own",
+                                       TRUE ~ "Not Applicable"),
+         B_knowledge=case_when(str_detect(trial_condition, "aware")==TRUE ~ "knowledgeable",
+                                    str_detect(trial_condition, "ignorant")==TRUE ~ "ignorant",
+                                    TRUE ~ "Not Applicable"),
+         blue_agent_first=case_when(str_detect(agent_order, "A_2,A_1")==TRUE ~ FALSE,
+                                       TRUE ~ TRUE))%>%
+  select(unique_id,data_type,batch,trial_condition,manipulation_type,A_intentionality,B_intentionality,B_knowledge,
+         blue_agent_first, A1_value, A2_value, stmt_1_response, stmt_2_response,
+         stmt_3_response, stmt_4_response, stmt_why_response, object_cost_response,id)
+
+# extract object cost judgments
+L_data_object_cost <-L_data%>%
+  filter(manipulation_type=="attention_checks")%>%
+  select(unique_id, object_cost_response)
+
+# add object cost judgments to ownership judgment data
+L_data_long <- L_data%>%
+  filter(manipulation_type!="attention_checks")%>%
+  rename(A=A1_value, B = A2_value)%>%
+  gather(agent, value, A,B)%>%
+  select(-object_cost_response)%>%
+  left_join(L_data_object_cost)%>%
+  rename(object_cost = object_cost_response)
+
+L_data_long$object_cost <- as.numeric(L_data_long$object_cost)
+L_data_long$value <- as.numeric(L_data_long$value)
+L_data_long$agent <- factor(L_data_long$agent, levels=c("A", "B"))
+
+baseline_data<- L_data_long%>%
+  filter(manipulation_type=="baseline" & agent=="B")%>% 
+  select(-stmt_why_response, -stmt_1_response,-stmt_2_response,-stmt_3_response,-stmt_4_response)%>%
+  spread(agent,value)%>%
+  spread(trial_condition,B)
+
+baseline_wide <- baseline_data%>%
+  group_by(unique_id)%>%
+  summarise_all(function(x){x[!is.na(x)]})%>%
+  filter(A_intentionality=="accidental drop")
+
+strict_baseline_filter_id <- baseline_wide%>%
+  filter(`1 agent,accidental`==0 & `1 agent,intentional`==0 & `1 agent,no drop`==0)
+
+strict_baseline_filtered_data_long <- L_data_long%>%
+  filter(unique_id %in% strict_baseline_filter_id$unique_id)
+
+# report inclusion rate
+nrow(strict_baseline_filter_id)/nrow(L_filtered_id) # 83.7%
+nrow(L_filtered_id) - nrow(strict_baseline_filter_id) # 6 participants excluded
+```
+
+```{r prepare dataframe}
+strict_baseline_filtered_data_long$B_intentionality <- factor(strict_baseline_filtered_data_long$B_intentionality,levels = c("Not Applicable", "no intent to own", "intend to own"))
+strict_baseline_filtered_data_long$A_intentionality <- factor(strict_baseline_filtered_data_long$A_intentionality,levels = c("no drop-off","accidental drop","intentional drop"))
+strict_baseline_filtered_data_long$B_knowledge <- factor(strict_baseline_filtered_data_long$B_knowledge,levels = c("Not Applicable", "knowledgeable","ignorant"))
+
+Main_conditions<-strict_baseline_filtered_data_long%>%
+  filter(manipulation_type=="main")%>%
+  select(-stmt_why_response, -stmt_1_response,-stmt_2_response,-stmt_3_response,-stmt_4_response)%>%
+  spread(agent,value)
+
+Baseline_conditions<-strict_baseline_filtered_data_long%>%
+  filter(manipulation_type=="baseline")%>%
+  select(-stmt_why_response, -stmt_1_response,-stmt_2_response,-stmt_3_response,-stmt_4_response)%>%
+  spread(agent,value)
+```
+
+# pre-registered ownership consequence analysis
+```{r get the dataframe ready}
+consequences_data_wide <- strict_baseline_filtered_data_long%>%
+  filter(manipulation_type=="main")%>%
+  filter(agent=="B")%>%
+  rename(use=stmt_1_response, dispose=stmt_2_response, alter=stmt_3_response, lend=stmt_4_response)%>%
+  select(unique_id, trial_condition, trial_condition,manipulation_type, A_intentionality, B_knowledge, 
+         use, dispose, alter, lend, stmt_why_response, agent, value)%>%
+  distinct()%>%
+  mutate(trial_condition_no = factor(trial_condition))
+
+consequences_data_long <- consequences_data_wide%>%
+  select(-stmt_why_response)%>%
+  gather(statement_type, statement_response, use, dispose, alter, lend)%>%
+  mutate(statement_type = factor(statement_type, levels = c("use", "dispose", "alter", "lend")),
+         response_numeric = case_when(statement_response == "Yes" ~ 1, 
+                                      TRUE ~ 0),
+         statement_response = factor(statement_response, levels=c("No","Yes")))
+```
+
+```{r mixed-effect logistics regression: predicting response using agent B ownership}
+model_consequence_1 <- glmer(statement_response ~ value + (1+value|statement_type)+(1+value|unique_id), data=consequences_data_long,family="binomial", control = glmerControl(optimizer = "bobyqa")) 
+
+summary(model_consequence_1) #b=0.12354
+exp(model_consequence_1@beta[2]) #odd ratio=1.131491
+```
+
+```{r permissibility judgments and ownership ratings regression with (SI) Table. 20}
+tab_model(model_consequence_1, 
+          show.ci = F, show.stat = T, show.est = T,
+          p.style = "numeric_stars",
+          string.stat = "t value", 
+          dv.labels = c("Ownership rating"))
+```
+
+# power analysis by simulation
+```{r set up simulated data}
+# target sample size
+sample_size <- 160
+unique_id <- factor(1:sample_size)
+
+# trial condition
+trial_condition <- c("2 agents,accidental,ignorant,pickup",
+                     "2 agents,accidental,aware,pickup",
+                     "2 agents,intentional,ignorant,pickup",
+                     "2 agents,intentional,aware,pickup")
+
+# statement type
+statement_type <- factor(c("use", "dispose", "alter", "lend"), levels=c("use", "dispose", "alter", "lend"))
+
+# all the rows
+subject_full <- rep(unique_id,4 * 4)
+trial_full <- rep(rep(trial_condition, each =sample_size),4)
+statement_full <- rep(statement_type, each = sample_size * 4)
+covars <- data.frame(unique_id = subject_full, trial_condition = trial_full, statement_type = statement_full)
+head(covars)
+
+trials <- rep(trial_condition, sample_size)
+sampled_unique_id <- rep(sample(strict_baseline_filter_id$unique_id, sample_size, replace = T), each=4) #4 total trials
+sim_id <- rep(paste("sim", 1:sample_size, sep="-"),each=4)
+single_sim_data <- cbind(sampled_unique_id, sim_id,
+                         trials)%>%
+  as.data.frame()%>%
+  rename(unique_id=sampled_unique_id,
+         trial_condition=trials)%>%## STOPPED HERE
+  left_join(consequences_data_long)%>%
+  select(-unique_id)%>%
+  rename(unique_id=sim_id)
+```
+
+## examine glmer models - main effects 
+1. parameters from Exp. 3 pilot data (n=31 participants)
+
+`glmer(statement_response ~ value + (1+value|statement_type)+(1+value|unique_id), data=consequences_data_long,family=binomial, control = glmerControl(optimizer = "bobyqa"))`
+
+```{r set glmer fixed and random effects parameters}
+## fixed effects for intercept and slopes for trial (1,2,3) and age (in month)
+fixed <- c(-8.42747, 0.12354)
+## random intercepts for participants clustered by subject
+rand <- list(32.562952,0.004369,-0.33435,2.592774,0.000114,-0.017189)
+```
+
+```{r}
+str(VarCorr(model_consequence_1))
+
+model_predictions_1 <- makeGlmer(formula=predicted_response ~ value + (1+value|statement_type)+(1+value|unique_id), family = "binomial", fixef=fixed, VarCorr=rand, data=single_sim_data)
+
+summary(model_predictions_1)
+```
+
+```{r}
+power_curve_v1 <- powerCurve(model_predictions_1,
+                            within="trial_condition+statement_type",breaks = c(130, 150),
+                            simOpts = simrOptions(nsim=100))
+plot(power_curve_v1) #visualize it
+```
+

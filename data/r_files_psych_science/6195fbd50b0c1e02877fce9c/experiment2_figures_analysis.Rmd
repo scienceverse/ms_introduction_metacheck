@@ -1,0 +1,752 @@
+---
+title: "Face information sampling in super-recognizers - Experiment 2"
+author: ""
+date: "18/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(effsize)
+library(ez)
+library(patchwork)
+library(magick)
+library(EnvStats)
+library(psychReport)
+library(emmeans)
+library(viridis)
+library(ggpubr)
+library(ggcorrplot)
+library(caret)
+library(nlme)
+
+windowsFonts(Arial=windowsFont("Arial"))
+```
+
+```{r data read & functions, include=FALSE}
+participantList <- read.csv("Exp2_Data/Exp2_participantList.csv")
+
+cfmtData <- participantList %>% 
+  select(ID,CFMT)
+cbPalette <- viridis(n=2)
+
+
+#1. MEAN ABSOLUTE PERCENTAGE ERROR (MAPE)
+MAPE = function(y_actual,y_predict){
+  mean(abs((y_actual-y_predict)/y_actual))*100
+}
+ 
+#2. R SQUARED error metric -- Coefficient of Determination
+RSQUARE = function(y_actual,y_predict){
+  cor(y_actual,y_predict)^2
+}
+
+RMSE = function(y_actual,y_predict){
+  mean((y_actual-y_predict)^2)^0.5
+}
+
+```
+
+```{r data processing aprime}
+aPrimeData <- read.csv("Exp2_Data/Exp2_aprime.csv")
+aPrimeData$Group<- factor(aPrimeData$Group, levels = c(1,2), labels = c("Typical Viewers","Super-recognizers"))
+
+summaryAPrimeData <- aPrimeData %>%
+  gather(key="VisualCondition",value="aprime",X12:X100) %>%
+  mutate(VisualCondition = as.integer(gsub('[a-zA-Z]', '',VisualCondition)))
+
+summaryAPrimeData$VisualCondition <- factor(summaryAPrimeData$VisualCondition, levels = c("100","60","48","36","24","12"))
+
+summaryAPrimeData$WindowSize <- factor(summaryAPrimeData$VisualCondition, levels = c("100","60","48","36","24","12"),labels=c("30","25","20","15","10","5"))
+```
+
+```{r aprime modelling fit}
+Condition<-0
+LR_T <- 0
+RMSE_L <- 0
+RMSE_T <- 0
+
+aPrimeData_TVonly2WAY <- summaryAPrimeData %>% 
+  filter(Group=="Typical Viewers")
+aPrimeData_SRonly2WAY <- summaryAPrimeData %>% 
+  filter(Group=="Super-recognizers")
+
+model_aPrimeData_TVonly2WAY<- lm(data = aPrimeData_TVonly2WAY, aprime~CFMT+VisualCondition)
+summary(model_aPrimeData_TVonly2WAY)
+
+linear_predictions<- predict(model_aPrimeData_TVonly2WAY,newdata=aPrimeData_TVonly2WAY)
+RMSE_L = RMSE(aPrimeData_TVonly2WAY$aprime,linear_predictions) # Using R-SQUARE error metrics to check for the error rate and accuracy level
+linear_predictions<- predict(model_aPrimeData_TVonly2WAY,newdata=aPrimeData_SRonly2WAY)
+RMSE_T = RMSE(aPrimeData_SRonly2WAY$aprime,linear_predictions) # Using R-SQUARE error metrics to check for the error rate and accuracy level
+LR_T = RSQUARE(aPrimeData_SRonly2WAY$aprime,linear_predictions) # Using R-SQUARE error metrics to check for the error rate and accuracy level
+Condition<-"2-WAY"
+full_LR <- data.frame(Condition,RMSE_L,RMSE_T,LR_T)
+```
+
+```{r aprime, echo=FALSE}
+ggplot(data=summaryAPrimeData,aes(x = VisualCondition,y = aprime)) +
+  geom_violin(alpha=0.2,scale = "width", fill=cbPalette[1],colour='black') +
+  geom_boxplot(width=0.5,alpha=0.4,fill=cbPalette[1],colour='black',fatten=NULL) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 16),
+              legend.text =  element_text(family = 'Arial', size = 12),
+              legend.position = "right",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="Preserved Face Information (%)",y="A'", colour = "Group",fill = "Group",shape = "Group") +
+    geom_dotplot(data = subset(summaryAPrimeData, Group=="Super-recognizers"),binaxis='y', stackdir='center', dotsize=2,binwidth=0.01, alpha = 1,fill=cbPalette[2],stroke = 1)+
+  stat_summary(fun=mean, geom="point", shape = 23, show.legend = F,size=3,fill='black',colour='black')+
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.2)+
+ggsave("Figures/Exp2_aprimePlot.png",width = 9, height = 6,dpi=150)
+
+ggplot(data=summaryAPrimeData,aes(x = CFMT,y = aprime)) +
+  facet_wrap(~VisualCondition, ncol = 3)+
+  geom_smooth(data = subset(summaryAPrimeData, Group=="Typical Viewers"), method = lm,colour="black",linetype="dashed",fullrange=TRUE)+
+  geom_point(aes(fill=Group),shape = 21,alpha=0.6,scale = "width",colour="black",size = 2, stroke = 1.5) +
+  stat_cor(data = subset(summaryAPrimeData, Group=="Typical Viewers"),method = "pearson",label.x = 50, label.y = 0.25,cor.coef.name = "r",r.accuracy = 0.001,p.accuracy=0.001,size=3,geom="label")+
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 18),
+              legend.text =  element_text(family = 'Arial', size = 16),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="CFMT+ (%)",y="A'", colour = "Group",fill = "Group",shape = "Group")+
+  scale_x_continuous(breaks=c(50,70,90))+scale_y_continuous(breaks=c(0.4,0.6,0.8,1))+
+ggsave("Figures/Exp2_aprimePlot_scatterplots.png",width = 9, height = 6,dpi=150)
+```
+
+```{r data processing trialData}
+trialDataw_CFMT <- read.csv("Exp2_Data/Exp2_Latency_Gini.csv")
+
+trialDataJoiner <- trialDataw_CFMT %>% 
+  rename(Trial = trial_number) %>% 
+  select(ID,Trial,image,CFMT, Order, timeanswer)
+
+trialDataw_CFMT$group<- factor(trialDataw_CFMT$group, levels = c(1,2), labels = c("Typical Viewers","Super-recognizers"))
+trialDataw_CFMT$phase<- factor(trialDataw_CFMT$phase, levels = c(1,2),labels = c("Face Learning","Face Recognition"))
+trialDataw_CFMT$visualcondition<- factor(trialDataw_CFMT$visualcondition, levels = c("1","6","5","4","3","2"), labels = c("100","60","48","36","24","12"))
+
+RecognitionPhaseOnlyData <- trialDataw_CFMT %>% 
+  filter(phase=="Face Recognition")
+
+RTPlotData <- RecognitionPhaseOnlyData %>% 
+  group_by(subject_number,visualcondition,group,CFMT) %>% 
+  summarise(meanRT = mean(timeanswer),CFMT=mean(CFMT))
+
+GiniPlotData <- trialDataw_CFMT %>% 
+  group_by(subject_number,visualcondition,phase,group,CFMT) %>% 
+  summarise(meanGini = mean(Gini), CFMT=mean(CFMT))
+
+GiniPlotDataSimplified <- GiniPlotData %>% 
+  group_by(subject_number,phase,group,CFMT) %>% 
+  summarise(meanGini = mean(meanGini), CFMT=mean(CFMT))
+  
+```
+
+```{r rt modelling fit}
+Condition<-0
+LR_T <- 0
+RMSE_L <- 0
+RMSE_T <- 0
+
+RTPlotData_TVonly <- RTPlotData %>% 
+  filter(group=="Typical Viewers")
+RTPlotData_SRonly <- RTPlotData %>% 
+  filter(group=="Super-recognizers")
+
+model_RTPlotData_TVonly<- lm(data = RTPlotData_TVonly, meanRT~CFMT+visualcondition)
+summary(model_RTPlotData_TVonly)
+
+linear_predictions<- predict(model_RTPlotData_TVonly,newdata=RTPlotData_SRonly)
+RMSE_L = RMSE(RTPlotData_TVonly$meanRT,linear_predictions)
+linear_predictions<- predict(model_RTPlotData_TVonly,newdata=RTPlotData_SRonly)
+RMSE_T = RMSE(RTPlotData_SRonly$meanRT,linear_predictions) 
+LR_T = RSQUARE(RTPlotData_SRonly$meanRT,linear_predictions) 
+Condition<-"3-WAY"
+full_LR <- data.frame(Condition,RMSE_L,RMSE_T,LR_T)
+```
+
+```{r rtplot, echo=FALSE}
+ggplot(data=RTPlotData,aes(x = visualcondition,y = meanRT)) +
+  geom_violin(alpha=0.2,scale = "width", fill=cbPalette[1],colour='black') +
+  geom_boxplot(width=0.5,alpha=0.4,fill=cbPalette[1],colour='black',fatten=NULL) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 16),
+              legend.text =  element_text(family = 'Arial', size = 12),
+              legend.position = "right",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="Preserved Face Information (%)",y="Mean Response Latency (s)", colour = "Group",fill = "Group",shape = "Group")+
+  geom_dotplot(data = subset(RTPlotData, group=="Super-recognizers"),binaxis='y', stackdir='center', dotsize=1.5,binwidth=0.25, alpha = 1,fill=cbPalette[2],stroke = 1)+
+  stat_summary(fun=mean, geom="point", shape = 23, show.legend = F,size=3,fill='black',colour='black')+
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.2)+
+  scale_y_continuous(breaks=c(1,3,5,7,9))+
+ggsave("Figures/Exp2_rtplot.png", width = 9, height = 6, dpi=150)
+
+ggplot(data=RTPlotData,aes(x = CFMT,y = meanRT)) +
+  facet_wrap(~visualcondition, ncol = 3)+
+  geom_smooth(data = subset(RTPlotData, group=="Typical Viewers"), method = lm,colour="black",linetype="dashed",fullrange=TRUE)+
+  geom_point(aes(fill=group),shape = 21,alpha=0.6,scale = "width",colour="black",size = 2, stroke = 1.5) +
+  stat_cor(data = subset(RTPlotData, group=="Typical Viewers"),method = "pearson",label.x = 50, label.y = 9,cor.coef.name = "r",r.accuracy = 0.001,p.accuracy=0.001,size=3,geom="label")+
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 18),
+              legend.text =  element_text(family = 'Arial', size = 16),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="CFMT+ (%)",y="Mean Response Latency (s)", colour = "Group",fill = "Group",shape = "Group")+
+  # scale_x_continuous(breaks=c(50,70,90))+scale_y_continuous(breaks=c(0.4,0.6,0.8,1))+
+ggsave("Figures/Exp2_rtplot_scatterplots.png",width = 9, height = 6,dpi=150)
+```
+
+```{r gini modelling fit}
+Condition<-0
+LR_T <- 0
+RMSE_L <- 0
+RMSE_T <- 0
+
+GiniPlotData_TVonly <- GiniPlotData %>% 
+  filter(group=="Typical Viewers")
+GiniPlotData_SRonly <- GiniPlotData %>% 
+  filter(group=="Super-recognizers")
+
+model_GiniPlotData_TVonly3WAY<- lm(data = GiniPlotData_TVonly, meanGini~CFMT+phase*visualcondition)
+summary(model_GiniPlotData_TVonly3WAY)
+
+linear_predictions<- predict(model_GiniPlotData_TVonly3WAY,newdata=GiniPlotData_TVonly)
+RMSE_L = RMSE(GiniPlotData_TVonly$meanGini,linear_predictions)
+linear_predictions<- predict(model_GiniPlotData_TVonly3WAY,newdata=GiniPlotData_SRonly)
+RMSE_T = RMSE(GiniPlotData_SRonly$meanGini,linear_predictions) 
+LR_T = RSQUARE(GiniPlotData_SRonly$meanGini,linear_predictions) 
+Condition<-"3-WAY"
+full_LR <- data.frame(Condition,RMSE_L,RMSE_T,LR_T)
+```
+
+```{r giniplots, echo=FALSE}
+ggplot(data=GiniPlotData,aes(x = visualcondition,y = meanGini)) +
+  facet_wrap(~phase)+
+  geom_violin(alpha=0.2,scale = "width", fill=cbPalette[1],colour='black') +
+  geom_boxplot(width=0.5,alpha=0.4,fill=cbPalette[1],colour='black',fatten=NULL) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 16),
+              legend.text =  element_text(family = 'Arial', size = 12),
+              legend.position = "right",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="Preserved Face Information (%)",y="Mean Gini Coefficient", colour = "Group",fill = "Group",shape = "Group") + 
+  geom_dotplot(data = subset(GiniPlotData, group=="Super-recognizers"),binaxis='y', stackdir='center', dotsize=1,binwidth=0.005, alpha = 1,fill=cbPalette[2],stroke = 1)+
+  stat_summary(fun=mean, geom="point", shape = 23, show.legend = F,size=3,fill='black',colour='black')+
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.2)+
+ggsave("Figures/Exp2_gini.png", units="in", width = 9, height = 6, dpi=150)
+
+ggplot(data=GiniPlotData,aes(x = CFMT,y = meanGini)) +
+  facet_grid(phase~visualcondition)+
+  geom_smooth(data = subset(GiniPlotData, group=="Typical Viewers"), method = lm,colour="black",linetype="dashed",fullrange=TRUE)+
+  geom_point(aes(fill=group),shape = 21,alpha=0.6,scale = "width",colour="black",size = 2, stroke = 1.5) +
+  stat_cor(data = subset(GiniPlotData, group=="Typical Viewers"),method = "pearson",label.x = 50, label.y = 0.7,cor.coef.name = "r",r.accuracy = 0.001,p.accuracy=0.001,size=3,geom="label")+
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 18),
+              legend.text =  element_text(family = 'Arial', size = 16),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="CFMT+ (%)",y="Mean Gini coefficent", colour = "Group",fill = "Group",shape = "Group")+
+  scale_x_continuous(breaks=c(50,70,90))+scale_y_continuous(breaks=c(0.7,0.8,0.9,1))+
+ggsave("Figures/Exp2_gini_scatterplots.png",width = 12, height = 6,dpi=150)
+
+ggplot(data=GiniPlotDataSimplified,aes(x = CFMT,y = meanGini)) +
+  facet_wrap(~phase)+
+  geom_smooth(data = subset(GiniPlotData, group=="Typical Viewers"), method = lm,colour="black",linetype="dashed",fullrange=TRUE)+
+  geom_point(aes(fill=group),shape = 21,alpha=0.6,scale = "width",colour="black",size = 2, stroke = 1.5) +
+  stat_cor(data = subset(GiniPlotData, group=="Typical Viewers"),method = "pearson",label.x = 50, label.y = 0.75,cor.coef.name = "r",r.accuracy = 0.001,p.accuracy=0.001,size=3,geom="label")+
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 18),
+              legend.text =  element_text(family = 'Arial', size = 16),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="CFMT+ (%)",y="Mean Gini coefficent", colour = "Group",fill = "Group",shape = "Group")+
+  scale_x_continuous(breaks=c(50,70,90))+
+ggsave("Figures/Exp2_gini_scatterplots_summary.png",width = 9, height = 6,dpi=150)
+```
+
+```{r data processing Fixation Statistics}
+fixationData <- read.csv("Exp2_Data/Exp2_fixationCount_Duration.csv")
+
+fixationData<- inner_join(fixationData,trialDataJoiner,by=c("ID","Trial"))
+
+fixationData$Group<- factor(fixationData$Group, levels = c(1,2), labels = c("Typical Viewers","Super-recognizers"))
+fixationData$Phase<- factor(fixationData$Phase, levels = c(1,2),labels = c("Face Learning","Face Recognition"))
+fixationData$windowsize<- factor(fixationData$VisualCondition, levels = c("1","6","5","4","3","2"), labels = c("30","25","20","15","10","5"))
+fixationData$VisualCondition<- factor(fixationData$VisualCondition, levels = c("1","6","5","4","3","2"), labels = c("100","60","48","36","24","12"))
+
+trialFixationData <- fixationData %>%
+  group_by(ID,Trial,image,Group,Phase,VisualCondition,windowsize) %>% 
+  summarise(fixationCount = n(),meanFixationDuration = mean(FixationDuration)*1000,meanGazeDistance=mean(DistanceFromCenter), meanDistanceBetweenFix = mean(DistanceFromLastFix,na.rm=TRUE), sumDistanceBetweenFix = sum(DistanceFromLastFix,na.rm=TRUE), CFMT = mean(CFMT), Order = mean(Order), timeanswer = mean(timeanswer))
+
+write.csv(trialFixationData,"Exp2_Data/Exp2_trialFixationData.csv",row.names = FALSE)
+
+fixationPlotData<-trialFixationData %>% 
+  group_by(ID,Group,Phase,VisualCondition,windowsize) %>% 
+  summarise(meanFixationCount = mean(fixationCount),meanFixationDuration = mean(meanFixationDuration),meanGazeDistance=mean(meanGazeDistance),meanDistanceBetweenFix = mean(meanDistanceBetweenFix,na.rm=TRUE),mean_sumDistanceBetweenFix = mean(sumDistanceBetweenFix),CFMT = mean(CFMT),Order = mean(Order))
+
+fixationPlotData_long<- fixationPlotData %>% 
+  gather(key="DV",value="Value",meanFixationCount:meanDistanceBetweenFix)
+
+fixationPlotData_long$DV<-factor(fixationPlotData_long$DV,levels=c("meanFixationCount","meanFixationDuration","meanGazeDistance","meanDistanceBetweenFix"),labels=c("Count","Duration (ms)", "Center Distance (degrees)","Travelled (degrees)"))
+
+fixationPlotDataSimplified<-fixationPlotData %>% 
+  group_by(ID,Group,Phase) %>% 
+  summarise(meanFixationCount = mean(meanFixationCount),meanFixationDuration = mean(meanFixationDuration),meanGazeDistance=mean(meanGazeDistance),meanDistanceBetweenFix = mean(meanDistanceBetweenFix,na.rm=TRUE),mean_sumDistanceBetweenFix = mean(mean_sumDistanceBetweenFix),CFMT = mean(CFMT),Order = mean(Order))
+```
+
+```{r fixation count modelling fit}
+Condition<-0
+LR_T <- 0
+RMSE_L <- 0
+RMSE_T <- 0
+
+fixationPlotData_TVonly3WAY <- fixationPlotData %>% 
+  filter(Group=="Typical Viewers")
+fixationPlotData_SRonly3WAY <- fixationPlotData %>% 
+  filter(Group=="Super-recognizers")
+
+model_fixationPlotData_TVonly3WAY<- lm(data = fixationPlotData_TVonly3WAY, meanFixationCount~CFMT+Phase*VisualCondition)
+summary(model_fixationPlotData_TVonly3WAY)
+
+linear_predictions<- predict(model_fixationPlotData_TVonly3WAY,newdata=fixationPlotData_TVonly3WAY)
+RMSE_L = RMSE(fixationPlotData_TVonly3WAY$meanFixationCount,linear_predictions)
+linear_predictions<- predict(model_fixationPlotData_TVonly3WAY,newdata=fixationPlotData_SRonly3WAY)
+RMSE_T = RMSE(fixationPlotData_SRonly3WAY$meanFixationCount,linear_predictions) 
+LR_T = RSQUARE(fixationPlotData_SRonly3WAY$meanFixationCount,linear_predictions) 
+Condition<-"3-WAY"
+full_LR <- data.frame(Condition,RMSE_L,RMSE_T,LR_T)
+```
+
+```{r fixation duration modelling fit}
+Condition<-0
+LR_T <- 0
+RMSE_L <- 0
+RMSE_T <- 0
+
+fixationPlotData_TVonly3WAY <- fixationPlotData %>% 
+  filter(Group=="Typical Viewers")
+fixationPlotData_SRonly3WAY <- fixationPlotData %>% 
+  filter(Group=="Super-recognizers")
+
+model_fixationPlotData_TVonly3WAY<- lm(data = fixationPlotData_TVonly3WAY, meanFixationDuration~CFMT+Phase*VisualCondition)
+summary(model_fixationPlotData_TVonly3WAY)
+
+linear_predictions<- predict(model_fixationPlotData_TVonly3WAY,newdata=fixationPlotData_TVonly3WAY)
+RMSE_L = RMSE(fixationPlotData_TVonly3WAY$meanFixationDuration,linear_predictions)
+linear_predictions<- predict(model_fixationPlotData_TVonly3WAY,newdata=fixationPlotData_SRonly3WAY)
+RMSE_T = RMSE(fixationPlotData_SRonly3WAY$meanFixationDuration,linear_predictions) 
+LR_T = RSQUARE(fixationPlotData_SRonly3WAY$meanFixationDuration,linear_predictions) 
+Condition<-"3-WAY"
+full_LR <- data.frame(Condition,RMSE_L,RMSE_T,LR_T)
+```
+
+```{r fixation count, echo=FALSE}
+ggplot(data=fixationPlotData,aes(x = VisualCondition,y = meanFixationCount)) +
+  facet_wrap(~Phase)+
+ geom_violin(alpha=0.2,scale = "width", fill=cbPalette[1],colour='black') +
+  geom_boxplot(width=0.5,alpha=0.4,fill=cbPalette[1],colour='black',fatten=NULL) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 16),
+              legend.text =  element_text(family = 'Arial', size = 12),
+              legend.position = "right",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="Preserved Face Information (%)",y="Mean Fixation Count", colour = "Group",fill = "Group",shape = "Group") + 
+  geom_dotplot(data = subset(fixationPlotData, Group=="Super-recognizers"),binaxis='y', stackdir='center', dotsize=1,binwidth=0.5, alpha = 1,fill=cbPalette[2],stroke = 1)+
+  stat_summary(fun=mean, geom="point", shape = 23, show.legend = F,size=3,fill='black',colour='black')+
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.2)+
+
+ggsave("Figures/Exp2_fixationCount.png",width = 9, height = 6, dpi=150)
+
+ggplot(data=fixationPlotData,aes(x = CFMT,y = meanFixationCount)) +
+  facet_grid(Phase~VisualCondition)+
+  geom_smooth(data = subset(fixationPlotData, Group=="Typical Viewers"), method = lm,colour="black",linetype="dashed",fullrange=TRUE)+
+  geom_point(aes(fill=Group),shape = 21,alpha=0.6,scale = "width",colour="black",size = 2, stroke = 1.5) +
+  stat_cor(data = subset(fixationPlotData, Group=="Typical Viewers"),method = "pearson",label.x = 50, label.y = 0.7,cor.coef.name = "r",r.accuracy = 0.001,p.accuracy=0.001,size=3,geom="label")+
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 18),
+              legend.text =  element_text(family = 'Arial', size = 16),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="CFMT+ (%)",y="Mean fixation count", colour = "Group",fill = "Group",shape = "Group")+
+  scale_x_continuous(breaks=c(50,70,90))+
+ggsave("Figures/Exp2_fixCount_scatterplots.png",width = 12, height = 6,dpi=150)
+
+ggplot(data=fixationPlotDataSimplified,aes(x = CFMT,y = meanFixationCount)) +
+  facet_wrap(~Phase)+
+  geom_smooth(data = subset(fixationPlotDataSimplified, Group=="Typical Viewers"), method = lm,colour="black",linetype="dashed",fullrange=TRUE)+
+  geom_point(aes(fill=Group),shape = 21,alpha=0.6,scale = "width",colour="black",size = 2, stroke = 1.5) +
+  stat_cor(data = subset(fixationPlotDataSimplified, Group=="Typical Viewers"),method = "pearson",label.x = 50, label.y = 0.75,cor.coef.name = "r",r.accuracy = 0.001,p.accuracy=0.001,size=3,geom="label")+
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 18),
+              legend.text =  element_text(family = 'Arial', size = 16),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="CFMT+ (%)",y="Mean fixation count", colour = "Group",fill = "Group",shape = "Group")+
+  scale_x_continuous(breaks=c(50,70,90))+
+ggsave("Figures/Exp2_fixCount_scatterplots_summary.png",width = 9, height = 6,dpi=150)
+```
+
+```{r fixation duration, echo=FALSE}
+ggplot(data=fixationPlotData,aes(x = VisualCondition,y = meanFixationDuration)) +
+  facet_wrap(~Phase)+
+ geom_violin(alpha=0.2,scale = "width", fill=cbPalette[1],colour='black') +
+  geom_boxplot(width=0.5,alpha=0.4,fill=cbPalette[1],colour='black',fatten=NULL) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 16),
+              legend.text =  element_text(family = 'Arial', size = 12),
+              legend.position = "right",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="Preserved Face Information (%)",y="Mean Fixation Duration (ms)", colour = "Group",fill = "Group",shape = "Group") + 
+ geom_dotplot(data = subset(fixationPlotData, Group=="Super-recognizers"),binaxis='y', stackdir='center', dotsize=1,binwidth=10, alpha = 1,fill=cbPalette[2],stroke = 1)+
+  stat_summary(fun=mean, geom="point", shape = 23, show.legend = F,size=3,fill='black',colour='black')+
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.2)+
+ggsave("Figures/Exp2_fixationDuration.png",width = 9, height = 6, dpi=150)
+
+ggplot(data=fixationPlotData,aes(x = CFMT,y = meanFixationDuration)) +
+  facet_grid(Phase~VisualCondition)+
+  geom_smooth(data = subset(fixationPlotData, Group=="Typical Viewers"), method = lm,colour="black",linetype="dashed",fullrange=TRUE)+
+  geom_point(aes(fill=Group),shape = 21,alpha=0.6,scale = "width",colour="black",size = 2, stroke = 1.5) +
+  stat_cor(data = subset(fixationPlotData, Group=="Typical Viewers"),method = "pearson",label.x = 50, label.y = 75,cor.coef.name = "r",r.accuracy = 0.001,p.accuracy=0.001,size=3,geom="label")+
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 18),
+              legend.text =  element_text(family = 'Arial', size = 16),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="CFMT+ (%)",y="Mean Fixation Duration (ms)", colour = "Group",fill = "Group",shape = "Group")+
+  scale_x_continuous(breaks=c(50,70,90))+
+ggsave("Figures/Exp2_fixDuration_scatterplots.png",width = 12, height = 6,dpi=150)
+```
+
+```{r data processing PC1}
+pcaData <- read.csv("Exp2_Data/Exp2_pc1_loading.csv")
+pcaData$Aperture <- factor(pcaData$Aperture,levels = c("30","25","20","15","10","5"), labels = c("100","60","48","36","24","12"))
+pcaData$Group<- factor(pcaData$Group, levels = c(1,2), labels = c("Typical Viewers","Super-recognizers"))
+
+pcaPlotData <- pcaData %>% 
+  group_by(ID,Phase,Aperture,Group) %>% 
+  summarise(meanPC1 = mean(PC1), CFMT = mean(CFMTp),Order=mean(Order))
+
+pcaPlotData_byPhase_mean <- pcaData %>% 
+  group_by(ID,Phase,Aperture,Group) %>% 
+  summarise(meanPC1 = mean(PC1)) %>% 
+  pivot_wider(names_from=Phase:Aperture,values_from=meanPC1)
+
+pcaPlotData_byPhase_sd <- pcaData %>%
+  group_by(ID,Phase,Aperture,Group) %>%
+  summarise(sdPC1 = sd(PC1)) %>%
+  pivot_wider(names_from=Phase:Aperture,values_from=sdPC1)
+
+pcaData$Phase<- factor(pcaData$Phase, levels = c("Learning","Recognition"),labels = c("Face Learning","Face Recognition"))
+pcaData$Order <- as.numeric(pcaData$Order)
+
+pcaPlotData_simplified <- pcaData %>% 
+  group_by(ID,Phase,Group) %>% 
+  summarise(meanPC1 = mean(PC1), CFMT = mean(CFMTp),Order=mean(Order))
+
+cor.test(pcaPlotData_byPhase_mean$Learning_100,pcaPlotData_byPhase_mean$Recognition_100)
+cor.test(pcaPlotData_byPhase_mean$Learning_60,pcaPlotData_byPhase_mean$Recognition_60)
+cor.test(pcaPlotData_byPhase_mean$Learning_48,pcaPlotData_byPhase_mean$Recognition_48)
+cor.test(pcaPlotData_byPhase_mean$Learning_36,pcaPlotData_byPhase_mean$Recognition_36)
+cor.test(pcaPlotData_byPhase_mean$Learning_24,pcaPlotData_byPhase_mean$Recognition_24)
+cor.test(pcaPlotData_byPhase_mean$Learning_12,pcaPlotData_byPhase_mean$Recognition_12)
+
+meanPCAData <- pcaData %>%
+  group_by(Phase,Group) %>%
+  summarise(meanPC1 = mean(PC1))
+
+cor.test(pcaPlotData_byPhase_sd$Learning_100,pcaPlotData_byPhase_sd$Recognition_100)
+cor.test(pcaPlotData_byPhase_sd$Learning_60,pcaPlotData_byPhase_sd$Recognition_60)
+cor.test(pcaPlotData_byPhase_sd$Learning_48,pcaPlotData_byPhase_sd$Recognition_48)
+cor.test(pcaPlotData_byPhase_sd$Learning_36,pcaPlotData_byPhase_sd$Recognition_36)
+cor.test(pcaPlotData_byPhase_sd$Learning_24,pcaPlotData_byPhase_sd$Recognition_24)
+cor.test(pcaPlotData_byPhase_sd$Learning_12,pcaPlotData_byPhase_sd$Recognition_12)
+```
+
+
+```{r pc1 modelling fit}
+Condition<-0
+LR_T <- 0
+RMSE_L <- 0
+RMSE_T <- 0
+
+pcaPlotData_TVonly <- pcaPlotData %>% 
+  filter(Group=="Typical Viewers")
+pcaPlotData_SRonly <- pcaPlotData %>% 
+  filter(Group=="Super-recognizers")
+
+
+## 3 way linear model
+model_pcaPlotData_TVonlyLIN<- lm(data = pcaPlotData_TVonly, meanPC1~CFMT+Phase*Aperture)
+summary(model_pcaPlotData_TVonlyLIN)
+
+linear_predictions<- predict(model_pcaPlotData_TVonlyLIN,newdata=pcaPlotData_TVonly)
+RMSE_L = RMSE(pcaPlotData_TVonly$meanPC1,linear_predictions)
+linear_predictions<- predict(model_pcaPlotData_TVonlyLIN,newdata=pcaPlotData_SRonly)
+RMSE_T = RMSE(pcaPlotData_SRonly$meanPC1,linear_predictions) 
+LR_T = RSQUARE(pcaPlotData_SRonly$meanPC1,linear_predictions) 
+Condition<-"LINEAR"
+full_LR <- data.frame(Condition,RMSE_L,RMSE_T,LR_T)
+
+## 3 way quad model
+model_pcaPlotData_TVonlyQUAD<- lm(data = pcaPlotData_TVonly, meanPC1~poly(CFMT,2)+Phase*Aperture)
+summary(model_pcaPlotData_TVonlyQUAD)
+
+linear_predictions<- predict(model_pcaPlotData_TVonlyQUAD,newdata=pcaPlotData_TVonly)
+RMSE_L = RMSE(pcaPlotData_TVonly$meanPC1,linear_predictions)
+linear_predictions<- predict(model_pcaPlotData_TVonlyQUAD,newdata=pcaPlotData_SRonly)
+RMSE_T = RMSE(pcaPlotData_SRonly$meanPC1,linear_predictions) 
+LR_T = RSQUARE(pcaPlotData_SRonly$meanPC1,linear_predictions) 
+Condition<-"QUAD"
+full_LR <- data.frame(Condition,RMSE_L,RMSE_T,LR_T)
+
+
+model_pcaPlotData_TVonlyLIN_GLS<- gls(data = pcaPlotData_TVonly, meanPC1~CFMT+Phase*Aperture, method = "ML")
+model_pcaPlotData_TVonlyQUAD_GLS<- gls(data = pcaPlotData_TVonly, meanPC1~poly(CFMT,2)+Phase*Aperture, method = "ML")
+
+anova(model_pcaPlotData_TVonlyLIN_GLS,model_pcaPlotData_TVonlyQUAD_GLS)
+```
+
+```{r PC1 data plots, echo=FALSE}
+ggplot(data=pcaPlotData,aes(x = Aperture,y = meanPC1)) +
+  facet_wrap(~Phase)+
+  geom_violin(alpha=0.2,scale = "width", fill=cbPalette[1],colour='black') +
+  geom_boxplot(width=0.5,alpha=0.4,fill=cbPalette[1],colour='black',fatten=NULL) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 16),
+              legend.text =  element_text(family = 'Arial', size = 12),
+              legend.position = "right",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="Preserved Face Information (%)",y="Mean PC1 Loading", colour = "Group",fill = "Group",shape = "Group") + 
+  geom_dotplot(data = subset(pcaPlotData, Group=="Super-recognizers"),binaxis='y', stackdir='center', dotsize=1,binwidth=0.1, alpha = 1,fill=cbPalette[2],stroke = 1)+
+  stat_summary(fun=mean, geom="point", shape = 23, show.legend = F,size=3,fill='black',colour='black')+
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.2)+
+ scale_y_continuous(breaks = c(-3,-2,-1,0,1,2,3),labels = c("-3SD","-2SD","-1SD","Mean","+1SD","+2SD","+3SD"))+
+  ggsave("Figures/Exp2_PC1.png", width = 9, height = 6, dpi=150)
+
+ggplot(data=pcaData,aes(x = Order,y = PC1,group=Order,fill=Group)) +
+    facet_wrap(~Phase)+
+  geom_boxplot(width=0.5,alpha=0.5,colour='black') +
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(      plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text.x = element_text(family = 'Arial', colour="black", size = 16),
+              axis.text.y = element_blank(),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks.x = element_line('black', size = 1),
+              axis.ticks.y = element_blank(),
+              legend.title = element_text(family = 'Arial', face="bold", size = 16),
+              legend.text =  element_text(family = 'Arial', size = 12),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="",y="PC1 Loading", colour = "Group",fill = "Group",shape = "Group") + 
+  scale_y_continuous(breaks = c(-3,-2,-1,0,1,2,3),labels = c("-3SD","-2SD","-1SD","Mean","+1SD","+2SD","+3SD"))+
+  stat_summary(fun=mean, geom="point", shape = 23, show.legend = F,size=1,fill='black',colour='black')+
+  scale_x_discrete()+
+  coord_flip()+
+ggsave("Figures/Exp2_PC1_triallevel.png",width = 9, height = 12, dpi=150)
+
+ggplot(data=pcaPlotData,aes(x = CFMT,y = meanPC1)) +
+  facet_grid(Phase~Aperture)+
+  geom_smooth(data = subset(pcaPlotData, Group=="Typical Viewers"), method = lm,colour="black",linetype="dashed",fullrange=TRUE)+
+  geom_point(aes(fill=Group),shape = 21,alpha=0.6,scale = "width",colour="black",size = 2, stroke = 1.5) +
+  stat_cor(data = subset(pcaPlotData, Group=="Typical Viewers"),method = "pearson",label.x = 50, label.y = -1.75,cor.coef.name = "r",r.accuracy = 0.001,p.accuracy=0.001,size=3,geom="label")+
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 18),
+              legend.text =  element_text(family = 'Arial', size = 16),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="CFMT+ (%)",y="Mean PC1 loading", colour = "Group",fill = "Group",shape = "Group")+
+  scale_x_continuous(breaks=c(50,70,90))+
+ggsave("Figures/Exp2_pca_scatterplots.png",width = 12, height = 6,dpi=150)
+
+ggplot(data=pcaPlotData_simplified,aes(x = CFMT,y = meanPC1)) +
+  facet_wrap(~Phase)+
+  geom_smooth(data = subset(pcaPlotData_simplified, Group=="Typical Viewers"),method = "lm",formula = "y ~ x", colour="red",fill="red",linetype="dashed",fullrange=TRUE,alpha=0.1)+
+  geom_smooth(data = subset(pcaPlotData_simplified, Group=="Typical Viewers"),method = "lm",formula = "y ~ poly(x,2)", colour="blue",fill="blue",fullrange=TRUE,alpha=0.1)+
+  geom_point(aes(fill=Group),shape = 21,alpha=0.6,scale = "width",colour="black",size = 2, stroke = 1.5) +
+  # stat_cor(data = subset(pcaPlotData_simplified, Group=="Typical Viewers"),method = "pearson",label.x = 50, label.y = -1.75,cor.coef.name = "r",r.accuracy = 0.001,p.accuracy=0.001,size=3,geom="label")+
+  scale_colour_manual(values=cbPalette) +
+  scale_fill_manual(values=cbPalette) +
+  theme(plot.title = element_text(family = 'Arial', face="bold", size = 18, hjust = 0.5),
+              axis.title = element_text(family = 'Arial', face="bold", size = 18),
+              axis.text = element_text(family = 'Arial', colour="black", size = 16),
+              axis.line.x = element_line('black', size = 1),
+              axis.line.y = element_line('black', size = 1),
+              axis.ticks = element_line('black', size = 1),
+              legend.title = element_text(family = 'Arial', face="bold", size = 18),
+              legend.text =  element_text(family = 'Arial', size = 16),
+              legend.position = "top",
+              legend.key =  element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = 'white'),
+              strip.text= element_text(family = 'Arial', face='bold', size = 16),
+              strip.background = element_rect(fill = 'white')) +
+  labs(x="CFMT+ (%)",y="Mean PC1 loading", colour = "Group",fill = "Group",shape = "Group")+
+  scale_x_continuous(breaks=c(50,70,90))+
+ggsave("Figures/Exp2_pca_scatterplots_simplified.png",width = 12, height = 6,dpi=150)
+```
+

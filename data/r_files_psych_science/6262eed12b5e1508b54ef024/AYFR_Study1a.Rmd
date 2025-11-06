@@ -1,0 +1,104 @@
+---
+title: "AYFR - Study 1a"
+author: "Erica R. Bailey"
+---
+
+```{r }
+
+# Load necessary packages 
+
+library(dplyr)
+library(report)
+library(psych)
+library(patchwork)
+library(ggplot2)
+
+# Read in data and apply exclusions 
+
+mydata = read.csv("AYFR_Study1a.csv")
+mydata = subset(mydata, attn == 2)
+
+```
+
+# Create Variables
+
+```{r }
+
+# Perceptions of authenticity 
+mydata$perception_4 = 8 - mydata$perception_4
+
+mydata$perc = (mydata$perception_1 + mydata$perception_2 + mydata$perception_3 + mydata$perception_4 + mydata$perception_5)/5
+
+# Importance of authenticity 
+mydata$import = (mydata$importance_1 + mydata$importance_2 + mydata$importance_3 + mydata$importance_4)/4
+
+```
+
+# Sample Descriptives 
+
+```{r }
+
+table(mydata$female)
+mean(mydata$age,na.rm = T)
+sd(mydata$age,na.rm = T)
+
+```
+
+# Measure Descriptives
+
+```{r }
+
+perc = data.frame(mydata$perception_1, mydata$perception_2, mydata$perception_3, mydata$perception_5)
+psych::alpha(perc)
+remove(perc)
+
+mean(mydata$perc)
+sd(mydata$perc)
+
+import = data.frame(mydata$importance_1, mydata$importance_2, mydata$importance_3, mydata$importance_4)
+psych::alpha(import)
+remove(import)
+
+mean(mydata$import)
+sd(mydata$import)
+
+```
+
+# Results 
+
+```{r }
+
+t.test(mydata$perc, mu = 4, alternative = "two.sided") %>% report()
+
+t.test(mydata$import, mu = 50, alternative = "two.sided") %>% report()
+
+```
+
+# Figures
+
+```{r }
+
+p1 = ggplot(mydata, aes(x=perc)) +
+  geom_histogram(color="black", fill="white", position="dodge") + 
+    geom_vline(aes(xintercept=mean(perc)),
+            color="black", linetype="dashed", size=1) + 
+    scale_x_continuous(limits = c(1, 7)) +
+      geom_vline(aes(xintercept=4),
+            color="black", size=.5) +   
+  labs(x="Ability to Perceive Authenticity", y = "")+ 
+  theme_classic() + scale_fill_grey() 
+
+p2 = ggplot(mydata, aes(x=import)) +
+  geom_histogram(color="black", fill="white", position="dodge")+ 
+    geom_vline(aes(xintercept=mean(import)), linetype="dashed", size=1) + 
+      geom_vline(aes(xintercept=50),
+            color="black", size=.5) +   
+    scale_x_continuous(limits = c(0, 100)) +
+  labs(x="Importance of Authenticity", y = "") + 
+  theme_classic() + scale_fill_grey() 
+
+
+p1 + p2 
+
+```
+

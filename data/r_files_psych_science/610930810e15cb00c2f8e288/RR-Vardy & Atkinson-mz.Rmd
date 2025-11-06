@@ -1,0 +1,208 @@
+---
+title: "Reproducibility Report - Vardy & Atkinson, 2019"
+author: "mz"
+date: "03/08/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+list.of.packages <- c("patchwork", "ggpubr", "tidyverse", "data.table", "knitr", "markdown", "rmarkdown", "ggplot2", "moments", "car", "rstatix", "coin", "psych", "AER", "dplyr")
+
+# install packages if new
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+# load packages
+invisible(lapply(list.of.packages, library, character.only = TRUE))
+
+```
+
+## Paper summary
+
+This paper examines prosociality as measured through the dictator game in the context of a natural disaster. A total of 164 participants from two communities (Christian and Kastom) participated at two time points: June 2014 and June 2015, i.e. before and after cyclone Pam. At both time points, participants played four counterbalanced variants of the dictator game. At time point two, participants also filled out a version of the Traumatic  Experience  Severity  Scale. Participants tended to be less prosocial in the dictator games in 2015. post-cyclone. Greater decreases in prosociality and preference for in-group members were predicted by higher levels of experienced property damage. Increases in prosocial behaviors as well as preferences for both in- and out-group members were predicted by exposure to other people in distress.
+
+
+Citation: Vardy, T., & Atkinson, Q. D. (2019). Property damage and exposure to other people in distress differentially predict prosocial behavior after a natural disaster. Psychological Science, 30(4), 563-575.
+
+OSF page: https://osf.io/fpsu8/
+OSF includes data and protocol scripts. It does not include analysis code.
+
+
+
+## Data and packages
+Data needs some cleaning - e.g. two rows of variable names, variable names include spaces and () etc. I have done this in a separate R file. There is no variable codebook, variable names are mostly intuitive but take some time to figure out.
+
+```{r}
+data <- read.csv("Cyclone and prosociality data.csv", header = TRUE)
+```
+
+
+## Reproducing analyses
+I will focus on the main results reported in the paper (rather than descriptives or supplemental analyses) and will follow the structure of the paper.
+
+
+### Cyclone Affectedness Measures
+
+#### Percentages
+First, we start with summary percentages for the Cyclone-affectedness measures on p. 568. The relevant variables here are DAMAGE, RELOCATE, INJURE, DIFMONEY, FOODAID. All reported percentages can be replicated.
+
+```{r}
+# A quick inspection suggests this is a binary variable and we want to know the % of pps who have reported 1 out of the total
+
+table(data$DAMAGE) # total of 163, 1 NA
+139/163 # 0.85
+
+table(data$RELOCATE) # total of 163, 1 NA
+131/163 # 0.80
+
+table(data$INJURE) # total of 163, 1 NA
+27/163 # 0.17
+
+table(data$DIFMONEY) # total of 163, 1 NA
+122/163 # 0.75
+
+table(data$FOODAID) # total of 163, 1 NA
+139/163 # 0.85
+
+
+```
+
+#### PCA
+I'm focusing on the results reported in the main text and they seem to be reproducible. A quick scan of some of the reported factor loadings in table SQ suggests a match with the supplemental ones too.
+
+```{r}
+pcadata <-select(data, STAY, FOODAID, SHELTER, DIFMONEY, MONEYASS, DAMAGE, RELOCATE, LOSSTUFF, INJURE,
+DEPINJ, FAMINJ, FAMDEP, FAMDEAD, FAMFEAR, RESCUE, HEARCRY)
+
+pcaresults <- principal(pcadata, nfactors = 4, rotate="oblimin")
+pcaresults$loadings
+pcaresults$values
+pcaresults$Vaccounted # proprtion var: 0.17, 0.16, 0.13, 0.13
+```
+
+
+### Prosocial Behavior After Cyclone
+
+#### Wilcoxon tests, p. 569
+
+First, looking at Corel v Self pre v post. The paper reports this as W = 4,251, p = .01, r = .20. I replicate the results, although my output is a V statistic rather than a W. 
+
+As a small note, I see that there are a lot of different packages and ways to compute the effect size but for simplicity's sake for all tests below, I'll do it manually through the formula and using 164 as the approximate total n.
+
+```{r}
+wilcox1 <- wilcox.test(data$preCorelvSelf, data$postCorelvSelf, paired=TRUE)
+wilcox1
+
+zstat <-qnorm(wilcox1$p.value/2)
+abs(zstat)/sqrt(164)
+```
+
+Next, we have  Outgroup v Self, pre v post. The paper reports this as W = 5,063, p = .001, r =.26. And with the same caveat as above about a V rather than a W, we basically get the same result: V = 5063, p < .001, r = .26.
+```{r}
+wilcox2 <- wilcox.test(data$preOutgroupv.Self, data$postOutgrouvSelf, paired = TRUE)
+wilcox2
+
+zstat <-qnorm(wilcox2$p.value/2)
+abs(zstat)/sqrt(164)
+
+```
+
+Next, Corel v Outgroup, pre v post, this replicates as well.
+
+```{r}
+wilcox3 <- wilcox.test(data$preOutgroupvCorel, data$postOutgroupvCorel, paired = TRUE)
+wilcox3
+
+zstat <-qnorm(wilcox3$p.value/2)
+abs(zstat)/sqrt(164)
+```
+
+The final of the Wilcoxon tests looks at own vaillage vs distant coreligionists, pre v post. I get a slight difference, V = 2864.5 compared to the reported W = 2843.5 in the paper.  P-vals and effect sizes are the same.
+```{r}
+wilcox4 <- wilcox.test(data$preCorelvOwnVillage, data$postCorelvOwnVillage, paired = TRUE)
+wilcox4
+
+zstat <-qnorm(wilcox4$p.value/2)
+abs(zstat)/sqrt(164)
+
+```
+
+#### McNemar tests, p. 569
+Next we have a series of Mcnemar chi-square tests using the binary variables (cut-off is 5 coins) and all of these results are reproducible.
+
+```{r}
+mcnemar.test(data$preOutgroupvSelfbinary, data$postOutgroupvSelfbinary)
+
+mcnemar.test(data$preCorelvSelfbinary, data$postCorelvSelfbinary)
+
+mcnemar.test(data$preOutgroupvCorelbinary, data$postCorelvSelfbinary)
+
+mcnemar.test(data$preCorelvOwnVillagebinary, data$postCorelvOwnVillagebinary)
+
+```
+
+### Consistency Behavior Change
+Here, we look at change in allocation amounts, p.571, figure 5. The relevant variable names (net_corel1_ord	net_corel2_ord	net_outgroup3_ord	net_outgroup4_ord) are variable names that I struggled with understanding without a variable description files and don't think they would have made sense to me without the paper (specifically the figure 5 caption). Some googling tells me this could probably be solved with something like margin.table but since I'm not too familiar with this, for simplicity once more I will just divide by the full n=164. Results replicate with small difference, possibly to rounding decisions differences or a more precise approach taken by the authors.
+
+```{r}
+table(data$net_corel1_ord) / 164
+
+table(data$net_corel2_ord) / 164
+
+table(data$net_outgroup3_ord) / 164
+
+table(data$net_outgroup4_ord) / 164
+```
+
+
+
+### Preducting Prosocial Giving
+
+#### Tobit regressions
+These are reported starting p.570 and mainly in Table 1. I assume that 'damage to property', 'need for resource aid', 'injury to loved ones', 'witnessing other people in distress' correspond to the four factors from the PCA, which are likely respectively the following variables: PROPDAM, NEED, INJURY, FEAR. I'm basing this on the order the variables appear in the dataset, though otherwise I wouldn't have figured out that 'witnessing other people in distress' corresponds to FEAR.
+
+I can't fully and exactly replicate the results, though most differences are small and some could be attributed to rounding decisions. I imagine the models might be specified somewhat differently too.
+
+```{r}
+#self/coreligionist
+summary(tbtmodel1 <- tobit(postCorelvSelf ~ PROPDAM + FEAR + INJURY + NEED + preCorelvSelf + Site, data=data))
+
+#self/outgroup
+summary(tbtmodel2 <- tobit(postOutgrouvSelf ~ PROPDAM + FEAR + INJURY + NEED + preOutgroupv.Self + Site, data=data))
+
+#village/coreligionist
+summary(tbtmodel3 <- tobit(postCorelvOwnVillage ~ PROPDAM + FEAR + INJURY + NEED + preCorelvOwnVillage + Site, data=data))
+
+#coreligionist/outgroup
+summary(tbtmodel4 <- tobit(postOutgroupvCorel ~ PROPDAM + FEAR + INJURY + NEED + preOutgroupvCorel + Site, data=data))
+
+
+```
+
+#### Logistic regressions
+These are reported starting p.570 and mainly in Table 2. Again, it's hard to figure out which variables are to be included in the model. The text does specify the use of the binary variables. Again I assume we are using the PCA factors (as with the tobit regressions above).
+
+I can't reproduce the results but I imagine I am doing something incorrectly, possibly from the very start with variable selection.
+
+``` {r}
+# self/coreligionist
+summary(logmodel1 <- glm(postCorelvSelfbinary ~ PROPDAM + NEED + INJURY + FEAR + preCorelvSelfbinary + Site, data=data, family = binomial), na.action="na.omit")
+
+# self/outgroup
+summary(logmodel2 <- glm(postOutgroupvSelfbinary ~ PROPDAM + NEED + INJURY + FEAR + preOutgroupvSelfbinary + Site, data=data, family = binomial),  na.action="na.omit")
+
+# village/coreligionist
+summary(logmodel3 <-glm(postCorelvOwnVillagebinary ~ PROPDAM + NEED + INJURY + FEAR + preCorelvOwnVillagebinary + Site, data=data, family = binomial),  na.action="na.omit")
+
+# coreligionist/outgroup
+summary(logmodel4 <-glm(postOutgroupvCorelbinary ~ PROPDAM + NEED + INJURY + FEAR + preOutgroupvCorelbinary + Site, data=data, family = binomial), na.action="na.omit")
+
+```
+
+## Final notes
+I haven't attempted to reproduce any figures or the supplementary results. The main results can be largely but not fully reproduced. A variable handbook would have been really useful to save time and to potentially help out with the regressions. The only thing that would have helped more would have been sharing the analysis code.
+

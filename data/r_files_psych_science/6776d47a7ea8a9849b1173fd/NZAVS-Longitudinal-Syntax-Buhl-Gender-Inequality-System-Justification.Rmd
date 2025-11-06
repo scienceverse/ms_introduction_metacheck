@@ -1,0 +1,792 @@
+---
+title: "Rebels with(out) a Cause - Revised Version (Main Analysis)" 
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+# DATA PREPARATION
+
+
+## STEP 1: Setup and Load R Packages
+
+
+```{r setup}
+knitr::opts_chunk$set(warning = F,
+                      message = F,
+                      tidy.opts=list(width.cutoff=80), 
+                      tidy=TRUE)
+
+options(scipen=999)
+
+library(pacman)
+pacman::p_load(haven, psych, foreign, tidyverse, coefficientalpha, 
+               magrittr, dplyr, panelr, lme4, lmerTest, performance,
+               misty, ggplot2, jtools, HLMdiag, lmtest, reghelper, 
+               emmeans, pvaluefunctions, knitr, formatR, simr,sjPlot)
+```
+
+
+## STEP 2: Load Longitudinal Data and Create Subset
+
+
+```{r dataset}
+df = file.choose() #NZAVS Longitudinal SPSS Base Dataset
+dataset = read.spss(df, to.data.frame=TRUE)
+
+#SYSJ
+dataset$SYSJ_W1 <- rowMeans(subset(dataset, select = c(SysJust01.T01,SysJust02.T01)))
+dataset$SYSJ_W2 <- rowMeans(subset(dataset, select = c(SysJust01.T02,SysJust02.T02, 
+                                                       SysJust03.T02, SysJust04.T02)))
+dataset$SYSJ_W3 <- rowMeans(subset(dataset, select = c(SysJust01.T03,SysJust02.T03, 
+                                                       SysJust03.T03, SysJust04.T03)))
+dataset$SYSJ_W4 <- rowMeans(subset(dataset, select = c(SysJust01.T04,SysJust02.T04, 
+                                                       SysJust03.T04, SysJust04.T04)))
+dataset$SYSJ_W5 <- rowMeans(subset(dataset, select = c(SysJust01.T05,SysJust02.T05, 
+                                                       SysJust03.T05, SysJust04.T05)))
+dataset$SYSJ_W6 <- rowMeans(subset(dataset, select = c(SysJust01.T06,SysJust02.T06, 
+                                                       SysJust03.T06, SysJust04.T06)))
+dataset$SYSJ_W7 <- rowMeans(subset(dataset, select = c(SysJust01.T07,SysJust02.T07, 
+                                                       SysJust03.T07, SysJust04.T07)))
+dataset$SYSJ_W8 <- rowMeans(subset(dataset, select = c(SysJust01.T08,SysJust02.T08, 
+                                                       SysJust03.T08, SysJust04.T08)))
+dataset$SYSJ_W9 <- rowMeans(subset(dataset, select = c(SysJust01.T09,SysJust02.T09, 
+                                                       SysJust03.T09, SysJust04.T09)))
+dataset$SYSJ_W10 <- rowMeans(subset(dataset, select = c(SysJust01.T10,SysJust02.T10, 
+                                                        SysJust03.T10, SysJust04.T10)))
+dataset$SYSJ_W11 <- rowMeans(subset(dataset, select = c(SysJust01.T11,SysJust02.T11, 
+                                                        SysJust03.T11, SysJust04.T11)))
+dataset$SYSJ_W12 <- rowMeans(subset(dataset, select = c(SysJust01.T12,SysJust02.T12, 
+                                                        SysJust03.T12, SysJust04.T12)))
+dataset$SYSJ_W13 <- rowMeans(subset(dataset, select = c(SysJust01.T13,SysJust02.T13, 
+                                                        SysJust03.T13, SysJust04.T13)))
+dataset$SYSJ_W14 <- rowMeans(subset(dataset, select = c(SysJust01.T14,SysJust02.T14, 
+                                                        SysJust03.T14, SysJust04.T14)))
+
+ds_wide <- subset(dataset, 
+                  select=c("Gender.L","Questionnaire.Num",
+#SDO
+                           "T01.SDO","T02.SDO","T03.SDO","T04.SDO",
+                           "T05.SDO","T06.SDO","T07.SDO","T08.SDO",
+                           "T09.SDO","T10.SDO","T11.SDO","T12.SDO",
+                           "T13.SDO","T14.SDO",
+#SYSJ
+                           "SYSJ_W1","SYSJ_W2","SYSJ_W3","SYSJ_W4",
+                           "SYSJ_W5","SYSJ_W6","SYSJ_W7","SYSJ_W8",
+                           "SYSJ_W9","SYSJ_W10","SYSJ_W11","SYSJ_W12",
+                           "SYSJ_W13","SYSJ_W14",
+#Ethnicity
+                           "Euro.Ever.L","EthCat.L",
+#Age
+                           "Age.T01.L","Age.T02.L","Age.T03.L",
+                           "Age.T04.L","Age.T05.L","Age.T06.L",
+                           "Age.T07.L","Age.T08.L","Age.T09.L",
+                           "Age.T10.L","Age.T11.L","Age.T12.L",
+                           "Age.T13.L","Age.T14.L",
+#Sexual Identity
+                           "SexualOrientationL1.T05","SexualOrientationL1.T06",
+                           "SexualOrientationL1.T07","SexualOrientationL1.T08",
+                           "SexualOrientationL1.T09","SexualOrientationL1.T10",
+                           "SexualOrientationL1.T11","SexualOrientationL1.T12",
+                           "SexualOrientationL1.T13","SexualOrientationL1.T14",
+#Gender
+                           "GendAll.T01","GendAll.T02","GendAll.T03",
+                           "GendAll.T04","GendAll.T05","GenderAll.T06",
+                           "GenderAll.T07","GenderAll.T08","GenderAll.T09",
+                           "GenderAll.T10","GenderAll.T11","GenderAll.T12",
+                           "GenderAll.T13","GenderAll.T14"))
+                   
+names(ds_wide)[3:16] <- paste0("SDO_W", 1:14)
+names(ds_wide)[33:46] <- paste0("AGE_W", 1:14)
+names(ds_wide)[47:56] <- paste0("SexualOr_W", 5:14)
+names(ds_wide)[57:70] <- paste0("Gender_W", 1:14)
+
+ds_wide$Year_W1 <- c(2009)
+ds_wide$Year_W2 <- c(2010)
+ds_wide$Year_W3 <- c(2011)
+ds_wide$Year_W4 <- c(2012)
+ds_wide$Year_W5 <- c(2013)
+ds_wide$Year_W6 <- c(2014)
+ds_wide$Year_W7 <- c(2015)
+ds_wide$Year_W8 <- c(2016)
+ds_wide$Year_W9 <- c(2017)
+ds_wide$Year_W10 <- c(2018)
+ds_wide$Year_W11 <- c(2019)
+ds_wide$Year_W12 <- c(2020)
+ds_wide$Year_W13 <- c(2021)
+ds_wide$Year_W14 <- c(2022)
+```
+
+
+## STEP 3: Add Global Gender Gap Index (World Economic Forum)
+
+
+```{r equ}
+ds_wide$EQU_W1 <- c(0.788)
+ds_wide$EQU_W2 <- c(0.7808)
+ds_wide$EQU_W3 <- c(0.7810)
+ds_wide$EQU_W4 <- c(0.7805)
+ds_wide$EQU_W5 <- c(0.7799)
+ds_wide$EQU_W6 <- c(0.7772)
+ds_wide$EQU_W7 <- c(0.782)
+ds_wide$EQU_W8 <- c(0.781)
+ds_wide$EQU_W9 <- c(0.791)
+ds_wide$EQU_W10 <- c(0.801)
+ds_wide$EQU_W11 <- c(NA)
+ds_wide$EQU_W12 <- c(0.799)
+ds_wide$EQU_W13 <- c(0.840)
+ds_wide$EQU_W14 <- c(0.841)
+```
+
+
+## STEP 4: Transform Wide to Long Format
+
+
+```{r long, echo=FALSE}
+ds_long <- long_panel(ds_wide, prefix = "_W", label_location = "end", begin = 1, end = 14)
+ds_long <- as.data.frame(ds_long)
+names(ds_long)
+```
+
+
+## STEP 5: Create Subsets for Male and Female Participants
+
+
+```{r subsets gender, echo=FALSE}
+ds_female <- subset(ds_long,Gender.L == "Woman")
+ds_male <- subset(ds_long,Gender.L == "Man")
+```
+
+
+## STEP 6: Descriptive Statistics across Time
+
+
+```{r gender, echo=FALSE}
+gender <- table(ds_long$wave, ds_long$Gender)
+
+knitr::kable(gender,
+             caption = "Gender")
+```
+
+
+```{r descrfocal, echo=FALSE}
+summary_stats <- ds_long %>%
+  group_by(wave) %>%
+  summarise(
+    mean_SDO = mean(SDO, na.rm = TRUE),
+    sd_SDO = sd(SDO, na.rm = TRUE),
+    mean_SYSJ = mean(SYSJ, na.rm = TRUE),
+    sd_SYSJ = sd(SYSJ, na.rm = TRUE),
+    mean_AGE = mean(AGE, na.rm = TRUE),
+    sd_AGE = sd(AGE, na.rm = TRUE)
+  )
+
+knitr::kable(summary_stats,
+             caption = "Focal Variables and Age")
+```
+
+
+```{r descrfocal female, echo=FALSE}
+summary_stats <- ds_female %>%
+  group_by(wave) %>%
+  summarise(
+    mean_SDO = mean(SDO, na.rm = TRUE),
+    sd_SDO = sd(SDO, na.rm = TRUE),
+    mean_SYSJ = mean(SYSJ, na.rm = TRUE),
+    sd_SYSJ = sd(SYSJ, na.rm = TRUE),
+    mean_AGE = mean(AGE, na.rm = TRUE),
+    sd_AGE = sd(AGE, na.rm = TRUE)
+  )
+
+knitr::kable(summary_stats,
+             caption = "Focal Variables and Age (Female Sample)")
+```
+
+
+```{r descrfocal male, echo=FALSE}
+summary_stats <- ds_male %>%
+  group_by(wave) %>%
+  summarise(
+    mean_SDO = mean(SDO, na.rm = TRUE),
+    sd_SDO = sd(SDO, na.rm = TRUE),
+    mean_SYSJ = mean(SYSJ, na.rm = TRUE),
+    sd_SYSJ = sd(SYSJ, na.rm = TRUE),
+    mean_AGE = mean(AGE, na.rm = TRUE),
+    sd_AGE = sd(AGE, na.rm = TRUE)
+  )
+
+knitr::kable(summary_stats,
+             caption = "Focal Variables and Age (Male Sample)")
+```
+
+
+```{r sexualid, echo=FALSE}
+sexualid <- table(ds_long$wave, ds_long$SexualOr)
+
+knitr::kable(sexualid,
+             caption = "Sexual Identity")
+```
+
+
+```{r ethnicity, echo=FALSE}
+results <- data.frame(
+  Timepoint = character(),
+  Euro = integer(),
+  Maori = integer(),
+  Pacific = integer(),
+  Asian = integer(),
+  stringsAsFactors = FALSE
+)
+
+ethnicities <- c("Euro", "Maori", "Pacific", "Asian")
+timepoints <- sprintf("T%02d", 1:14)
+
+for (timepoint in timepoints) {
+  counts <- c(Timepoint = timepoint)
+  for (ethnicity in ethnicities) {
+    col_name <- paste0("EthL2.", ethnicity, ".", timepoint)
+    if (col_name %in% names(dataset)) {
+      if (timepoint == "T01" && ethnicity == "Euro") {
+        counts[ethnicity] <- sum(dataset[[col_name]] == "NZ European", na.rm = TRUE)
+      } else if (as.numeric(sub("T", "", timepoint)) <= 12) {
+        counts[ethnicity] <- sum(dataset[[col_name]] == "Yes", na.rm = TRUE)
+      } else {
+        counts[ethnicity] <- sum(dataset[[col_name]] == 1, na.rm = TRUE)
+      }
+    } else {
+      counts[ethnicity] <- 0
+    }
+  }
+  results <- rbind(results, as.data.frame(t(counts), stringsAsFactors = FALSE))
+}
+
+knitr::kable(results,
+             caption = "Ethnicity")
+```
+
+
+# MAIN ANALYSIS AND RESULTS
+
+
+## STEP 0: Granger Causality Test Without Considering Multilevel Data Structure
+
+
+```{r granger, echo=FALSE}
+ds_long$SDO_std <- scale(ds_long$SDO, center = TRUE, scale = FALSE)
+ds_long$SYSJ_std <- scale(ds_long$SYSJ, center = TRUE, scale = FALSE)
+ds_long$EQU_std <- scale(ds_long$EQU, center = TRUE, scale = FALSE)
+
+granger_df <- ds_long %>%
+  group_by(Year) %>%
+  summarise(
+    Correlation = cor(SDO_std, SYSJ_std, use = "pairwise.complete.obs"),
+    EQU = first(EQU_std)
+  )
+
+grangertest(Correlation ~ EQU, order = 2, data = granger_df)
+grangertest(EQU ~ Correlation, order = 2, data = granger_df)
+```
+
+
+```{r granger female, echo=FALSE}
+ds_female$SDO_std <- scale(ds_female$SDO, center = TRUE, scale = FALSE)
+ds_female$SYSJ_std <- scale(ds_female$SYSJ, center = TRUE, scale = FALSE)
+ds_female$EQU_std <- scale(ds_female$EQU, center = TRUE, scale = FALSE)
+
+granger_df_female <- ds_female %>%
+  group_by(Year) %>%
+  summarise(
+    Correlation = cor(SDO_std, SYSJ_std, use = "pairwise.complete.obs"),
+    EQU = first(EQU_std)
+  )
+
+grangertest(Correlation ~ EQU, order = 2, data = granger_df_female)
+grangertest(EQU ~ Correlation, order = 2, data = granger_df_female)
+```
+
+
+```{r grangerplot female, echo=FALSE, fig.cap = "Mean Levels of X (Structural Gender Equality) and Y (Correlation between SDO and System Justification) across Time", fig.show='hold', out.width = "60%"}
+legend_pos <- "top"
+
+ggplot(granger_df_female, aes(x = Year)) +
+  geom_line(aes(y = Correlation, color = "Correlation SDO and System Justification"), size = 1) +
+  geom_line(aes(y = EQU, color = "Gender Equality Index"), size = 1) +
+  labs(
+    y = "Mean-Centered Coefficient", x = "Year",
+    color = "Legend"
+  ) +
+  scale_x_continuous(breaks = 2009:2022) +
+  theme_apa(legend.pos = all_of(legend_pos)) +
+  scale_colour_grey() +
+  theme(
+    legend.background = element_rect(
+      fill = "white",
+      colour = "black"
+    ),
+    axis.text = element_text(size = 12, colour = "black")
+  )
+```
+
+
+```{r granger male, echo=FALSE}
+ds_male$SDO_std <- scale(ds_male$SDO, center = TRUE, scale = FALSE)
+ds_male$SYSJ_std <- scale(ds_male$SYSJ, center = TRUE, scale = FALSE)
+ds_male$EQU_std <- scale(ds_male$EQU, center = TRUE, scale = FALSE)
+
+granger_df_male <- ds_male %>%
+  group_by(Year) %>%
+  summarise(
+    Correlation = cor(SDO_std, SYSJ_std, use = "pairwise.complete.obs"),
+    EQU = first(EQU_std)
+  )
+
+grangertest(Correlation ~ EQU, order = 2, data = granger_df_male)
+grangertest(EQU ~ Correlation, order = 2, data = granger_df_male)
+```
+
+
+## STEP 1: Fit the Baseline Model
+
+
+```{r baseline, echo=FALSE}
+baseline <- lmer(SYSJ ~ 1 + (1 | id), data = ds_long, REML = FALSE)
+summary(baseline)
+
+confint(baseline, method = "Wald")
+```
+
+
+```{r baseline female, echo=FALSE}
+baseline_female <- lmer(SYSJ ~ 1 + (1 | id), data = ds_female, REML = FALSE)
+summary(baseline_female)
+
+confint(baseline_female, method = "Wald")
+```
+
+
+```{r baseline male, echo=FALSE}
+baseline_male <- lmer(SYSJ ~ 1 + (1 | id), data = ds_male, REML = FALSE)
+summary(baseline_male)
+
+confint(baseline_male, method = "Wald")
+```
+
+
+## STEP 3: Centering of Predictors
+
+
+```{r centering}
+# Grand mean centering
+
+## Gender Equality Index
+ds_long <- ds_long %>%
+  mutate(EQU_gmc = EQU - mean(EQU, na.rm = TRUE))
+
+## SDO
+ds_long <- ds_long %>%
+  mutate(SDO_gmc = SDO - mean(SDO, na.rm = TRUE))
+
+# Centering within clusters (ID)
+ds_long <- ds_long %>%
+  group_by(id) %>%
+  mutate(
+    mean_SDO = mean(SDO, na.rm = TRUE),
+    SDO_cwc = SDO - mean_SDO
+  ) %>%
+  ungroup()
+
+# Grand mean centering of the aggregated variable (mean_SDO)
+ds_long <- ds_long %>%
+  mutate(mean_SDO_gmc = mean_SDO - mean(mean_SDO, na.rm = TRUE))
+```
+
+
+```{r centering female}
+# Grand mean centering
+
+## Gender Equality Index
+ds_female <- ds_female %>%
+  mutate(EQU_gmc = EQU - mean(EQU, na.rm = TRUE))
+
+## SDO
+ds_female <- ds_female %>%
+  mutate(SDO_gmc = SDO - mean(SDO, na.rm = TRUE))
+
+# Centering within clusters (ID)
+ds_female <- ds_female %>%
+  group_by(id) %>%
+  mutate(
+    mean_SDO = mean(SDO, na.rm = TRUE),
+    SDO_cwc = SDO - mean_SDO
+  ) %>%
+  ungroup()
+
+# Grand mean centering of the aggregated variable (mean_SDO)
+ds_female <- ds_female %>%
+  mutate(mean_SDO_gmc = mean_SDO - mean(mean_SDO, na.rm = TRUE))
+```
+
+
+```{r centering male}
+# Grand mean centering
+
+## Gender Equality Index
+ds_male <- ds_male %>%
+  mutate(EQU_gmc = EQU - mean(EQU, na.rm = TRUE))
+
+## SDO
+ds_male <- ds_male %>%
+  mutate(SDO_gmc = SDO - mean(SDO, na.rm = TRUE))
+
+# Centering within clusters (ID)
+ds_male <- ds_male %>%
+  group_by(id) %>%
+  mutate(
+    mean_SDO = mean(SDO, na.rm = TRUE),
+    SDO_cwc = SDO - mean_SDO
+  ) %>%
+  ungroup()
+
+# Grand mean centering of the aggregated variable (mean_SDO)
+ds_male <- ds_male %>%
+  mutate(mean_SDO_gmc = mean_SDO - mean(mean_SDO, na.rm = TRUE))
+```
+
+
+## STEP 4: Add EQU as Predictor
+
+
+```{r mod1, echo=FALSE}
+mod1 <- lmer(SYSJ ~ EQU_gmc + (1 | id), data = ds_long, REML = FALSE)
+summary(mod1)
+
+confint(mod1, method = "Wald")
+```
+
+
+```{r mod1 female, echo=FALSE}
+mod1_female <- lmer(SYSJ ~ EQU_gmc + (1 | id), data = ds_female, REML = FALSE)
+summary(mod1_female)
+
+confint(mod1_female, method = "Wald")
+```
+
+
+```{r mod1 male, echo=FALSE}
+mod1_male <- lmer(SYSJ ~ EQU_gmc + (1 | id), data = ds_male, REML = FALSE)
+summary(mod1_male)
+
+confint(mod1_male, method = "Wald")
+```
+
+
+## STEP 5: Add SDO as Predictor
+
+
+```{r mod2, echo=FALSE}
+mod2 <- lmer(SYSJ ~ EQU_gmc + SDO_cwc + mean_SDO_gmc + (1 | id), data = ds_long, REML = FALSE)
+summary(mod2)
+
+confint(mod2, method = "Wald")
+```
+
+
+```{r mod2 female, echo=FALSE}
+mod2_female <- lmer(SYSJ ~ EQU_gmc + SDO_cwc + mean_SDO_gmc + (1 | id), data = ds_female, REML = FALSE)
+summary(mod2_female)
+
+confint(mod2_female, method = "Wald")
+```
+
+
+```{r mod2 male, echo=FALSE}
+mod2_male <- lmer(SYSJ ~ EQU_gmc + SDO_cwc + mean_SDO_gmc + (1 | id), data = ds_male, REML = FALSE)
+summary(mod2_male)
+
+confint(mod2_male, method = "Wald")
+```
+
+
+## STEP 6: Add Random Slope for ID
+
+
+```{r mod3, echo=FALSE}
+mod3 <- lmer(SYSJ ~ EQU_gmc + SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id), 
+             data = ds_long, REML = FALSE,
+             control = lmerControl(optimizer = "bobyqa"))
+summary(mod3)
+
+confint(mod3, method = "Wald")
+```
+
+
+```{r mod3 female, echo=FALSE}
+mod3_female <- lmer(SYSJ ~ EQU_gmc + SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id), 
+             data = ds_female, REML = FALSE,
+             control = lmerControl(optimizer = "bobyqa"))
+summary(mod3_female)
+
+confint(mod3_female, method = "Wald")
+```
+
+
+```{r mod3 male, echo=FALSE}
+mod3_male <- lmer(SYSJ ~ EQU_gmc + SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id), 
+             data = ds_male, REML = FALSE,
+             control = lmerControl(optimizer = "bobyqa"))
+summary(mod3_male)
+
+confint(mod3_male, method = "Wald")
+```
+
+
+## STEP 7: Add Interaction between SDO and EQU
+
+
+```{r mod4, echo=FALSE}
+mod4 <- lmer(SYSJ ~ EQU_gmc * SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id),
+  data = ds_long, REML = FALSE,
+  control = lmerControl(optimizer = "bobyqa")
+)
+summary(mod4)
+
+confint(mod4, method = "Wald")
+```
+
+
+```{r mod4 female, echo=FALSE}
+mod4_female <- lmer(SYSJ ~ EQU_gmc * SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id),
+  data = ds_female, REML = FALSE,
+  control = lmerControl(optimizer = "bobyqa")
+)
+summary(mod4_female)
+
+confint(mod4_female, method = "Wald")
+```
+
+
+```{r mod4 male, echo=FALSE}
+mod4_male <- lmer(SYSJ ~ EQU_gmc * SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id),
+  data = ds_male, REML = FALSE,
+  control = lmerControl(optimizer = "bobyqa")
+)
+summary(mod4_male)
+
+confint(mod4_male, method = "Wald")
+```
+
+
+```{r plotmod4 female, echo=FALSE, fig.cap = "Fitted Interaction Model Predicting System Justification", fig.show='hold', out.width = "60%"}
+plot <- graph_model(mod4_female,
+  y = SYSJ, x = SDO_cwc, lines = EQU_gmc, errorbars = "CI",
+  labels = list(
+    y = "System Justification",
+    x = "SDO",
+    lines = "Gender Equality Index"
+  )
+)
+
+plot <- plot + scale_color_manual(
+  values = c("-1 SD" = "black", "+1 SD" = "grey")
+)
+plot <- plot + theme_bw() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+print(plot)
+```
+
+
+### Decompose Interaction Effect
+
+
+```{r decomposed female, echo=FALSE}
+equ_minus <- mean(ds_female$EQU_gmc, na.rm = TRUE) - sd(ds_female$EQU_gmc, na.rm = TRUE)
+equ_mean <- mean(ds_female$EQU_gmc, na.rm = TRUE)
+equ_plus <- mean(ds_female$EQU_gmc, na.rm = TRUE) + sd(ds_female$EQU_gmc, na.rm = TRUE)
+
+mylist <- list(EQU_gmc = c(equ_minus, equ_mean, equ_plus))
+emtrends(mod4_female, ~EQU_gmc, var = "SDO_cwc", at = mylist)
+```
+
+
+# ADDITIONAL ANALYSES: SUBGROUP COMPARISON
+
+
+## STEP 1: Majoritized Women (NZ European Heterosexual Women)
+
+
+```{r majority, echo=FALSE}
+ds_female$Euro.Ever.L <- ifelse(ds_female$Euro.Ever.L == "Yes", 1, 0)
+ds_female <- ds_female %>%
+  rename(EUR = Euro.Ever.L)
+
+EUR_women <- subset(ds_female, EUR == 1 & SexualOr == "Heterosexual")
+
+EUR_women <- EUR_women %>%
+  mutate(EQU_gmc = EQU - mean(EQU, na.rm = TRUE))
+
+EUR_women <- EUR_women %>%
+  mutate(SDO_gmc = SDO - mean(SDO, na.rm = TRUE))
+
+EUR_women <- EUR_women %>%
+  group_by(id) %>%
+  mutate(
+    mean_SDO = mean(SDO, na.rm = TRUE),
+    SDO_cwc = SDO - mean_SDO
+  ) %>%
+  ungroup()
+
+EUR_women <- EUR_women %>%
+  mutate(mean_SDO_gmc = mean_SDO - mean(mean_SDO, na.rm = TRUE))
+
+EURmod0 <- lmer(SYSJ ~ EQU_gmc + SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id), data = EUR_women, REML = FALSE)
+
+EURmod1 <- lmer(SYSJ ~ EQU_gmc * SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id),
+  data = EUR_women, REML = FALSE,
+  control = lmerControl(optimizer = "bobyqa")
+)
+
+anova(EURmod0, EURmod1)
+summary(EURmod1)
+
+confint(EURmod1, method = "Wald")
+```
+
+
+```{r plotmajority, echo=FALSE, fig.cap = "Fitted Interaction Model Predicting System Justification (Majoritized Women)", fig.show='hold', out.width = "60%"}
+plot_majority <- graph_model(EURmod1,
+  y = SYSJ, x = SDO_cwc, lines = EQU_gmc, errorbars = "CI",
+  labels = list(
+    y = "System Justification",
+    x = "SDO",
+    lines = "Gender Equality Index"
+  )
+)
+
+plot_majority <- plot_majority + scale_color_manual(
+  values = c("-1 SD" = "black", "+1 SD" = "grey")
+)
+plot_majority <- plot_majority + theme_bw() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+print(plot_majority)
+```
+
+
+### Decompose Interaction Effect
+
+
+```{r decomposed majority, echo=FALSE}
+equ_minus1 <- mean(EUR_women$EQU_gmc, na.rm = TRUE) - sd(EUR_women$EQU_gmc, na.rm = TRUE)
+equ_mean1 <- mean(EUR_women$EQU_gmc, na.rm = TRUE)
+equ_plus1 <- mean(EUR_women$EQU_gmc, na.rm = TRUE) + sd(EUR_women$EQU_gmc, na.rm = TRUE)
+
+mylist1 <- list(EQU_gmc = c(equ_minus1, equ_mean1, equ_plus1))
+emtrends(EURmod1, ~EQU_gmc, var = "SDO_cwc", at = mylist1)
+```
+
+
+## STEP 2: Minoritized Women (NZ Ethnic Minority Women)
+
+
+```{r minority, echo=FALSE}
+ETHMIN_women <- subset(ds_female, EUR == 0)
+
+ETHMIN_women <- ETHMIN_women %>%
+  mutate(EQU_gmc = EQU - mean(EQU, na.rm = TRUE))
+
+ETHMIN_women <- ETHMIN_women %>%
+  mutate(SDO_gmc = SDO - mean(SDO, na.rm = TRUE))
+
+ETHMIN_women <- ETHMIN_women %>%
+  group_by(id) %>%
+  mutate(
+    mean_SDO = mean(SDO, na.rm = TRUE),
+    SDO_cwc = SDO - mean_SDO
+  ) %>%
+  ungroup()
+
+ETHMIN_women <- ETHMIN_women %>%
+  mutate(mean_SDO_gmc = mean_SDO - mean(mean_SDO, na.rm = TRUE))
+
+ETHMINmod0 <- lmer(SYSJ ~ EQU_gmc + SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id), data = ETHMIN_women, REML = FALSE)
+
+ETHMINmod1 <- lmer(SYSJ ~ EQU_gmc * SDO_cwc + mean_SDO_gmc + (1 + SDO_cwc | id),
+  data = ETHMIN_women, REML = FALSE,
+  control = lmerControl(optimizer = "bobyqa")
+)
+
+anova(ETHMINmod0, ETHMINmod1)
+
+summary(ETHMINmod1)
+
+confint(ETHMINmod1, method = "Wald")
+```
+
+
+```{r plotminority, echo=FALSE, fig.cap = "Fitted Interaction Model Predicting System Justification (Minoritized Women)", fig.show='hold', out.width = "60%"}
+plot_minority <- graph_model(ETHMINmod1,
+  y = SYSJ, x = SDO_cwc, lines = EQU_gmc, errorbars = "CI",
+  labels = list(
+    y = "System Justification",
+    x = "SDO",
+    lines = "Gender Equality Index"
+  )
+)
+
+plot_minority <- plot_minority + scale_color_manual(
+  values = c("-1 SD" = "black", "+1 SD" = "grey")
+)
+plot_minority <- plot_minority + theme_bw() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+print(plot_minority)
+```
+
+
+### Beta Coefficients and Marginal/Conditional R2 (Female Sample)
+
+
+```{r model female beta, eval = FALSE}
+tab_model(baseline_female, show.std = TRUE, show.ci = FALSE, digits =3)
+tab_model(mod1_female, show.std = TRUE, show.ci = FALSE, digits =3)
+tab_model(mod2_female, show.std = TRUE, show.ci = FALSE, digits =3)
+tab_model(mod3_female, show.std = TRUE, show.ci = FALSE, digits =3)
+tab_model(mod4_female, show.std = TRUE, show.ci = FALSE, digits =3)
+
+# majority
+tab_model(EURmod0, show.std = TRUE, show.ci = FALSE, digits =3)
+tab_model(EURmod1, show.std = TRUE, show.ci = FALSE, digits =3)
+
+# minority
+tab_model(ETHMINmod0, show.std = TRUE, show.ci = FALSE, digits =3)
+tab_model(ETHMINmod1, show.std = TRUE, show.ci = FALSE, digits =3)
+```
+
+
+## STEP 3: Adjust *p*-Values
+
+
+```{r adjust}
+pvalues <- c(0.047, 0.107, 0.000116, 0.00000237, 0.89097)
+
+p.adjust(pvalues, method = "BH")
+```
+

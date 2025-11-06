@@ -1,0 +1,1086 @@
+---
+title: 'Cognitive correlates of hallucinatory experiences in the general population: an international
+  multi-site project'
+output:
+  html_document:
+    number_sections: false
+    theme: spacelab
+  pdf_document: default
+  word_document:
+    reference_docx: word_styles.docx
+bibliography: ["zotero-library.bib"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Non-filtered data is in the multisite_dataset_nonfiltered_anon.csv file 
+# (no exclusion criteria applied, n = 1513)
+
+# Note that some variables have been removed from the openly available dataset to
+# preserve participant anonymity. As such any analysis that relies on these variables has 
+# been commented out of the below analysis code.
+# Removed variables: 
+# age (replaced with age group variable)
+# gender
+# country of origin
+  
+# create vector of packages needed, load packages
+multisite_packages_rmd <- c("tidyverse", "jmv", "compute.es", "psych", "TOSTER", "citr", "lme4", "ggeffects", "ggplot2", "AICcmodavg", "knitr", "cocor", "Rmisc", "MBESS", "reghelper")
+invisible(lapply(multisite_packages_rmd, library, character.only = TRUE))
+
+source("spearman_ci.r") # used to calculate confidence intervals around Spearman's rho
+source('task_scripts/calc_sdt.R') # used for SDT calculation
+
+# dataset with no exclusions
+multisite_dataset_nonfiltered <- read_csv("dataset/multisite_dataset_nonfiltered_anon.csv")
+
+# dataset with no task data excluded, but demog/attention exclusion criteria applied
+multisite_dataset_filtered <- filter(multisite_dataset_nonfiltered, failed_checks < 2, hearing_diagnosis != "Yes")
+
+# this script applies the exclusion criteria for individual tasks 
+# and creates the multisite_dataset tibble used throughout this script
+source("task_scripts/filter_multisite_data.R")
+                  
+# separate dataframes for lab and online data
+multisite_dataset_lab <- filter(multisite_dataset, origin == 1)
+multisite_dataset_prolific <- filter(multisite_dataset, origin != 1)
+
+attach(multisite_dataset)
+```
+
+```{r}
+# calculate sample sizes and number of exclusions
+total_n <- nrow(multisite_dataset_nonfiltered)
+lab_n <- nrow(multisite_dataset_nonfiltered %>%  filter(origin == 1))
+online_n <- total_n - lab_n
+att_check_exclusions <- sum(multisite_dataset_nonfiltered$failed_checks > 1)
+hearing_diagnosis_exclusion <- sum(multisite_dataset_nonfiltered$hearing_diagnosis == "Yes")
+final_sample_n <- nrow(multisite_dataset)
+final_lab_n <- nrow(multisite_dataset %>% filter(origin == 1))
+final_online_n <- final_sample_n - final_lab_n
+
+# number of participants at each data collection site (after exclusions)
+n_by_site <- multisite_dataset %>% 
+  group_by(site) %>% 
+  tally()
+
+```
+# 2. Method
+
+## 2.1. Preregistration
+The study protocol, hypotheses, variables of interest, exclusion criteria, and sample size were preregistered on AsPredicted.org on 27th February 2018, before data collection commenced. The registration form is available here: https://osf.io/cyu6j/. There was one deviation from the preregistration (H6), described further in Section 3.8. 
+
+## 2.2. Participants
+Participants were recruited into the study in two ways: 1) lab data collection (i.e., participants attended a data collection site and took part in laboratory conditions) and 2) online data collection (i.e., participants were recruited online, and completed the tasks on their own computer). While our main aim was to collect as large a sample as possible at as many data collection sites as possible, we preregistered a minimum sample size of *n* = 420 in lab-based data collection (based on the anticipated number of data collection sites) and *n* = 800 in the online data collection (based on available funding).  The final sample size was `r total_n`, before exclusions; demographic information can be found in Table 2 and in the Results section. 
+
+## 2.3. Lab data collection sites
+The study was advertised as part of a working group at the International Consortium for Hallucinations Research, with investigators invited to join if they expressed interest and could commit to collecting the required amount of data. Participating sites were required to recruit a minimum of 40 participants into the study to be eligible for inclusion in the final dataset. This number was chosen based on data collection logistics (what could data collection sites realistically commit to within a reasonable timeframe?) while maintaining enough participants per site to allow inclusion of 'site' as a random effect variable (Meteyard reference).  12 sites were involved in data collection, situated in the UK (6 sites), France, The Netherlands, Czech Republic, Norway, Canada, and Australia (1 site per country). All sites obtained ethical clearance from their institutional review board, in accordance with the Declaration of Helsinki. Sites advertised using volunteer panels, poster advertisements, social media, and word of mouth. Participants were required to be aged 18-75 years,  fluently speak the native language of the respective country, and report no diagnosed hearing impairments. Participants were given a small reward for participation at the discretion of each participating site (e.g., a gift voucher, small payment, or prize draw entry).
+
+## 2.4. Online data collection
+In addition to data collection in labs at participating sites, the study was also advertised on the website Prolific Academic (http://prolific.ac - ProA), a recruitment website through which researchers can advertise online behavioural studies, and reward participants with small payments for task and questionnaire completion. Eligibility criteria and exclusion criteria were the same as for the lab-based data. Participants were rewarded with a payment of £4.20 for participation.
+
+## 2.5. Task platform
+All tasks and questionnaires were programmed in JavaScript, using the *jspsych* toolbox, and run from an internet browser. The questionnaires were originally designed in English, but for the purpose of this study, all were translated and back-translated into French, Czech, and Norwegian, for use at data collection sites in countries where these were the primary language.
+
+For online data collection, participants were required to pass a short headphone check task, as developed by @woods_improving_2011, before gaining access to the main task platform. The headphone check is described in further detail in the Supplemental Materials (S1).
+
+## 2.6. Questionnaires
+*Cardiff Anomalous Perceptions Scale (CAPS)* [@bell_cardiff_2006]  - the CAPS was employed as the primary assessment of HEs in the general population. It consists of 32 items (e.g., *Do you ever hear noises or sounds when there is nothing about to explain them?*), with yes/no as response options. The primary outcome variable, as specified in the preregistration, consisted of the total number of items on which the participant responded 'yes' (scored as 1, so that scores varied from 0-32), with higher values indicating higher levels of HEs. Further subscales on distress, intrusiveness, and frequency were included but not used in any preregistered analysis (see Supplemental Materials).
+
+*Launay-Slade Hallucination Scale - Extended (LSHS-E)* [@laroi_further_2004] - the LSHS-E was used as a secondary assessment of hallucinatory experiences, due to its high prevalence in the literature in studies regarding hallucinations in the general population. It consists of 16 items (e.g., *I have been troubled by hearing voices in my head*), and participants are asked to respond on a 5-point Likert scale as to how much each item applies to them (0 = *Certainly does not apply to me*, 4 = *Certainly applies to me*), with overall score calculated as the sum of the score for each item (0-64).
+
+*Adverse Childhood Experiences scale (ACE)* [@felitti_relationship_1998] - the ACE scale was used as an assessment of childhood trauma. It consists of 17 items (e.g., *Did a parent or other adult in the household often or very often swear at, insult, or put you down?*), with participants responding Yes or No for each item. Total score was calculated as the sum of 'Yes' responses (0-17).
+
+Two further scales were included not to test any specific hypotheses, but simply to characterise the sample and for potential exploratory analysis - the Schizotypal Personality Questionnaire (SPQ-BR, 32 items) [@davidson_schizotypal_2016] and the Depression Anxiety and Stress Scale (DASS-21, 21 items) (Lovibond et al., 1995). These are described further in the Supplemental Materials.
+
+*Attention checks* - taken from @peer_reputation_2014, three questions were included within the questionnaires and demographics section of the task platform, which were designed to be easily answerable, and thus acted as attention checks. Participants were excluded from all data analysis if they incorrectly answered more than one attention check questions. See Supplemental Materials (S2) for a full description of the attention checks.
+
+## 2.7. Source memory task (SMT)
+The SMT required participants to recall whether words had been presented as spoken stimuli through headphones (*Hear* trials), or whether they had simply been instructed to imagine hearing the words (*Imagine* trials). Three lists of 24 words were assembled using the MRC Psycholinguistic Database [@wilson_mrc_1988], matched for number of letters, syllables, frequency of use, concreteness, and imageability. For each participant, one list was randomly assigned to the Hear trials, and another to the Imagine trials. The third list was assigned to the *New* condition in the second stage of the task. 
+ 
+In the first stage of the task, participants were presented with a series of words in the centre of the screen (duration = 3s), each preceded by the word *HEAR* or *IMAGINE* (duration = 1s). For trials on which they heard the stimuli, a word from the Hear condition was presented in the centre of the screen, and an audio clip of that word being spoken by a male, in a neutral tone, was presented concurrently. For trials on which participants were instructed to imagine the word, a word from the Imagine condition was presented on the screen, but no speech clip was played. The second stage of the task began immediately after the first was completed. Participants were presented with all 48 words from Stage 1, presented in random order, as well as 24 new words. For each word, they were instructed to decide whether they had heard the word, imagined the word, or whether the word was new. The primary variable of interest in this task was the number of responses on which the participant mistakenly decided that they had heard a word from the Imagine list (*Imagine-Hear errors*). 
+
+Participant data for this task was excluded if the participant performed at less than 33.3% overall accuracy (i.e., at or below chance level), at 100% accuracy (to remove those who may have 'cheated' in online-only participants), or at or below 50% old-new accuracy.
+
+## 2.8. Consonant-vowel dichotic listening (DL)
+The DL task is designed to assess language lateralisation, with two additional ‘forced attention’ conditions aimed at assessing cognitive or attentional control. The task involves the simultaneous presentation of two audio clips of spoken consonant-vowel syllables, with a different syllable presented to each ear. The presented syllables are ‘ba’, ‘da’, ‘ka’, ‘ta’, ‘pa’, and ‘ga’, with each clip lasting approximately 350ms. In the ‘non-forced attention’ condition, the participant is required to select the syllable they could hear most clearly. In the ‘forced right’ and ‘forced left’ conditions, the participant is instructed to select the syllable they believe has been presented to the right or left ear, respectively. Participants provided a response with a mouse click. 
+
+There were 36 trials in each condition, presented in a random order, including 6 homonym trials (with the same syllable presented to each ear). The homonym trials are excluded from data analysis and are used only as a data quality check (see below). The remaining 30 trials consisted of all possible combinations of the 6 syllables presented to each ear. Resulting variables were the total number of correctly identified syllables presented to the right ear (REC) (for the non-forced and forced-right conditions), or correctly identified syllables in the left ear (LEC) (forced-left condition only). Additionally, the *laterality index* for each condition was calculated as follows:
+Laterality Index = (REC – LEC) / (REC + LEC) *100
+
+Where possible, data collection sites used verbal stimuli suited best to their geographical region; that is, the sites located in Norway and France used French and Norwegian consonant-vowel syllables, as outlined in @bless_laterality_2015. Data for this task was excluded, following @bless_laterality_2015, if participants made < 20% correct responses on non-homonym trials (i.e., responded with a syllable that was presented to neither ear), if participants made < 50% correct responses on the homonym trials, or if participants performed with a laterality index of 100 or -100 (i.e., always chose the syllable in one ear).
+
+## 2.9. Backwards digit span (DS)
+The DS task aimed to assessed verbal working memory performance, with each trial requiring participants to view a series of numeric digits, and then recall these digits in reverse order. Digits (1-9) were presented on the centre of the screen, randomly sampled without replacement (until trial length of 10, when digits were resampled), with the preconditions that i) adjacent digits could not be presented (e.g., 1-2, or 6-5) and ii) adjacent odd or even digits could not be presented (e.g., 2-4 or 9-7). Each digit was presented on-screen for 1s. Trial length started at 2 digits, and was varied according to the rules set out in @woods_improving_2011; that is, a correctly recalled digit string led to an increase in trial length by 1, whereas two consecutive incorrectly recalled digit strings decreased the trial length by 1. Participants responded using a mouse to click the digits they wished to input on an on-screen keypad. All participants completed 14 trials.
+
+Performance was assessed using the *mean span* method described by @woods_improving_2011, which estimates the trial length at which the participant performs with 50% accuracy. This is calculated by summing the proportion of correctly recalled digit strings for each trial length, plus the initial trial length minus 0.5 (in this case 2 – 0.5 = 1.5). For example, if a participant was presented with 3 trials at a digit string length of 5, and correctly recalled 2 of them, this would increase their score by 0.66; whereas, if they had only correctly recalled 1 of them, this would have increased their score by 0.33.
+
+Data were excluded for this task if their mean span was ≤ 3, or ≥ 12.
+
+## 2.10. Auditory signal detection (SD) (lab data collection only)
+The auditory SD task required the participant to respond as to whether they believed a speech clip had been embedded in noise. The signal-to-noise ratio (SNR; that is, the ratio of the volume of the voice clip to the noise) was determined individually at each site using a short calibration task, in which participants (*N* = 10 per site, who did not participate in the main study) were presented with speech clips embedded in noise at a variety of SNRs.
+
+In the main task, the participant was presented with 72 3.5s bursts of pink noise, with a 1.5s speech clip in the middle, presented at one of four volumes in 36 trials (speech-present), and with no speech clip presented at all in 36 trials (speech-absent). The speech clips were the same as those used in previous studies using this task [@barkus_auditory_2011; @moseley_role_2014], consisting of a male voice reading text (taken from an instruction manual) in an emotionally neutral tone. After each burst of noise, participants were presented with the text *Did you hear speech?*, and responded by clicking a mouse button for *Yes* or *No*. For each trial, they were also then prompted to enter a confidence rating (Norman & Price, 2015), data from which will be analysed and reported in a separate paper. The primary outcome variable was false alarm rate (the percentage of voice-absent trials on which the participant incorrectly responded that a speech clip was present). Secondary outcome variables were hit rate, task sensitivity (\(d'\), calculated as the standardised false alarm rate subtracted from the standardised hit rate), and criterion ($\beta$, calculated as [formula here]) (aka. response bias).
+
+Data for this task were excluded if \(d'\) ≤ 0 (i.e., at or below chance level), the hit rate was ≤ 10%, or if overall accuracy rate was 100%.
+
+## 2.11. Matrix reasoning (MR)
+This task was included to provide a brief assessment of non-verbal reasoning ability. 10 items were taken from the International Cognitive Ability Resource (previously tested in a general population sample of > 97,000 participants) [@condon_international_2014]. The task is based on Raven’s Progressive Matrices, with participants completing a 3 x 3 grid of shapes, choosing from six options, within 60s. Raw number of correct responses (max 10) was used as an assessment of non-verbal reasoning ability.
+
+## 2.12. Procedure
+For participants tested in a lab environment, testing took place in a quiet room at a laptop or desktop computer, using over-ear headphones for tasks involving auditory stimuli. The task platform presented the headphone check, dichotic listening, source memory, matrix reasoning, digit span, and auditory signal detection tasks, followed by questionnaire measures. The task platform used in online data collection was identical, with the exception being the exclusion of the auditory SD task, which relied on laboratory-controlled conditions.
+
+## 2.13. Data analysis
+Firstly, we examined associations between demographic attributes (age, gender, handedness, parental income) and CAPS score, as well as short measures of alcohol, cannabis, and cigarette usage, and a short measure of non-verbal reasoning. These analyses were non-preregistered, and included solely for descriptive purposes.
+
+To assess associations between task performance and CAPS score, as detailed in H1-H5, simple correlations (Spearman's rho for non-normally distributed variables) were calculated, with associated 95% confidence intervals. For the pre-registered analyses, where confidence intervals crossed 0 (indicating a potential null effect), equivalence testing was conducted (using the *TOSTER* r package) with upper and lower bounds of *rho* = 0.1 and *rho* = -0.1. These bounds were chosen as representing 'small' effect sizes, with effects smaller than this likely to be of negligible relevance. Equivalence testing assesses whether an effect is significantly smaller/larger than the upper/lower bounds; therefore, when a significant *p*-value is reported for an equivalence test, this can be taken to indicate that the effect is indistinguishable from 0 (providing evidence for the null hypothesis).
+
+As well as assessing simple correlations between task measures and CAPS score, we also constructed linear mixed models, with data collection site as a random effect, task measures as fixed effects, and CAPS score as the dependent variable, to investigate which variables would contribute to the highest quality model. Akaike Information Criteria (AIC), a measure which takes into account both predictive ability and number of parameters in a model (with fewer seen as better) was used to assess model quality. Smaller AIC values indicate higher model quality. All data analysis was conducted in R.
+
+
+# 3. Results 
+```{r message=FALSE, warning=FALSE, include=FALSE}
+### Demographics and differences between lab/online samples ###
+
+# calculate demographics - countries, gender, age, diagnoses
+# Czech Rep was represented twice with different spellings - first line standardises this
+multisite_dataset$country[country == "ÄŒeskÃ¡ republika"] <- "Czechia"
+num_unique_countries <- length(unique(multisite_dataset$country))
+
+# calculate proportions of genders (male, female, other, prefer not to say), and age statistics (mean, sd, min, max)
+#prop_female <- round((sum(multisite_dataset$gender == "Female", na.rm = TRUE)/final_sample_n)*100, 1)
+#prop_male <- round((sum(multisite_dataset$gender == "Male", na.rm = TRUE)/final_sample_n)*100, 1)
+#prop_other <- round((sum(multisite_dataset$gender == "Other", na.rm = TRUE)/final_sample_n)*100, 1)
+#prop_notsay <- round((sum(multisite_dataset$gender == "Prefer Not to Say", na.rm = TRUE)/final_sample_n)*100, 1)
+#mean_age <- round(mean(age), 1)
+#sd_age <- round(sd(age), 1)
+#min_age <- min(age)
+#max_age <- max(age)
+
+# calculate age statistics for participants who took part in the lab (mean, sd, min, max, 95% CIs)
+#mean_age_lab <- round(mean(multisite_dataset_lab$age), 2)
+#sd_age_lab <- round(sd(multisite_dataset_lab$age), 2)
+#min_age_lab <- min(multisite_dataset_lab$age)
+#max_age_lab <- max(multisite_dataset_lab$age)
+#age_lab_ci_lo <- round(CI(na.omit(multisite_dataset_lab$age))[3], 2)
+#age_lab_ci_hi <- round(CI(na.omit(multisite_dataset_lab$age))[1], 2)
+
+# calculate age statistics for participants who took part online (mean, sd, min, max, 95% CIs)
+#mean_age_prolific <- round(mean(multisite_dataset_prolific$age), 2)
+#sd_age_prolific <- round(sd(multisite_dataset_prolific$age), 2)
+#min_age_prolific <- min(multisite_dataset_prolific$age)
+#max_age_prolific <- max(multisite_dataset_prolific$age)
+#age_prolific_ci_lo <- round(CI(na.omit(multisite_dataset_prolific$age))[3], 2)
+#age_prolific_ci_hi <- round(CI(na.omit(multisite_dataset_prolific$age))[1], 2)
+
+# t-test comparing age of lab-based vs. online participants, then assign effect size to variable
+#origin_age_ttest <- jmv::ttestIS(formula = age~origin,
+ #                           data = multisite_dataset,
+  #                          vars = age,
+   #                         effectSize = TRUE, desc = TRUE)
+#origin_age_es <- round(origin_age_ttest$ttest$asDF$`es[stud]`, 2)
+#origin_age_t <- round(origin_age_ttest$ttest$asDF$stat, 2)
+#origin_age_df <- origin_age_ttest$ttest$asDF$df
+#origin_age_p <- format.pval(origin_age_ttest$ttest$asDF$p, digits = 3, eps = .001)
+
+# chi square test for association between gender and online/lab participation
+# first, filters out participants who did not answer 'male' or 'female'
+#origin_gender_chisq <- filter(multisite_dataset, gender == "Male" | gender == "Female")
+#percent_female_lab <- round((sum(multisite_dataset_lab$gender == "Female")/final_lab_n)*100, 2)
+#percent_female_online <- round((sum(multisite_dataset_prolific$gender == "Female")/final_online_n)*100, 2)
+#origin_gender_chisq <- jmv::contTables(formula = ~ origin:gender,
+ #                                 data = origin_gender_chisq,
+  #                                pcRow = TRUE)
+#origin_gender_chi_value <- round(origin_gender_chisq$chiSq$asDF$`value[chiSq]`, 2)
+#origin_gender_chi_df <- origin_gender_chisq$chiSq$asDF$df
+#origin_gender_chi_p <- format.pval(origin_gender_chisq$chiSq$asDF$p, digits = 3, eps = .001)
+
+# chi square test for association between diagnosis and online/lab participation
+# first, filters out participants who answered "Prefer not to say"
+origin_diagnosis_chisq <- filter(multisite_dataset, diagnosis == "Yes" | diagnosis == "No")
+percent_diagnosis_lab <- round((sum(multisite_dataset_lab$diagnosis == "Yes")/final_lab_n)*100, 2)
+percent_diagnosis_online <- round((sum(multisite_dataset_prolific$diagnosis == "Yes")/final_online_n)*100, 2)
+origin_diagnosis_chisq <- jmv::contTables(formula = ~ origin:diagnosis,
+                                  data = origin_diagnosis_chisq,
+                                  pcRow = TRUE)
+origin_diagnosis_chi_value <- round(origin_diagnosis_chisq$chiSq$asDF$`value[chiSq]`, 2)
+prop_diagnosis <- round((sum(multisite_dataset$diagnosis == "Yes")/final_sample_n)*100, 1)
+
+# mean and CI for CAPS scores in the lab and online
+mean_CAPS_lab <-  round(mean(multisite_dataset_lab$CAPS_total), 2)
+CAPS_lab_ci_lo <- round(CI(na.omit(multisite_dataset_lab$CAPS_total))[3], 2)
+CAPS_lab_ci_hi <- round(CI(na.omit(multisite_dataset_lab$CAPS_total))[1], 2)
+mean_CAPS_prolific <-  round(mean(multisite_dataset_prolific$CAPS_total, na.rm = TRUE), 2)
+CAPS_prolific_ci_lo <- round(CI(na.omit(multisite_dataset_prolific$CAPS_total))[3], 2)
+CAPS_prolific_ci_hi <- round(CI(na.omit(multisite_dataset_prolific$CAPS_total))[1], 2)
+
+# t-test for CAPS score between lab and online participants
+origin_CAPS_ttest <- ttestIS(formula = CAPS_total~origin,
+                            data = multisite_dataset,
+                            vars = CAPS_total,
+                            effectSize = TRUE, desc = TRUE, ci = TRUE)
+origin_CAPS_t <- round(origin_CAPS_ttest$ttest$asDF$stat, 2)
+origin_CAPS_df <- origin_CAPS_ttest$ttest$asDF$df
+origin_CAPS_p <- format.pval(origin_CAPS_ttest$ttest$asDF$p, digits = 3, eps = .001)
+
+```
+
+## 3.1. Sample
+In total, `r total_n` participants were recruited into the study. One UK-based data collection site did not meet the minimum sample size requirement, and was therefore not included in any analysis. Of the final sample, `r lab_n` (`r round((lab_n/total_n)*100, 1)`%) participated in a laboratory environment at one of 11 data collection sites, while `r online_n` (`r round((online_n/total_n)*100, 1)`%) took part in the online version of the study. After applying preregistered exclusion criteria, the final sample consisted of `r final_sample_n` participants (`r final_lab_n` in the lab, `r final_online_n` online) native to `r num_unique_countries` countries. Further demographic information can be seen in Table 2. Further details regarding exclusions, based on pre-registered criteria for each task, are outlined in the Supplemental Materials.
+
+Participants who took part in the lab (*M* = `r mean_age_lab`, 95% CI = [`r age_lab_ci_lo`, `r age_lab_ci_hi`], range = `r min_age_lab`-`r max_age_lab`), were younger than those who took part online (*M* = `r mean_age_prolific`, 95% CI = [`r age_prolific_ci_lo`, `r age_prolific_ci_hi`], range = `r min_age_prolific`-`r max_age_prolific`) (*t*(`r origin_age_df`) = `r origin_age_t`, *p* `r origin_age_p`, *d* = `r origin_age_es`). Participants who took part in the lab were also more likely to be female (`r percent_female_lab`% in the lab, `r percent_female_online`% online, χ²(`r origin_gender_chi_df`) = `r origin_gender_chi_value`, *p* `r format.pval(origin_gender_chisq$chiSq$asDF$p, digits = 3, eps = .001)`). There was no difference in the proportion of participants who reported a psychiatric diagnosis, between those who took part in the lab (`r round(percent_diagnosis_lab, 2)`%) and those who took part online (`r round(percent_diagnosis_online, 2)`%), χ²(`r origin_diagnosis_chisq$chiSq$asDF$df`) = `r origin_diagnosis_chi_value`, *p* = `r origin_gender_chi_p`, nor any difference in CAPS score between participants in the lab (*M* = `r mean_CAPS_lab`, 95% CI = [`r CAPS_lab_ci_lo`, `r CAPS_lab_ci_hi`]) and online participants (*M* = `r mean_CAPS_prolific`, 95% CI = [`r CAPS_prolific_ci_lo`, `r CAPS_prolific_ci_hi`])  (*t*(`r origin_CAPS_df`) = `r origin_CAPS_t`, *p* = `r origin_CAPS_p`).
+
+
+## 3.2. Assessment of hallucinations
+```{r}
+# number of cases excluded due to CAPS non-completion
+CAPS_exclusions <- sum(is.na(multisite_dataset$CAPS_total))
+
+# descriptive stats for CAPS (mean, sd, median, min, max, 95% CIs)
+CAPS_mean <- round(mean(CAPS_total, na.rm = TRUE), 2)
+CAPS_sd <- round(sd(CAPS_total, na.rm = TRUE), 2)
+CAPS_mdn <- round(median(CAPS_total, na.rm = TRUE))
+CAPS_min <- min(CAPS_total, na.rm = TRUE)
+CAPS_max <- max(CAPS_total, na.rm = TRUE)
+CAPS_ci_lo <- round(CI(na.omit(CAPS_total))["lower"], 2)
+CAPS_ci_hi <- round(CI(na.omit(CAPS_total))["upper"], 2)
+
+# descriptives table for CAPS, inc. skew and kurtosis
+CAPS_descriptives <- jmv::descriptives(data = multisite_dataset, vars = CAPS_total, skew = TRUE, kurt = TRUE)
+CAPS_skew <- round(CAPS_descriptives$descriptives$asDF$`CAPS_total[skew]`, 2)
+CAPS_skew_se <- round(CAPS_descriptives$descriptives$asDF$`CAPS_total[seSkew]`, 2)
+CAPS_kurtosis <- round(CAPS_descriptives$descriptives$asDF$`CAPS_total[kurt]`, 2)
+CAPS_kurtosis_se <- round(CAPS_descriptives$descriptives$asDF$`CAPS_total[seKurt]`, 2)
+
+# correlations between CAPS, age, and cigarette use, including 95% CIs
+#CAPS_demog_vars <- select(multisite_dataset, CAPS_total, age, cigarette_use)
+#CAPS_corr_demog <- psych::corr.test(CAPS_demog_vars, method = "spearman", use = "complete.obs")
+#CAPS_age_corr_rho <- round(CAPS_corr_demog$r["CAPS_total", "age"], 3)
+#CAPS_age_corr_p <- format.pval(CAPS_corr_demog$p["CAPS_total", "age"], digits = 3, eps = .001)
+#CAPS_age_ci <- calc.Spearman.CIs(CAPS_age_corr_rho, n = CAPS_corr_demog$n["CAPS_total", "age"])
+#CAPS_age_ci_lo <- CAPS_age_ci$fiel[1]
+#CAPS_age_ci_hi <- CAPS_age_ci$fiel[2]
+#CAPS_cigarette_rho <- CAPS_corr_demog$r["CAPS_total", "cigarette_use"]
+#CAPS_cigarette_ci <- calc.Spearman.CIs(rs = CAPS_cigarette_rho, n = CAPS_corr_demog$n["CAPS_total", "cigarette_use"])
+#CAPS_cigarette_ci_lo <- round(CAPS_cigarette_ci$fiel[1], 2)
+#CAPS_cigarette_ci_hi <- round(CAPS_cigarette_ci$fiel[2], 2)
+
+# create tibble with mean and sd CAPS score by gender, then conduct t-test and calculate 95% CIs
+#CAPS_by_gender <- dplyr::group_by(multisite_dataset, gender_bin) %>% 
+#  dplyr::summarize(mean = round(mean(CAPS_total, na.rm = TRUE), 2),
+#                   sd = round(sd(CAPS_total, na.rm = TRUE), 2))
+#CAPS_by_gender_ttest <- jmv::ttestIS(formula = CAPS_total~gender_bin, data = multisite_dataset,
+#                                   vars = CAPS_total, effectSize = TRUE, desc = TRUE)
+#CAPS_gender_d_ci <- ci.smd(CAPS_by_gender_ttest$ttest$asDF$stat, n.1 = CAPS_by_gender_ttest$desc$asDF$`num[1]`,
+#                           n.2 = CAPS_by_gender_ttest$desc$asDF$`num[2]`, conf.level = 0.95)
+
+# t-test for CAPS score between right and left handed participants
+CAPS_by_handedness_ttest <- jmv::ttestIS(formula = CAPS_total~handedness_bin, data = multisite_dataset,
+                                   vars = CAPS_total, effectSize = TRUE, desc = TRUE)
+
+# create tibble of mean/sd CAPS score by diagnosis and relative diagnosis, then t-tests between groups
+CAPS_by_diagnosis <- dplyr::group_by(multisite_dataset, diagnosis) %>% 
+  dplyr::summarize(mean = round(mean(CAPS_total, na.rm = TRUE), 2),
+                   sd = round(sd(CAPS_total, na.rm = TRUE), 2))
+CAPS_by_rel_diagnosis <- dplyr::group_by(multisite_dataset, relative_diagnosis) %>% 
+  dplyr::summarize(mean = round(mean(CAPS_total, na.rm = TRUE), 2),
+                   sd = round(sd(CAPS_total, na.rm = TRUE), 2))
+CAPS_by_diagnosis_ttest <- filter(multisite_dataset, diagnosis != "Prefer not to say") 
+CAPS_by_diagnosis_ttest <- jmv::ttestIS(formula = CAPS_total~diagnosis, data = CAPS_by_diagnosis_ttest,
+                                   vars = CAPS_total, effectSize = TRUE, desc = TRUE)
+CAPS_by_rel_diagnosis_ttest <- filter(multisite_dataset, relative_diagnosis != "Prefer not to say")
+CAPS_by_rel_diagnosis_ttest <- jmv::ttestIS(formula = CAPS_total~relative_diagnosis,
+                                       data = CAPS_by_rel_diagnosis_ttest, vars = CAPS_total,
+                                       effectSize = TRUE, desc = TRUE)
+CAPS_diagnosis_d_ci <- ci.smd(CAPS_by_diagnosis_ttest$ttest$asDF$stat,
+                              n.1 = CAPS_by_diagnosis_ttest$desc$asDF$`num[1]`,
+                              n.2 = CAPS_by_diagnosis_ttest$desc$asDF$`num[2]`,
+                              conf.level = 0.95)
+CAPS_rel_diagnosis_d_ci <- ci.smd(CAPS_by_rel_diagnosis_ttest$ttest$asDF$stat,
+                                  n.1 = CAPS_by_rel_diagnosis_ttest$desc$asDF$`num[1]`,
+                                  n.2 = CAPS_by_rel_diagnosis_ttest$desc$asDF$`num[2]`,
+                                  conf.level = 0.95)
+
+```
+
+
+```{r}
+# anova, CAPS score by cannabis use (5 levels), then compute 95% CIs around effect size
+CAPS_by_cannabis_lm <- jmv::ANOVA(formula = CAPS_total~cannabis_use,
+                             data = multisite_dataset,
+                             effectSize = "partEta",
+                             contrasts = list(
+                               list(var = "cannabis_use", type = "polynomial")),
+                             emMeans = ~ cannabis_use,
+                             emmPlots = TRUE,
+                             emmTables = TRUE)
+CAPS_by_cannabis_polynomial <- as.data.frame(CAPS_by_cannabis_lm$contrasts[[1]])
+CAPS_cannabis_ci <- ci.pvaf(F.value = CAPS_by_cannabis_lm$main$asDF$F[1],
+        df.1 = CAPS_by_cannabis_lm$main$asDF$df[1],
+        df.2 = CAPS_by_cannabis_lm$main$asDF$df[2],
+        N = sum(multisite_dataset$cannabis_use >= 0, na.rm = TRUE),
+        conf.level = .90)
+
+# anova, CAPS score by alcohol use (5 levels), then compute 95% CIs around effect size
+CAPS_by_alcohol_lm <- ANOVA(formula = CAPS_total~alcohol_use,
+                             data = multisite_dataset,
+                             effectSize = "partEta",
+                             contrasts = list(
+                               list(var = "alcohol_use", type = "polynomial")),
+                             emMeans = ~ alcohol_use,
+                             emmPlots = TRUE,
+                             emmTables = TRUE)
+CAPS_alcohol_eta <- CAPS_by_alcohol_lm$main$asDF$etaSqP[1]
+CAPS_alcohol_ci <- ci.pvaf(F.value = CAPS_by_alcohol_lm$main$asDF$F[1],
+        df.1 = CAPS_by_alcohol_lm$main$asDF$df[1],
+        df.2 = CAPS_by_alcohol_lm$main$asDF$df[2],
+        N = sum(multisite_dataset$alcohol_use >= 0, na.rm = TRUE),
+        conf.level = .90)
+
+# anova, CAPS score by parental income (5 levels), then compute 95% CIs around effect size
+CAPS_by_ses_lm <- filter(multisite_dataset, ses != 0)
+CAPS_by_ses_lm <- ANOVA(formula = CAPS_total~ses,
+                        data = CAPS_by_ses_lm,
+                        effectSize = "partEta",
+                        contrasts = list(
+                          list(var = "ses", type = "polynomial")),
+                        emMeans = ~ ses,
+                        emmPlots = TRUE,
+                        emmTables = TRUE)
+CAPS_ses_ci <- ci.pvaf(F.value = CAPS_by_ses_lm$main$asDF$F[1],
+        df.1 = CAPS_by_ses_lm$main$asDF$df[1],
+        df.2 = CAPS_by_ses_lm$main$asDF$df[2],
+        N = sum(multisite_dataset$ses >= 0, na.rm = TRUE),
+        conf.level = .90)
+
+# t-test, CAPS score by handedness, then compute 95% CIs around effect size
+# handedness_bin refers to a variable where participants are grouped as right-handeded or non-right-handed
+CAPS_by_handedness_ttest <- ttestIS(formula = CAPS_total~handedness_bin, data = multisite_dataset,
+                                   vars = CAPS_total, effectSize = TRUE, desc = TRUE)
+CAPS_handedness_d_ci <- ci.smd(CAPS_by_handedness_ttest$ttest$asDF$stat,
+                               n.1 = CAPS_by_handedness_ttest$desc$asDF$`num[1]`,
+                               n.2 = CAPS_by_handedness_ttest$desc$asDF$`num[2]`,
+                               conf.level = 0.95)
+
+# compute correlation between CAPS score and matrix reasoning performance
+CAPS_mr_corr <- corr.test(CAPS_total, mr_score, method = "spearman", use = "complete.obs")
+CAPS_mr_rho <- CAPS_mr_corr$r
+CAPS_mr_p <- CAPS_mr_corr$p
+CAPS_mr_ci_lo <- round(CAPS_mr_corr$ci["lower"], 2)
+CAPS_mr_ci_hi <- round(CAPS_mr_corr$ci["upper"], 2)
+
+```
+
+Across the whole sample, participants endorsed a mean of `r CAPS_mean` items on the CAPS scale (95% CI = [`r CAPS_ci_lo`, `r CAPS_ci_hi`], *Mdn* = `r CAPS_mdn`, range = `r CAPS_min`-`r CAPS_max`). CAPS score was strongly positively skewed (skewness = `r CAPS_skew`, *SE* = `r CAPS_skew_se`) and leptokurtic (kurtosis = `r CAPS_kurtosis`, *SE* = `r CAPS_kurtosis_se`), with most participants reporting few HEs, and a smaller number of participants reporting many HEs. Non-preregistered analysis, as shown in Table 2, showed that CAPS score was associated with age, having a psychiatric diagnosis, having a relative with a psychiatric diagnosis, and with cannabis usage. These associations are consistent with previous findings [@bell_cardiff_2006]. There was no association between CAPS score and non-verbal reasoning, as assessed by matrix reasoning (*rho* = `r round(CAPS_mr_corr$r, 2)`, 95% CI = [`r CAPS_mr_ci_lo`, `r CAPS_mr_ci_hi`],  *p* = `r format.pval(CAPS_mr_corr$p, digits = 3, eps = .001)`).
+
+## 3.3. H1: Hallucinations and source memory 
+```{r echo=FALSE}
+source("spearman_ci.r")
+
+# calculate number of source memory exclusions due to high or low accuracy
+smt_exclusions_hiacc <- sum(multisite_dataset_filtered$smt_overall_acc == 100)
+smt_exclusions_lowacc <- sum(multisite_dataset_filtered$smt_overall_acc < 33.34)
+smt_exclusions_oldnew <- sum(multisite_dataset_filtered$smt_oldnew_acc <= 50)
+smt_exclusions <- sum(multisite_dataset_filtered$smt_overall_acc == 100 |
+                        multisite_dataset_filtered$smt_overall_acc < 33.34 |
+                        multisite_dataset_filtered$smt_oldnew_acc <= 50)
+
+# select relevant source memory variables for analysis; separate tbls for lab-only and online-only data
+smt_CAPS_LSHS_vars <- select(multisite_dataset, smt_imagine_hear, smt_misattribution_bias, smt_rm_acc,
+                             smt_oldnew_sensitivity, CAPS_total, LSHS_total_score)
+
+smt_CAPS_LSHS_vars_lab <- select(multisite_dataset_lab, smt_imagine_hear, smt_misattribution_bias, smt_rm_acc,
+                                 smt_oldnew_sensitivity, CAPS_total, LSHS_total_score)
+
+smt_CAPS_LSHS_vars_prolific <- select(multisite_dataset_prolific, smt_imagine_hear, smt_misattribution_bias, smt_rm_acc,
+                                      smt_oldnew_sensitivity, CAPS_total, LSHS_total_score)
+
+# compute means, standard deviations, ranges, 95% CIs, for source memory task variables, stored in tibbles for each variable
+# smt_overall_acc refers to the overall percentages of correct responses on the task
+smt_overall_desc <- round(tibble(mean = mean(smt_overall_acc, na.rm = TRUE),
+                                 sd = sd(smt_overall_acc, na.rm = TRUE),
+                                 min = min(smt_overall_acc, na.rm = TRUE),
+                                 max = max(smt_overall_acc, na.rm = TRUE),
+                                 ci_lo = CI(na.omit(smt_overall_acc), 0.95)[["lower"]],
+                                 ci_hi = CI(na.omit(smt_overall_acc), 0.95)[["upper"]]), 2)
+
+# smt_rm_acc refers to the percentage of items correctly recalled as 'old', for which the source was also correctly recalled
+smt_rm_acc_desc <- round(tibble(mean = mean(smt_rm_acc, na.rm = TRUE),
+                                sd = sd(smt_rm_acc, na.rm = TRUE),
+                                min = min(smt_rm_acc, na.rm = TRUE),
+                                max = max(smt_rm_acc, na.rm = TRUE),
+                                ci_lo = CI(na.omit(smt_rm_acc), 0.95)[["lower"]],
+                                ci_hi = CI(na.omit(smt_rm_acc), 0.95)[["upper"]]), 2)
+
+# smt_oldnew_sensitivity refers to the no. of correctly recalled old items, minus the no. of new items misremembered as old
+smt_oldnew_desc <- round(tibble(mean = mean(smt_oldnew_sensitivity, na.rm = TRUE),
+                                sd = sd(smt_oldnew_sensitivity, na.rm = TRUE),
+                                min = min(smt_oldnew_sensitivity, na.rm = TRUE),
+                                max = max(smt_oldnew_sensitivity, na.rm = TRUE),
+                                ci_lo = CI(na.omit(smt_oldnew_sensitivity), 0.95)[["lower"]],
+                                ci_hi = CI(na.omit(smt_oldnew_sensitivity), 0.95)[["upper"]]), 2)
+
+# smt_imagine_hear refers to the number of imagined items incorrectly recalled as heard
+smt_imagine_hear_desc <- round(tibble(mean = mean(smt_imagine_hear, na.rm = TRUE),
+                                      sd = sd(smt_imagine_hear, na.rm = TRUE),
+                                      min = min(smt_imagine_hear, na.rm = TRUE),
+                                      max = max(smt_imagine_hear, na.rm = TRUE),
+                                      ci_lo = CI(na.omit(smt_imagine_hear), 0.95)[["lower"]],
+                                      ci_hi = CI(na.omit(smt_imagine_hear), 0.95)[["upper"]]), 2)
+
+# smt_hear_imagine refers to the number of heard items incorrectly recalled as imagined
+smt_hear_imagine_desc <- round(tibble(mean = mean(smt_hear_imagine, na.rm = TRUE),
+                                      sd = sd(smt_hear_imagine, na.rm = TRUE),
+                                      min = min(smt_hear_imagine, na.rm = TRUE),
+                                      max = max(smt_hear_imagine, na.rm = TRUE),
+                                      ci_lo = CI(na.omit(smt_hear_imagine), 0.95)[["lower"]],
+                                      ci_hi = CI(na.omit(smt_hear_imagine), 0.95)[["upper"]]), 2)
+
+# paired t-test between hear-imagine and imagine-to-hear errors
+smt_errors_ttest <- jmv::ttestPS(data = multisite_dataset,
+                            pairs = list(list(i1 = "smt_hear_imagine", i2 = "smt_imagine_hear")),
+                            effectSize = TRUE, ci = TRUE)
+smt_errors_t <- round(smt_errors_ttest$ttest$asDF$stat, 2)
+smt_errors_df <- smt_errors_ttest$ttest$asDF$df
+smt_errors_p <- format.pval(smt_errors_ttest$ttest$asDF$p, digits = 3, eps = .001)
+smt_errors_d <- round(smt_errors_ttest$ttest$asDF$es, 2)
+
+# create correlation matrix between source monitoring variables and CAPS total score, for whole sample, and lab data only
+smt_CAPS_LSHS_corr_matrix <- psych::corr.test(smt_CAPS_LSHS_vars, method = "spearman", adjust = "none")
+smt_CAPS_LSHS_corr_matrix_lab <- psych::corr.test(smt_CAPS_LSHS_vars_lab, method = "spearman", adjust = "none") 
+
+# variable with correlation coefficient for correlation between imagine-hear errors and CAPS score
+# then calculate 95% confidence intervals for Spearman's rho
+# note that this calls the spearman_ci.r script (based on Bishara & Hittner, 2017)
+# then format p value ready to be inserted into text
+smtimaginehear_CAPS_corr_rho <- round(smt_CAPS_LSHS_corr_matrix$r["smt_imagine_hear", "CAPS_total"], 3)
+
+
+smtimaginehear_CAPS_corr_ci <- calc.Spearman.CIs(rs = smt_CAPS_LSHS_corr_matrix$r["smt_imagine_hear", "CAPS_total"],
+                  n = smt_CAPS_LSHS_corr_matrix$n["smt_imagine_hear", "CAPS_total"])
+smtimaginehear_CAPS_corr_ci_lo <- round(smtimaginehear_CAPS_corr_ci$fiel[1], 2)
+smtimaginehear_CAPS_corr_ci_hi <- round(smtimaginehear_CAPS_corr_ci$fiel[2], 2)
+
+smtimaginehear_CAPS_corr_p <- format.pval(smt_CAPS_LSHS_corr_matrix$p["smt_imagine_hear", "CAPS_total"],
+                                          digits = 3, eps = .001)
+
+# calculate rho and confidence intervals for LSHS
+smt_LSHS_rho <- round(smt_CAPS_LSHS_corr_matrix$r["smt_imagine_hear", "LSHS_total_score"], 3)
+smtimaginehear_LSHS_corr_ci <- calc.Spearman.CIs(rs = smt_CAPS_LSHS_corr_matrix$r["smt_imagine_hear", "LSHS_total_score"],
+                                                 n = smt_CAPS_LSHS_corr_matrix$n["smt_imagine_hear", "LSHS_total_score"])
+smtimaginehear_LSHS_corr_ci_lo <- round(smtimaginehear_LSHS_corr_ci$fiel[1], 2)
+smtimaginehear_LSHS_corr_ci_hi <- round(smtimaginehear_LSHS_corr_ci$fiel[2], 2)
+smtimaginehear_LSHS_corr_p <- format.pval(smt_CAPS_LSHS_corr_matrix$p["smt_imagine_hear", "LSHS_total_score"],
+                                          digits = 3, eps = .001)
+
+# conduct equivalence test (two one-sided t-tests) for imagine to hear errors
+# to view plot within equivalence bounds, change 'plot' argument to TRUE
+# for verbal explanation of results, change 'verbose' argument to TRUE
+smt_CAPS_imagine_hear_equiv <- TOSTER::TOSTr(n = smt_CAPS_LSHS_corr_matrix$n["smt_imagine_hear", "CAPS_total"],
+                                     r = smt_CAPS_LSHS_corr_matrix$r["smt_imagine_hear", "CAPS_total"],
+                                     low_eqbound_r = -0.1, high_eqbound_r = 0.1, alpha = .05,
+                                     plot = FALSE, verbose = FALSE)
+smt_CAPS_imagine_hear_equiv_p <- format.pval(smt_CAPS_imagine_hear_equiv$TOST_p2, digits = 3, eps = .001)
+
+```
+
+`r nrow(na.omit(smt_CAPS_LSHS_vars))` participants' data was included for the source memory task. Overall accuracy was well above chance (*M* = `r smt_overall_desc$mean`%, 95% CI = [`r smt_overall_desc$ci_lo`, `r smt_overall_desc$ci_hi`]). In terms of source judgements, participants were more likely to misattribute a heard item as imagined (‘hear-to-imagine error’) (*M* = `r smt_hear_imagine_desc$mean`, 95% CI = [`r smt_hear_imagine_desc$ci_lo`, `r smt_hear_imagine_desc$ci_hi`]) than to misattribute an imagined item as heard (‘imagine-to-hear error’) (*M* = `r smt_imagine_hear_desc$mean`, 95% CI = [`r smt_imagine_hear_desc$ci_lo`, `r smt_imagine_hear_desc$ci_hi`]) (*t*(`r smt_errors_df`) = `r smt_errors_t`, *p* `r smt_errors_p`, *d* = `r smt_errors_d`).  
+
+The number of ‘imagine-to-hear errors’ (i.e., external misattributions) was used as the primary variable to assess source monitoring performance (H1). There was no correlation between number of imagine-to-hear errors and CAPS score (*rho* = `r smtimaginehear_CAPS_corr_rho`, 95% CI = [`r smtimaginehear_CAPS_corr_ci_lo`, `r smtimaginehear_CAPS_corr_ci_hi`], *p* = `r smtimaginehear_CAPS_corr_p`). Equivalence testing indicated that the effect was statistically indistinguishable from 0, given equivalence bounds of `r smt_CAPS_imagine_hear_equiv$low_eqbound_r` and `r smt_CAPS_imagine_hear_equiv$high_eqbound_r` (*p* = `r smt_CAPS_imagine_hear_equiv_p`). Similarly, further analysis indicated that there was no association between imagine-hear errors and score on the LSHS-E (*rho* = `r smt_LSHS_rho`, 95% CI = [`r smtimaginehear_LSHS_corr_ci_lo`, `r smtimaginehear_LSHS_corr_ci_hi`], *p* = `r smtimaginehear_LSHS_corr_p`).
+
+## 3.4. H2: Hallucinations and dichotic listening
+```{r echo=FALSE}
+
+# compute number of exclusions for dichotic listening task, based on performance on homonym trials and laterality
+dl_exclusions_homonym <- nrow(filter(multisite_dataset_filtered, dl_nonforced_homonym < 3 | 
+                                       dl_forcedleft_homonym_acc < 3 | dl_forcedright_homonym_acc <3))
+dl_exclusions_laterality <- nrow(filter(multisite_dataset_filtered, abs(dl_laterality_index) == 1 |
+                                  abs(dl_forced_left_index) == 1 |
+                                  abs(dl_forced_right_index) == 1))
+dl_exclusions <- nrow(filter(multisite_dataset_filtered, 
+                             dl_nonforced_homonym < 3 | 
+                             dl_forcedleft_homonym_acc < 3 |
+                             dl_forcedright_homonym_acc <3 |
+                             abs(dl_laterality_index) == 1 |
+                             abs(dl_forced_left_index) == 1 |
+                             abs(dl_forced_right_index) == 1))
+
+# select variables for dichotic listening correlation matrix, all data, and then lab-only data
+dl_CAPS_LSHS_vars <- select(multisite_dataset, dl_RE_sum, dl_RE_forcedright_sum, dl_LE_forcedleft_sum,
+                            CAPS_total, LSHS_total_score)
+dl_CAPS_LSHS_vars_lab <- select(multisite_dataset_lab, dl_RE_sum, dl_RE_forcedright_sum, dl_LE_forcedleft_sum,
+                                CAPS_total, LSHS_total_score)
+
+# descriptive stats for dichotic listening non-forced condition
+dl_nf_descriptives <- round(tibble(RE_nf_mean = mean(dl_RE_sum, na.rm = TRUE),
+                                   RE_nf_sd = sd(dl_RE_sum, na.rm = TRUE),
+                                   RE_nf_min = min(dl_RE_sum, na.rm = TRUE), 
+                                   RE_nf_max = max(dl_RE_sum, na.rm = TRUE), 
+                                   RE_nf_ci_lo = CI(na.omit(dl_RE_sum), 0.95)[["lower"]],
+                                   RE_nf_ci_hi = CI(na.omit(dl_RE_sum), 0.95)[["upper"]],
+                                   LE_nf_mean = mean(dl_LE_sum, na.rm = TRUE),
+                                   LE_nf_sd = sd(dl_LE_sum, na.rm = TRUE),
+                                   LE_nf_min = min(dl_LE_sum, na.rm = TRUE),
+                                   LE_nf_max = max(dl_LE_sum, na.rm = TRUE),
+                                   LE_nf_ci_lo = CI(na.omit(dl_LE_sum), 0.95)[["lower"]],
+                                   LE_nf_ci_hi = CI(na.omit(dl_LE_sum), 0.95)[["upper"]],
+                                   index_nf_mean = mean(dl_laterality_index, na.rm = TRUE),
+                                   index_nf_sd = sd(dl_laterality_index, na.rm = TRUE),
+                                   index_nf_min = min(dl_laterality_index, na.rm = TRUE),
+                                   index_nf_max = max(dl_laterality_index, na.rm = TRUE),
+                                   index_nf_ci_lo = CI(na.omit(dl_laterality_index), 0.95)[["lower"]],
+                                   index_nf_ci_hi = CI(na.omit(dl_laterality_index), 0.95)[["upper"]]),2)
+
+# descriptive stats for dichotic listening forced right condition
+dl_fr_descriptives <- round(tibble(RE_fr_mean = mean(dl_RE_forcedright_sum, na.rm = TRUE),
+                                   RE_fr_sd = sd(dl_RE_forcedright_sum, na.rm = TRUE),
+                                   RE_fr_min = min(dl_RE_forcedright_sum, na.rm = TRUE),
+                                   RE_fr_max = max(dl_RE_forcedright_sum, na.rm = TRUE),
+                                   RE_fr_ci_lo = CI(na.omit(dl_RE_forcedright_sum), 0.95)[["lower"]],
+                                   RE_fr_ci_hi = CI(na.omit(dl_RE_forcedright_sum), 0.95)[["upper"]],
+                                   LE_fr_mean = mean(dl_LE_forcedright_sum, na.rm = TRUE),
+                                   LE_fr_sd = sd(dl_LE_forcedright_sum, na.rm = TRUE),
+                                   LE_fr_min = min(dl_LE_forcedright_sum, na.rm = TRUE),
+                                   LE_fr_max = max(dl_LE_forcedright_sum, na.rm = TRUE),
+                                   LE_fr_ci_lo = CI(na.omit(dl_LE_forcedright_sum), 0.95)[["lower"]],
+                                   LE_fr_ci_hi = CI(na.omit(dl_LE_forcedright_sum), 0.95)[["upper"]],
+                                   index_fr_mean = mean(dl_forced_right_index, na.rm = TRUE),
+                                   index_fr_sd = sd(dl_forced_right_index, na.rm = TRUE), 
+                                   index_fr_min = min(dl_forced_right_index, na.rm = TRUE),
+                                   index_fr_max = max(dl_forced_right_index, na.rm = TRUE),
+                                   index_fr_ci_lo = CI(na.omit(dl_forced_right_index), 0.95)[["lower"]],
+                                   index_fr_ci_hi = CI(na.omit(dl_forced_right_index), 0.95)[["upper"]]),2)
+
+# descriptive stats for dichotic listening forced left condition
+dl_fl_descriptives <- round(tibble(RE_fl_mean = mean(dl_RE_forcedleft_sum, na.rm = TRUE),
+                                   RE_fl_sd = sd(dl_RE_forcedleft_sum, na.rm = TRUE),
+                                   RE_fl_min = min(dl_RE_forcedleft_sum, na.rm = TRUE),
+                                   RE_fl_max = max(dl_RE_forcedleft_sum, na.rm = TRUE),
+                                   RE_fl_ci_lo = CI(na.omit(dl_RE_forcedleft_sum), 0.95)[["lower"]],
+                                   RE_fl_ci_hi = CI(na.omit(dl_RE_forcedleft_sum), 0.95)[["upper"]],
+                                   LE_fl_mean = mean(dl_LE_forcedleft_sum, na.rm = TRUE),
+                                   LE_fl_sd = sd(dl_LE_forcedleft_sum, na.rm = TRUE),
+                                   LE_fl_min = min(dl_LE_forcedleft_sum, na.rm = TRUE),
+                                   LE_fl_max = max(dl_LE_forcedleft_sum, na.rm = TRUE),
+                                   LE_fl_ci_lo = CI(na.omit(dl_LE_forcedleft_sum), 0.95)[["lower"]],
+                                   LE_fl_ci_hi = CI(na.omit(dl_LE_forcedleft_sum), 0.95)[["upper"]],
+                                   index_fl_mean = mean(dl_forced_left_index, na.rm = TRUE),
+                                   index_fl_sd = sd(dl_forced_left_index, na.rm = TRUE),
+                                   index_fl_min = min(dl_forced_left_index, na.rm = TRUE),
+                                   index_fl_max = max(dl_forced_left_index, na.rm = TRUE),
+                                   index_fl_ci_lo = CI(na.omit(dl_forced_left_index), 0.95)[["lower"]],
+                                   index_fl_ci_hi = CI(na.omit(dl_forced_left_index), 0.95)[["upper"]]),2)
+
+# paired t-test between right and left ear correct responses in the three conditions, 
+# and laterality index in each forced condition, compared to non-forced condition
+dl_ttest <- jmv::ttestPS(data = multisite_dataset,
+                    pairs = list(
+                      list(i1 = "dl_RE_sum", i2 = "dl_LE_sum"),
+                      list(i1 = "dl_RE_forcedright_sum", i2 = "dl_LE_forcedright_sum"),
+                      list(i1 = "dl_RE_forcedleft_sum", i2 = "dl_LE_forcedleft_sum"),
+                      list(i1 = "dl_forced_right_index", i2 = "dl_laterality_index"),
+                      list(i1 = "dl_forced_left_index", i2 = "dl_laterality_index")),
+                    effectSize = TRUE, ci = TRUE, desc = TRUE)
+
+# create variables for individual t-test statistics to insert easily into text
+dl_ttest_nf_df <- dl_ttest$ttest$asDF$df[1]
+dl_ttest_nf_t <- round((dl_ttest$ttest$asDF$stat[1]), 2)
+dl_ttest_nf_p <- format.pval((dl_ttest$ttest$asDF$p[1]), digits = 3, eps = .001)
+dl_ttest_nf_d <- round((dl_ttest$ttest$asDF$es[1]), 2)
+
+dl_ttest_fr_df <- dl_ttest$ttest$asDF$df[2]
+dl_ttest_fr_t <- round(dl_ttest$ttest$asDF$stat[2], 2)
+dl_ttest_fr_p <- format.pval(dl_ttest$ttest$asDF$p[2], digits = 3, eps = .001)
+dl_ttest_fr_d <- round(dl_ttest$ttest$asDF$es[2], 2)
+
+dl_ttest_frindex_df <- dl_ttest$ttest$asDF$df[4]
+dl_ttest_frindex_t <- round(dl_ttest$ttest$asDF$stat[4], 2)
+dl_ttest_frindex_p <- format.pval(dl_ttest$ttest$asDF$p[4], digits = 3, eps = .001)
+dl_ttest_frindex_d <- round(dl_ttest$ttest$asDF$es[4], 2)
+
+dl_ttest_fl_df <- dl_ttest$ttest$asDF$df[3]
+dl_ttest_fl_t <- round(dl_ttest$ttest$asDF$stat[3], 2)
+dl_ttest_fl_p <- format.pval(dl_ttest$ttest$asDF$p[3], digits = 3, eps = .001)
+dl_ttest_fl_d <- round(dl_ttest$ttest$asDF$es[3], 2)
+
+dl_ttest_flindex_df <- dl_ttest$ttest$asDF$df[5]
+dl_ttest_flindex_t <- round(dl_ttest$ttest$asDF$stat[5], 2)
+dl_ttest_flindex_p <- format.pval(dl_ttest$ttest$asDF$p[5], digits = 3, eps = .001)
+dl_ttest_flindex_d <- round(dl_ttest$ttest$asDF$es[5], 2)
+
+# one-sample t-test to test whether non-forced laterality index is different to 0
+dl_index_ttest <- jmv::ttestOneS(data = multisite_dataset,
+                            vars = vars(dl_laterality_index, dl_forced_right_index, dl_forced_left_index), 
+                            effectSize = TRUE, ci = TRUE, desc = TRUE)
+dl_ttest_nfindex_df <- dl_index_ttest$ttest$asDF$df[1]
+dl_ttest_nfindex_t <- round(dl_index_ttest$ttest$asDF$stat[1], 2)
+dl_ttest_nfindex_p <- format.pval(dl_index_ttest$ttest$asDF$p[1], digits = 3, eps = .001)
+dl_ttest_nfindex_d <- round(dl_index_ttest$ttest$asDF$es[1], 2)
+
+```
+
+`r nrow(na.omit(dl_CAPS_LSHS_vars))` participants' data was included for the dichotic listening task. Across the whole sample, a right-ear advantage was observed, with participants also successfully orienting their attention to the left or right ear in the forced-left and forced-right conditions, as previous research has indicated. See Supplemental Materials (S3) for full details.
+
+```{r echo=FALSE}
+# create correlation matrix for dichotic listening variables, and CAPS/LSHS scores
+dl_CAPS_LSHS_corr_matrix <- psych::corr.test(dl_CAPS_LSHS_vars, method = "spearman", adjust = "none")
+
+# creates tibbles for easy access to correlations for different dichotic listening conditions
+dl_nf_RE_corr <- round(tibble(CAPS_rho = dl_CAPS_LSHS_corr_matrix$r["dl_RE_sum", "CAPS_total"],
+                      CAPS_p = dl_CAPS_LSHS_corr_matrix$p["dl_RE_sum", "CAPS_total"],
+                      LSHS_rho = dl_CAPS_LSHS_corr_matrix$r["dl_RE_sum", "LSHS_total_score"],
+                      LSHS_p = dl_CAPS_LSHS_corr_matrix$p["dl_RE_sum", "LSHS_total_score"]), 3)
+
+dl_fr_RE_corr <- round(tibble(CAPS_rho = dl_CAPS_LSHS_corr_matrix$r["dl_RE_forcedright_sum", "CAPS_total"],
+                      CAPS_p = dl_CAPS_LSHS_corr_matrix$p["dl_RE_forcedright_sum", "CAPS_total"],
+                      LSHS_rho = dl_CAPS_LSHS_corr_matrix$r["dl_RE_forcedright_sum", "LSHS_total_score"],
+                      LSHS_p = dl_CAPS_LSHS_corr_matrix$p["dl_RE_forcedright_sum", "LSHS_total_score"]), 3)
+
+dl_fl_LE_corr <- round(tibble(CAPS_rho = dl_CAPS_LSHS_corr_matrix$r["dl_LE_forcedleft_sum", "CAPS_total"],
+                      CAPS_p = dl_CAPS_LSHS_corr_matrix$p["dl_LE_forcedleft_sum", "CAPS_total"],
+                      LSHS_rho = dl_CAPS_LSHS_corr_matrix$r["dl_LE_forcedleft_sum", "LSHS_total_score"],
+                      LSHS_p = dl_CAPS_LSHS_corr_matrix$p["dl_LE_forcedleft_sum", "LSHS_total_score"]), 3)
+
+# equivalence tests for correlations between CAPS and each dichotic listening condition
+dl_CAPS_nfre_equiv <- TOSTER::TOSTr(n = dl_CAPS_LSHS_corr_matrix$n["dl_RE_sum", "CAPS_total"],
+                                     r = dl_CAPS_LSHS_corr_matrix$r["dl_RE_sum", "CAPS_total"],
+                                     low_eqbound_r = -0.1, high_eqbound_r = 0.1, alpha = .05,
+                                     plot = FALSE, verbose = FALSE)
+dl_CAPS_nfre_equiv_p <- format.pval(dl_CAPS_nfre_equiv$TOST_p2, digits = 3, eps = .001)
+
+dl_CAPS_frre_equiv <- TOSTER::TOSTr(n = dl_CAPS_LSHS_corr_matrix$n["dl_RE_forcedright_sum", "CAPS_total"],
+                                     r = dl_CAPS_LSHS_corr_matrix$r["dl_RE_forcedright_sum", "CAPS_total"],
+                                     low_eqbound_r = -0.1, high_eqbound_r = 0.1, alpha = .05,
+                                     plot = FALSE, verbose = FALSE)
+
+dl_CAPS_flle_equiv <- TOSTER::TOSTr(n = dl_CAPS_LSHS_corr_matrix$n["dl_LE_forcedleft_sum", "CAPS_total"],
+                                     r = dl_CAPS_LSHS_corr_matrix$r["dl_LE_forcedleft_sum", "CAPS_total"],
+                                     low_eqbound_r = -0.1, high_eqbound_r = 0.1, alpha = .05,
+                                     plot = FALSE, verbose = FALSE)
+dl_CAPS_flle_equiv_p <- format.pval(dl_CAPS_flle_equiv$TOST_p2, digits = 3, eps = .001)
+
+# assign correlations and p values to variables for ease of inserting into text
+# then calculate confidence intervals for spearmans rho values
+source("spearman_ci.r")
+
+dl_nf_RE_corr_rho <- dl_nf_RE_corr$CAPS_rho
+dl_nf_RE_corr_p <- dl_nf_RE_corr$CAPS_p
+dl_nf_RE_corr_ci <- calc.Spearman.CIs(rs = dl_CAPS_LSHS_corr_matrix$r["dl_RE_sum", "CAPS_total"],
+                                         n = dl_CAPS_LSHS_corr_matrix$n["dl_RE_sum", "CAPS_total"])
+dl_nf_RE_corr_ci_lo <- round(dl_nf_RE_corr_ci$fiel[1], 2)
+dl_nf_RE_corr_ci_hi <- round(dl_nf_RE_corr_ci$fiel[2], 2)
+
+# repeat for forced right condition
+dl_fr_RE_corr_rho <- dl_fr_RE_corr$CAPS_rho
+dl_fr_RE_corr_p <- dl_fr_RE_corr$CAPS_p
+dl_fr_RE_corr_ci <- calc.Spearman.CIs(rs = dl_CAPS_LSHS_corr_matrix$r["dl_RE_forcedright_sum", "CAPS_total"],
+                                         n = dl_CAPS_LSHS_corr_matrix$n["dl_RE_forcedright_sum", "CAPS_total"])
+dl_fr_RE_corr_ci_lo <- round(dl_fr_RE_corr_ci$fiel[1], 2)
+dl_fr_RE_corr_ci_hi <- round(dl_fr_RE_corr_ci$fiel[2], 2)
+
+# repeat for forced left condition
+dl_fl_LE_corr_rho <- dl_fl_LE_corr$CAPS_rho
+dl_fl_LE_corr_p <- dl_fl_LE_corr$CAPS_p
+dl_fl_LE_corr_ci <- calc.Spearman.CIs(rs = dl_CAPS_LSHS_corr_matrix$r["dl_LE_forcedleft_sum", "CAPS_total"],
+                                         n = dl_CAPS_LSHS_corr_matrix$n["dl_LE_forcedleft_sum", "CAPS_total"])
+dl_fl_LE_corr_ci_lo <- round(dl_fl_LE_corr_ci$fiel[1], 2)
+dl_fl_LE_corr_ci_hi <- round(dl_fl_LE_corr_ci$fiel[2], 2)
+
+# calculate maximum effect size for correlations between DL and LSHS, and minimum p value
+dl_LSHS_max_rho <- round(max(abs(dl_CAPS_LSHS_corr_matrix$r[, "LSHS_total_score"][1:3])), 3)
+dl_LSHS_min_p <- round(min(dl_CAPS_LSHS_corr_matrix$p[, "LSHS_total_score"][1:3]), 3)
+
+
+```
+
+
+There was no correlation between CAPS score and performance in the non-forced condition of the dichotic listening task, as assessed by the number of right ear responses (H2) (*rho* = `r dl_nf_RE_corr_rho`, 95% CI = [`r dl_nf_RE_corr_ci_lo`, `r dl_nf_RE_corr_ci_hi`], *p* = `r dl_nf_RE_corr_p`), and equivalence testing indicated that the effect size was equivalent to 0 (*p* `r dl_CAPS_nfre_equiv_p`). Similarly, there was no association between CAPS score and the number of correct left ear responses (*rho* = `r dl_fl_LE_corr_rho`, 95% CI = [`r dl_fl_LE_corr_ci_lo`, `r dl_fl_LE_corr_ci_hi`], *p* = `r dl_fl_LE_corr_p`) in the forced-left condition, which was also equivalent to 0 (*p* = `r dl_CAPS_flle_equiv_p`). 
+
+As a secondary analysis, total LSHS-E score was used as a measure of hallucinations, and also showed no association with dichotic listening task performance for all conditions (all *rho*s < `r dl_LSHS_max_rho`, *p*s > `r dl_LSHS_min_p`).
+
+## 3.5. H3: Hallucinations and verbal working memory
+```{r}
+# calculate number of exclusions for digit span task based on low or high performance
+ds_exclusions_low <- sum(multisite_dataset_filtered$ds_mean_span <= 3)
+ds_exclusions_high <- sum(multisite_dataset_filtered$ds_mean_span >=12)
+ds_exclusions <- sum(is.na(multisite_dataset$ds_mean_span))
+
+# calculate mean, sd, min, max, and 95% CIs for digit span task performance
+ds_mean <- round(mean(ds_mean_span, na.rm = TRUE), 2)
+ds_sd <- round(sd(ds_mean_span, na.rm = TRUE), 2)
+ds_min <- round(min(ds_mean_span, na.rm = TRUE), 2)
+ds_max <- round(max(ds_mean_span, na.rm = TRUE), 2)
+ds_ci_lo <- round(CI(na.omit(ds_mean_span), 0.95)[["lower"]], 2)
+ds_ci_hi <- round(CI(na.omit(ds_mean_span), 0.95)[["upper"]], 2)
+
+# correlations (spearmans) and equivalence tests for association between CAPS, LSHS and DS performance 
+ds_CAPS_corr <- psych::corr.test(ds_mean_span, CAPS_total, method = "spearman", use = "complete.obs", adjust = "none")
+ds_LSHS_corr <- psych::corr.test(ds_mean_span, LSHS_total_score, method = "spearman", use = "complete.obs", adjust = "none")
+ds_CAPS_equiv <- TOSTER::TOSTr(n = ds_CAPS_corr$n, r = ds_CAPS_corr$r, low_eqbound_r = -0.1, high_eqbound_r = 0.1,
+                       plot = FALSE, verbose = FALSE)
+ds_LSHS_equiv <- TOSTER::TOSTr(n = ds_LSHS_corr$n, r = ds_LSHS_corr$r, low_eqbound_r = -0.1, high_eqbound_r = 0.1,
+                       plot = FALSE, verbose = FALSE)
+
+# for digit span task, assign rho and p to variables for inserting into text
+# calculate confidence intervals around rho
+ds_CAPS_rho <- round(ds_CAPS_corr$r, 2)
+ds_CAPS_p <- format.pval(ds_CAPS_corr$p, digits = 3, eps = .001)
+ds_CAPS_ci <-calc.Spearman.CIs(rs = ds_CAPS_corr$r, n = ds_CAPS_corr$n)
+ds_CAPS_ci_lo <- round(ds_CAPS_ci$fiel[1], 2)
+ds_CAPS_ci_hi <- round(ds_CAPS_ci$fiel[2], 2)
+
+# repeat for LSHS correlations
+ds_LSHS_rho <- round(ds_LSHS_corr$r, 2)
+ds_LSHS_p <- format.pval(ds_LSHS_corr$p, digits = 3, eps = .001)
+ds_LSHS_ci <-calc.Spearman.CIs(rs = ds_LSHS_corr$r, n = ds_LSHS_corr$n)
+ds_LSHS_ci_lo <- round(ds_LSHS_ci$fiel[1], 2)
+ds_LSHS_ci_hi <- round(ds_LSHS_ci$fiel[2], 2)
+
+```
+
+Overall mean span was approximately equal to that reported by Woods et al. (2011) (*M* = `r ds_mean`, 95% CI = [`r ds_ci_lo`, `r ds_ci_hi`]).
+
+There was no association between mean digit span and CAPS score (H3) (*rho* = `r round(ds_CAPS_corr$r, 2)`, 95% CI = [`r ds_CAPS_ci_lo`, `r ds_CAPS_ci_hi`], *p* = `r ds_CAPS_p`), with equivalence testing indicating an effect indistinguishable from 0 (*p* `r format.pval(ds_CAPS_equiv$TOST_p2, digits = 3, eps = .001)`), though secondary analysis showed a very weak association between mean digit span and LSHS-E score (*rho* = `r ds_LSHS_rho`, 95% CI = [`r ds_LSHS_ci_lo`, `r ds_LSHS_ci_hi`], *p* = `r ds_LSHS_p`). 
+
+## 3.6. H4: Hallucinations and auditory signal detection
+```{r}
+sdt_d_exclusions <- sum(multisite_dataset_filtered$sdt_d <= 0, na.rm = TRUE)
+sdt_hits_exclusions <- sum(multisite_dataset_filtered$sdt_hits <= 10, na.rm = TRUE)
+sdt_exclusions <- sum(multisite_dataset_filtered$sdt_d <= 0 | multisite_dataset_filtered$sdt_hits <= 10, na.rm = TRUE)
+
+sdt_mean_hitrate <- round(mean(sdt_hits, na.rm = TRUE), 2)
+sdt_sd_hitrate <- round(sd(sdt_hits, na.rm = TRUE), 2)
+sdt_ci_lo_hitrate <- round(CI(na.omit(sdt_hits), 0.95)[["lower"]], 2)
+sdt_ci_hi_hitrate <- round(CI(na.omit(sdt_hits), 0.95)[["upper"]], 2)
+
+sdt_mean_farate <- round(mean(sdt_fa, na.rm = TRUE), 2)
+sdt_sd_farate <- round(sd(sdt_fa, na.rm = TRUE), 2)
+sdt_ci_lo_farate <- round(CI(na.omit(sdt_fa), 0.95)[["lower"]], 2)
+sdt_ci_hi_farate <- round(CI(na.omit(sdt_fa), 0.95)[["upper"]], 2)
+
+sdt_CAPS_corr <- multisite_dataset %>% 
+  select(sdt_hits, sdt_fa, sdt_d, sdt_beta, CAPS_total) %>% 
+  corr.test(method = "spearman", use = "complete.obs", adjust = "none")
+
+# create correlation matrix between LSHS and SDT parameters
+sdt_LSHS_corr <-  multisite_dataset %>% 
+  select(sdt_hits, sdt_fa, sdt_d, sdt_beta, LSHS_total_score) %>% 
+  corr.test(method = "spearman", use = "complete.obs", adjust = "none")
+
+# for correlation between CAPS and SDT measures, assign rho and p to variables, calculate confidence intervals
+# then repeat for LSHS
+sdt_fa_CAPS_rho <- round(sdt_CAPS_corr$r["sdt_fa", "CAPS_total"], 2)
+sdt_fa_CAPS_p <- format.pval(sdt_CAPS_corr$p["sdt_fa", "CAPS_total"], eps = .001, digits = 3)
+sdt_fa_CAPS_rho_ci_lo <- round(sdt_CAPS_corr$ci["sdt_f-CAPS_", "lower"], 2)
+sdt_fa_CAPS_rho_ci_hi <- round(sdt_CAPS_corr$ci["sdt_f-CAPS_", "upper"], 2)
+
+sdt_fa_LSHS_rho <- round(sdt_LSHS_corr$r["sdt_fa", "LSHS_total_score"], 2)
+sdt_fa_LSHS_p <- format.pval(sdt_LSHS_corr$p["sdt_fa", "LSHS_total_score"], eps = .001, digits = 3)
+sdt_fa_LSHS_rho_ci_lo <- round(sdt_LSHS_corr$ci["sdt_f-LSHS_", "lower"], 2)
+sdt_fa_LSHS_rho_ci_hi <- round(sdt_LSHS_corr$ci["sdt_f-LSHS_", "upper"], 2)
+
+# repeat for hit rate for CAPS and LSHS
+sdt_hits_CAPS_rho <- round(sdt_CAPS_corr$r["sdt_hits", "CAPS_total"], 2)
+sdt_hits_CAPS_p <- format.pval(sdt_CAPS_corr$p["sdt_hits", "CAPS_total"], eps = .001, digits = 3)
+sdt_hits_CAPS_rho_ci_lo <- round(sdt_CAPS_corr$ci["sdt_h-CAPS_", "lower"], 2)
+sdt_hits_CAPS_rho_ci_hi <- round(sdt_CAPS_corr$ci["sdt_h-CAPS_", "upper"], 2)
+
+sdt_hits_LSHS_rho <- round(sdt_LSHS_corr$r["sdt_hits", "LSHS_total_score"], 2)
+sdt_hits_LSHS_p <- format.pval(sdt_LSHS_corr$p["sdt_hits", "LSHS_total_score"], eps = .001, digits = 3)
+sdt_hits_LSHS_rho_ci_lo <- round(sdt_LSHS_corr$ci["sdt_h-LSHS_", "lower"], 2)
+sdt_hits_LSHS_rho_ci_hi <- round(sdt_LSHS_corr$ci["sdt_h-LSHS_", "upper"], 2)
+
+# repeat for beta for CAPS and LSHS
+sdt_beta_CAPS_rho <- round(sdt_CAPS_corr$r["sdt_beta", "CAPS_total"], 2)
+sdt_beta_CAPS_p <- format.pval(sdt_CAPS_corr$p["sdt_beta", "CAPS_total"], eps = .001, digits = 3)
+sdt_beta_CAPS_rho_ci_lo <- round(sdt_CAPS_corr$ci["sdt_b-CAPS_", "lower"], 2)
+sdt_beta_CAPS_rho_ci_hi <- round(sdt_CAPS_corr$ci["sdt_b-CAPS_", "upper"], 2)
+
+sdt_beta_LSHS_rho <- round(sdt_LSHS_corr$r["sdt_beta", "LSHS_total_score"], 2)
+sdt_beta_LSHS_p <- format.pval(sdt_LSHS_corr$p["sdt_beta", "LSHS_total_score"], eps = .001, digits = 3)
+sdt_beta_LSHS_rho_ci_lo <- round(sdt_LSHS_corr$ci["sdt_b-LSHS_", "lower"], 2)
+sdt_beta_LSHS_rho_ci_hi <- round(sdt_LSHS_corr$ci["sdt_b-LSHS_", "upper"], 2)
+
+# repeat for d-prime for CAPS and LSHS
+sdt_d_CAPS_rho <- round(sdt_CAPS_corr$r["sdt_d", "CAPS_total"], 2)
+sdt_d_CAPS_p <- format.pval(sdt_CAPS_corr$p["sdt_d", "CAPS_total"], eps = .001, digits = 3)
+sdt_d_CAPS_rho_ci_lo <- round(sdt_CAPS_corr$ci["sdt_d-CAPS_", "lower"], 2)
+sdt_d_CAPS_rho_ci_hi <- round(sdt_CAPS_corr$ci["sdt_d-CAPS_", "upper"], 2)
+
+sdt_d_LSHS_rho <- round(sdt_LSHS_corr$r["sdt_d", "LSHS_total_score"], 2)
+sdt_d_LSHS_p <- format.pval(sdt_LSHS_corr$p["sdt_d", "LSHS_total_score"], eps = .001, digits = 3)
+sdt_d_LSHS_rho_ci_lo <- round(sdt_LSHS_corr$ci["sdt_d-LSHS_", "lower"], 2)
+sdt_d_LSHS_rho_ci_hi <- round(sdt_LSHS_corr$ci["sdt_d-LSHS_", "upper"], 2)
+
+sdt_CAPS_equiv <- TOSTr(n = sdt_CAPS_corr$n["CAPS_total", "sdt_d"], r = sdt_CAPS_corr$r["CAPS_total", "sdt_d"],
+                        low_eqbound_r = -0.1, high_eqbound_r = 0.1, plot = FALSE, verbose = FALSE)
+sdt_CAPS_equiv_p <- round(max(sdt_CAPS_equiv$TOST_p1, sdt_CAPS_equiv$TOST_p2), 2)
+
+```
+
+Auditory signal detection data was collected only from participants that took part in the lab-based version of the study (*n* = `r final_lab_n`). Mean hit rate was comparable to previous studies using this task (*M* = `r sdt_mean_hitrate`%, 95% CI = [`r sdt_ci_lo_hitrate`, `r sdt_ci_hi_hitrate`]), as was the false alarm rate (*M* = `r sdt_mean_farate`%, 95% CI = [`r sdt_ci_lo_farate`, `r sdt_ci_hi_farate`]).
+
+There was a positive association between CAPS score and false alarm rate (H5) (*rho* = `r sdt_fa_CAPS_rho`, 95% CI = [`r sdt_fa_CAPS_rho_ci_lo`, `r sdt_fa_CAPS_rho_ci_hi`], *p* `r sdt_fa_CAPS_p`). Additional analysis using signal detection parameters showed  a positive association between CAPS score and hit rate (*rho* = `r sdt_hits_CAPS_rho`, 95% CI = [`r sdt_hits_CAPS_rho_ci_lo`, `r sdt_hits_CAPS_rho_ci_hi`], *p* `r sdt_hits_CAPS_p`), and a negative association between CAPS score and $\beta$ (*rho* = `r sdt_beta_CAPS_rho`, 95% CI = [`r sdt_beta_CAPS_rho_ci_lo`, `r sdt_beta_CAPS_rho_ci_hi`], *p* `r sdt_beta_CAPS_p`), indicating that increased CAPS score was associated with a reduced threshold for accepting the presence of a stimulus. There was no such association between CAPS score and \(d'\) (*rho* = `r sdt_d_CAPS_rho`, 95% CI = [`r sdt_d_CAPS_rho_ci_lo`, `r sdt_d_CAPS_rho_ci_hi`], *p* = `r sdt_d_CAPS_p`), indicating that CAPS score was not associated with task sensitivity. However, equivalence testing also indicated that the correlation was not statistically equivalent to 0 (*p* = `r sdt_CAPS_equiv_p`).
+
+Using LSHS-E as a secondary outcome, similar associations with false alarm rate (*rho* = `r sdt_fa_LSHS_rho`, 95% CI = [`r sdt_fa_LSHS_rho_ci_lo`, `r sdt_fa_LSHS_rho_ci_hi`], *p* = `r sdt_fa_LSHS_p`), and $\beta$ (*rho* = `r sdt_beta_LSHS_rho`, 95% CI = [`r sdt_beta_LSHS_rho_ci_lo`, `r sdt_beta_LSHS_rho_ci_hi`], *p* = `r sdt_beta_LSHS_p`) were observed. Unlike with the primary outcome measure, there was also a small association between LSHS-E score and \(d'\) (*rho* = `r sdt_d_LSHS_rho`, 95% CI = [`r sdt_d_LSHS_rho_ci_lo`, `r sdt_d_LSHS_rho_ci_hi`], *p* = `r sdt_d_LSHS_p`).
+
+## 3.7. H5: Hallucinations and adverse childhood events
+```{r warning=FALSE}
+ace_exclusions_missing <- sum(multisite_dataset_filtered$ACES_missing > 5, na.rm = TRUE)
+ace_exclusions_timing <- sum(multisite_dataset_filtered$ACES_mean_rt < 1.5, na.rm = TRUE)
+ace_exclusions <- sum(multisite_dataset_filtered$ACES_missing > 5 | multisite_dataset_filtered$ACES_mean_rt < 1.5, na.rm = TRUE)
+
+ace_mean <- round(mean(ACES_total_score, na.rm = TRUE), 2)
+ace_median <- median(ACES_total_score, na.rm = TRUE)
+ace_oneormore <- 100-(round((sum(ACES_total_score == 0, na.rm = TRUE)/(sum(!is.na(ACES_total_score))))*100, 2))
+
+ace_CAPS_corr <- corr.test(CAPS_total, ACES_total_score, method = "spearman", use = "complete.obs", adjust = "none")
+ace_LSHS_corr <- corr.test(LSHS_total_score, ACES_total_score, method = "spearman")
+
+# for ace, assign rho, ci, and p to variables to insert into text
+source("spearman_ci.r")
+ace_CAPS_rho <- round(ace_CAPS_corr$r, 2)
+ace_CAPS_p <- format.pval(ace_CAPS_corr$p, eps = .001, digits = 3)
+ace_CAPS_rho_ci <- calc.Spearman.CIs(rs = ace_CAPS_rho,
+                               n = ace_CAPS_corr$n)
+ace_CAPS_rho_ci_lo <- round(ace_CAPS_rho_ci$fiel[1], 2)
+ace_CAPS_rho_ci_hi <- round(ace_CAPS_rho_ci$fiel[2], 2)
+
+ace_LSHS_rho <- round(ace_LSHS_corr$r, 2)
+ace_LSHS_p <- format.pval(ace_LSHS_corr$p, eps = .001, digits = 3)
+ace_LSHS_rho_ci <- calc.Spearman.CIs(rs = ace_LSHS_rho,
+                               n = ace_LSHS_corr$n)
+ace_LSHS_rho_ci_lo <- round(ace_LSHS_rho_ci$fiel[1], 2)
+ace_LSHS_rho_ci_hi <- round(ace_LSHS_rho_ci$fiel[2], 2)
+
+```
+Mean number of ACEs reported was `r ace_mean`, although this was heavily positively skewed, with a median number of ACES of `r ace_median`. `r ace_oneormore`% of participants reported one or more ACE.
+
+There was a positive correlation between CAPS total and ACE score (*rho* = `r ace_CAPS_rho`, 95% CI = [`r ace_CAPS_rho_ci_lo`, `r ace_CAPS_rho_ci_hi`], *p* `r ace_CAPS_p`). A similar effect size was found when LSHS-E was used as a secondary outcome measure to assess hallucinations (*rho* = `r ace_LSHS_rho`, 95% CI = [`r ace_LSHS_rho_ci_lo`, `r ace_LSHS_rho_ci_hi`], *p* `r ace_LSHS_p`).
+
+## Table 3: correlations matrix
+```{r}
+
+# produce correlation matrix between CAPS and primary outcome variables for each task
+tbl3_corr <- multisite_dataset %>% 
+  select(CAPS_total, smt_imagine_hear, dl_RE_sum, dl_LE_forcedleft_sum, ds_mean_span,
+         sdt_fa, ACES_total_score) %>%  
+  corr.test(method = "spearman", use = "pairwise", adjust = "none")
+
+# same correlation matrix for only data collected in the lab
+tbl_labonly_corrs <- multisite_dataset %>% 
+  filter(origin == 1) %>% 
+  select(CAPS_total, smt_imagine_hear, dl_RE_sum, dl_LE_forcedleft_sum, ds_mean_span,
+         sdt_fa, ACES_total_score) %>%  
+  corr.test(method = "spearman", use = "pairwise", adjust = "none")
+
+# same correlation matrix for only data collected online (without SD task)
+tbl_onlineonly_corrs <- multisite_dataset %>% 
+  filter(origin == 2) %>% 
+  select(CAPS_total, smt_imagine_hear, dl_RE_sum, dl_LE_forcedleft_sum, ds_mean_span,
+         ACES_total_score) %>%  
+  corr.test(method = "spearman", use = "pairwise", adjust = "none")
+
+```
+
+
+## 3.8. H6: Attention checks and data quality in the lab vs. online
+```{r warning=FALSE}
+multisite_dataset_nonfiltered <- mutate(multisite_dataset_nonfiltered,
+                                        att_check_split = if_else(failed_checks >= 2, 1, 0))
+failed_all_checks <- nrow(filter(multisite_dataset_nonfiltered, failed_checks == 3))
+failed_two_checks <- nrow(filter(multisite_dataset_nonfiltered, failed_checks >=2))
+
+# tests whether participants who failed 2 or more attention checks make more errors on the DL task
+attcheck_ttest <- ttestIS(formula = CAPS_total + dl_RE_sum + dl_RE_forcedright_sum +
+                            dl_LE_forcedleft_sum + smt_imagine_hear + ds_mean_span +
+                            sdt_fa + ACES_total_score~att_check_split,
+                          data = multisite_dataset_nonfiltered, 
+                          vars = vars(CAPS_total, dl_RE_sum, dl_RE_forcedright_sum,
+                                      dl_LE_forcedleft_sum, smt_imagine_hear,
+                                      ds_mean_span, sdt_fa, ACES_total_score),
+                          effectSize = TRUE, desc = TRUE, ci = TRUE, mann = TRUE)
+
+attcheck_corr_data <- filter(multisite_dataset_nonfiltered, failed_checks >=2) %>% 
+  select(CAPS_total, dl_RE_sum, dl_RE_forcedright_sum, dl_LE_forcedleft_sum,
+         smt_imagine_hear, ds_mean_span, sdt_fa, ACES_total_score)
+
+attcheck_corr <- corr.test(attcheck_corr_data, adjust = "none", method = "spearman")
+
+attcheck_origin_chi <- chisq.test(multisite_dataset_nonfiltered$att_check_split,
+                                  multisite_dataset_nonfiltered$origin)
+attcheck_origin_stat <- round(attcheck_origin_chi$statistic, 2)
+attcheck_origin_p <- format.pval(attcheck_origin_chi$p.value, digits = 3, eps = .001)
+
+lab_attcheck_exc_percent <- round((attcheck_origin_chi$observed[2, 1])/
+  (attcheck_origin_chi$observed[1, 1] + attcheck_origin_chi$observed[2, 1])*100, 2)
+
+online_attcheck_exc_percent <- round((attcheck_origin_chi$observed[2, 2])/
+  (attcheck_origin_chi$observed[1, 2] + attcheck_origin_chi$observed[2, 2])*100, 2)
+
+source("spearman_ci.r")
+attcheck_corr_dl_nf_ci <- calc.Spearman.CIs(rs = attcheck_corr$r["CAPS_total", "dl_RE_sum"],
+                  n = attcheck_corr$n["CAPS_total", "dl_RE_sum"])
+
+attcheck_corr_dl_fl_ci <- calc.Spearman.CIs(rs = attcheck_corr$r["CAPS_total", "dl_LE_forcedleft_sum"],
+                  n = attcheck_corr$n["CAPS_total", "dl_LE_forcedleft_sum"])
+
+attcheck_corr_smt_ci <- calc.Spearman.CIs(rs = attcheck_corr$r["CAPS_total", "smt_imagine_hear"],
+                  n = attcheck_corr$n["CAPS_total", "smt_imagine_hear"])
+
+attcheck_corr_ds_ci <- calc.Spearman.CIs(rs = attcheck_corr$r["CAPS_total", "ds_mean_span"],
+                  n = attcheck_corr$n["CAPS_total", "ds_mean_span"])
+
+attcheck_corr_sdt_ci <- calc.Spearman.CIs(rs = attcheck_corr$r["CAPS_total", "sdt_fa"],
+                  n = attcheck_corr$n["CAPS_total", "sdt_fa"])
+
+attcheck_corr_ace_ci <- calc.Spearman.CIs(rs = attcheck_corr$r["CAPS_total", "ACES_total_score"],
+                  n = attcheck_corr$n["CAPS_total", "ACES_total_score"])
+
+
+ds_attcheck_u <- attcheck_ttest$ttest$asDF$`stat[mann]`[6]
+ds_attcheck_p <- format.pval(attcheck_ttest$ttest$asDF$`p[mann]`[6], digits = 3, eps = .001)
+ds_attcheck_mean <- round(attcheck_ttest$desc$asDF$`mean[2]`[6], 2)
+ds_attcheck_ci_lo <- attcheck_ttest$ttest$asDF$`cil[stud]`[6]
+ds_attcheck_ci_hi <- attcheck_ttest$ttest$asDF$`ciu[stud]`[6]
+
+```
+
+Given the inclusion of attention checks, we planned to assess task performance for participants that failed all attention checks, compared to those that were included in the final dataset (with non-directional hypotheses). However, due to a low number of participants failing all attention checks (*n* = `r failed_all_checks`), we diverged from our preregistered analysis plan, and compared participants that failed two or more checks, and were hence excluded from full analysis (the *failed checks* group, *n* = `r failed_two_checks`) to those that failed one check or fewer (the *included* group). The failed checks group scored lower on all task primary outcome variables, though confidence intervals crossed 0 in all cases other than mean digit span (*U* = `r round(ds_attcheck_u, 2)`, 95% CI = [`r ds_attcheck_ci_lo`, `r ds_attcheck_ci_hi`], *p* = `r ds_attcheck_p`). Correlation coefficients were also computed between task variables and CAPS score for the failed checks group (*n* = `r failed_two_checks`) only, and compared to the coefficients gained in the main analysis. There were no differences between the two groups in correlation coefficients (all 95% CIs overlapping).
+
+To test whether there was any divergence between findings from data collected in the lab and data collected online, we repeated the analyses for H1-5 for lab data only and online data only, with no difference in results: there was no association between CAPS and dichotic listening, digit span, or source memory performance, but there was an association between CAPS score and adverse childhood experiences, in both sets of data. There was also no difference between the number of exclusions due to failed attention checks in the lab data (`r lab_attcheck_exc_percent`%) as compared to the online data (`r online_attcheck_exc_percent`%), (\( \chi \)\( ^2 \) = `r attcheck_origin_stat`, *p* = `r attcheck_origin_p`).
+
+## 3.9. Constructing a model to predict HEs from cognitive task performance
+```{r message=FALSE, warning=FALSE}
+# this has been commented out, as the model includes age and gender
+# centre and standardise each variable for use in LMM
+#multisite_dataset$age_centred <- scale(multisite_dataset$age,
+ #                                               center = TRUE, scale = TRUE)
+#multisite_dataset$sdt_fa_centred <- scale(multisite_dataset$sdt_fa,
+ #                                         center = TRUE, scale = TRUE)
+#multisite_dataset$dl_RE_sum_centred <- scale(multisite_dataset$dl_RE_sum,
+  #                                           center = TRUE, scale = TRUE)
+#multisite_dataset$smt_imagine_hear_centred <- scale(multisite_dataset$smt_imagine_hear,
+ #                                                   center = TRUE, scale = TRUE)
+#multisite_dataset$ds_mean_span_centred <- scale(multisite_dataset$ds_mean_span,
+ #                                               center = TRUE, scale = TRUE)
+
+#filter dataset to remove NA cases for each task
+#multisite_dataset_complete_cases <- filter(multisite_dataset, !is.na(age), !is.na(gender_bin),
+#                                           !is.na(sdt_fa), !is.na(dl_RE_sum), !is.na(smt_imagine_hear),
+#                                           !is.na(ds_mean_span), !is.na(ses))
+
+# creates four models to predict CAPS total score, increasing in complexity, with site as a random effect
+#rand_eff_only_lmer <- lmerTest::lmer(CAPS_total ~ 1 + (1|site),
+#                      data = multisite_dataset_complete_cases, REML = FALSE)
+#baseline_lmer <- lmerTest::lmer(CAPS_total ~ age_centred + gender_bin + ses + (1|site),
+#                      data = multisite_dataset_complete_cases, REML = FALSE)
+#sdt_lmer <- lmerTest::lmer(CAPS_total ~ age_centred + gender_bin + ses+ sdt_fa_centred + (1|site),
+#                      data = multisite_dataset_complete_cases, REML = FALSE)
+#all_vars_lmer <- lmerTest::lmer(CAPS_total ~ age_centred + gender_bin + ses+ sdt_fa_centred + dl_RE_sum_centred +
+ #                       smt_imagine_hear_centred + ds_mean_span_centred +
+#                        (1|site), data = multisite_dataset_complete_cases, REML = FALSE)
+
+#use 'performance' package to check assumptions - assumption of normality of residuals is not met
+#baseline_assump <- performance::check_model(baseline_lmer)
+#sdt_assump <- performance::check_model(sdt_lmer)
+#all_vars_assump <- performance::check_model(all_vars_lmer)
+
+# try log transforming variables to improve normality of residuals
+#multisite_dataset_complete_cases$CAPS_total_plus1 <- multisite_dataset_complete_cases$CAPS_total + 1
+#multisite_dataset_complete_cases$CAPS_total_log <- log10(multisite_dataset_complete_cases$CAPS_total_plus1)
+
+# sdt and all_vars model using transformed CAPS variable
+#rand_eff_only_lmer_transform <- lmerTest::lmer(CAPS_total_log ~ 1 + (1|site),
+#                      data = multisite_dataset_complete_cases, REML = FALSE)
+#baseline_lmer_transform <- lmerTest::lmer(CAPS_total_log ~ age_centred + gender_bin + ses + (1|site),
+#                      data = multisite_dataset_complete_cases, REML = FALSE)
+#sdt_lmer_transform <- lmerTest::lmer(CAPS_total_log ~ age_centred + gender_bin + ses+ sdt_fa_centred + (1|site),
+#                      data = multisite_dataset_complete_cases, REML = FALSE)
+#all_vars_lmer_transform <- lmerTest::lmer(CAPS_total_log ~ age_centred +
+ #                                 gender_bin + ses + sdt_fa_centred + dl_RE_sum_centred +
+#                                  smt_imagine_hear_centred + ds_mean_span_centred +
+#                                  (1|site), data = multisite_dataset_complete_cases, REML = FALSE)
+
+# check assumptions on new models with transformed variable
+#transformation has improved normality of residuals, so proceed with transformed version
+#baseline_transform_assump <- performance::check_model(baseline_lmer_transform)
+#sdt_transform_assump <- performance::check_model(sdt_lmer_transform)
+#all_vars_transform_assump <- performance::check_model(all_vars_lmer_transform)
+
+#model_names <- c("Random effects only", "Baseline", "SDT only", "All task variables")
+#lme.models <- aictab(cand.set = list(rand_eff_only_lmer_transform, baseline_lmer_transform,
+ #                                    sdt_lmer_transform, all_vars_lmer_transform),
+#                     modnames = model_names)
+
+# compares different models using anova, assigns p to variable for use in text
+#rand_baseline_comparison <- stats::anova(rand_eff_only_lmer_transform, baseline_lmer_transform)
+#rand_baseline_comparison_p <- rand_baseline_comparison$`Pr(>Chisq)`[2]
+
+#baseline_sdt_comparison <- stats::anova(baseline_lmer_transform, sdt_lmer_transform)
+#baseline_sdt_comparison_p <- baseline_sdt_comparison$`Pr(>Chisq)`[2]
+
+#sdt_allvars_comparison <- stats::anova(sdt_lmer_transform, all_vars_lmer_transform)
+#sdt_allvars_comparison_p <- sdt_allvars_comparison$`Pr(>Chisq)`[2]
+
+# calculate standardized coefficients and SE for fixed effects in model with all variables
+#all_vars_lmer_standardized <- reghelper::beta(all_vars_lmer_transform)
+
+```
+
+We constructed three linear mixed models (using the *lme4* *r* package), each with CAPS score as the dependent variable, and including data collection site as a random effect (intercept). This analysis was conducted only on data collected in the lab, so that SD task data could be included. Predictor variables were centred and standardised. Assumptions regarding multicollinearity, homoscedasticity, homogeneity of variance, and normality of random effects were met. However, inspection of QQ plots suggested non-normality of residuals; therefore, CAPS score was log-transformed, and the models re-computed. For these models, QQ plots suggested normality of residuals; therefore, the mixed models were computed with a log-transformed CAPS score.
+
+The first (*baseline* model) included basic demographic information (age, gender, and parental income) as fixed effects, which significantly improved upon a model with only the random effect entered (*p* `r format.pval(rand_baseline_comparison_p, digits = 3, eps = .001)`). The second model (*signal detection* model) added the SD task false alarm rate as a fixed effect, and significantly improved upon the baseline model (*p* = `r format.pval(baseline_sdt_comparison_p, digits = 3, eps = .001)`). The third model added the remaining task variables (dichotic listening non-forced right ear syllables, digit span mean span, source memory imagine-hear errors), and did not improve upon the signal detection model (*p* = `r format.pval(sdt_allvars_comparison_p, digits = 3, eps = .001)`). The Akaike Information Criteria (AIC) was also used to assess model quality. The signal detection model provided the lowest AIC (AICc = `r round(lme.models$AICc[1], 2)` - that is, the highest quality model to predict CAPS score, of those tested, was the model including only age, gender, parental income, and SD task performance. See Table 4 for full coefficients for the model with all variables included, and Supplemental Materials (S7) for full breakdown of model comparisons.
+
+
+## Figure 1: association between CAPS score and task measures
+```{r message=FALSE, warning=FALSE}
+
+# create tibble with task names, confidence intervals and rho coefficients
+all_tasks <- c("H1: Source memory", "H2a: Dichotic listening (nf)", "H2b: Dichotic listening (fl)", "H3: Digit span", "H4: Signal detection (FA)", "H5: ACEs")
+all_lo_ci <- c(smtimaginehear_CAPS_corr_ci$fiel[1], dl_nf_RE_corr_ci$fiel[1],
+               dl_fl_LE_corr_ci$fiel[1], ds_CAPS_ci$fiel[1], sdt_fa_CAPS_rho_ci_lo,
+               ace_CAPS_rho_ci_lo)
+all_hi_ci <- c(smtimaginehear_CAPS_corr_ci$fiel[2], dl_nf_RE_corr_ci$fiel[2],
+               dl_fl_LE_corr_ci$fiel[2], ds_CAPS_ci$fiel[2], sdt_fa_CAPS_rho_ci_hi,
+               ace_CAPS_rho_ci_hi)
+all_tasks_corr <- c(smt_CAPS_LSHS_corr_matrix$r["smt_imagine_hear", "CAPS_total"],
+                    dl_CAPS_LSHS_corr_matrix$r["dl_RE_sum", "CAPS_total"],
+                    dl_CAPS_LSHS_corr_matrix$r["dl_LE_forcedleft_sum", "CAPS_total"],
+                    ds_CAPS_corr$r,
+                    sdt_CAPS_corr$r["sdt_fa", "CAPS_total"], ace_CAPS_rho) 
+correlation_ci_tbl <- tibble(all_tasks, all_lo_ci, all_hi_ci, all_tasks_corr)
+
+# factor is task names
+correlation_ci_tbl$all_tasks <- factor(correlation_ci_tbl$all_tasks, levels = rev(correlation_ci_tbl$all_tasks))
+
+# create plot from tibble - dots are rho values, error bars are 95% confidence intervals around the rho
+tasks_rho_plot <- ggplot(data = correlation_ci_tbl,
+                           aes(x = all_tasks,
+                               y = all_tasks_corr,
+                               ymin = all_lo_ci,
+                               ymax = all_hi_ci)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, lty = 2) + # add dotted line at 0 (will be flipped)
+  coord_flip() + # flips coordinates so labels are on x axis
+  ylim(-0.3, 0.3) +
+  xlab("") + 
+  ylab(expression(italic(r)[s]*~textstyle(group("(", CAPS, ")"))))+
+  scale_y_continuous(breaks = c(-0.2, -0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.25)) +
+  theme_bw() +  # use white background
+  theme(axis.text.y = element_text(size = 12))
+
+print(tasks_rho_plot)
+
+#export as a tiff
+tiff(file = "Fig1_multisite.tiff", width = 4800, height = 3200, units = "px", res = 800, compression = "lzw")
+plot(tasks_rho_plot)
+dev.off()
+
+
+```
+Fig. 1: correlations (Spearman's rho) between HEs (CAPS) and primary variables for each task. H1-4 correspond to the first four hypotheses described in the introduction. Error bars = 95% confidence interval. NF = non-forced condition in the dichotic listening task; FL = forced left condition of the dichotic listening task. FA = false alarm rate on the signal detection task.
+

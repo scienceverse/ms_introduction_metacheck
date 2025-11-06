@@ -1,0 +1,1743 @@
+---
+title: "OSF_10.24.23"
+author: "anonymized"
+date: '2023-10-02'
+output: 
+    html_document:
+      toc: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
+```
+
+```{r, message = FALSE, warning = FALSE}
+#R version 3.5.1
+
+library(stringr) #Version 1.3.1
+library(plyr) #Version 1.8.4
+library(psych) #Version 1.8.10
+#library(Zelig) #Version 5.1.6
+library(car) #Version 3.0.2
+library(ggplot2) #Version 3.1.0
+library(tidyverse)
+library(here)
+library(miceadds)
+library(plm)
+library(survival)
+library(ggsurvfit)
+library(survminer)
+library(performance)
+```
+
+Structuring Data: Transforming from Start to End dates to Wide Format
+
+```{r}
+#setwd("~/Research/Politics/Risk Pool/R Files/")
+
+#Loading in the raw data for lower officeholders.
+riskpoolraw.df <- read_csv(here::here("data", "RiskPoolData.csv"))
+  # read.csv("RiskPoolData.csv", stringsAsFactors = FALSE)
+
+#Loading in identifiers for roles held
+rolenames <- read_csv(here::here("data","RoleNames.csv"))
+
+#Loading in the candidates for higher office
+candidate.df <- read_csv(here::here("data","CandidateData.csv"))
+
+#Loading in the Gallup Opinion data
+opinions.df <- read_csv(here::here("data", "Polls.csv"))
+```
+
+
+```{r}
+#Converting the raw officeholder variables into their proper format
+##riskpoolraw.df$Name <- gsub("\n\n", "", riskpoolraw.df$Name, fixed = TRUE)
+riskpoolraw.df$Name <- str_replace_all(riskpoolraw.df$Name,"\n\n", "")
+riskpoolraw.df$CandOneState <- paste(riskpoolraw.df$Name, riskpoolraw.df$State)
+riskpoolraw.df$Start <- as.numeric(riskpoolraw.df$Start)
+riskpoolraw.df$End <- as.numeric(riskpoolraw.df$End)
+riskpoolraw.df$BirthYear <- as.numeric(riskpoolraw.df$BirthYear)
+riskpoolraw.df$EarlyBird <- as.numeric(riskpoolraw.df$EarlyBird)
+riskpoolraw.df$LameDuck[is.na(riskpoolraw.df$LameDuck)] <- 0
+riskpoolraw.df$LameDuck[is.na(riskpoolraw.df$EarlyBird)] <- 0
+```
+
+```{r}
+#Removing officeholder raw data that do not reflect legitimate officeholder observations and observations of officeholders that did not serve during our observation period
+riskpoolraw.df <- riskpoolraw.df[!is.na(riskpoolraw.df$Start),]
+riskpoolraw.df <- riskpoolraw.df[riskpoolraw.df$Start != 0,]
+riskpoolraw.df <- riskpoolraw.df[riskpoolraw.df$End != 0,]
+riskpoolraw.df <- riskpoolraw.df[!is.na(riskpoolraw.df$Start),]
+riskpoolraw.df <- riskpoolraw.df[!is.na(riskpoolraw.df$End),]
+
+riskpoolraw.df <- riskpoolraw.df[riskpoolraw.df$End > 1890,]
+riskpoolraw.df <- riskpoolraw.df[riskpoolraw.df$Start != 2018,]
+riskpoolraw.df$End[riskpoolraw.df$End > 2017] <-2017
+
+#Making pre-1891 start dates equal to 1891 to allow for processing
+riskpoolraw.df$Start[riskpoolraw.df$Start < 1891] <- 1891
+
+#The raw data includes start and end years of officeholders. Additionally, it may include multiple rows for the same officeholder (e.g., if held discontinous terms, held multiple offices). For our analysis, we want a long dataset - a single row for each officeholder-year. For ease of processing, we first build a wide dataset, with one row for each officeholder and a column for each year in our dataset. We begin converting the dataset by creating columns for each year in the observation period and determining if a risk pool member served in that year. Later, we will convert this wide dataset into a long dataset.
+riskpoolraw.df$InOffice1891 <- ""
+riskpoolraw.df$InOffice1892 <- ""
+riskpoolraw.df$InOffice1893 <- ""
+riskpoolraw.df$InOffice1894 <- ""
+riskpoolraw.df$InOffice1895 <- ""
+riskpoolraw.df$InOffice1896 <- ""
+riskpoolraw.df$InOffice1897 <- ""
+riskpoolraw.df$InOffice1898 <- ""
+riskpoolraw.df$InOffice1899 <- ""
+riskpoolraw.df$InOffice1900 <- ""
+riskpoolraw.df$InOffice1901 <- ""
+riskpoolraw.df$InOffice1902 <- ""
+riskpoolraw.df$InOffice1903 <- ""
+riskpoolraw.df$InOffice1904 <- ""
+riskpoolraw.df$InOffice1905 <- ""
+riskpoolraw.df$InOffice1906 <- ""
+riskpoolraw.df$InOffice1907 <- ""
+riskpoolraw.df$InOffice1908 <- ""
+riskpoolraw.df$InOffice1909 <- ""
+riskpoolraw.df$InOffice1910 <- ""
+riskpoolraw.df$InOffice1911 <- ""
+riskpoolraw.df$InOffice1912 <- ""
+riskpoolraw.df$InOffice1913 <- ""
+riskpoolraw.df$InOffice1914 <- ""
+riskpoolraw.df$InOffice1915 <- ""
+riskpoolraw.df$InOffice1916 <- ""
+riskpoolraw.df$InOffice1917 <- ""
+riskpoolraw.df$InOffice1918 <- ""
+riskpoolraw.df$InOffice1919 <- ""
+riskpoolraw.df$InOffice1920 <- ""
+riskpoolraw.df$InOffice1921 <- ""
+riskpoolraw.df$InOffice1922 <- ""
+riskpoolraw.df$InOffice1923 <- ""
+riskpoolraw.df$InOffice1924 <- ""
+riskpoolraw.df$InOffice1925 <- ""
+riskpoolraw.df$InOffice1926 <- ""
+riskpoolraw.df$InOffice1927 <- ""
+riskpoolraw.df$InOffice1928 <- ""
+riskpoolraw.df$InOffice1929 <- ""
+riskpoolraw.df$InOffice1930 <- ""
+riskpoolraw.df$InOffice1931 <- ""
+riskpoolraw.df$InOffice1932 <- ""
+riskpoolraw.df$InOffice1933 <- ""
+riskpoolraw.df$InOffice1934 <- ""
+riskpoolraw.df$InOffice1935 <- ""
+riskpoolraw.df$InOffice1936 <- ""
+riskpoolraw.df$InOffice1937 <- ""
+riskpoolraw.df$InOffice1938 <- ""
+riskpoolraw.df$InOffice1939 <- ""
+riskpoolraw.df$InOffice1940 <- ""
+riskpoolraw.df$InOffice1941 <- ""
+riskpoolraw.df$InOffice1942 <- ""
+riskpoolraw.df$InOffice1943 <- ""
+riskpoolraw.df$InOffice1944 <- ""
+riskpoolraw.df$InOffice1945 <- ""
+riskpoolraw.df$InOffice1946 <- ""
+riskpoolraw.df$InOffice1947 <- ""
+riskpoolraw.df$InOffice1948 <- ""
+riskpoolraw.df$InOffice1949 <- ""
+riskpoolraw.df$InOffice1950 <- ""
+riskpoolraw.df$InOffice1951 <- ""
+riskpoolraw.df$InOffice1952 <- ""
+riskpoolraw.df$InOffice1953 <- ""
+riskpoolraw.df$InOffice1954 <- ""
+riskpoolraw.df$InOffice1955 <- ""
+riskpoolraw.df$InOffice1956 <- ""
+riskpoolraw.df$InOffice1957 <- ""
+riskpoolraw.df$InOffice1958 <- ""
+riskpoolraw.df$InOffice1959 <- ""
+riskpoolraw.df$InOffice1960 <- ""
+riskpoolraw.df$InOffice1961 <- ""
+riskpoolraw.df$InOffice1962 <- ""
+riskpoolraw.df$InOffice1963 <- ""
+riskpoolraw.df$InOffice1964 <- ""
+riskpoolraw.df$InOffice1965 <- ""
+riskpoolraw.df$InOffice1966 <- ""
+riskpoolraw.df$InOffice1967 <- ""
+riskpoolraw.df$InOffice1968 <- ""
+riskpoolraw.df$InOffice1969 <- ""
+riskpoolraw.df$InOffice1970 <- ""
+riskpoolraw.df$InOffice1971 <- ""
+riskpoolraw.df$InOffice1972 <- ""
+riskpoolraw.df$InOffice1973 <- ""
+riskpoolraw.df$InOffice1974 <- ""
+riskpoolraw.df$InOffice1975 <- ""
+riskpoolraw.df$InOffice1976 <- ""
+riskpoolraw.df$InOffice1977 <- ""
+riskpoolraw.df$InOffice1978 <- ""
+riskpoolraw.df$InOffice1979 <- ""
+riskpoolraw.df$InOffice1980 <- ""
+riskpoolraw.df$InOffice1981 <- ""
+riskpoolraw.df$InOffice1982 <- ""
+riskpoolraw.df$InOffice1983 <- ""
+riskpoolraw.df$InOffice1984 <- ""
+riskpoolraw.df$InOffice1985 <- ""
+riskpoolraw.df$InOffice1986 <- ""
+riskpoolraw.df$InOffice1987 <- ""
+riskpoolraw.df$InOffice1988 <- ""
+riskpoolraw.df$InOffice1989 <- ""
+riskpoolraw.df$InOffice1990 <- ""
+riskpoolraw.df$InOffice1991 <- ""
+riskpoolraw.df$InOffice1992 <- ""
+riskpoolraw.df$InOffice1993 <- ""
+riskpoolraw.df$InOffice1994 <- ""
+riskpoolraw.df$InOffice1995 <- ""
+riskpoolraw.df$InOffice1996 <- ""
+riskpoolraw.df$InOffice1997 <- ""
+riskpoolraw.df$InOffice1998 <- ""
+riskpoolraw.df$InOffice1999 <- ""
+riskpoolraw.df$InOffice2000 <- ""
+riskpoolraw.df$InOffice2001 <- ""
+riskpoolraw.df$InOffice2002 <- ""
+riskpoolraw.df$InOffice2003 <- ""
+riskpoolraw.df$InOffice2004 <- ""
+riskpoolraw.df$InOffice2005 <- ""
+riskpoolraw.df$InOffice2006 <- ""
+riskpoolraw.df$InOffice2007 <- ""
+riskpoolraw.df$InOffice2008 <- ""
+riskpoolraw.df$InOffice2009 <- ""
+riskpoolraw.df$InOffice2010 <- ""
+riskpoolraw.df$InOffice2011 <- ""
+riskpoolraw.df$InOffice2012 <- ""
+riskpoolraw.df$InOffice2013 <- ""
+riskpoolraw.df$InOffice2014 <- ""
+riskpoolraw.df$InOffice2015 <- ""
+riskpoolraw.df$InOffice2016 <- ""
+riskpoolraw.df$InOffice2017 <- "" #As a placeholder for people who first won in 2016.  They will be removed from analysis
+
+#For each candidate, we observe their start year and end year and use that to populate their columns for years served.
+#If it's their first year in office / last year in office and they are an early bird / lame duck, we append that notation to their office name
+for(a in 1:nrow(riskpoolraw.df)){
+  numberYears <- riskpoolraw.df$End[a] - riskpoolraw.df$Start[a]
+  inoffceyear <-  match(paste("InOffice",riskpoolraw.df$End[a], sep = ""), colnames(riskpoolraw.df))
+  
+  if (riskpoolraw.df$LameDuck[a] == 1) {
+    riskpoolraw.df[a,inoffceyear] <- paste(riskpoolraw.df$Office[a], "LameDuck")
+    }else{ 
+  riskpoolraw.df[a,inoffceyear] <- riskpoolraw.df$Office[a]
+    }
+  
+  if (numberYears == 0) {
+  }else{
+  for (b in 1:numberYears) {
+    if (b == numberYears & riskpoolraw.df$EarlyBird[a] == 1){
+      inoffceyear <-  match(paste("InOffice",riskpoolraw.df$End[a], sep = ""), colnames(riskpoolraw.df)) - b
+    riskpoolraw.df[a,inoffceyear] <- paste(riskpoolraw.df$Office[a], "EarlyBird")
+    }else{
+    inoffceyear <-  match(paste("InOffice",riskpoolraw.df$End[a], sep = ""), colnames(riskpoolraw.df)) - b
+    riskpoolraw.df[a,inoffceyear] <- riskpoolraw.df$Office[a]
+    }
+    }
+  }
+}
+```
+
+```{r}
+#To account for the possibility that we have multiple rows for the same officeholder, we need to create a new dataframe that collapses across equivalent officeholder names. We identify unique officeholders by their name and state. For our collapsed output, we create a data frame that includes a single row for each unique officeholder.
+riskpool.df <- as.data.frame(unique(riskpoolraw.df$CandOneState))
+colnames(riskpool.df) <- c("CandOneState")
+
+#Then, we add in the Name, Party, State, Gender, and Minority Status of these officeholders
+# NOTE THAT MINORITY STATUS ONLY APPLIES TO HOUSE MEMBERS, NOT THE OTHER THREE RISK POOL OFFICES (since we did not collect it for the other three offices, all of them just say "0", and our analyses with minority status are only done on the subset of House members, not the full sample)
+for(c in 1:nrow(riskpool.df)){
+riskpool.df$CandOneName[c] <- unique(riskpoolraw.df$Name[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]])
+riskpool.df$Gender[c] <- unique(riskpoolraw.df$Gender[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]])
+riskpool.df$State[c] <- unique(riskpoolraw.df$State[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]])
+riskpool.df$BirthYear[c] <- unique(riskpoolraw.df$BirthYear[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]])
+riskpool.df$isMinority[c] <- unique(riskpoolraw.df$isMinority[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]])
+  }
+
+#Finally, we add the office held in each year for each unique name-state
+for(c in 1:nrow(riskpool.df)){
+  riskpool.df$InOffice1891[c] <- paste(unique(riskpoolraw.df$InOffice1891[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1892[c] <- paste(unique(riskpoolraw.df$InOffice1892[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1893[c] <- paste(unique(riskpoolraw.df$InOffice1893[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1894[c] <- paste(unique(riskpoolraw.df$InOffice1894[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1895[c] <- paste(unique(riskpoolraw.df$InOffice1895[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1896[c] <- paste(unique(riskpoolraw.df$InOffice1896[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1897[c] <- paste(unique(riskpoolraw.df$InOffice1897[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1898[c] <- paste(unique(riskpoolraw.df$InOffice1898[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1899[c] <- paste(unique(riskpoolraw.df$InOffice1899[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1900[c] <- paste(unique(riskpoolraw.df$InOffice1900[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+
+  riskpool.df$InOffice1901[c] <- paste(unique(riskpoolraw.df$InOffice1901[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1902[c] <- paste(unique(riskpoolraw.df$InOffice1902[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1903[c] <- paste(unique(riskpoolraw.df$InOffice1903[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1904[c] <- paste(unique(riskpoolraw.df$InOffice1904[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1905[c] <- paste(unique(riskpoolraw.df$InOffice1905[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1906[c] <- paste(unique(riskpoolraw.df$InOffice1906[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1907[c] <- paste(unique(riskpoolraw.df$InOffice1907[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1908[c] <- paste(unique(riskpoolraw.df$InOffice1908[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1909[c] <- paste(unique(riskpoolraw.df$InOffice1909[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1910[c] <- paste(unique(riskpoolraw.df$InOffice1910[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1911[c] <- paste(unique(riskpoolraw.df$InOffice1911[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1912[c] <- paste(unique(riskpoolraw.df$InOffice1912[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1913[c] <- paste(unique(riskpoolraw.df$InOffice1913[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1914[c] <- paste(unique(riskpoolraw.df$InOffice1914[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1915[c] <- paste(unique(riskpoolraw.df$InOffice1915[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1916[c] <- paste(unique(riskpoolraw.df$InOffice1916[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1917[c] <- paste(unique(riskpoolraw.df$InOffice1917[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1918[c] <- paste(unique(riskpoolraw.df$InOffice1918[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1919[c] <- paste(unique(riskpoolraw.df$InOffice1919[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1920[c] <- paste(unique(riskpoolraw.df$InOffice1920[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1921[c] <- paste(unique(riskpoolraw.df$InOffice1921[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1922[c] <- paste(unique(riskpoolraw.df$InOffice1922[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1923[c] <- paste(unique(riskpoolraw.df$InOffice1923[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1924[c] <- paste(unique(riskpoolraw.df$InOffice1924[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1925[c] <- paste(unique(riskpoolraw.df$InOffice1925[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1926[c] <- paste(unique(riskpoolraw.df$InOffice1926[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1927[c] <- paste(unique(riskpoolraw.df$InOffice1927[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1928[c] <- paste(unique(riskpoolraw.df$InOffice1928[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1929[c] <- paste(unique(riskpoolraw.df$InOffice1929[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1930[c] <- paste(unique(riskpoolraw.df$InOffice1930[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1931[c] <- paste(unique(riskpoolraw.df$InOffice1931[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1932[c] <- paste(unique(riskpoolraw.df$InOffice1932[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1933[c] <- paste(unique(riskpoolraw.df$InOffice1933[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1934[c] <- paste(unique(riskpoolraw.df$InOffice1934[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1935[c] <- paste(unique(riskpoolraw.df$InOffice1935[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1936[c] <- paste(unique(riskpoolraw.df$InOffice1936[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1937[c] <- paste(unique(riskpoolraw.df$InOffice1937[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1938[c] <- paste(unique(riskpoolraw.df$InOffice1938[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1939[c] <- paste(unique(riskpoolraw.df$InOffice1939[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1940[c] <- paste(unique(riskpoolraw.df$InOffice1940[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1941[c] <- paste(unique(riskpoolraw.df$InOffice1941[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1942[c] <- paste(unique(riskpoolraw.df$InOffice1942[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1943[c] <- paste(unique(riskpoolraw.df$InOffice1943[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1944[c] <- paste(unique(riskpoolraw.df$InOffice1944[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1945[c] <- paste(unique(riskpoolraw.df$InOffice1945[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1946[c] <- paste(unique(riskpoolraw.df$InOffice1946[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1947[c] <- paste(unique(riskpoolraw.df$InOffice1947[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1948[c] <- paste(unique(riskpoolraw.df$InOffice1948[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1949[c] <- paste(unique(riskpoolraw.df$InOffice1949[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1950[c] <- paste(unique(riskpoolraw.df$InOffice1950[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1951[c] <- paste(unique(riskpoolraw.df$InOffice1951[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1952[c] <- paste(unique(riskpoolraw.df$InOffice1952[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1953[c] <- paste(unique(riskpoolraw.df$InOffice1953[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1954[c] <- paste(unique(riskpoolraw.df$InOffice1954[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1955[c] <- paste(unique(riskpoolraw.df$InOffice1955[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1956[c] <- paste(unique(riskpoolraw.df$InOffice1956[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1957[c] <- paste(unique(riskpoolraw.df$InOffice1957[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1958[c] <- paste(unique(riskpoolraw.df$InOffice1958[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1959[c] <- paste(unique(riskpoolraw.df$InOffice1959[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1960[c] <- paste(unique(riskpoolraw.df$InOffice1960[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1961[c] <- paste(unique(riskpoolraw.df$InOffice1961[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1962[c] <- paste(unique(riskpoolraw.df$InOffice1962[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1963[c] <- paste(unique(riskpoolraw.df$InOffice1963[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1964[c] <- paste(unique(riskpoolraw.df$InOffice1964[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1965[c] <- paste(unique(riskpoolraw.df$InOffice1965[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1966[c] <- paste(unique(riskpoolraw.df$InOffice1966[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1967[c] <- paste(unique(riskpoolraw.df$InOffice1967[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1968[c] <- paste(unique(riskpoolraw.df$InOffice1968[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1969[c] <- paste(unique(riskpoolraw.df$InOffice1969[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1970[c] <- paste(unique(riskpoolraw.df$InOffice1970[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1971[c] <- paste(unique(riskpoolraw.df$InOffice1971[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1972[c] <- paste(unique(riskpoolraw.df$InOffice1972[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1973[c] <- paste(unique(riskpoolraw.df$InOffice1973[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1974[c] <- paste(unique(riskpoolraw.df$InOffice1974[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1975[c] <- paste(unique(riskpoolraw.df$InOffice1975[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1976[c] <- paste(unique(riskpoolraw.df$InOffice1976[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1977[c] <- paste(unique(riskpoolraw.df$InOffice1977[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1978[c] <- paste(unique(riskpoolraw.df$InOffice1978[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1979[c] <- paste(unique(riskpoolraw.df$InOffice1979[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1980[c] <- paste(unique(riskpoolraw.df$InOffice1980[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1981[c] <- paste(unique(riskpoolraw.df$InOffice1981[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1982[c] <- paste(unique(riskpoolraw.df$InOffice1982[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1983[c] <- paste(unique(riskpoolraw.df$InOffice1983[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1984[c] <- paste(unique(riskpoolraw.df$InOffice1984[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1985[c] <- paste(unique(riskpoolraw.df$InOffice1985[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1986[c] <- paste(unique(riskpoolraw.df$InOffice1986[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1987[c] <- paste(unique(riskpoolraw.df$InOffice1987[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1988[c] <- paste(unique(riskpoolraw.df$InOffice1988[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1989[c] <- paste(unique(riskpoolraw.df$InOffice1989[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1990[c] <- paste(unique(riskpoolraw.df$InOffice1990[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1991[c] <- paste(unique(riskpoolraw.df$InOffice1991[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1992[c] <- paste(unique(riskpoolraw.df$InOffice1992[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1993[c] <- paste(unique(riskpoolraw.df$InOffice1993[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1994[c] <- paste(unique(riskpoolraw.df$InOffice1994[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1995[c] <- paste(unique(riskpoolraw.df$InOffice1995[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1996[c] <- paste(unique(riskpoolraw.df$InOffice1996[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1997[c] <- paste(unique(riskpoolraw.df$InOffice1997[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1998[c] <- paste(unique(riskpoolraw.df$InOffice1998[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice1999[c] <- paste(unique(riskpoolraw.df$InOffice1999[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2000[c] <- paste(unique(riskpoolraw.df$InOffice2000[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2001[c] <- paste(unique(riskpoolraw.df$InOffice2001[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2002[c] <- paste(unique(riskpoolraw.df$InOffice2002[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2003[c] <- paste(unique(riskpoolraw.df$InOffice2003[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2004[c] <- paste(unique(riskpoolraw.df$InOffice2004[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2005[c] <- paste(unique(riskpoolraw.df$InOffice2005[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2006[c] <- paste(unique(riskpoolraw.df$InOffice2006[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2007[c] <- paste(unique(riskpoolraw.df$InOffice2007[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2008[c] <- paste(unique(riskpoolraw.df$InOffice2008[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2009[c] <- paste(unique(riskpoolraw.df$InOffice2009[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2010[c] <- paste(unique(riskpoolraw.df$InOffice2010[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2011[c] <- paste(unique(riskpoolraw.df$InOffice2011[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2012[c] <- paste(unique(riskpoolraw.df$InOffice2012[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2013[c] <- paste(unique(riskpoolraw.df$InOffice2013[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2014[c] <- paste(unique(riskpoolraw.df$InOffice2014[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2015[c] <- paste(unique(riskpoolraw.df$InOffice2015[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2016[c] <- paste(unique(riskpoolraw.df$InOffice2016[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+  riskpool.df$InOffice2017[c] <- paste(unique(riskpoolraw.df$InOffice2017[riskpoolraw.df$CandOneState == riskpool.df$CandOneState[c]]), collapse = "")
+}
+
+#Creating a standard name for each observation for merging additional data
+riskpool.df$NameNorm <- str_trim(riskpool.df$CandOneName)
+riskpool.df$NameNorm <- gsub(" ", "", riskpool.df$NameNorm)
+riskpool.df$NameNorm <- gsub("[[:punct:]]", "", riskpool.df$NameNorm)
+riskpool.df$NameNormState <- paste(riskpool.df$NameNorm, riskpool.df$State)
+
+```
+
+Structuring Data: Converting Wide Format to Long Format
+
+```{r}
+#We need to convert the wide dataset into a long dataset. We begin by creating the initial columns of the long dataset and then populating the rows with wide dataset's data. We measure since 1891 to account for pre-1920 experience.
+riskpoollong.df <- as.data.frame(matrix(nrow = nrow(riskpool.df)*(2017-1890), ncol = 11))
+colnames(riskpoollong.df) <- c("NameNorm", "State", "NameNormState", "Gender", "isMinority", "Year", "InOffice", "BirthYear")
+
+for(a in 1:(2017-1890)){
+  riskpoollong.df$NameNorm[c((1+(a-1)*nrow(riskpool.df)):(a*nrow(riskpool.df)))] <- riskpool.df$NameNorm
+  riskpoollong.df$State[c((1+(a-1)*nrow(riskpool.df)):(a*nrow(riskpool.df)))] <- riskpool.df$State
+  riskpoollong.df$NameNormState[c((1+(a-1)*nrow(riskpool.df)):(a*nrow(riskpool.df)))] <- riskpool.df$NameNormState
+  riskpoollong.df$Gender[c((1+(a-1)*nrow(riskpool.df)):(a*nrow(riskpool.df)))] <- riskpool.df$Gender
+  riskpoollong.df$isMinority[c((1+(a-1)*nrow(riskpool.df)):(a*nrow(riskpool.df)))] <- riskpool.df$isMinority
+  riskpoollong.df$Year[c((1+(a-1)*nrow(riskpool.df)):(a*nrow(riskpool.df)))] <- 1890+a
+  riskpoollong.df$InOffice[c((1+(a-1)*nrow(riskpool.df)):(a*nrow(riskpool.df)))] <- 
+          riskpool.df[,match(paste("InOffice",riskpoollong.df$Year[(1+(a-1)*nrow(riskpool.df))], sep = ""), colnames(riskpool.df))]
+  riskpoollong.df$BirthYear[c((1+(a-1)*nrow(riskpool.df)):(a*nrow(riskpool.df)))] <- riskpool.df$BirthYear
+}
+
+#Standardizing State and Office Names
+riskpoollong.df$StateNoSpace <- gsub(" ", "", riskpoollong.df$State)
+riskpoollong.df$InOffice <- gsub("_", "", riskpoollong.df$InOffice)
+
+#Creating a list of ways offices were coded to use as matches to indicate if a candidate held each specific office
+LtGovlist <- rolenames$LtGov[nchar(rolenames$LtGov) >0]
+Houselist <- rolenames$House[nchar(rolenames$House) >0]
+SecStatelist <- rolenames$SecState[nchar(rolenames$SecState) >0]
+AGlist <- rolenames$AttorneyGeneral[nchar(rolenames$AttorneyGeneral) >0]
+MultOfficeEBorLD <- rolenames$MultipleOfficesAndEBorLD[nchar(rolenames$MultipleOfficesAndEBorLD) >0]
+
+#If held multiple offices and one of those offices was tagged as a lame duck or early bird, delete out the lame duck / early bird office (the non-lame duck / non-early bird office will be considered their office for that year). Because Lame Duck / Early Bird indication always comes after the name of the office that was a lame duck / early bird, can find that way.
+riskpoollong.df$isMultOfficeEBorLD <- as.numeric(riskpoollong.df$InOffice %in% MultOfficeEBorLD)
+riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1] <- gsub("Secretary of State LameDuck", "", riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1])
+riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1] <- gsub("LtGov LameDuck", "", riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1])
+riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1] <- gsub("Attorney General LameDuck", "", riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1])
+riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1] <- gsub("Secretary of State EarlyBird", "", riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1])
+riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1] <- gsub("LtGov EarlyBird", "", riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1])
+riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1] <- gsub("Attorney General EarlyBird", "", riskpoollong.df$InOffice[riskpoollong.df$isMultOfficeEBorLD == 1])
+
+#If held only one office in a year and had early bird / lame duck designation, identify whether they were a lame duck / early bird and code appropriately. Can then remove lame duck / early bird tag in office name to properly then code their office.
+riskpoollong.df$EarlyBird <- 0
+riskpoollong.df$LameDuck <- 0
+riskpoollong.df$EarlyBird <- as.numeric(regexpr("EarlyBird", riskpoollong.df$InOffice) > 0)
+riskpoollong.df$LameDuck <- as.numeric(regexpr("LameDuck", riskpoollong.df$InOffice) > 0)
+riskpoollong.df$InOffice <- gsub("EarlyBird","",riskpoollong.df$InOffice)
+riskpoollong.df$InOffice <- gsub("LameDuck","",riskpoollong.df$InOffice)
+riskpoollong.df$InOffice <- trimws(riskpoollong.df$InOffice, which = "both")
+
+#Creating columns for each risk pool office served and determining whether the role held matches one of the recognized office titles
+riskpoollong.df$isLtGov <- as.numeric(riskpoollong.df$InOffice %in% LtGovlist)
+riskpoollong.df$isHouse <- as.numeric(riskpoollong.df$InOffice %in% Houselist)
+riskpoollong.df$isSecState <- as.numeric(riskpoollong.df$InOffice %in% SecStatelist)
+riskpoollong.df$isAG <- as.numeric(riskpoollong.df$InOffice %in% AGlist)
+riskpoollong.df$InPool <- as.numeric(riskpoollong.df$InOffice != 0 & riskpoollong.df$InOffice != "")
+
+#Creating a single column for the office the officeholder served in in the given year
+riskpoollong.df$office[riskpoollong.df$InOffice == ""] <- ""
+riskpoollong.df$office[riskpoollong.df$isAG == 1] <- "AttorneyGeneral"
+riskpoollong.df$office[riskpoollong.df$isHouse == 1] <- "House"
+riskpoollong.df$office[riskpoollong.df$isSecState == 1] <- "SecretaryOfState"
+riskpoollong.df$office[riskpoollong.df$isLtGov == 1] <- "LieutenantGovernor"
+
+      #Collecting descriptives
+      numberHouse <- length(unique(riskpoollong.df$NameNormState[riskpoollong.df$isHouse == 1]))
+      numberLtGov <- length(unique(riskpoollong.df$NameNormState[riskpoollong.df$isLtGov == 1]))
+      numberAG <- length(unique(riskpoollong.df$NameNormState[riskpoollong.df$isAG == 1]))
+      numberSecState <- length(unique(riskpoollong.df$NameNormState[riskpoollong.df$isSecState == 1]))
+      
+      
+#Creating a data frame that only includes candidate-years where the member was in a risk pool office
+riskpoollong.df.rem <- riskpoollong.df[riskpoollong.df$InPool == 1,]
+riskpoollong.df.rem <- riskpoollong.df.rem[order(riskpoollong.df.rem$Year, decreasing = FALSE),]
+
+#Because our lame duck /early bird coding was algorithmic, it may mis-identify some terms. One-year terms in office that are coded as a lame duck or early bird need to corrected to non-lame duck / non-early bird
+riskpoollong.df.rem$OnlyYearEBorLD <- 0
+
+for (x in 1:nrow(riskpoollong.df.rem)) {
+  EarlyBirdButNotInPoolNextYear <- 0 
+  #If they are an early bird
+  EarlyBirdButNotInPoolNextYear <- as.numeric((riskpoollong.df.rem$EarlyBird[x] == 1) + 
+  #And they are in the dataset in the subsequent year but in a different role
+     sum(riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] & 
+           riskpoollong.df.rem$Year == (riskpoollong.df.rem$Year[x]+1) & 
+           riskpoollong.df.rem$office != riskpoollong.df.rem$office[x]) +
+  #Or they are not in the dataset in the subsequent year
+         (nrow(riskpoollong.df.rem[(riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] & 
+           riskpoollong.df.rem$Year == (riskpoollong.df.rem$Year[x]+1)),]) == 0) == 2)
+  #Then their early bird year should count as a normal year in office
+  
+  LameDuckButNotInPoolPriorYear <- 0
+  #If they are a lame duck
+  LameDuckButNotInPoolPriorYear <- as.numeric((riskpoollong.df.rem$LameDuck[x] == 1) +
+  #And they are in the dataset in the previous year but in a different role
+     sum(riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] &
+           riskpoollong.df.rem$Year == (riskpoollong.df.rem$Year[x]-1) & 
+           riskpoollong.df.rem$office != riskpoollong.df.rem$office[x]) +
+  #Or they are not in the dataset in the previous year
+  (nrow(riskpoollong.df.rem[(riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] & 
+           riskpoollong.df.rem$Year == (riskpoollong.df.rem$Year[x]-1)),]) == 0) == 2)
+  #Then their lame duck year should count as a normal year in office  
+  
+  riskpoollong.df.rem$OnlyYearEBorLD[x]  <- EarlyBirdButNotInPoolNextYear + LameDuckButNotInPoolPriorYear
+}
+
+#If we found that their only year in office was an early bird / lame duck, we remove the early bird / lame duck designation
+riskpoollong.df.rem$LameDuck[riskpoollong.df.rem$OnlyYearEBorLD == 1] <- 0
+riskpoollong.df.rem$EarlyBird[riskpoollong.df.rem$OnlyYearEBorLD == 1] <- 0
+
+
+#Determing the offices a candidate held and number of years in office prior to the given year in the long data set since 1890
+riskpoollong.df.rem$WasAG <- 0
+riskpoollong.df.rem$WasHouse <- 0
+riskpoollong.df.rem$WasSecState <- 0
+riskpoollong.df.rem$WasLtGov <- 0
+
+for (x in 1:nrow(riskpoollong.df.rem)) {
+  riskpoollong.df.rem$WasAG[x] <- as.numeric(sum(riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] & 
+                                      riskpoollong.df.rem$isAG == 1 &
+                                      riskpoollong.df.rem$Year < riskpoollong.df.rem$Year[x]) > 0) 
+                                      
+  riskpoollong.df.rem$WasHouse[x] <- as.numeric(sum(riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] & 
+                                      riskpoollong.df.rem$isHouse == 1 &
+                                      riskpoollong.df.rem$Year < riskpoollong.df.rem$Year[x]) > 0) 
+  
+  riskpoollong.df.rem$WasSecState[x] <- as.numeric(sum(riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] & 
+                                      riskpoollong.df.rem$isSecState == 1 &
+                                      riskpoollong.df.rem$Year < riskpoollong.df.rem$Year[x]) > 0) 
+
+  riskpoollong.df.rem$WasLtGov[x] <- as.numeric(sum(riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] & 
+                                      riskpoollong.df.rem$isLtGov == 1 &
+                                      riskpoollong.df.rem$Year < riskpoollong.df.rem$Year[x]) > 0) 
+}
+
+riskpoollong.df.rem$TotalYearsOfService <- 0
+
+#Calculating total experience inclusive and exclusive of early bird / lame duck years. First year in office is coded as 1 year.
+for (x in 1:nrow(riskpoollong.df.rem)) {
+  riskpoollong.df.rem$TotalYearsOfService[x] <- length(unique(riskpoollong.df.rem$Year[
+                                              riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] &
+                                              riskpoollong.df.rem$Year <= riskpoollong.df.rem$Year[x]]))
+  
+  riskpoollong.df.rem$TotalYearsOfServiceNoEBLD[x] <- length(unique(riskpoollong.df.rem$Year[
+                                              riskpoollong.df.rem$NameNormState == riskpoollong.df.rem$NameNormState[x] &
+                                              riskpoollong.df.rem$Year <= riskpoollong.df.rem$Year[x] & 
+                                                riskpoollong.df.rem$LameDuck == 0 & riskpoollong.df.rem$EarlyBird == 0]))
+    }
+
+numberEarlyBirds <- sum(riskpoollong.df.rem$EarlyBird == 1)
+numberLameDucks <- sum(riskpoollong.df.rem$LameDuck == 1)
+```
+
+
+Combining Data: Merging Risk Pool Data with Candidate Data
+
+```{r}
+#Reformatting the candidate.df dataframe
+candidate.df$Candidate <- as.character(candidate.df$Candidate)
+candidate.df$State <- as.character(candidate.df$State)
+candidate.df$StateNoSpace <- gsub(" ", "", candidate.df$State)
+
+#First, identify if a race ocurred in a risk pool member's state/year
+for (x in 1:nrow(riskpoollong.df.rem)) {
+  riskpoollong.df.rem$GovEventOccurred[x] <- sum(candidate.df$Year == riskpoollong.df.rem$Year[x] &
+                                                           candidate.df$StateNoSpace == riskpoollong.df.rem$StateNoSpace[x] &
+                                                             candidate.df$Gov1Sen0 == 1)
+  riskpoollong.df.rem$SenEventOccurred[x] <- sum(candidate.df$Year == riskpoollong.df.rem$Year[x] &
+                                                             candidate.df$StateNoSpace == riskpoollong.df.rem$StateNoSpace[x] &
+                                                             candidate.df$Gov1Sen0 == 0)
+}
+
+riskpoollong.df.rem$AnyEventOccurred <- riskpoollong.df.rem$GovEventOccurred + riskpoollong.df.rem$SenEventOccurred
+
+#Remove observations where no event ocurred
+riskpoollong.df.rem <- riskpoollong.df.rem[riskpoollong.df.rem$AnyEventOccurred > 0,]
+
+#Make candidate names consistent across databases
+riskpoollong.df.rem$CandNameOneNorm <- gsub(" ", "", riskpoollong.df.rem$NameNorm)
+riskpoollong.df.rem$CandNameOneNorm <- gsub("[[:punct:]]", "", riskpoollong.df.rem$CandNameOneNorm)
+
+candidate.df$CandidateNorm <- gsub(" ", "", candidate.df$Candidate)
+candidate.df$CandidateNorm <- gsub("[[:punct:]]", "", candidate.df$CandidateNorm)
+candidate.df$Type <- as.character(candidate.df$Type)
+candidate.df$Female1Male0 <- as.numeric(candidate.df$Female1Male0)
+
+#Identify what kind of event it was, whether the candidate ran, if they were the incumbent, and if they won the race
+
+#Split the dataframes to make it easier to identify specific events in the candidates dataset
+senlongriskpool.df <- riskpoollong.df.rem[riskpoollong.df.rem$SenEventOccurred > 0,]
+govlongriskpool.df <- riskpoollong.df.rem[riskpoollong.df.rem$GovEventOccurred > 0,]
+
+
+#Create dataframes for our Sen and Gov data
+sen.df <- as.data.frame(matrix(nrow = 100000, ncol = 26))
+gov.df <- as.data.frame(matrix(nrow = 100000, ncol = 26))
+
+colnames(sen.df) <- c("Name","State", "NameState", "Gender", "isMinority", "Year","TypeOfEvent","GovEvent1SenEvent0","isLtGov","isHouse","isSecState", "isAG",
+                      "WasHouse", "WasAG", "WasLtGov","WasSecState", "EarlyBird", "LameDuck", "TotalYearsService",  "TotalYearsServiceNoEBLD",
+                      "BirthYear", "WouldBeAgainstIncumbent", "WasCandidate", "Incumbent", "AgainstIncumbent", "Won")
+colnames(gov.df) <-c("Name","State", "NameState", "Gender", "isMinority", "Year","TypeOfEvent","GovEvent1SenEvent0","isLtGov","isHouse","isSecState", "isAG",
+                      "WasHouse", "WasAG", "WasLtGov","WasSecState", "EarlyBird", "LameDuck", "TotalYearsService",  "TotalYearsServiceNoEBLD",
+                      "BirthYear", "WouldBeAgainstIncumbent", "WasCandidate", "Incumbent", "AgainstIncumbent", "Won")
+
+#Creating unique RaceID and Event Type.  Will use the count of the unique RaceIDs to determine number of events.  Can define
+#event type by deleting out the RaceID from it.
+candidate.df$RaceIDType <- paste(candidate.df$RaceID, candidate.df$Type)
+
+r <- 0
+#For the Senate
+for(y in 1:nrow(senlongriskpool.df)){
+  numberOfSenEventsForOfficeInYear <- length(unique(candidate.df$RaceIDType[candidate.df$Year == senlongriskpool.df$Year[y] &
+                                         candidate.df$StateNoSpace == senlongriskpool.df$StateNoSpace[y] &
+                                         candidate.df$Gov1Sen0 == 0]))
+  typeOfSenEvents <- unique(candidate.df$RaceIDType[candidate.df$Year == senlongriskpool.df$Year[y] &
+                                         candidate.df$StateNoSpace == senlongriskpool.df$StateNoSpace[y] &
+                                         candidate.df$Gov1Sen0 == 0])
+  for(w in 1:numberOfSenEventsForOfficeInYear){
+    r <- r+1
+    sen.df$Name[r] <- senlongriskpool.df$NameNorm[y]
+    sen.df$State[r] <- senlongriskpool.df$StateNoSpace[y]
+    sen.df$NameState[r] <- senlongriskpool.df$NameNormState[y]
+    sen.df$Gender[r] <- senlongriskpool.df$Gender[y]
+    sen.df$isMinority[r] <- senlongriskpool.df$isMinority[y]
+    sen.df$Year[r] <- senlongriskpool.df$Year[y]
+    sen.df$TypeOfEvent[r] <- trimws(substr(typeOfSenEvents[w], 
+                                    nchar(unique(candidate.df$RaceID[candidate.df$RaceIDType == typeOfSenEvents[w]]))+1,100))
+    sen.df$GovEvent1SenEvent0[r] <- 0
+    sen.df$isLtGov[r] <- senlongriskpool.df$isLtGov[y]
+    sen.df$isHouse[r] <- senlongriskpool.df$isHouse[y]
+    sen.df$isSecState[r] <- senlongriskpool.df$isSecState[y]
+    sen.df$isAG[r] <- senlongriskpool.df$isAG[y]
+    sen.df$WasLtGov[r] <- senlongriskpool.df$WasLtGov[y]
+    sen.df$WasHouse[r] <- senlongriskpool.df$WasHouse[y]
+    sen.df$WasSecState[r] <- senlongriskpool.df$WasSecState[y]
+    sen.df$WasAG[r] <- senlongriskpool.df$WasAG[y]
+    sen.df$EarlyBird[r] <- senlongriskpool.df$EarlyBird[y]
+    sen.df$LameDuck[r] <- senlongriskpool.df$LameDuck[y]
+    sen.df$TotalYearsService[r] <- senlongriskpool.df$TotalYearsOfService[y]
+    sen.df$TotalYearsServiceNoEBLD[r] <- senlongriskpool.df$TotalYearsOfServiceNoEBLD[y]
+    sen.df$BirthYear[r] <- senlongriskpool.df$BirthYear[y]
+    sen.df$WouldBeAgainstIncumbent[r] <- sum(candidate.df$Year == senlongriskpool.df$Year[y] &
+                                        candidate.df$StateNoSpace == senlongriskpool.df$StateNoSpace[y] &
+                                        candidate.df$Gov1Sen0 == 0 & candidate.df$RaceIDType == typeOfSenEvents[w] &
+                                        candidate.df$Incumbent == 1 & 
+                                          candidate.df$CandidateNorm != senlongriskpool.df$CandNameOneNorm[y])
+    sen.df$WasCandidate[r] <- sum(candidate.df$Year == senlongriskpool.df$Year[y] &
+                             candidate.df$StateNoSpace == senlongriskpool.df$StateNoSpace[y] &
+                             candidate.df$CandidateNorm == senlongriskpool.df$CandNameOneNorm[y] &
+                             candidate.df$Gov1Sen0 == 0 & candidate.df$RaceIDType == typeOfSenEvents[w])
+    sen.df$Incumbent[r] <- sum(candidate.df$Year == senlongriskpool.df$Year[y] &
+                                   candidate.df$StateNoSpace == senlongriskpool.df$StateNoSpace[y] &
+                                   candidate.df$CandidateNorm == senlongriskpool.df$CandNameOneNorm[y] &
+                                   candidate.df$Gov1Sen0 == 0 & candidate.df$RaceIDType == typeOfSenEvents[w] &
+                                   candidate.df$Incumbent == 1)
+    sen.df$AgainstIncumbent[r] <- sum(candidate.df$Year == senlongriskpool.df$Year[y] &
+                                   candidate.df$StateNoSpace == senlongriskpool.df$StateNoSpace[y] &
+                                   candidate.df$CandidateNorm == senlongriskpool.df$CandNameOneNorm[y] &
+                                   candidate.df$Gov1Sen0 == 0 & candidate.df$RaceIDType == typeOfSenEvents[w] &
+                                   candidate.df$RunningAgainstIncumbent == 1)
+    sen.df$Won[r] <- sum(candidate.df$Year == senlongriskpool.df$Year[y] &
+                                   candidate.df$StateNoSpace == senlongriskpool.df$StateNoSpace[y] &
+                                   candidate.df$CandidateNorm == senlongriskpool.df$CandNameOneNorm[y] &
+                                   candidate.df$Gov1Sen0 == 0 & candidate.df$RaceIDType == typeOfSenEvents[w] &
+                                   candidate.df$Won == 1)
+}
+}
+
+#For the Gov
+r <- 0
+for(y in 1:nrow(govlongriskpool.df)){
+  numberOfGovEventsForOfficeInYear <- length(unique(candidate.df$RaceIDType[candidate.df$Year == govlongriskpool.df$Year[y] &
+                                            candidate.df$StateNoSpace == govlongriskpool.df$StateNoSpace[y] &
+                                            candidate.df$Gov1Sen0 == 1]))
+  typeOfGovEvents <- unique(candidate.df$RaceIDType[candidate.df$Year == govlongriskpool.df$Year[y] &
+                                         candidate.df$StateNoSpace == govlongriskpool.df$StateNoSpace[y] &
+                                         candidate.df$Gov1Sen0 == 1])
+  for(w in 1:numberOfGovEventsForOfficeInYear){
+    r <- r+1
+    gov.df$Name[r] <-govlongriskpool.df$CandNameOneNorm[y]
+    gov.df$State[r] <- govlongriskpool.df$StateNoSpace[y]
+    gov.df$NameState[r] <- govlongriskpool.df$NameNormState[y]
+    gov.df$Gender[r] <- govlongriskpool.df$Gender[y]
+    gov.df$isMinority[r] <- govlongriskpool.df$isMinority[y]
+    gov.df$Year[r] <- govlongriskpool.df$Year[y]
+    gov.df$TypeOfEvent[r] <- trimws(substr(typeOfGovEvents[w], 
+                                           nchar(unique(candidate.df$RaceID[candidate.df$RaceIDType == typeOfGovEvents[w]]))+1,100))
+    gov.df$GovEvent1SenEvent0[r] <- 1
+    gov.df$isLtGov[r] <- govlongriskpool.df$isLtGov[y]
+    gov.df$isHouse[r] <- govlongriskpool.df$isHouse[y]
+    gov.df$isSecState[r] <- govlongriskpool.df$isSecState[y]
+    gov.df$isAG[r] <- govlongriskpool.df$isAG[y]
+    gov.df$WasLtGov[r] <- govlongriskpool.df$WasLtGov[y]
+    gov.df$WasHouse[r] <- govlongriskpool.df$WasHouse[y]
+    gov.df$WasSecState[r] <- govlongriskpool.df$WasSecState[y]
+    gov.df$WasAG[r] <- govlongriskpool.df$WasAG[y]
+    gov.df$EarlyBird[r] <- govlongriskpool.df$EarlyBird[y]
+    gov.df$LameDuck[r] <- govlongriskpool.df$LameDuck[y]
+    gov.df$TotalYearsService[r] <- govlongriskpool.df$TotalYearsOfService[y]
+    gov.df$TotalYearsServiceNoEBLD[r] <- govlongriskpool.df$TotalYearsOfServiceNoEBLD[y]
+    gov.df$BirthYear[r] <- govlongriskpool.df$BirthYear[y]
+    gov.df$WouldBeAgainstIncumbent[r] <- sum(candidate.df$Year == govlongriskpool.df$Year[y] &
+                                        candidate.df$StateNoSpace == govlongriskpool.df$StateNoSpace[y] &
+                                        candidate.df$Gov1Sen0 == 1 & candidate.df$RaceIDType == typeOfGovEvents[w] &
+                                        candidate.df$Incumbent == 1 & 
+                                          candidate.df$CandidateNorm != govlongriskpool.df$CandNameOneNorm[y])
+    gov.df$WasCandidate[r] <- sum(candidate.df$Year == govlongriskpool.df$Year[y] &
+                                    candidate.df$StateNoSpace == govlongriskpool.df$StateNoSpace[y] &
+                                    candidate.df$CandidateNorm == govlongriskpool.df$CandNameOneNorm[y] &
+                                    candidate.df$Gov1Sen0 == 1 & candidate.df$RaceIDType == typeOfGovEvents[w])
+    gov.df$Incumbent[r] <- sum(candidate.df$Year == govlongriskpool.df$Year[y] &
+                                 candidate.df$StateNoSpace == govlongriskpool.df$StateNoSpace[y] &
+                                 candidate.df$CandidateNorm == govlongriskpool.df$CandNameOneNorm[y] &
+                                 candidate.df$Gov1Sen0 == 1 & candidate.df$RaceIDType == typeOfGovEvents[w] &
+                                 candidate.df$Incumbent == 1)
+    gov.df$AgainstIncumbent[r] <- sum(candidate.df$Year == govlongriskpool.df$Year[y] &
+                                        candidate.df$StateNoSpace == govlongriskpool.df$StateNoSpace[y] &
+                                        candidate.df$CandidateNorm == govlongriskpool.df$CandNameOneNorm[y] &
+                                        candidate.df$Gov1Sen0 == 1 & candidate.df$RaceIDType == typeOfGovEvents[w] &
+                                        candidate.df$RunningAgainstIncumbent == 1)
+    gov.df$Won[r] <- sum(candidate.df$Year == govlongriskpool.df$Year[y] &
+                                        candidate.df$StateNoSpace == govlongriskpool.df$StateNoSpace[y] &
+                                        candidate.df$CandidateNorm == govlongriskpool.df$CandNameOneNorm[y] &
+                                        candidate.df$Gov1Sen0 == 1 & candidate.df$RaceIDType == typeOfGovEvents[w] &
+                                        candidate.df$Won == 1)
+    }
+}
+
+#We initialized send.df and gov.df with more rows than necessary. Will delete out the rows that were unused.
+sen.df <- sen.df[!is.na(sen.df$Name),]
+gov.df <- gov.df[!is.na(gov.df$Name),]
+
+#Stitch sen.df and gov.df back together for a complete dataset
+sengov.df <- rbind(sen.df, gov.df) %>%
+  # K added (adding in the Gallup opinion data)
+  left_join(opinions.df, by = "Year")
+
+
+#Calculate number of times a candidate ran for higher office
+sengov.df$PriorRuns <- NA
+for(j in 1:nrow(sengov.df)){
+  sengov.df$PriorRuns[j] <- as.numeric(sum(candidate.df$CandidateNorm == sengov.df$Name[j] & 
+                                                candidate.df$Year < sengov.df$Year[j] &
+                                                candidate.df$StateNoSpace == sengov.df$State[j] &
+                                                candidate.df$Type != "Succession" & candidate.df$Type != "Appointment") > 0)
+}
+
+#You can't be a Was if you currently are an Is
+sengov.df$WasHouse[sengov.df$isHouse == 1] <- 0
+sengov.df$WasAG[sengov.df$isAG == 1] <- 0
+sengov.df$WasLtGov[sengov.df$isLtGov == 1] <- 0
+sengov.df$WasSecState[sengov.df$isSecState == 1] <- 0
+
+    #Collecting More Descriptives
+    numberofSenEvents <- length(unique(candidate.df$RaceID[candidate.df$Gov1Sen0 == 0]))
+    numberofGovEvents <- length(unique(candidate.df$RaceID[candidate.df$Gov1Sen0 == 1]))
+
+```
+
+
+
+Cleaning Data: Correcting Errors and Formatting
+
+```{r}
+#Removing missing gender and vacant offices
+sengov.df$Gender <- as.numeric(sengov.df$Gender)
+numberMissingGenderRiskPool <- length(unique(sengov.df$Name[is.na(sengov.df$Gender) & sengov.df$Name != "Vacant"]))
+sengov.df <- sengov.df[!is.na(sengov.df$Gender),]
+sengov.df <- sengov.df[sengov.df$Name != "Vacant",]
+
+#Cleaning people who held multiple offices in the same year. Need to  include a "was" dummy code for office we remove them from if appropriate
+sengov.df$multoffice <- as.numeric((sengov.df$isHouse + sengov.df$isAG + sengov.df$isLtGov + sengov.df$isSecState)>1)
+
+sengov.df$isHouse[sengov.df$multoffice == 1 & sengov.df$Name == "JamesLindsayAlmondJr"] <- 0 #Resigned House in early 1948 to assume AG
+sengov.df$WasHouse[sengov.df$multoffice == 1 & sengov.df$Name == "JamesLindsayAlmondJr"] <- 1 
+sengov.df$isHouse[sengov.df$multoffice == 1 & sengov.df$Name == "BenChandler"] <- 0 #Was Attorney General through end of 2003. Ran for and became House member in February 2004 special election
+sengov.df$isLtGov[sengov.df$multoffice == 1 & sengov.df$Name == "JayDardenne"] <- 0 #Secretary of State term ended in November 2010 after running for Lt. Governor position
+sengov.df$isLtGov[sengov.df$multoffice == 1 & sengov.df$Name == "KimberlyKimGuadagno"] <- 0 #Dual-held for multiple years, but Secretary of State is more established NJ executive office; Do not add "Was Lt Gov" because never held Sec State strictly after holding Lt Gov
+sengov.df$isHouse[sengov.df$multoffice == 1 & sengov.df$Name == "ThomasHall"] <- 0 #Joined House in November 1924
+sengov.df$isSecState[sengov.df$multoffice == 1 & sengov.df$Name == "BarbaraKennelly"] <- 0 #Left Sec State office in Jan 1982
+sengov.df$WasSecState[sengov.df$multoffice == 1 & sengov.df$Name == "BarbaraKennelly"] <- 1 
+sengov.df$isLtGov[sengov.df$multoffice == 1 & sengov.df$Name == "JosephMMontoya"] <- 0 #Resigned Lt Gov to take House role in early 1957
+sengov.df$WasLtGov[sengov.df$multoffice == 1 & sengov.df$Name == "JosephMMontoya"] <- 1
+sengov.df$isHouse[sengov.df$multoffice == 1 & sengov.df$Name == "EdReinecke"] <- 0 #Because left House in Jan 1969 to become Lt Gov
+sengov.df$WasHouse[sengov.df$multoffice == 1 & sengov.df$Name == "EdReinecke"] <- 1
+sengov.df$isLtGov[sengov.df$multoffice == 1 & sengov.df$Name == "ThelmaHawkinsStovall"] <- 0 #Spent November 1975 as Sec State
+sengov.df$isSecState[sengov.df$multoffice == 1 & sengov.df$Name == "EarleDWilley"] <- 0 #Joined the House in Jan 1943
+sengov.df$WasSecState[sengov.df$multoffice == 1 & sengov.df$Name == "EarleDWilley"] <- 1 
+
+#Fixing the Incumbent errors
+sengov.df <- sengov.df[!(sengov.df$Name == "JohnJSparkman" & sengov.df$Year == 1948 & sengov.df$Incumbent == 1),]
+sengov.df <- sengov.df[!(sengov.df$Name == "EdwardJMarkey" & sengov.df$Year == 2014 & sengov.df$Incumbent == 1),]
+
+#Fixing Buddy Roemer in 1987. Was running against Edwin Edwards, the incumbent. Edwin  dropped out because anticipated a loss in the runoff. So Buddy is marked as running against the incumbent (drawn from Buddy's observation in "candidate.df"). But "would be running against the incumbent" is drawn from candidate.df by observing the incumbent, in this case Edwin. However, Edwin is missing from the candidate.df dataset, so Buddy is erroneously marked as not "would be running against an incumbent". The following code corrects that.
+sengov.df$WouldBeAgainstIncumbent[sengov.df$Name == "CharlesEBuddyRoemerIII" & sengov.df$Year == "1987" & sengov.df$GovEvent1SenEvent0 == 1 & sengov.df$TypeOfEvent == "General Election"] <- 1
+
+#Remove successions and appointments    
+sengov.df <- sengov.df[sengov.df$TypeOfEvent != "Appointment" & sengov.df$TypeOfEvent != "Succession",]
+
+#Cleaning age data
+    sengov.df$Age <- NA
+    sengov.df$Age <- sengov.df$Year - sengov.df$BirthYear
+    sengov.df$Age.sq <- sengov.df$Age^2
+
+#Code for even or odd year
+sengov.df$even1odd0 <- as.numeric(round(sengov.df$Year / 2, 0) == sengov.df$Year /2)
+
+#Kurtosis for total years of service is high, so we log years of service - This is for an OLD (not reported) analysis
+skew(sengov.df$TotalYearsService)
+kurtosi(sengov.df$TotalYearsService)
+sengov.df$TotalYearsService_log <- log(sengov.df$TotalYearsService)
+sengov.df$TotalYearsServiceNoEBLD_log <- log(sengov.df$TotalYearsServiceNoEBLD)
+skew(sengov.df$TotalYearsService_log)
+kurtosi(sengov.df$TotalYearsService_log)
+
+#Removing incumbents for main analysis
+sengov.df.withIncumbents <- sengov.df
+sengov.df <- sengov.df[sengov.df$Incumbent != 1,]
+
+
+#Determining win percentage of risk pool members in open seat races
+wascand.df <- sengov.df[sengov.df$WasCandidate == 1,]
+wascand.df$YearStateOfficeType <- paste(wascand.df$Year, wascand.df$State, wascand.df$GovEvent1SenEvent0, wascand.df$TypeOfEvent, sep = "")
+    wascand.df$NumberRPsInRace <- 0
+    
+    for (z in 1:nrow(wascand.df)) {
+      wascand.df$NumberRPsInRace[z] <- sum(wascand.df$YearStateOfficeType == wascand.df$YearStateOfficeType[z])
+    }
+    
+WinPercentOfRiskPoolMembersInOpenSeatRaces <- sum(wascand.df$Won[wascand.df$AgainstIncumbent == 0]) / nrow(wascand.df[wascand.df$AgainstIncumbent == 0,])    
+
+numberSenatorElections <- length(unique(candidate.df$RaceID[candidate.df$Gov1Sen0 == 0 & (candidate.df$Type == "General Election" | candidate.df$Type == "Special Election")]))    
+numberGovernorElections <- length(unique(candidate.df$RaceID[candidate.df$Gov1Sen0 == 1 & (candidate.df$Type == "General Election" | candidate.df$Type == "Special Election")]))    
+numberCandidates <- nrow(candidate.df[(candidate.df$Type == "General Election" | candidate.df$Type == "Special Election"),])
+
+numberHouseMembers <- length(unique(sengov.df$NameState[sengov.df$isHouse == 1]))
+numberLtGovMembers <- length(unique(sengov.df$NameState[sengov.df$isLtGov == 1]))
+numberSecStateMembers <- length(unique(sengov.df$NameState[sengov.df$isSecState == 1]))
+numberAGMembers <- length(unique(sengov.df$NameState[sengov.df$isAG == 1]))
+numberRiskPoolMembers <- length(unique(sengov.df$NameState))
+numberFemaleRiskPoolMembers <- length(unique(sengov.df$NameState[sengov.df$Gender == 1]))
+numberMaleRiskPoolMembers <- length(unique(sengov.df$NameState[sengov.df$Gender == 0]))
+numberOpportunities <- nrow(sengov.df)
+numberFemaleOpportunities <- sum(sengov.df$Gender == 1)
+numberMaleOpportunities <- sum(sengov.df$Gender == 0)
+percentwomenWithAge <- length(unique(sengov.df$NameState[!is.na(sengov.df$Age)])) / length(unique(sengov.df$NameState[sengov.df$Gender == 1]))
+missingCandidateGender <- length(unique(candidate.df$CandidateNorm[is.na(candidate.df$Female1Male0) & candidate.df$Election1Appointment2 == 1]))
+percentofCandidatesFromRiskPool <- length(unique(sengov.df$NameState[sengov.df$WasCandidate == 1])) / length(unique(candidate.df$CandidateNorm[candidate.df$Election1Appointment2 == 1]))
+
+
+
+
+#percentofCandidatesFromRiskPool
+#WinPercentOfRiskPoolMembersInOpenSeatRaces
+
+#numberRiskPoolMembers
+#numberFemaleRiskPoolMembers
+#numberMaleRiskPoolMembers
+#missingCandidateGender
+#numberMissingGenderRiskPool
+#numberSenatorElections
+#numberGovernorElections
+#numberCandidates
+#numberHouseMembers
+#numberLtGovMembers
+#numberAGMembers
+#numberSecStateMembers
+#numberOpportunities
+#numberFemaleOpportunities
+#numberMaleOpportunities
+#percentwomenWithAge
+
+
+# Dataset for main analyses filtering out lame ducks and early birds (some code still has these manually filtered out from the full dataset)
+sengov.df.main <- sengov.df %>%
+  filter(LameDuck == 0, EarlyBird == 0) %>%
+  # Create separate columns to indicate senator/governor election type that year (1 or 0 for each; could both be 1 if both occurred same year), as well as separate columns for incumbents for Governor and Senator elections respectively
+  mutate(GovernorEvent = ifelse(GovEvent1SenEvent0 == 1, 1, 0),
+         SenateEvent = ifelse(GovEvent1SenEvent0 == 0, 1, 0),
+         GovernorIncumbent = ifelse(GovEvent1SenEvent0 == 1 & WouldBeAgainstIncumbent == 1, 1, 0),
+         SenateIncumbent = ifelse(GovEvent1SenEvent0 == 0 & WouldBeAgainstIncumbent == 1, 1, 0))
+  
+
+# The below are old descriptives based on the data being structured a different way from how it is analyzed in the main text
+
+# Number opportunities when excluding early birds and lame ducks (which main analyses are reported on)
+#nrow(sengov.df[sengov.df$LameDuck == 0 & sengov.df$EarlyBird == 0,])
+   # Number male opportunites within that
+ # nrow(sengov.df[sengov.df$LameDuck == 0 & sengov.df$EarlyBird == 0 & sengov.df$Gender == 0,])
+   # Number female opportunities within that
+#  nrow(sengov.df[sengov.df$LameDuck == 0 & sengov.df$EarlyBird == 0 & sengov.df$Gender == 1,])
+  
+# N with only 36 years of experience or less
+#nrow(sengov.df[sengov.df$LameDuck == 0 & sengov.df$EarlyBird == 0 & 
+ #                                       sengov.df$TotalYearsServiceNoEBLD <= 36,])
+
+# N (opportunities) above 10 years of experience
+#nrow(sengov.df[sengov.df$LameDuck == 0 & sengov.df$EarlyBird == 0 & 
+ #                sengov.df$TotalYearsServiceNoEBLD > 9,])
+# Number male CANDIATES with more than 10 years of experience
+  # length(unique(sengov.df$NameState[sengov.df$LameDuck == 0 & 
+   #                                    sengov.df$EarlyBird == 0 & sengov.df$Gender == 0 &
+    #                                   sengov.df$TotalYearsServiceNoEBLD > 9]))
+# Number male CANDIATES with more than 10 years of experience
+  # length(unique(sengov.df$NameState[sengov.df$LameDuck == 0 & 
+   #                                    sengov.df$EarlyBird == 0 & sengov.df$Gender == 1 &
+    #                                   sengov.df$TotalYearsServiceNoEBLD > 9]))
+
+   #length(unique(sengov.df$NameState[sengov.df$LameDuck == 0 & 
+ #                                      sengov.df$EarlyBird == 0 &
+  #                                     sengov.df$TotalYearsServiceNoEBLD > 9]))
+# Again, note that racial minority data ONLY makes sense for House, because it was only collected for House members (rest are coded as 0)
+```
+
+```{r}
+
+# This set of code restructures the data so that there is only one observation per person-year, and to filter out anyone with prior runs for higher office
+
+
+# Below, we are creating a dataset that we can use to grab the individual-year specific variables (that is, not variables that differ for each election event). So, we are removing all duplicates based on NameState and Year (i.e., simply keeping the first one that appears in the dataset), for merging by NameState and Year with the "test" dataset which will have the election event-specific variables.
+sengov.df.main.unique <- sengov.df.main %>%
+  distinct(NameState, Year, .keep_all = TRUE)
+
+
+# Next, we want to restructure the variables that differ for each election event - essentially, we want to create summary variables for each individual-year observation in case there were multiple elections for that individual-year. So the below is to create a dataframe with only one row IF there are multiple elections in a given year, to indicate whether the individual was a candidate in ANY election that year, how many total opportunities occurred that year, whether there were Governor and/or Senate events that year, and how many total incumbents there were. 
+test <- sengov.df.main %>% 
+  group_by(NameState, Year) %>% 
+  dplyr::summarize(WasCandidateEither = max(WasCandidate, na.rm = TRUE),
+            NumberOpportunities = n(),
+            GovEvent = max(GovernorEvent, na.rm = TRUE),
+            SenEvent = max(SenateEvent, na.rm = TRUE),
+            # This gets the total number of incumbents across all possible governor and senate races. Note that we want the total incumbents (not simply a binary variable) since we want to know how many of the total races that year had incumbents.
+            TotalIncumbents = sum(GovernorIncumbent) + sum(SenateIncumbent), na.rm = TRUE) %>%
+  arrange(Year, NameState)
+# Merge to get the other variables that should be the same across each person-year, from the non-duplicated dataset created above
+merged_test <- sengov.df.main.unique %>% 
+  right_join(test, by = c("NameState" = "NameState", "Year" = "Year")) %>%
+  # Now we can select only the variables needed for the main analysis. The dataset contains other variables that aren't needed, or that no longer make sense based on the way we restructured the data, so to avoid confusion, we remove them here. 
+  dplyr::select(Name, State, NameState, Gender, isMinority, Year, TypeOfEvent, isLtGov, isHouse, isSecState, isAG, WasHouse, WasAG, WasLtGov, WasSecState, TotalYearsServiceNoEBLD, BirthYear, WasCandidate, Opinion, Age, Age.sq, even1odd0, TotalYearsServiceNoEBLD_log, GovernorEvent, SenateEvent, WasCandidateEither, NumberOpportunities, GovEvent, SenEvent, TotalIncumbents, PriorRuns)
+
+
+# Remove instances of second runs given our focus on likelihood of running among first-time candidates.
+merged_test_first_only <- merged_test %>%
+  filter(PriorRuns == 0)
+# Create experience squared variable
+merged_test_first_only$TotalYearsServiceNoEBLD_sq <- merged_test_first_only$TotalYearsServiceNoEBLD^2
+
+
+# There was one value erroneously entered for a male's age (the year was entered by accident) - fixing that here to just be an NA
+merged_test_first_only$Age[!is.na(merged_test_first_only$Age) & 
+                             merged_test_first_only$Gender == 0] <- NA
+
+
+# Series of manual checks that the restructuring process worked by examining specific observations
+
+#merged_test %>% dplyr::select(Name, Year, GovEvent1SenEvent0, GovEvent, SenEvent, WouldBeAgainstIncumbent, #GovIncumbent, SenIncumbent, NumberOpportunities)
+#sengov.df.main %>% filter(Name == "AACarmichael")
+#merged_test %>% dplyr::select(Name, Year, TotalYearsServiceNoEBLD, time_passed)
+#merged_test %>% dplyr::select(Name, Year, AnyIncumbent)
+#sengov.df.main %>% dplyr::select(Name, Year, WouldBeAgainstIncumbent)
+
+# Checking all prior runs are filtered out
+#merged_test_first_only %>% filter (WasCandidateEither == 1) %>% group_by(Name) %>% dplyr::summarize(count = n()) %>% filter(count > 0)
+
+# Check by looking over some of the duplicate Name-Years
+#duplicates <- sengov.df.main %>%
+ # arrange(Name, Year) %>% 
+  #filter(duplicated(select(., Name, Year)) | 
+   #      duplicated(select(., Name, Year), fromLast = TRUE))
+
+# Checking incumbents variable
+#summary(merged_test_first_only$TotalIncumbents)
+#merged_test_first_only %>%
+ # dplyr::select(TotalIncumbents, NumberOpportunities)
+
+#merged_test_first_only  %>% dplyr::select(Name, Year, TotalIncumbents)
+#sengov.df.main %>% dplyr::select(Name, Year, WouldBeAgainstIncumbent)
+
+```
+
+# Some Descriptive Numbers/Counts
+
+```{r}
+# Identifying number of duplicates within the same person-year
+
+# Total unique rows
+#sengov.df.main %>%
+ # distinct(Name, Year, .keep_all = TRUE) %>%
+  #nrow()
+# Number duplicates is the total number of rows (38,617) minus this
+
+# Total unique rows when we take out the Sen/Gov duplicates
+#sengov.df.main %>%
+ # distinct(Name, Year_election_type_1, .keep_all = TRUE) %>%
+  #nrow()
+
+# 26,297 unique rows out of 38,617 => 12,320 duplicates in total
+# Special elections only (taking out the Sen/gov duplicates): 37,531 unique rows => 1,086 duplicates
+
+# Distribution of number of opportunities
+#merged_test_first_only %>% 
+ # group_by(NumberOpportunities) %>% 
+  #dplyr::summarize(count = n())
+
+# Number of times someone ran in multiple elections in the same year
+sengov.df.main %>%
+  filter(PriorRuns == 0) %>%
+  filter(WasCandidate == 1) %>%
+  group_by(Name, Year) %>%
+  dplyr::summarize(count = n()) %>%
+  filter(count > 1)
+
+
+# Total number of observations for men and women (in main dataset)
+merged_test_first_only %>%
+  group_by(Gender) %>%
+  dplyr::summarize(count = n())
+# Total
+nrow(merged_test_first_only)
+
+# Distribution of number of opportunities in a given year (across all individuals)
+merged_test_first_only %>%
+  group_by(NumberOpportunities) %>%
+  dplyr::summarize(count = n())
+```
+
+```{r}
+# Some raw numbers
+# Total number of individuals
+merged_test_first_only %>% distinct(Name, .keep_all = TRUE) %>% nrow()
+# Number of male and female individuals
+merged_test_first_only %>% distinct(Name, .keep_all = TRUE) %>% group_by(Gender) %>%
+  dplyr::summarize(count = n())
+# Numbers by risk pool office
+merged_test_first_only %>% distinct(Name, .keep_all = TRUE) %>% group_by(isHouse, isLtGov, isAG, isSecState) %>%
+  dplyr::summarize(count = n())
+
+
+
+# Percent of candidates from risk pool
+percentofCandidatesFromRiskPool <-
+  length(unique(merged_test_first_only$NameState[merged_test_first_only$WasCandidateEither == 1])) / length(unique(candidate.df$CandidateNorm[candidate.df$Election1Appointment2 == 1]))
+percentofCandidatesFromRiskPool
+
+# Percent of women with age
+length(unique(merged_test_first_only$NameState[!is.na(merged_test_first_only$Age)])) /
+  length(unique(merged_test_first_only$NameState[merged_test_first_only$Gender == 1]))
+
+# Average age of women with 9 years of experience (where they are approx just as likely to run as men)
+merged_test_first_only %>%
+  filter(Gender == 1 & TotalYearsServiceNoEBLD == 9) %>%
+  dplyr::summarize(mean = mean(Age))
+  
+
+# Distribution of Numbers of Election Opportunities
+merged_test_first_only %>% distinct(State, Year, .keep_all = TRUE) %>% group_by(NumberOpportunities) %>% dplyr::summarize(count = n())
+#merged_test_first_only %>% group_by(State, Year) %>% dplyr::summarize(count = n())
+
+# Amount of experience women who ran had (to see maximum amount of experience of any woman who ran in our data)
+merged_test_first_only %>% 
+  filter(Gender == 1, WasCandidateEither == 1) %>% 
+  group_by(TotalYearsServiceNoEBLD) %>% 
+  dplyr::summarize(count = n())
+```
+
+# DESCRIPTIVE STATISTICS & T-TESTS FOR KEY VARIABLES, BY GENDER
+
+```{r}
+# Experience
+summary(merged_test_first_only$TotalYearsServiceNoEBLD[merged_test_first_only$Gender == 1])
+sd(merged_test_first_only$TotalYearsServiceNoEBLD[merged_test_first_only$Gender == 1])
+summary(merged_test_first_only$TotalYearsServiceNoEBLD[merged_test_first_only$Gender == 0])
+sd(merged_test_first_only$TotalYearsServiceNoEBLD[merged_test_first_only$Gender == 0])
+
+t.test(merged_test_first_only$TotalYearsServiceNoEBLD[merged_test_first_only$Gender == 1],
+       merged_test_first_only$TotalYearsServiceNoEBLD[merged_test_first_only$Gender == 0])
+
+# OFFICES HELD (CURRENT)
+t.test(merged_test_first_only$isHouse[merged_test_first_only$Gender == 1],
+       merged_test_first_only$isHouse[merged_test_first_only$Gender == 0])
+sd(merged_test_first_only$isHouse[merged_test_first_only$Gender == 1])
+sd(merged_test_first_only$isHouse[merged_test_first_only$Gender == 0])
+
+t.test(merged_test_first_only$isAG[merged_test_first_only$Gender == 1],
+       merged_test_first_only$isAG[merged_test_first_only$Gender == 0])
+sd(merged_test_first_only$isAG[merged_test_first_only$Gender == 1])
+sd(merged_test_first_only$isAG[merged_test_first_only$Gender == 0])
+
+t.test(merged_test_first_only$isLtGov[merged_test_first_only$Gender == 1],
+       merged_test_first_only$isLtGov[merged_test_first_only$Gender == 0])
+sd(merged_test_first_only$isLtGov[merged_test_first_only$Gender == 1])
+sd(merged_test_first_only$isLtGov[merged_test_first_only$Gender == 0])
+
+t.test(merged_test_first_only$isSecState[merged_test_first_only$Gender == 1],
+       merged_test_first_only$isSecState[merged_test_first_only$Gender == 0])
+sd(merged_test_first_only$isSecState[merged_test_first_only$Gender == 1])
+sd(merged_test_first_only$isSecState[merged_test_first_only$Gender == 0])
+
+# SENATE EVENT
+t.test(merged_test_first_only$SenEvent[merged_test_first_only$Gender == 1],
+       merged_test_first_only$SenEvent[merged_test_first_only$Gender == 0])
+sd(merged_test_first_only$SenEvent[merged_test_first_only$Gender == 1])
+sd(merged_test_first_only$SenEvent[merged_test_first_only$Gender == 0])
+
+# NUMBER OF INCUMBENTS
+t.test(merged_test_first_only$TotalIncumbents[merged_test_first_only$Gender == 1],
+       merged_test_first_only$TotalIncumbents[merged_test_first_only$Gender == 0])
+summary(merged_test_first_only$TotalIncumbents[merged_test_first_only$Gender == 1])
+sd(merged_test_first_only$TotalIncumbents[merged_test_first_only$Gender == 1])
+summary(merged_test_first_only$TotalIncumbents[merged_test_first_only$Gender == 0])
+sd(merged_test_first_only$TotalIncumbents[merged_test_first_only$Gender == 0])
+
+
+# NUMBER OF OPPORTUNITIES
+t.test(merged_test_first_only$NumberOpportunities[merged_test_first_only$Gender == 1],
+       merged_test_first_only$NumberOpportunities[merged_test_first_only$Gender == 0])
+summary(merged_test_first_only$NumberOpportunities[merged_test_first_only$Gender == 1])
+sd(merged_test_first_only$NumberOpportunities[merged_test_first_only$Gender == 1])
+summary(merged_test_first_only$NumberOpportunities[merged_test_first_only$Gender == 0])
+sd(merged_test_first_only$NumberOpportunities[merged_test_first_only$Gender == 0])
+
+
+# LIKELIHOOD OF RUNNING (DV)
+t.test(merged_test_first_only$WasCandidateEither[merged_test_first_only$Gender == 1],
+       merged_test_first_only$WasCandidateEither[merged_test_first_only$Gender == 0])
+summary(merged_test_first_only$WasCandidateEither[merged_test_first_only$Gender == 1])
+sd(merged_test_first_only$WasCandidateEither[merged_test_first_only$Gender == 1])
+summary(merged_test_first_only$WasCandidateEither[merged_test_first_only$Gender == 0])
+sd(merged_test_first_only$WasCandidateEither[merged_test_first_only$Gender == 0])
+```
+
+
+# Main Analysis
+
+```{r}
+# MAIN MODEL - Discrete model, including experience squared
+discrete_model_quad <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD +
+                                isLtGov + isAG + isSecState + 
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only, 
+                     family = "binomial"(link = "cloglog"))
+summary(discrete_model_quad)
+# Get r-squared
+r2_nagelkerke(discrete_model_quad$glm_res)
+```
+
+# Appendix: Main Model with No Control Variables
+
+```{r}
+model_no_controls <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD, cluster = 'Name',
+                     data = merged_test_first_only, 
+                     family = "binomial"(link = "cloglog"))
+summary(model_no_controls)
+# Get r-squared
+r2_nagelkerke(model_no_controls$glm_res)
+```
+
+# Robustness Check: Age Analyses
+
+```{r}
+# Number of women with age
+merged_test_first_only %>% filter(!is.na(Age), Gender == 1) %>% distinct(Name, .keep_all = TRUE) %>% nrow()
+# Number of observations for women with age
+merged_test_first_only %>% filter(!is.na(Age), Gender == 1) %>% nrow()
+
+# There are no women for which the value of WasAG = 1, and very few in most of the other categories too, so will exclude these from the models
+merged_test_first_only %>% filter(Gender == 1) %>% dplyr::summarize(max = max(WasAG))
+merged_test_first_only %>% filter(Gender == 1) %>% dplyr::group_by(WasHouse) %>% 
+  dplyr::summarize(count = n())
+merged_test_first_only %>% filter(Gender == 1) %>% dplyr::group_by(WasSecState) %>% 
+  dplyr::summarize(count = n())
+merged_test_first_only %>% filter(Gender == 1) %>% dplyr::group_by(WasLtGov) %>% 
+  dplyr::summarize(count = n())
+```
+
+```{r}
+# Age analyses
+
+# Dataset with only women with age
+merged_test_first_only_age <- merged_test_first_only %>%
+  filter(!is.na(Age), Gender == 1)
+
+# Women only, no age
+women_only <- glm.cluster(WasCandidateEither ~ TotalYearsServiceNoEBLD_sq + TotalYearsServiceNoEBLD +
+                                isLtGov + isAG + isSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only_age, 
+                     family = "binomial"(link = "cloglog"))
+summary(women_only)
+# Get r-squared
+r2_nagelkerke(women_only$glm_res)
+```
+
+```{r}
+# Women only, with age
+women_age <- glm.cluster(WasCandidateEither ~ TotalYearsServiceNoEBLD_sq + TotalYearsServiceNoEBLD + Age +
+                                isLtGov + isAG + isSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only_age, 
+                     family = "binomial"(link = "cloglog"))
+summary(women_age)
+# Get r-squared
+r2_nagelkerke(women_age$glm_res)
+
+```
+
+```{r}
+# Women only, with age and age squared
+women_age_sq <- glm.cluster(WasCandidateEither ~ TotalYearsServiceNoEBLD_sq + TotalYearsServiceNoEBLD + Age + 
+                              Age.sq +isLtGov + isAG + isSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only_age, 
+                     family = "binomial"(link = "cloglog"))
+summary(women_age_sq)
+# Get r-squared
+r2_nagelkerke(women_age_sq$glm_res)
+```
+
+
+# Robustness Check: Limiting to Those with 36 Years of Experience
+
+```{r}
+merged_test_first_only_36 <- merged_test_first_only %>%
+  filter(TotalYearsServiceNoEBLD <= 36)
+nrow(merged_test_first_only_36)
+nrow(merged_test_first_only_36 %>% distinct(Name, .keep_all = TRUE))
+
+model_36 <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq + Gender*TotalYearsServiceNoEBLD +
+                                isLtGov + isAG + isSecState + WasHouse + WasLtGov + WasAG + WasSecState + 
+                          SenEvent + TotalIncumbents + NumberOpportunities + Year + as.factor(State), 
+                        cluster = 'Name',
+                     data = merged_test_first_only_36, 
+                     family = "binomial"(link = "cloglog"))
+summary(model_36)
+# Get r-squared
+r2_nagelkerke((model_36$glm_res))
+```
+
+# Robustness Check: Gallup Opinion Data
+
+```{r}
+# Create data frame that excludes the years with no Gallup opinion data
+merged_test_exclude_years <- merged_test_first_only %>%
+  filter(Year > 1936)
+nrow(merged_test_exclude_years)
+nrow(merged_test_exclude_years %>% distinct(Name, .keep_all = TRUE))
+
+gallup_model <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD + Gender*Opinion +
+                                isLtGov + isAG + isSecState + 
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_exclude_years, 
+                     family = "binomial"(link = "cloglog"))
+summary(gallup_model)
+
+# Get r-squared
+r2_nagelkerke((gallup_model$glm_res))
+```
+
+# For Supplement: Logit Instead of Cloglog
+
+```{r}
+logit_model_quad <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD +
+                                isLtGov + isAG + isSecState + 
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only, 
+                     family = "binomial")
+summary(logit_model_quad)
+
+# Get r-squared
+r2_nagelkerke(logit_model_quad$glm_res)
+```
+
+# For Supplement: Year Fixed Effects (Rather than Continuous)
+
+```{r}
+years_fixed_quad <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD +
+                                isLtGov + isAG + isSecState + 
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + as.factor(Year) +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only, 
+                     family = "binomial"(link = "cloglog"))
+summary(years_fixed_quad)
+
+# Get r-squared
+r2_nagelkerke(years_fixed_quad$glm_res)
+```
+
+# For Supplement: Even Years Only
+
+```{r}
+even_only_model <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD +
+                                isLtGov + isAG + isSecState + 
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only[merged_test_first_only$even1odd0 == 1,], 
+                     family = "binomial"(link = "cloglog"))
+summary(even_only_model)
+
+# Number of observations and individuals
+nrow(merged_test_first_only[merged_test_first_only$even1odd0 == 1,])
+nrow(merged_test_first_only[merged_test_first_only$even1odd0 == 1,] %>% distinct(Name, .keep_all = TRUE))
+# Get r-squared
+r2_nagelkerke(even_only_model$glm_res)
+```
+
+# For Supplement: Racial Minorities (House Only)
+
+```{r}
+# Dataset with current House Members only (for analyses with racial minorities)
+merged_test.house <- merged_test_first_only %>%
+  filter(isHouse == 1)
+
+minority_model_house <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD + isMinority +
+                         WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), 
+                  cluster = 'Name',
+                     data = merged_test.house, 
+                     family = "binomial"(link = "cloglog"))
+summary(minority_model_house)
+
+# Number of observations and individuals
+nrow(merged_test.house)
+nrow(merged_test.house %>% distinct(Name, .keep_all = TRUE))
+# Get r-squared
+r2_nagelkerke(minority_model_house$glm_res)
+```
+
+```{r}
+# Looking at how many racial minorities are actually in the (House) dataset
+# Overall (House) dataset
+merged_test.house %>%
+  group_by(Gender, isMinority) %>%
+  dplyr::summarize(count = n())
+# Only looking at unique individuals (within House dataset)
+merged_test.house %>%
+  distinct(Name, .keep_all = TRUE) %>%
+  group_by(Gender, isMinority) %>%
+  dplyr::summarize(count = n())
+
+# Percent of total data that is this House dataset
+nrow(merged_test.house) / nrow(merged_test_first_only)
+```
+
+# Footnote: Excluding 7 Observations of Members Who Ran in Multiple Elections in Same Year
+
+```{r}
+names_multiple <- sengov.df.main %>%
+  filter(WasCandidate == 1) %>%
+  group_by(Name, Year) %>%
+  dplyr::summarize(count = n()) %>%
+  filter(count > 1) %>%
+  dplyr::select(Name, Year)
+
+merged_test_first_only_nomultiple <- merged_test_first_only %>%
+  anti_join(names_multiple, by = c("Name", "Year"))
+
+multiple_excluded_model <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD +
+                                isLtGov + isAG + isSecState + 
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only_nomultiple, 
+                     family = "binomial"(link = "cloglog"))
+summary(multiple_excluded_model)
+```
+
+# Footnote: Interacting Office with Gender
+
+```{r}
+office_model <- glm.cluster(WasCandidateEither ~ Gender * isLtGov + Gender * isAG + Gender * isSecState +
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only, 
+                     family = "binomial"(link = "cloglog"))
+summary(office_model)
+```
+
+
+
+# Non-Reported Analysis: Main Model w/ Experience Logged Rather than Quadratic Term
+
+```{r}
+exper_logged_model <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_log +
+                                isLtGov + isAG + isSecState + 
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only, 
+                     family = "binomial"(link = "cloglog"))
+summary(exper_logged_model)
+```
+
+
+# Footnote: Main Model with No Clustered Standard Errors
+
+```{r}
+model_no_clustering <- glm(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD +
+                                isLtGov + isAG + isSecState + 
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State),
+                     data = merged_test_first_only, 
+                     family = "binomial"(link = "cloglog"))
+summary(model_no_clustering)
+```
+
+# Non-Reported Analysis: Main Model Without Incumbents Control
+
+```{r}
+model_no_incumb <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD +
+                                isLtGov + isAG + isSecState + 
+                         WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    +  NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only, 
+                     family = "binomial"(link = "cloglog"))
+summary(model_no_incumb)
+```
+
+
+
+# Kaplan Meier Plot - Failure (Figure 1 in Paper)
+
+```{r}
+# All Years
+# Generate the survival plot
+fit <- survfit2(Surv(TotalYearsServiceNoEBLD, WasCandidateEither) ~ Gender, data = merged_test_first_only)
+fit$surv <- 1 - fit$surv
+plot_obj <- ggsurvplot(fit, data = merged_test_first_only, ylim = c(0, 0.12))
+
+# Display the full plot (not in paper)
+plot_obj$plot + scale_x_continuous(limits = c(1, 60), breaks = seq(1, 60, by = 5)) +
+  scale_color_manual(values = c("gray", "black"), 
+                     labels = c("Male", "Female")) +
+  ylab("Cumulative Likelihood of Running")
+
+# Display the zoomed-in plot (in paper) - up to 36 years
+plot_obj$plot + scale_x_continuous(breaks = seq(1, 36, by = 5)) +
+  coord_cartesian(xlim = c(1,36)) +
+  scale_color_manual(values = c("gray", "black"), 
+                     labels = c("Male", "Female")) +
+  ylab("Cumulative Likelihood of Running") +
+  xlab("Years of Experience")
+
+
+```
+
+```{r}
+# The following code generates the plot in a separate PDF file (this was used for submission for the proofs)
+
+#pdf("wald_figure1.pdf", width = 10, height = 7)
+
+# All Years
+# Generate the survival plot
+fit <- survfit2(Surv(TotalYearsServiceNoEBLD, WasCandidateEither) ~ Gender, data = merged_test_first_only)
+fit$surv <- 1 - fit$surv
+plot_obj <- ggsurvplot(fit, data = merged_test_first_only, ylim = c(0, 0.12))
+
+
+# Display the zoomed-in plot (in paper) - up to 36 years
+plot_obj$plot + scale_x_continuous(breaks = seq(1, 36, by = 5)) +
+  coord_cartesian(xlim = c(1,36)) +
+  scale_color_manual(values = c("gray", "black"), 
+                     labels = c("Male", "Female")) +
+  ylab("Cumulative Likelihood of Running") +
+  xlab("Years of Experience")
+
+#dev.off()
+
+```
+
+# Quintile Analysis and Plot (Figure 2 in Paper)
+
+```{r}
+# Quintiles with BINARY indicators for each quintile (dropping first quintile) - NO CONTROLS
+quintile_breaks <- quantile(merged_test_first_only$TotalYearsServiceNoEBLD, probs = seq(0, 1, by = 0.2))
+merged_test_first_only$quintile_exper2 <- as.numeric(cut(merged_test_first_only$TotalYearsServiceNoEBLD,
+                                                        breaks = quintile_breaks, labels = FALSE, 
+                                                        include.lowest = TRUE))
+# Show values of quintile breaks
+quintile_breaks
+
+# Creating separate indicator variables for each quintile
+for (i in 1:5) {
+  merged_test_first_only[paste0("quintile_", i)] <- ifelse(merged_test_first_only$quintile_exper2 == i, 1, 0)
+}
+
+binary_quintile_model <- glm.cluster(WasCandidateEither ~ Gender*quintile_2 + Gender*quintile_3 +
+                                       Gender*quintile_4 + Gender*quintile_5, cluster = 'Name',
+                     data = merged_test_first_only, 
+                     family = "binomial"(link = "cloglog"))
+summary(binary_quintile_model)
+
+# Plot with BINARY quintile variables
+intercepteffect <- coef(binary_quintile_model)[1]
+gendereffect <- coef(binary_quintile_model)[2]
+# Assigning coefficients for each quintile and interaction
+q2_effect <- coef(binary_quintile_model)["quintile_2"]
+q3_effect <- coef(binary_quintile_model)["quintile_3"]
+q4_effect <- coef(binary_quintile_model)["quintile_4"]
+q5_effect <- coef(binary_quintile_model)["quintile_5"]
+gender_q2_effect <- coef(binary_quintile_model)["Gender:quintile_2"]
+gender_q3_effect <- coef(binary_quintile_model)["Gender:quintile_3"]
+gender_q4_effect <- coef(binary_quintile_model)["Gender:quintile_4"]
+gender_q5_effect <- coef(binary_quintile_model)["Gender:quintile_5"]
+
+
+
+predictedprobs <- as.data.frame(matrix(nrow = 10, ncol = 3))
+colnames(predictedprobs) <- c("Female1Male0", "Tenure", "LikelihoodOfRunning")
+predictedprobs$Female1Male0[1:5] <- 1
+predictedprobs$Female1Male0[6:10] <- 0
+predictedprobs$Tenure[1:5] <- 1:5
+predictedprobs$Tenure[6:10] <- 1:5
+
+predictedprobs$LikelihoodOfRunning <- intercepteffect +
+  predictedprobs$Female1Male0 * gendereffect +
+  ifelse(predictedprobs$Tenure == 2, q2_effect + predictedprobs$Female1Male0 * gender_q2_effect, 0) +
+  ifelse(predictedprobs$Tenure == 3, q3_effect + predictedprobs$Female1Male0 * gender_q3_effect, 0) +
+  ifelse(predictedprobs$Tenure == 4, q4_effect + predictedprobs$Female1Male0 * gender_q4_effect, 0) +
+  ifelse(predictedprobs$Tenure == 5, q5_effect + predictedprobs$Female1Male0 * gender_q5_effect, 0)
+
+predictedprobs$ProbabilityOfRunning <- 1 - exp(-exp(predictedprobs$LikelihoodOfRunning))
+predictedprobs$PercentRunning <- 100 * predictedprobs$ProbabilityOfRunning
+
+
+#Figure two plot
+predictedprobs$Female0Male1 <- as.factor(1-as.numeric(predictedprobs$Female1Male0))
+predictedprobs$Female1Male0 <- as.character(predictedprobs$Female1Male0)
+
+# The following code generates the plot in a separate PDF file (this was used for submission for the proofs)
+#pdf("wald_figure2.pdf", width = 10, height = 7)
+
+ggplot(data = predictedprobs, aes(x = Tenure, y = PercentRunning, group = Female0Male1)) +
+  geom_line(aes(linetype = Female0Male1), size = 1) + 
+  geom_point(aes(shape = Female0Male1), size = 3) +  
+  scale_linetype_manual(labels = c("Female", "Male"), values = c("solid", "dotted")) +
+  scale_shape_manual(labels = c("Female", "Male"), values = c(16, 17), guide = FALSE) + 
+  guides(linetype=guide_legend("Gender")) +
+  scale_x_continuous(name = "Quintile of Experience", limits = c(1, 5), breaks = c(1,2,3,4,5)) + 
+  scale_y_continuous(name = "Predicted Probability of Running \n (Percent)", limits = c(0,7)) +
+  theme_classic() + 
+  theme(axis.line = element_line(size = 1), axis.text = element_text(size = 12, face = "bold"), axis.title = element_text(size = 12, face = "bold")) +
+  theme(legend.title = element_text(size = 12), legend.text = element_text(size = 12)) +
+  ggtitle("Predicted Probability of Running \n by Gender and Experience") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+#dev.off()
+```
+
+
+# Margins Plot (Predicted Values with Main Model) (Figure 3 in Paper)
+
+```{r}
+
+predictedprobs <- as.data.frame(matrix(nrow = 40, ncol = 5))
+colnames(predictedprobs) <- c("Female1Male0", "Tenure", "PercentRunning", "LowerCI", "UpperCI")
+predictedprobs$Female1Male0[1:20] <- 1
+predictedprobs$Female1Male0[21:40] <- 0
+predictedprobs$Tenure[1:20] <- 1:20
+predictedprobs$Tenure[21:40] <- 1:20
+
+# Here I am manually entering in the predicted percentages using calculations from Stata, in which it is easier to compute these predicted probabilities given our models (code/output from Stata is available in a separate OSF file)
+# Females
+predictedprobs$PercentRunning[1:20] <- c(.004016, .0058655, .0082537, .0111896, .0146156, .0183942, .0223078,
+                                         .0260739, .0293766, .0319088, .0334187, .0337503, .0328685, .0308657,
+                                         .0279461, .024392, .0205204, .0166368, .0129969, .0097827) * 100
+
+# Males
+predictedprobs$PercentRunning[21:40] <- c(.0135969, .0157316, .0179051, .0200477, .0220828, .0239311, .0255158,
+                                          .0267674, .0276293, .0280612, .0280428, .0275751, .0266799, .025399,
+                                          .0237903, .021924, .0198772, .0177294, .0155565, .0134277) * 100
+
+# As above, I am manually add in the values for the confidence intervals for males and females at each level of experience - these are based on calculations in Stata (which makes it much easier to compute these; code/output from Stata is available in a separate OSF file)
+# Females
+predictedprobs$LowerCI[1:20] <- c(.0013759, .0027664, .0046872, .0070389, .0096094, .0121797,
+                                             .01461, .0168221, .0187383, .02023, .0210884, .0210313, 
+                                             .01978, .0172212, .0135606, .0093062, .0050799, .0014163,
+                                             -.001351, -.0031131) * 100
+predictedprobs$UpperCI[1:20] <- c(.0066561, .0089647, .0118202, .0153403, .0196217, .0246086,
+                                             .0300055, .0353257, .0400149, .0435875, .0457491, .0464693,
+                                             .045957, .0445103, .0423315, .0394778, .035961, .0318573,
+                                             .0273448, .0226786) * 100
+
+# Males
+predictedprobs$LowerCI[21:40] <- c(.0108508, .0132372, .015613, .0178023, .0196709, .0211867, 
+                                             .0223788, .0232764, .0238905, .0242165, .0242364, .0239194,
+                                             .023221, .0220886, .0204881, .0184514, .0160961, .0135868,
+                                             .0110842, .0087187) * 100
+predictedprobs$UpperCI[21:40] <- c(.016343, .0182261, .0201972, .0222931, .0244947, .0266756,
+                                             .0286527, .0302584, .031368, .0319059, .0318493, .0312307,
+                                             .0301388, .0287095, .0270926, .0253965, .0236584, .0218719,
+                                             .0200289, .0181367) * 100
+
+#Figure Three plot
+predictedprobs$Female0Male1 <- as.factor(1-as.numeric(predictedprobs$Female1Male0))
+predictedprobs$Female1Male0 <- as.character(predictedprobs$Female1Male0)
+
+# The following code generates the plot in a separate PDF file (this was used for submission for the proofs)
+#pdf("wald_figure3.pdf", width = 10, height = 7)
+
+ggplot(data = predictedprobs, aes(x = Tenure, y = PercentRunning, group = Female0Male1)) +
+  geom_line(aes(linetype = Female0Male1), size = 1) + 
+  scale_linetype_manual(labels = c("Female", "Male"), values = c("solid", "dotted")) +
+  guides(linetype=guide_legend("Gender")) +
+  scale_x_continuous(name = "Years of Experience", limits = c(0, 20), breaks = c(0,5,10,15, 20)) + 
+  scale_y_continuous(name = "Predicted Probability of Running \n (Percent)", limits = c(-0.5,6)) +
+  theme_classic() + 
+  theme(axis.line = element_line(size = 1), axis.text = element_text(size = 12, face = "bold"), axis.title = element_text(size = 12, face = "bold")) +
+  theme(legend.title = element_text(size = 12), legend.text = element_text(size = 12)) +
+  ggtitle("Predicted Probability of Running \n by Gender and Experience") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  # Adding confidence intervals
+  geom_ribbon(aes(x = Tenure, ymin = LowerCI, ymax = UpperCI, group = Female0Male1), alpha = 0.2) 
+
+#dev.off()
+```
+
+
+# Derivatives Tests
+
+
+```{r}
+# Steps for derivative analyses
+# 1. Manually compute derivatives at each value of gender and experience using the coefficient on experience, the coefficient on experience^2, AND IF FEMALE: the coefficient on the gender*experience interaction term, and 2 times the coefficient on the gender*experiences^2 interaction term. (Can write a function to compute these by plugging each value in.)
+# 2. Manually compute the standard error of each linear combination of coefficients on gender*experience and gender*experience^2, at each value of experience (will need this for the t-test to test if different from zero). Formula is as follows: Var(aX + bY) = a^2 * Var(X) + b^2 * Var(Y) + 2ab * Cov(X,Y). Will thus need the covariance between X and Y (extract from covariance matrix). Plug in the value of experience as part of b (i.e., b should equal 2 * years).
+# 3. Manually calculate the t-statistic: [combination of coefficients] / SE(combination of coefficients)
+# 4. Manually determine the corresponding p-value (use R package for this).
+```
+
+```{r}
+# STEP 1
+
+# Saving main model again here to get coefficients
+discrete_model_quad <- glm.cluster(WasCandidateEither ~ Gender*TotalYearsServiceNoEBLD_sq +
+                                     Gender*TotalYearsServiceNoEBLD + isLtGov + isAG + isSecState + 
+                       WasHouse + WasLtGov + WasAG + WasSecState + SenEvent 
+                    + TotalIncumbents + NumberOpportunities + Year +
+                         as.factor(State), cluster = 'Name',
+                     data = merged_test_first_only,
+                     family = "binomial"(link = "cloglog"))
+
+
+tenureeffect <- coef(discrete_model_quad)[4]
+tenure.sq.effect <- coef(discrete_model_quad)[3]
+genderxtenureeffect <- coef(discrete_model_quad)[66] 
+genderxtenure.sq.effect <- coef(discrete_model_quad)[65] 
+
+
+derivative_values <- as.data.frame(matrix(nrow = 40, ncol = 3))
+colnames(derivative_values) <- c("Female1Male0", "Tenure", "Derivative")
+derivative_values$Female1Male0[1:20] <- 1
+derivative_values$Female1Male0[21:40] <- 0
+derivative_values$Tenure[1:20] <- 1:20
+derivative_values$Tenure[21:40] <- 1:20
+
+
+derivative_values$Derivative <- round(tenureeffect + 2 * tenure.sq.effect * derivative_values$Tenure + 
+  genderxtenureeffect * derivative_values$Female1Male0 +
+  2 * genderxtenure.sq.effect * derivative_values$Female1Male0 * derivative_values$Tenure,2)
+
+derivative_values
+```
+
+```{r}
+# STEP 2
+
+# Obtain the covariance matrix of parameter estimates, which I will need to compute the SE of both coefficients jointly
+# We are specifically interested in seeing whether the coefficient on gender * experience plus 2 * coefficient on gender * experience^2 is different from zero, so need the covariance for these two coefficients
+
+# The below is checking the full matrix to double-check I am grabbing the right entry:
+#options(max.print = 5000)
+#vcov(discrete_model_quad)
+
+# Set up the data frame to contain the eventual t-values, and the standard error values at each level of expereince
+t_values <- as.data.frame(matrix(nrow = 20, ncol = 5))
+colnames(t_values) <- c("Tenure", "VarianceJoint", "SEjoint", "T_statistic", "p_value")
+t_values$Tenure[1:20] <- 1:20
+
+
+# This is the covariance between the two (interaction) terms we want: 
+covar <- vcov(discrete_model_quad)[65,66]
+# Need to extract the standard errors from the key (interaction) terms in the model
+summary_model <- summary(discrete_model_quad)
+# This is for the gender*experience term
+intx_se <- summary_model[[66,2]]
+# This is for the gender*experience^2 term
+intx_sq_se <- summary_model[[65,2]]
+
+
+# Now compute joint variance at each level of experience:
+# Formula: Var(aX + bY) = a^2 * Var(X) + b^2 * Var(Y) + 2ab * Cov(X,Y)
+t_values$VarianceJoint <- 1^2 * (intx_se^2) + (2*t_values$Tenure)^2 * (intx_sq_se^2) + 2*1*2*t_values$Tenure * covar
+# Now convert variance to SE
+t_values$SEjoint <- sqrt(t_values$VarianceJoint)
+```
+
+```{r}
+# STEPS 3 & 4
+# The t-statistic should be the coefficients we are trying to test divided by the (joint) standard error of those coefficients
+
+# Save the sample size
+n <- nrow(merged_test_first_only)
+
+t_values$T_statistic <- round((genderxtenureeffect + 2 * genderxtenure.sq.effect * t_values$Tenure) / t_values$SEjoint,2)
+# Now generate the corresponding p-values (use the absolute value of the t-statistic since the sign goes both ways)
+# Multiplying by 2 here to give us a 2-tailed test
+t_values$p_value <- round(2*pt(abs(t_values$T_statistic), (n-1), lower.tail = FALSE),3)
+t_values
+```
+
+# Proportion of Data in First 9 Years of Experience
+
+```{r}
+number_9_years <- merged_test_first_only %>%
+  filter(TotalYearsServiceNoEBLD < 10) %>%
+  nrow()
+
+round(number_9_years / nrow(merged_test_first_only),4) * 100
+```
+
+# Proportion of Data Above 14 Years of Experience
+
+```{r}
+nrow(merged_test_first_only %>% filter(TotalYearsServiceNoEBLD > 14)) / nrow(merged_test_first_only)
+
+# Proportion of those who are women
+nrow(merged_test_first_only %>% filter(TotalYearsServiceNoEBLD > 14, Gender == 1)) / nrow(merged_test_first_only %>% filter(TotalYearsServiceNoEBLD > 14))
+```
+
+

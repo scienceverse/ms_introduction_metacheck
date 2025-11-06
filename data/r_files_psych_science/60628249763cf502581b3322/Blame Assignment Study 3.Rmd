@@ -1,0 +1,511 @@
+---
+title: "Blame Assignment - Study 3"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+#Set Working Directory & Load Packages
+```{r}
+#set working directory
+setwd("~/Desktop/blameassignment")
+
+#load packages
+library(psych)
+library(effects)
+library(corrplot)
+library(corrgram)
+library(stats)
+library(plotrix)
+library(plyr)
+library(dplyr)
+
+library(tidyverse)
+library(ggplot2)
+
+```
+
+#Load in Anonymized Data (this is the file available on OSF)
+```{r}
+#load in data frame
+qualtrics <- read.csv("Blame Assignment Study 3 Anon.csv", stringsAsFactors = FALSE)
+
+#turn all blanks to NA
+qualtrics <- qualtrics %>% mutate_all(na_if,"")
+
+#no headers
+df <- qualtrics %>%
+  filter(DistributionChannel == "anonymous") #1248 entries
+
+#frequency of each ID
+df.duplicateIDs <- df %>% 
+  group_by(anon_id) %>% 
+  dplyr::summarise(freq=n())
+
+#df that has only unique IDs
+df.unique <- df.duplicateIDs %>%
+  filter(freq == 1)
+
+#only retain rows in original data file that are in the "unique" df
+df.2 <- 
+  df %>% 
+  filter(anon_id %in% c(df.unique$anon_id))
+
+#filter out anyone who is not American
+df.2 <- df.2 %>% 
+  filter(citizenship == 1)
+
+#filter out anyone who did not identity as white or black
+df.2 <- df.2 %>% 
+  filter(race == 1 | race == 2)
+
+#filter out those who did not consent
+df.2 <- df.2 %>% 
+  rename(consent = Q11)
+
+df.2 <- df.2 %>% 
+  filter(consent==1)
+
+```
+
+#Make Condition Variable
+```{r}
+#condition
+df.2$condition <- rep(NA,nrow(df.2))
+
+df.2$condition[!is.na(df.2$packedboth_1)] <- 1 #Packed Both
+df.2$condition[!is.na(df.2$unpackedwhite_1)] <- 2 #Unpacked White
+df.2$condition[!is.na(df.2$unpackedblack_1)] <- 3 #Unpacked Black
+df.2$condition[!is.na(df.2$unpackedboth_1)] <- 4 #Unpacked Both
+
+table(df.2$condition, useNA="ifany")
+
+df.2 <- df.2 %>% filter(condition<5)
+
+```
+
+#Data Cleaning
+```{r}
+#delete Qualtrics columns
+df.2$Status <- NULL
+df.2$Progress <- NULL
+df.2$Duration..in.seconds. <- NULL
+df.2$Finished <- NULL
+df.2$RecipientLastName <- NULL
+df.2$RecipientFirstName <- NULL
+df.2$RecipientEmail <- NULL
+df.2$ExternalReference <- NULL
+df.2$DistributionChannel <- NULL
+df.2$UserLanguage <- NULL
+
+```
+
+#Finalize Clean Data
+```{r}
+#create new data frame
+df.3 <- df.2
+
+#check consent
+table(df.3$consent)
+
+#check conditions
+table(df.3$condition)
+
+#turn all variables to numeric
+df.4 <- data.frame(lapply(df.3, function(x) as.numeric(as.character(x))))
+
+```
+
+#Data Demographics
+```{r}
+#gender
+tablegender <- table(df.4$gender)
+prop.table(tablegender)*100
+
+#age
+df.4 %>% summarize(mean_age=mean(age, na.rm=TRUE),
+            sd_age=sd(age, na.rm=TRUE),
+            se_age=sd(age, na.rm=TRUE)/sqrt(n()),
+            lower_age=mean(age, na.rm=TRUE) - sd(age, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_age=mean(age, na.rm=TRUE) + sd(age, na.rm=TRUE)/sqrt(n())*1.96)
+
+#race
+tablerace <- table(df.4$race)
+prop.table(tablerace)*100
+
+```
+
+#Create Blame Variables
+```{r}
+#Condition 1: Packed Both
+#Condition 2: Unpacked White
+#Condition 3: Unpacked Black
+#Condition 4: Unpacked Both
+
+#packed both
+df.4 <- df.4 %>% 
+  mutate(c1_blameblack = packedboth_2)
+
+#unpacked white
+df.4 <- df.4 %>% 
+  mutate(c2_blameblack = unpackedwhite_1)
+
+#unpacked black
+df.4 <- df.4 %>% 
+  mutate(c3_blameblack = unpackedblack_2 +
+           unpackedblack_3 +
+           unpackedblack_4 +
+           unpackedblack_5 +
+           unpackedblack_6)
+
+#unpacked both
+df.4 <- df.4 %>% 
+  mutate(c4_blameblack = unpackedboth_6 +
+           unpackedboth_7 +
+           unpackedboth_8 +
+           unpackedboth_9 +
+           unpackedboth_10)
+
+#blame black variable
+df.4$blameblack <- rep(NA,nrow(df.4))
+
+df.4$blameblack <- pmax(df.4$c1_blameblack, df.4$c2_blameblack, df.4$c3_blameblack, df.4$c4_blameblack, na.rm=TRUE)
+
+summary(df.4$blameblack)
+
+#blame white variable
+df.4$blamewhite <- rep(NA,nrow(df.4))
+
+df.4$blamewhite <- 100-df.4$blameblack
+
+summary(df.4$blamewhite)
+
+```
+
+#Analyses
+```{r}
+#Condition 1: Packed Both
+#Condition 2: Unpacked White
+#Condition 3: Unpacked Black
+#Condition 4: Unpacked Both
+
+#turn numeric variables into factors
+df.4$condition <- as.factor(df.4$condition)
+df.4$race <- as.factor(df.4$race)
+df.4$politicalorientation <- as.factor(df.4$politicalorientation)
+
+#make binary variable for unpacked white
+df.4$binaryunpackedwhite <- rep(NA,nrow(df.4))
+
+df.4$binaryunpackedwhite <- ifelse(df.4$condition==2 | df.4$condition==4, 1, 0)
+
+df.4$binaryunpackedwhite <- as.factor(df.4$binaryunpackedwhite)
+
+#make binary variable for unpacked black
+df.4$binaryunpackedblack <- rep(NA,nrow(df.4))
+
+df.4$binaryunpackedblack <- ifelse(df.4$condition==3 | df.4$condition==4, 1, 0)
+
+df.4$binaryunpackedblack <- as.factor(df.4$binaryunpackedblack)
+
+#set ANOVA defaults to SPSS defaults
+options(contrasts = c("contr.helmert", "contr.poly"))
+options("contrasts")
+
+library(car)
+library(sjstats)
+
+#3 way ANOVA
+anova1 <- lm(blameblack ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova1,type=3)
+
+anova1effect <-Anova(anova1,type=3)
+eta_sq(anova1effect, partial = T)
+
+#2 way ANOVA
+anova2 <- lm(blameblack ~ binaryunpackedwhite * binaryunpackedblack, data = df.4)
+
+Anova(anova2,type=3)
+
+anova2effect <-Anova(anova2,type=3)
+eta_sq(anova2effect, partial = T)
+
+#correlation
+df.4$race <- as.numeric(df.4$race)
+
+cor.test(df.4$race, df.4$blameblack)
+
+df.4$race <- as.factor(df.4$race)
+
+#summary statistics by condition
+conditionsummarytable <- df.4 %>% dplyr::group_by(condition) %>% 
+  summarize(mean_blameblack=mean(blameblack, na.rm=TRUE),
+            sd_blameblack=sd(blameblack, na.rm=TRUE),
+            se_blameblack=sd(blameblack, na.rm=TRUE)/sqrt(n()),
+            lower_blameblack=mean(blameblack, na.rm=TRUE) - sd(blameblack, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_blameblack=mean(blameblack, na.rm=TRUE) + sd(blameblack, na.rm=TRUE)/sqrt(n())*1.96)
+
+```
+
+#online supplementary materials - blame assigned to each subgroup
+```{r}
+#Condition 1: Packed Both
+#Condition 2: Unpacked White
+#Condition 3: Unpacked Black
+#Condition 4: Unpacked Both
+
+#Condition 1: Packed Both
+df.condition1 <- df.4 %>% filter(condition==1) %>% select(packedboth_1, packedboth_2)
+
+df.condition1 <- df.condition1 %>% 
+  rename(white = packedboth_1) %>% 
+  rename(black = packedboth_2)
+
+df.condition1 <- df.condition1 %>% mutate(participantid = row_number())
+
+df.condition1.long <- df.condition1 %>% pivot_longer(
+  !participantid,
+  names_to = "group",
+  names_prefix = "packedboth_",
+  values_to = "blame",
+  values_drop_na = FALSE)
+
+condition1table <- df.condition1.long %>% group_by(group) %>% 
+  summarize(mean_blame=mean(blame, na.rm=TRUE),
+            sd_blame=sd(blame, na.rm=TRUE),
+            se_blame=sd(blame, na.rm=TRUE)/sqrt(n()),
+            lower_blame=mean(blame, na.rm=TRUE) - sd(blame, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_blame=mean(blame, na.rm=TRUE) + sd(blame, na.rm=TRUE)/sqrt(n())*1.96)
+
+
+#Condition 2: Unpacked White
+
+df.condition2 <- df.4 %>% filter(condition==2) %>% select(unpackedwhite_1, unpackedwhite_2, unpackedwhite_3, unpackedwhite_4, unpackedwhite_5, unpackedwhite_6)
+
+df.condition2 <- df.condition2 %>% 
+  rename(unpackedwhite_black = unpackedwhite_1) %>% 
+  rename(unpackedwhite_strongrepublicanwhite = unpackedwhite_2) %>%
+  rename(unpackedwhite_moderaterepublicanwhite = unpackedwhite_3) %>% 
+  rename(unpackedwhite_strongdemocratwhite = unpackedwhite_4) %>% 
+  rename(unpackedwhite_moderatedemocratwhite = unpackedwhite_5) %>% 
+  rename(unpackedwhite_independentwhite = unpackedwhite_6)
+
+df.condition2 <- df.condition2 %>% mutate(participantid = row_number())
+
+df.condition2.long <- df.condition2 %>% pivot_longer(
+  !participantid,
+  names_to = "group",
+  names_prefix = "unpackedwhite_",
+  values_to = "blame",
+  values_drop_na = FALSE)
+
+condition2table <- df.condition2.long %>% group_by(group) %>% 
+  summarize(mean_blame=mean(blame, na.rm=TRUE),
+            sd_blame=sd(blame, na.rm=TRUE),
+            se_blame=sd(blame, na.rm=TRUE)/sqrt(n()),
+            lower_blame=mean(blame, na.rm=TRUE) - sd(blame, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_blame=mean(blame, na.rm=TRUE) + sd(blame, na.rm=TRUE)/sqrt(n())*1.96)
+
+
+#Condition 3: Unpacked Black
+
+df.condition3 <- df.4 %>% filter(condition==3) %>% select(unpackedblack_1, unpackedblack_2, unpackedblack_3, unpackedblack_4, unpackedblack_5, unpackedblack_6)
+
+df.condition3 <- df.condition3 %>% 
+  rename(unpackedblack_white = unpackedblack_1) %>% 
+  rename(unpackedblack_strongrepublicanblack = unpackedblack_2) %>%
+  rename(unpackedblack_moderaterepublicanblack = unpackedblack_3) %>% 
+  rename(unpackedblack_strongdemocratblack = unpackedblack_4) %>% 
+  rename(unpackedblack_moderatedemocratblack = unpackedblack_5) %>% 
+  rename(unpackedblack_independentblack = unpackedblack_6)
+
+df.condition3 <- df.condition3 %>% mutate(participantid = row_number())
+
+df.condition3.long <- df.condition3 %>% pivot_longer(
+  !participantid,
+  names_to = "group",
+  names_prefix = "unpackedblack_",
+  values_to = "blame",
+  values_drop_na = FALSE)
+
+condition3table <- df.condition3.long %>% group_by(group) %>% 
+  summarize(mean_blame=mean(blame, na.rm=TRUE),
+            sd_blame=sd(blame, na.rm=TRUE),
+            se_blame=sd(blame, na.rm=TRUE)/sqrt(n()),
+            lower_blame=mean(blame, na.rm=TRUE) - sd(blame, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_blame=mean(blame, na.rm=TRUE) + sd(blame, na.rm=TRUE)/sqrt(n())*1.96)
+
+
+#Condition 4: Unpacked Both
+
+df.condition4 <- df.4 %>% filter(condition==4) %>% select(unpackedboth_1, unpackedboth_2, unpackedboth_3, unpackedboth_4, unpackedboth_5, unpackedboth_6, unpackedboth_7, unpackedboth_8, unpackedboth_9, unpackedboth_10)
+
+df.condition4 <- df.condition4 %>% 
+  rename(unpackedboth_strongrepublicanwhite = unpackedboth_1) %>% 
+  rename(unpackedboth_moderaterepublicanwhite = unpackedboth_2) %>%
+  rename(unpackedboth_strongdemocratwhite = unpackedboth_3) %>% 
+  rename(unpackedboth_moderatedemocratwhite = unpackedboth_4) %>% 
+  rename(unpackedboth_independentwhite = unpackedboth_5) %>% 
+  rename(unpackedboth_strongrepublicanblack = unpackedboth_6) %>% 
+  rename(unpackedboth_moderaterepublicanblack = unpackedboth_7) %>% 
+  rename(unpackedboth_strongdemocratblack = unpackedboth_8) %>% 
+  rename(unpackedboth_moderatedemocratblack = unpackedboth_9) %>% 
+  rename(unpackedboth_independentblack = unpackedboth_10)
+
+df.condition4 <- df.condition4 %>% mutate(participantid = row_number())
+
+df.condition4.long <- df.condition4 %>% pivot_longer(
+  !participantid,
+  names_to = "group",
+  names_prefix = "unpackedboth_",
+  values_to = "blame",
+  values_drop_na = FALSE)
+
+condition4table <- df.condition4.long %>% group_by(group) %>% 
+  summarize(mean_blame=mean(blame, na.rm=TRUE),
+            sd_blame=sd(blame, na.rm=TRUE),
+            se_blame=sd(blame, na.rm=TRUE)/sqrt(n()),
+            lower_blame=mean(blame, na.rm=TRUE) - sd(blame, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_blame=mean(blame, na.rm=TRUE) + sd(blame, na.rm=TRUE)/sqrt(n())*1.96)
+
+```
+
+#online supplementary analyses - entitativity, group identification, and differentiation
+```{r}
+#make entitativity variables
+df.entitativitywhite <- df.4 %>%
+  select(entiativity_1:entiativity_4)
+
+df.4$entitativitywhite <- rowMeans(df.entitativitywhite, na.rm=TRUE, dims=1)
+
+df.entitativityblack <- df.4 %>%
+  select(entiativity_5:entiativity_8)
+
+df.4$entitativityblack <- rowMeans(df.entitativityblack, na.rm=TRUE, dims=1)
+
+#make identification variables
+df.identificationwhite <- df.4 %>% 
+  select(identification_1, identification_7)
+
+df.4$identificationwhite <- rowMeans(df.identificationwhite, na.rm=TRUE, dims=1) #white
+
+df.identificationblack <- df.4 %>% 
+  select(identification_4, identification_10)
+
+df.4$identificationblack <- rowMeans(df.identificationblack, na.rm=TRUE, dims=1) #black
+
+df.identificationwhitedemocrat <- df.4 %>% 
+  select(identification_2, identification_8)
+
+df.4$identificationwhitedemocrat <- rowMeans(df.identificationwhitedemocrat, na.rm=TRUE, dims=1) #white democrat
+
+df.identificationblackdemocrat <- df.4 %>% 
+  select(identification_5, identification_11)
+
+df.4$identificationblackdemocrat <- rowMeans(df.identificationblackdemocrat, na.rm=TRUE, dims=1) #black democrat
+
+df.identificationwhiterepublican <- df.4 %>% 
+  select(identification_3, identification_9)
+
+df.4$identificationwhiterepublican <- rowMeans(df.identificationwhiterepublican, na.rm=TRUE, dims=1) #white republican
+
+df.identificationblackrepublican <- df.4 %>% 
+  select(identification_6, identification_12)
+
+df.4$identificationblackrepublican <- rowMeans(df.identificationblackrepublican, na.rm=TRUE, dims=1) #black republican
+
+#make differentiation variables
+df.differentiationwhite <- df.4 %>%
+  select(differentiation_1:differentiation_4)
+
+df.4$differentiationwhite <- rowMeans(df.differentiationwhite, na.rm=TRUE, dims=1)
+
+df.differentiationblack <- df.4 %>%
+  select(differentiation_5:differentiation_8)
+
+df.4$differentiationblack <- rowMeans(df.differentiationblack, na.rm=TRUE, dims=1)
+
+#check variable types
+df.4$binaryunpackedwhite <- as.factor(df.4$binarypackedwhite)
+df.4$binaryunpackedblack <- as.factor(df.4$binaryunpackedblack)
+df.4$race <- as.factor(df.4$race)
+
+df.4$entitativitywhite <- as.numeric(df.4$entitativitywhite)
+df.4$entitativityblack <- as.numeric(df.4$entitativityblack)
+df.4$identificationwhite <- as.numeric(df.4$identificationwhite)
+df.4$identificationblack <- as.numeric(df.4$identificationblack)
+df.4$identificationwhitedemocrat <- as.numeric(df.4$identificationwhitedemocrat)
+df.4$identificationblackdemocrat <- as.numeric(df.4$identificationblackdemocrat)
+df.4$identificationwhiterepublican <- as.numeric(df.4$identificationwhiterepublican)
+df.4$identificationblackrepublican <- as.numeric(df.4$identificationblackrepublican)
+df.4$differentiationwhite <- as.numeric(df.4$differentiationwhite)
+df.4$differentiationblack <- as.numeric(df.4$differentiationblack)
+
+#check reliability
+psych::alpha(df.entitativitywhite)
+psych::alpha(df.entitativityblack)
+
+psych::alpha(df.identificationwhite)
+psych::alpha(df.identificationblack)
+psych::alpha(df.identificationwhitedemocrat)
+psych::alpha(df.identificationblackdemocrat)
+psych::alpha(df.identificationwhiterepublican)
+psych::alpha(df.identificationblackrepublican)
+
+psych::alpha(df.differentiationwhite)
+psych::alpha(df.differentiationblack)
+
+#analyses - entitativity
+anova3 <- lm(entitativitywhite ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova3,type=3)
+
+anova4 <- lm(entitativityblack ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova4,type=3)
+
+#analyses - identification
+anova5 <- lm(identificationwhite ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova5,type=3)
+
+anova6 <- lm(identificationblack ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova6,type=3)
+
+anova7 <- lm(identificationwhitedemocrat ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova7,type=3)
+
+anova8 <- lm(identificationblackdemocrat ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova8,type=3)
+
+anova9 <- lm(identificationwhiterepublican ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova9,type=3)
+
+anova10 <- lm(identificationblackrepublican ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova10,type=3)
+
+#analyses - differentiation
+anova11 <- lm(differentiationwhite ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova11,type=3)
+
+anova12 <- lm(differentiationblack ~ binaryunpackedwhite * binaryunpackedblack * race, data = df.4)
+
+Anova(anova12,type=3)
+
+#correlation table with social identity measures
+library(apaTables)
+
+df.correlation <- df.4 %>%
+  select(entitativitywhite, entitativityblack, identificationwhite, identificationblack, identificationwhitedemocrat, identificationblackdemocrat, identificationwhiterepublican, identificationblackrepublican, differentiationwhite, differentiationblack)
+
+apa.cor.table(df.correlation, filename="TableStudy3SocialIdentity_APA.doc", table.number=1)
+
+```

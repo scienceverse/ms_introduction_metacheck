@@ -1,0 +1,838 @@
+---
+title: "Analysis for 'Alloparenting Explains the Paradox of Religious Fertility'"
+authors: "John Shaver & Joseph Bulbulia"
+date: "14 Oct 2018"
+output: html_document
+---
+
+  
+
+
+# LOAD DATA 
+system.time(
+  dat6 <- as.data.frame("data_file.csv",
+ header=TRUE,
+ sep=",",
+ na = -9999))
+
+
+# Verify sample
+nrow(dat6) #15820
+head(dat6)
+
+#Create id variable and set as factor
+dat6$Id <- factor(1:nrow(dat6))
+
+#Check this
+str(dat6)
+
+library(dplyr)
+
+# Select variables for analyses
+dat6.1<- dat6%>%
+  select(Id,
+   Age.T6,
+   ChildrenHome.T6,
+   ChildrenNum.T6,
+   Gender.T6,
+   NZDep.2013.T6,
+   EthnicCats.T6,
+   Age.YoungestBorn.T6, 
+   Occupation.L3.T6, 
+   NZREG.T6,
+   Partner.T6,
+   Religious.T6,
+   Religion.Church.T6,
+   Census.Religion.L3.T6,
+   Religion.Identification.T6,
+   ChildrenNum.T6, 
+   Urban.T6,
+   Hours.Work.T6,
+   Hours.Children.T6,
+   Hours.Work.T6,
+   Hours.Housework.T6,
+   Hours.Children.T6,
+   Hours.CompGames.T6,
+   Hours.Exercise.T6,
+   Hours.TV.T6,
+   Hours.Commute.T6,
+   Hours.Charity.T6,
+   Hours.Internet.T6,
+   Hours.News.T6,
+   Hours.NZEuroFRD.T6,
+   Hours.MaoriFRD.T6,
+   Hours.PacificFRD.T6,
+   Hours.AsiansFRD.T6,
+   Hours.NZEuroOTH.T6,
+   Hours.MaoriOTH.T6,
+   Hours.PacificOTH.T6,
+   Hours.AsiansOTH.T6,
+   Pol.Orient.T6,
+   Employed.T6)%>%
+  mutate(
+    Id = factor(Id),
+    Age.T6 = as.numeric(Age.T6),
+    ChildrenHome.T6 = as.integer(ChildrenHome.T6),
+    ChildrenNum.T6 = as.integer(ChildrenNum.T6),
+    Gender.T6 = as.integer(Gender.T6), #for better estimates
+    NZDep.2013.T6 = as.numeric(NZDep.2013.T6),
+    EthnicCats.T6 = as.factor(EthnicCats.T6),
+    Age.YoungestBorn.T6 =as.numeric(Age.YoungestBorn.T6),
+    Occupation.L3.T6 = as.factor(Occupation.L3.T6),
+    NZREG.T6 =as.numeric(NZREG.T6),
+    Partner.T6 =as.integer(Partner.T6), # for better estimates
+    Religious.T6 =as.numeric(Religious.T6), 
+    Religion.Church.T6 = as.integer(Religion.Church.T6),
+    Census.Religion.L3.T6 = as.factor(Census.Religion.L3.T6),
+    Religion.Identification.T6 =as.numeric(Religion.Identification.T6),
+    Urban.T6 =as.integer(Urban.T6),
+    Employed.T6 =as.integer(Employed.T6),
+    Pol.Orient.T6 =as.numeric(Pol.Orient.T6),
+    Hours.Work.T6 = as.integer(Hours.Work.T6),
+    Hours.Children.T6 = as.integer(Hours.Children.T6),
+    Hours.Work.T6 = as.integer(Hours.Work.T6),
+    Hours.Housework.T6 = as.integer(Hours.Housework.T6),
+    Hours.Children.T6 = as.integer(Hours.Children.T6),
+    Hours.CompGames.T6 = as.integer(Hours.CompGames.T6),
+    Hours.Exercise.T6 = as.integer(Hours.Exercise.T6),
+    Hours.TV.T6 = as.integer(Hours.TV.T6),
+    Hours.Commute.T6 = as.integer(Hours.Commute.T6),
+    Hours.Charity.T6 = as.integer(Hours.Charity.T6),
+    Hours.Internet.T6  = as.integer(Hours.Internet.T6),
+    Hours.News.T6 = as.integer(Hours.News.T6),
+    Hours.NZEuroFRD.T6  = as.integer(Hours.NZEuroFRD.T6),
+    Hours.MaoriFRD.T6 = as.integer(Hours.MaoriFRD.T6),
+    Hours.PacificFRD.T6 = as.integer(Hours.PacificFRD.T6),
+    Hours.AsiansFRD.T6 = as.integer(Hours.AsiansFRD.T6),
+    Hours.NZEuroOTH.T6 = as.integer(Hours.NZEuroOTH.T6),
+    Hours.MaoriOTH.T6 = as.integer(Hours.MaoriOTH.T6),
+    Hours.PacificOTH.T6 = as.integer(Hours.PacificOTH.T6),
+    Hours.AsiansOTH.T6 = as.integer(Hours.AsiansOTH.T6))#mixing and imputation improved
+    
+  
+# Check dataset
+str(dat6.1)
+
+# Obtain summaries
+summary(dat6.1)
+
+
+## To get no religious affiliation reports into a religious denominations category (of no report), which is consistent with the stats NZ Government method.
+dat6.11<-dat6.1%>%
+  mutate(Census.Religion.L3.T6 = ifelse(is.na(Census.Religion.L3.T6), 99999, Census.Religion.L3.T6))%>%
+  mutate(Census.Religion.L3.T6 = factor(Census.Religion.L3.T6))
+
+dat6.2<-dat6.11%>%
+  mutate(Occupation.L3.T6 = ifelse(is.na(Occupation.L3.T6), 99999, Occupation.L3.T6))%>%
+  mutate(Occupation.L3.T6 = factor(Occupation.L3.T6))
+
+dat6.3 <- dat6.2%>%
+    mutate(RELID = as.numeric(ifelse(Religious.T6==0,0, Religion.Identification.T6)))
+
+
+summary(dat6.3)
+
+############################################################################################
+#######################model predicting offspring count ####################################
+############################################################################################
+
+# Remove perfectly colinear terms
+library(dplyr)
+dat6.4 <- dat6.3%>%
+  select(-c(Religion.Identification.T6, Religious.T6))# 
+
+head(dat6.4)
+
+# Call Amelia for missing data imputation
+
+library(Amelia)
+set.seed(2345)
+offspringCountSets.0 <-amelia(dat6.4,
+    m = 20,
+    noms = c("EthnicCats.T6"),
+    idvars=c("Id", "Census.Religion.L3.T6", "Occupation.L3.T6","ChildrenNum.T6"), 
+    logs =c("Religion.Church.T6",   # for zeros and positive integers
+"ChildrenHome.T6",
+"Hours.Work.T6",
+"Hours.Children.T6",
+"Hours.Housework.T6",
+"Hours.CompGames.T6",
+"Hours.Exercise.T6",
+"Hours.TV.T6",
+"Hours.Commute.T6",
+"Hours.Charity.T6",
+"Hours.Internet.T6",
+"Hours.News.T6"))
+"Hours.NZEuroFRD.T6",
+"Hours.MaoriFRD.T6",
+"Hours.PacificFRD.T6",
+"Hours.AsiansFRD.T6",
+"Hours.NZEuroOTH.T6",
+"Hours.MaoriOTH.T6",
+"Hours.PacificOTH.T6",
+"Hours.AsiansOTH.T6"))
+
+
+# Quick datat check
+summary(offspringCountSets.0$imputations$imp10)
+
+# Save datasets
+#saveRDS(offspringCountSets.0 , "offspringCountSets.0 ")
+#offspringCountSets.0 <-readRDS("offspringCountSets.0 ")
+
+plot(offspringCountSets.0)
+%
+
+# Center and scale indicators across all data sets, creat log for CHURCH
+offCount0 <- transform.amelia(offspringCountSets.0,
+Age.T6.10yrs= (Age.T6/10),
+MALE.T6 = as.numeric(Gender.T6),
+NZDep.2013.T6.S = scale(NZDep.2013.T6, center=TRUE, scale=TRUE),
+RELID.S = scale(RELID,center=TRUE, scale =TRUE),
+EthnicCats.T6 = factor(EthnicCats.T6),
+Partner.T6 = factor(Partner.T6),
+Census.Religion.L3.T6 = factor(Census.Religion.L3.T6),
+NZREG.T6.S = scale(NZREG.T6,center=TRUE,scale=TRUE),
+CHURCHlog = log(Religion.Church.T6 + 1),
+Pol.Orient.T6.S = scale(Pol.Orient.T6,center=TRUE,scale=TRUE),
+ChildrenNum.T6 = as.integer(ChildrenNum.T6))
+
+
+# Now save this transformed dataset
+saveRDS(offCount, "offCount")
+#if need to reload later
+offCount<-readRDS("offCount")
+
+head(offCount$imputations$imp1$Age.YoungestBorn.T6)
+
+# Brief summary of the zeros in the data
+plot(factor(ChildrenNum.T6 == 0) ~ Age.T6.10yrs, data = offCount$imputations$imp2, main = "Zero")
+plot(factor(ChildrenNum.T6 == 0) ~ RELID, data = offCount$imputations$imp2, main = "Zero")
+plot(factor(ChildrenNum.T6 == 0) ~ CHURCHlog, data = offCount$imputations$imp2, main = "Zero")
+plot(log(ChildrenNum.T6) ~ RELID, data = offCount$imputations$imp2, subset = Hours.Children.T6 > 0,
+     main = "Count")
+plot(log(ChildrenNum.T6) ~ CHURCHlog, data = offCount$imputations$imp2, subset = Hours.Children.T6 > 0, main = "Count")
+
+# Histogram
+library(ggplot2)
+pr <- ggplot( offCount$imputations$imp2es(x=ChildrenNum.T6, fill = RELID)) + geom_histogram(binwidth=1, position = "dodge", alpha=.5)  + facet_grid(~RELID)
+
+#transform imputations into a form that brms can handle
+offCountList<- list(offCount$imputations$imp1,
+                    offCount$imputations$imp2,
+                    offCount$imputations$imp3,
+                    offCount$imputations$imp4,
+                    offCount$imputations$imp5) 
+                    offCount$imputations$imp6,
+                    offCount$imputations$imp7,
+                    offCount$imputations$imp8,
+                    offCount$imputations$imp9,
+                    offCount$imputations$imp10,
+                    offCount$imputations$imp11,
+                    offCount$imputations$imp12,
+                    offCount$imputations$imp13,
+                    offCount$imputations$imp14,
+                    offCount$imputations$imp15,
+                    offCount$imputations$imp16,
+                    offCount$imputations$imp17,
+                    offCount$imputations$imp18,
+                    offCount$imputations$imp19,
+                    offCount$imputations$imp20))
+
+
+# call packages to run the model
+library(brms)
+library(brmstools)
+library(rstan)
+library(bayesplot)
+theme_set(theme_default())
+library(dplyr)
+
+##ask to run models on multiple cores
+rstan_options(auto_write=TRUE)
+options(mc.cores=parallel::detectCores ())
+
+##full model
+
+system.time(
+  mod.off.count <- brm_multiple(bf(Hours.Children.T6 ~ RELID +
+                                          CHURCHlog +
+                                          ChildrenNum.T6 +
+                                          Age.T6.10yrs.C +
+                                          Employed.T6 +
+                                          EthnicCats.T6 +
+                                          MALE.T6 +
+                                          NZDep.2013.T6.S +
+                                          NZREG.T6.S +
+                                          Partner.T6 +
+                                          Pol.Orient.T6.S +
+                                          Urban.T6,
+                                        hu ~ RELID +
+                                          CHURCHlog +
+                                          ChildrenNum.T6 +
+                                          Age.T6.10yrs.C +
+                                          Employed.T6 +
+                                          EthnicCats.T6 +
+                                          MALE.T6 +
+                                          NZDep.2013.T6.S +
+                                          NZREG.T6.S +
+                                          Partner.T6 +
+                                          Pol.Orient.T6.S +
+                                          Urban.T6),
+                                     chains=2,  # good
+                                     iter = 5000, # default is 2000
+                                     prior = prior(normal(0, 10), dpar = hu) +
+                                       prior(normal(0, 10), class = Intercept, dpar = hu),  #
+                                     data = lhoursCount0,  # check that this name is correct
+                                     family =  hurdle_poisson(),
+                                     inits = "0") )
+
+
+
+
+##save model results
+saveRDS(mod.off.count,"mod.off.count")
+##load model results
+mod.off.count <- readRDS("mod.off.count")
+
+
+#Summary
+summary(mod.off.count)
+stanplot(mod.off.count)
+
+
+
+
+############################################################################################
+#######################model predicting alloparenting ####################################
+############################################################################################
+
+## He we create a value for the age of the youngest child, as part of figuring out who in the population does not have children of their own. 
+# To adopt a conservative model, we remove those people who might have children living at home.
+library(dplyr)
+dat6.5<- dat6.4%>%
+  mutate(Age.Youngest.T6 = Age.T6 - Age.YoungestBorn.T6)
+
+dat6.6<-dat6.5%>%
+  filter(Age.Youngest.T6 >=18 |is.na(Age.Youngest.T6))%>%
+  filter(ChildrenHome.T6 ==0|is.na(ChildrenHome.T6))
+  
+nrow(dat6.6) ##  9320 
+head(dat6.6)
+
+##remove colinear terms
+dat6.7<- dat6.6%>%
+  select(-c(ChildrenHome.T6, Age.Youngest.T6, Age.YoungestBorn.T6))
+
+nrow(dat6.7)
+head(dat6.7)
+missmap(dat6.7)
+
+library(Amelia)
+set.seed(2345)
+
+
+## Impute data
+hoursChildSets<-amelia(dat6.7,
+                       m = 20,
+                       noms = c("EthnicCats.T6"),
+                       idvars=c("Id", "Census.Religion.L3.T6", "Occupation.L3.T6","Hours.Children.T6"),
+                       logs =c("Religion.Church.T6",   # for skewed data
+                               "ChildrenNum.T6",
+                             # "ChildrenHome.T6",
+                             # "Hours.Children.T6",
+                               "Hours.Work.T6",
+                               "Hours.Housework.T6",
+                               "Hours.CompGames.T6",
+                               "Hours.Exercise.T6",
+                               "Hours.TV.T6",
+                               "Hours.Commute.T6",
+                               "Hours.Charity.T6",
+                               "Hours.Internet.T6",
+                               "Hours.News.T6",
+                               "Hours.NZEuroFRD.T6", "Hours.MaoriFRD.T6", 
+                               "Hours.PacificFRD.T6",
+                               "Hours.AsiansFRD.T6",
+                               "Hours.NZEuroOTH.T6",
+                               "Hours.MaoriOTH.T6",
+                               "Hours.PacificOTH.T6",
+                               "Hours.AsiansOTH.T6"))
+
+
+# Save the imputed dataset
+saveRDS(hoursChildSets,"hoursChildSets")
+
+# Load the imputed dataset
+hoursChildSets<-readRDS("hoursChildSets")
+
+# look over the data
+plot(hoursChildSets)
+  str(hoursChildSets)
+
+
+# Transform the data for analysis 
+hoursCount <- transform.amelia(hoursChildSets,Age.T6.10yrs= (Age.T6/10),
+MALE.T6 = as.numeric(Gender.T6),
+Partner.T6 = factor(Partner.T6),
+Employed.T6 = factor(Employed.T6),
+NZDep.2013.T6.S = scale(NZDep.2013.T6, center=TRUE, scale=TRUE),
+RELID.S = scale(RELID,center=TRUE, scale =TRUE),
+EthnicCats.T6 = factor(EthnicCats.T6),
+Census.Religion.L3.T6 = factor(Census.Religion.L3.T6),
+NZREG.T6.S = scale(NZREG.T6,center=TRUE,scale=TRUE),
+CHURCHlog = log(Religion.Church.T6 + 1),
+Pol.Orient.T6.S = scale(Pol.Orient.T6,center=TRUE,scale=TRUE),
+Hours.Children.T6 = as.integer(Hours.Children.T6))
+
+
+hoursCount0<-transform.amelia(hoursCount, 
+                           Age.T6.10yrs.C = scale(Age.T6.10yrs, center=TRUE, scale =FALSE),
+                           CHURCHlog.C = scale(CHURCHlog, center = TRUE, scale = FALSE)) 
+
+
+#save imputed data sets
+saveRDS(hoursCount0,"hoursCount0")
+#load imputed datasets
+hoursCount0<-readRDS("hoursCount0")
+
+# descriptive analysis of the data
+plot(factor(Hours.Children.T6 == 0) ~ RELID, data = hoursCount0$imputations$imp2, main = "Zero")
+plot(factor(Hours.Children.T6 == 0) ~ CHURCHlog, data = hoursCount0$imputations$imp2, main = "Zero")
+plot(log(Hours.Children.T6) ~ RELID, data = hoursCount$imputations$imp2, subset = Hours.Children.T6 > 0,
+     main = "Count")
+plot(log(Hours.Children.T6) ~ CHURCHlog, data = hoursCount$imputations$imp2, subset = Hours.Children.T6 > 0, main = "Count")
+
+
+library(MCMCglmm)
+library(mcmcplots)
+
+
+## Set priors for MCMCglmm
+prior.za.4 = list( 
+  R = list(V = diag(1)*.02, nu = 2),  # non-informative 
+  G = list( G1 = list(V = diag(1) *.02, nu = 2)))
+
+
+# run model
+m <- 20  
+mcfit.hours <- NULL
+for(i in 1:m) {
+  mcfit.hours[[i]] <-MCMCglmm(Hours.Children.T6  ~  trait * (RELID +
+   CHURCHlog +
+   ChildrenNum.T6 +
+   Age.T6.10yrs.C +
+   Employed.T6 +
+   EthnicCats.T6 +
+   MALE.T6 +
+   NZDep.2013.T6.S +
+   NZREG.T6.S +
+   Partner.T6 +
+   Pol.Orient.T6.S +
+   Urban.T6), 
+random =  ~trait:Census.Religion.L3.T6, rcov = ~trait:units,
+family = "zapoisson", 
+verbose=TRUE, 
+nitt=203000,
+thin=10,
+prior=prior.za.4,
+data=hoursCount0$imputations[[i]])
+}
+
+summary(mcfit.hours[[2]])
+
+
+# Save outcomes
+saveRDS(mcfit.hours,"mcfit.hours")
+#load outcomes
+mcfit.hours<-readRDS("mcfit.hours")
+
+
+### Intercept only model
+m <- 20  
+mcfit.hours.int <- NULL
+for(i in 1:m) {
+  mcfit.hours.int[[i]] <-MCMCglmm(Hours.Children.T6  ~  trait, 
+                              random =  ~trait:Census.Religion.L3.T6, rcov = ~trait:units,
+                              family = "zapoisson", 
+                              verbose=TRUE, 
+                              nitt=203000,
+                              thin=10,
+                              prior=prior.za.4,
+                              # pr=TRUE,
+                              # pl=TRUE,
+                              data=hoursCount0$imputations[[i]])
+}
+
+     summary(mcfit.hours.int[[2]])
+
+
+# Save outcomes
+saveRDS(mcfit.hours.int,"mcfit.hours.int")
+#load outcomes
+mcfit.hours.int<-readRDS("mcfit.hours.int")
+
+library(MuMIn)
+
+coefTable(mcfit.hours.int[[1]])
+summary(mcfit.hours.int[[1]])
+
+
+DICinterceptonly <-sum(DIC(mcfit.hours.int[[1]]),
+     DIC(mcfit.hours.int[[2]]),
+     DIC(mcfit.hours.int[[3]]),
+     DIC(mcfit.hours.int[[4]]),
+     DIC(mcfit.hours.int[[5]]),
+     DIC(mcfit.hours.int[[6]]),
+     DIC(mcfit.hours.int[[7]]),
+     DIC(mcfit.hours.int[[8]]),
+     DIC(mcfit.hours.int[[9]]),
+     DIC(mcfit.hours.int[[10]]),
+     DIC(mcfit.hours.int[[11]]),
+     DIC(mcfit.hours.int[[12]]),
+     DIC(mcfit.hours.int[[13]]),
+     DIC(mcfit.hours.int[[14]]),
+     DIC(mcfit.hours.int[[15]]),
+     DIC(mcfit.hours.int[[16]]),
+     DIC(mcfit.hours.int[[17]]),
+     DIC(mcfit.hours.int[[18]]),
+     DIC(mcfit.hours.int[[19]]),
+     DIC(mcfit.hours.int[[20]]))/20
+
+DICinterceptonly
+
+
+#average DIC of intercept only 19157.15
+
+
+DICtheory <-sum(DIC(mcfit.hours[[1]]),
+    DIC(mcfit.hours[[2]]),
+    DIC(mcfit.hours[[3]]),
+    DIC(mcfit.hours[[4]]),
+    DIC(mcfit.hours[[5]]),
+    DIC(mcfit.hours[[6]]),
+    DIC(mcfit.hours[[7]]),
+    DIC(mcfit.hours[[8]]),
+    DIC(mcfit.hours[[9]]),
+    DIC(mcfit.hours[[10]]),
+    DIC(mcfit.hours[[11]]),
+    DIC(mcfit.hours[[12]]),
+    DIC(mcfit.hours[[13]]),
+    DIC(mcfit.hours[[14]]),
+    DIC(mcfit.hours[[15]]),
+    DIC(mcfit.hours[[16]]),
+    DIC(mcfit.hours[[17]]),
+    DIC(mcfit.hours[[18]]),
+    DIC(mcfit.hours[[19]]),
+    DIC(mcfit.hours[[20]]))/20
+
+
+# average DIC of theoretical mdoel 18740.79
+DICtheory
+
+DICtheory - DICinterceptonly 
+
+-416.352
+
+
+##load in results of MCMCglmm for reporting/plotting
+
+mcfit.hours<-readRDS("mcfit.hours")
+
+     
+# Get all tables into shape
+mcfit.hours.SOL<-mcmc.list(
+  mcfit.hours[[1]]$Sol, 
+  mcfit.hours[[2]]$Sol,
+  mcfit.hours[[3]]$Sol,
+  mcfit.hours[[4]]$Sol,
+  mcfit.hours[[5]]$Sol,
+  mcfit.hours[[6]]$Sol, 
+  mcfit.hours[[7]]$Sol,
+  mcfit.hours[[8]]$Sol,
+  mcfit.hours[[9]]$Sol,
+  mcfit.hours[[10]]$Sol,
+  mcfit.hours[[11]]$Sol,
+  mcfit.hours[[12]]$Sol,
+  mcfit.hours[[13]]$Sol,
+  mcfit.hours[[14]]$Sol,
+  mcfit.hours[[15]]$Sol,
+  mcfit.hours[[16]]$Sol,
+  mcfit.hours[[17]]$Sol,
+  mcfit.hours[[18]]$Sol,
+  mcfit.hours[[19]]$Sol,
+  mcfit.hours[[20]]$Sol
+ )
+
+# check
+str(mcfit.hours.SOL)
+
+
+# Variance componenents
+mcfit.hours.VCV<-mcmc.list(
+  mcfit.hours[[1]]$VCV, 
+  mcfit.hours[[2]]$VCV,
+  mcfit.hours[[3]]$VCV,
+  mcfit.hours[[4]]$VCV,
+  mcfit.hours[[5]]$VCV,
+  mcfit.hours[[6]]$VCV, 
+  mcfit.hours[[7]]$VCV,
+  mcfit.hours[[8]]$VCV,
+  mcfit.hours[[9]]$VCV,
+  mcfit.hours[[10]]$VCV,
+  mcfit.hours[[11]]$VCV,
+  mcfit.hours[[12]]$VCV,
+  mcfit.hours[[13]]$VCV,
+  mcfit.hours[[14]]$VCV,
+  mcfit.hours[[15]]$VCV,
+  mcfit.hours[[16]]$VCV,
+  mcfit.hours[[17]]$VCV,
+  mcfit.hours[[18]]$VCV,
+  mcfit.hours[[19]]$VCV,
+  mcfit.hours[[20]]$VCV)
+
+
+
+library(pander)
+
+# Create tables
+table.w<-summary(mcfit.hours.SOL)
+
+table.w
+table.w.1<-as.data.frame(table.w$quantiles)
+dim(table.w.1)
+table.w.1
+table.w.r<-round(table.w.1,3)
+table.w.r
+
+str(table.w.r)
+
+## NON ZERO TABLE
+table.w.r.poss<-table.w.r[c(1,3:16),]
+
+pander(table.w.r.poss[  ,c(3,1,5)],style = "grid",split.table=140,justify = c('left', 'center', 'center','center'))
+
+# diff format
+pander(table.w.r.poss[  ,c(3,1,5)],style = "rmarkdown",split.table=140,justify = c('left', 'center', 'center','center'))
+
+
+## ZERO TABLE
+table.w.r.zero<-table.w.r[c(2,17:30),]
+table.w.r.zero
+
+pander(table.w.r.zero[,c(3,1,5)],style = "grid",split.table=140,justify = c('left', 'center', 'center','center'))
+
+#diff format
+pander(table.w.r.zero[,c(3,1,5)],style = "rmarkdown",split.table=140,justify = c('left', 'center', 'center','center'))
+  
+
+exp(-exp())
+
+log(4-1)
+
+
+#predictions
+mcfit.hours.SOL.s<-rbind(mcfit.hours[[1]]$Sol,
+                         mcfit.hours[[2]]$Sol,
+                         mcfit.hours[[3]]$Sol,
+                         mcfit.hours[[4]]$Sol,
+                         mcfit.hours[[5]]$Sol,
+                         mcfit.hours[[6]]$Sol, 
+                         mcfit.hours[[7]]$Sol,
+                         mcfit.hours[[8]]$Sol,
+                         mcfit.hours[[9]]$Sol,
+                         mcfit.hours[[10]]$Sol,#,
+                         mcfit.hours[[11]]$Sol,
+                         mcfit.hours[[12]]$Sol,
+                         mcfit.hours[[13]]$Sol,
+                         mcfit.hours[[14]]$Sol,
+                         mcfit.hours[[15]]$Sol,
+                         mcfit.hours[[16]]$Sol,
+                         mcfit.hours[[17]]$Sol,
+                         mcfit.hours[[18]]$Sol,
+                         mcfit.hours[[19]]$Sol,
+                         mcfit.hours[[20]]$Sol)
+head(mcfit.hours.SOL.s)
+dim(mcfit.hours.SOL.s)
+
+
+
+
+# HIGHLY IDENTIFIED RELIGIOUS FEMALE WHO GOES TO CHURCH EVERY WEEK (partner + 0 kids)
+
+
+round(mean(exp(-exp(( mcfit.hours.SOL.s[,2] * 1 +
+                        mcfit.hours.SOL.s[,17]* 7 + # relid
+                        mcfit.hours.SOL.s[,18] * 1.609438  + #ritual * log(4+1)
+                        mcfit.hours.SOL.s[,19] * 0 + # kids
+                        mcfit.hours.SOL.s[,20] * 0 + # age in 10 year units
+                        mcfit.hours.SOL.s[,21] * 1 + # employed
+                        mcfit.hours.SOL.s[,22] * 0 + # Maori
+                        mcfit.hours.SOL.s[,23] * 0 + # Pacific Islander
+                        mcfit.hours.SOL.s[,24] * 0 + # Other
+                        mcfit.hours.SOL.s[,25] * 0 + # male
+                        mcfit.hours.SOL.s[,26] * 0 + # Deprivation
+                        mcfit.hours.SOL.s[,27] * 0 + # Education
+                        mcfit.hours.SOL.s[,28] * 1 + # partner
+                        mcfit.hours.SOL.s[,29] * 0 + # pol orientation
+                        mcfit.hours.SOL.s[,30])))),4) #Urban
+
+
+PR = [1] 0.9665
+
+
+# No ritual or RELID (partner + 0 kids)
+
+round(mean(exp(-exp(( mcfit.hours.SOL.s[,2] * 1 +
+                        mcfit.hours.SOL.s[,17]* 0 + # relid
+                        mcfit.hours.SOL.s[,18]*  0  + #ritual * log(4+1)
+                        mcfit.hours.SOL.s[,19] * 0 + # kids
+                        mcfit.hours.SOL.s[,20] * 0 + # age in 10 year units
+                        mcfit.hours.SOL.s[,21] * 1 + # employed
+                        mcfit.hours.SOL.s[,22] * 0 + # Maori
+                        mcfit.hours.SOL.s[,23] * 0 + # Pacific Islander
+                        mcfit.hours.SOL.s[,24] * 0 + # Other
+                        mcfit.hours.SOL.s[,25] * 0 + # male
+                        mcfit.hours.SOL.s[,26] * 0 + # Deprivation
+                        mcfit.hours.SOL.s[,27] * 0 + # Education
+                        mcfit.hours.SOL.s[,28] * 1 + # partner
+                        mcfit.hours.SOL.s[,29] * 0 + # pol orientation
+                        mcfit.hours.SOL.s[,30])))),4) #Urban
+
+
+####  Pacific Islander highly reilgious,  partner, no kids
+
+round(mean(exp(-exp(( mcfit.hours.SOL.s[,2] * 1 +
+                        mcfit.hours.SOL.s[,17]* 7 + # relid
+                        mcfit.hours.SOL.s[,18]* 1.609438  + #ritual * log(4+1)
+                        mcfit.hours.SOL.s[,19] * 0 + # kids
+                        mcfit.hours.SOL.s[,20] * 0 + # age in 10 year units
+                        mcfit.hours.SOL.s[,21] * 1 + # employed
+                        mcfit.hours.SOL.s[,22] * 0 + # Maori
+                        mcfit.hours.SOL.s[,23] * 1 + # Pacific Islander
+                        mcfit.hours.SOL.s[,24] * 0 + # Other
+                        mcfit.hours.SOL.s[,25] * 0 + # male
+                        mcfit.hours.SOL.s[,26] * 0 + # Deprivation
+                        mcfit.hours.SOL.s[,27] * 0 + # Education
+                        mcfit.hours.SOL.s[,28] * 1 + # parnter
+                        mcfit.hours.SOL.s[,29] * 0 + # pol orientation
+                        mcfit.hours.SOL.s[,30])))),4) #Urban
+
+
+
+pr = 0.9468
+
+####  Maori highly religious,  partner, no kids
+
+
+round(mean(exp(-exp(( mcfit.hours.SOL.s[,2] * 1 +
+                        mcfit.hours.SOL.s[,17]* 7 + # relid
+                        mcfit.hours.SOL.s[,18]* 1.609438  + #ritual * log(4+1)
+                        mcfit.hours.SOL.s[,19] * 0 + # kids
+                        mcfit.hours.SOL.s[,20] * 0 + # age in 10 year units
+                        mcfit.hours.SOL.s[,21] * 1 + # employed
+                        mcfit.hours.SOL.s[,22] * 1 + # Maori
+                        mcfit.hours.SOL.s[,23] * 0 + # Pacific Islander
+                        mcfit.hours.SOL.s[,24] * 0 + # Other
+                        mcfit.hours.SOL.s[,25] * 0 + # male
+                        mcfit.hours.SOL.s[,26] * 0 + # Deprivation
+                        mcfit.hours.SOL.s[,27] * 0 + # Education
+                        mcfit.hours.SOL.s[,28] * 1 + # parnter
+                        mcfit.hours.SOL.s[,29] * 0 + # pol orientation
+                        mcfit.hours.SOL.s[,30])))),4) #Urban
+
+
+
+pr = 0.9572
+
+
+
+
+
+
+####  Pacific Islander,  partner, no kids
+
+round(mean(exp(-exp(( mcfit.hours.SOL.s[,2] * 1 +
+                        mcfit.hours.SOL.s[,17]* 0 + # relid
+                        mcfit.hours.SOL.s[,18]* 0  + #ritual * log(4+1)
+                        mcfit.hours.SOL.s[,19] * 0 + # kids
+                        mcfit.hours.SOL.s[,20] * 0 + # age in 10 year units
+                        mcfit.hours.SOL.s[,21] * 1 + # employed
+                        mcfit.hours.SOL.s[,22] * 0 + # Maori
+                        mcfit.hours.SOL.s[,23] * 1 + # Pacific Islander
+                        mcfit.hours.SOL.s[,24] * 0 + # Other
+                        mcfit.hours.SOL.s[,25] * 0 + # male
+                        mcfit.hours.SOL.s[,26] * 0 + # Deprivation
+                        mcfit.hours.SOL.s[,27] * 0 + # Education
+                        mcfit.hours.SOL.s[,28] * 1 + # parnter
+                        mcfit.hours.SOL.s[,29] * 0 + # pol orientation
+                        mcfit.hours.SOL.s[,30])))),4) #Urban
+
+
+
+pr = *.9709
+
+####  Maori, not religious / partner, no kids
+
+
+round(mean(exp(-exp(( mcfit.hours.SOL.s[,2] * 1 +
+                        mcfit.hours.SOL.s[,17]* 0 + # relid
+                        mcfit.hours.SOL.s[,18]* 0  + #ritual * log(4+1)
+                        mcfit.hours.SOL.s[,19] * 0 + # kids
+                        mcfit.hours.SOL.s[,20] * 0 + # age in 10 year units
+                        mcfit.hours.SOL.s[,21] * 1 + # employed
+                        mcfit.hours.SOL.s[,22] * 1 + # Maori
+                        mcfit.hours.SOL.s[,23] * 0 + # Pacific Islander
+                        mcfit.hours.SOL.s[,24] * 0 + # Other
+                        mcfit.hours.SOL.s[,25] * 0 + # male
+                        mcfit.hours.SOL.s[,26] * 0 + # Deprivation
+                        mcfit.hours.SOL.s[,27] * 0 + # Education
+                        mcfit.hours.SOL.s[,28] * 1 + # parnter
+                        mcfit.hours.SOL.s[,29] * 0 + # pol orientation
+                        mcfit.hours.SOL.s[,30])))),4) #Urban
+
+
+pr =0.9767
+exp(-exp(-4.531 + .154*1.6))
+
+
+
+
+# PLOTS
+
+
+
+library(mcmcvis)
+
+#rename variables for publication
+coeflabs<-c("Intercept",
+            "Religious Identification",
+            "Ritual (log)",
+            "Child Number",
+            "Age (10yr., centered)",
+            "Employed",
+            "Maori",
+            "Pacific Islander",
+            "Asian",
+            "Male",
+            "Deprivation (scaled)",
+            "Education",
+            "Partner",
+            "Political Orientation (scaled)",
+            "Urban")
+
+
+## plot the hurdle portion of the data
+MCMCplot(mcfit.hours.SOL[,c(2,17:30)], ylab = TRUE, labels=coeflabs,main="Fig 1: Estimates of zero deflation
+in alloparenting", ,rank=TRUE, thin_sz=TRUE,  med_sz=.01,  horiz = TRUE, xlim=c(-5,1), thick_sz = 4)
+
+
+##positive portion
+MCMCplot(mcfit.hours.SOL[,c(1,3:16)], ylab = TRUE, labels=coeflabs,main="Fig 2: Estimates of hours of care 
+         among alloparents 
+         ", rank=TRUE, thin_sz=TRUE,  med_sz=.01,  xlim=c(-1,3), horiz = TRUE,  thick_sz = 4)
+
+
+
+
+
+

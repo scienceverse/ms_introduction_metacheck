@@ -1,0 +1,236 @@
+---
+title: "Vardy_Atkinson_2019"
+author: "Sandra Geiger"
+date: "1 Juli 2020"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(psych)
+library(dplyr)
+library(cooccur)
+library(AER)
+```
+
+## Data
+```{r data}
+Data <- read.csv("cyclone_and_prosociality_data.csv", header = TRUE)
+Data_original <- read.csv("cyclone_and_prosociality_data_original.csv", header = TRUE)
+
+```
+
+
+## Power Analysis
+To reproduce the power analysis, I used GPower Version 3.1.9.4 with a Wilcoxon signed-rank test (matched pairs) and *d* = 0.2, $\alpha$ = .05, and 1-$\beta$ = .80. This yielded *N* = 164, as reported in the paper.
+![Results of the Power Analysis](power.png)
+\newpage
+
+To make reproducing the power analysis easier, the authors could have mentioned they program they used and if they indeed used GPower, included the protocol of the power analysis, as displayed below.
+
+
+![](power_protocol.png)
+
+
+## Affectedness
+### Descriptive Statistics
+```{r desc}
+describe(Data)
+```
+* DAMAGE: 85%
+* RELOCATE: 80%
+* INJURE: 17%
+* DIFMONEY: 75% 
+* FOODAID: 85% 
+
+**Conclusion**: Corresponds to values reported in the paper -> reproducible! 
+
+### Principal Component Analysis
+```{r pca}
+pca_data <- Data %>%
+  select(STAY, FOODAID, SHELTER, DIFMONEY, MONEYASS, DAMAGE, RELOCATE, LOSSTUFF, INJURE, 
+         DEPINJ, FAMINJ, FAMDEP, FAMDEAD, FAMFEAR, RESCUE, HEARCRY)
+
+pca <- principal(pca_data, nfactors = 4, rotate="oblimin")
+pca$values
+```
+* Component 1: STAY (0.72), SHELTER (0.51), DAMAGE (0.87), RELOCATE (0.87), LOSSTUFF (0.39)
+* Component 2: FOODAID (0.69), DIFMONEY (0.83), MONEYASS (0.84), DEPINJ (0.46)
+* Component 3: FAMINJ (0.78), FAMDEAD (0.76), INJURE (0.67), FAMDEP (0.41)
+* Component 4: RESCUE (0.73), FAMFEAR (0.68), HEARCRY (0.67), LOSSTUFF (0.41), FAMDEP (0.43)
+
+* Eigenvalues: C1 4.57, C2 2.22, C3 1.40, C4 1.13
+* Variance explained: C1 17%, C2 16%, C3 13%, C4 13%
+
+**Conclusion**: Corresponds to values reported in supplement -> reproducible! 
+
+### Reliability
+```{r reliability}
+Data %>%
+  select(DAMAGE, RELOCATE, SHELTER, STAY) %>%
+  psych::alpha()
+
+Data %>%
+  select(FOODAID, DIFMONEY, MONEYASS, DEPINJ) %>%
+  psych::alpha()
+
+Data %>%
+  select(FAMINJ, FAMDEAD, INJURE) %>%
+  psych::alpha()
+
+Data %>%
+  select(RESCUE, FAMFEAR, HEARCRY) %>%
+  psych::alpha()
+```
+* Damage to property: $\alpha$ = 0.81
+* Need for resources: $\alpha$ = 0.74
+* Injury to self and loved ones: $\alpha$ = 0.64 
+* Exposure to other people in distress: $\alpha$ = 0.61
+
+**Conclusion**: Reliability estimates are reproducible!
+
+## Did prosocial behavior change after the cyclone? 
+```{r change after cyclone}
+# Coreligionists vs. self
+wilcox.test(Data$preCorelvSelf, Data$postCorelvSelf, paired = TRUE)
+
+# Outgroup vs. self
+wilcox.test(Data$preOutgroupvSelf, Data$postOutgroupvSelf, paired = TRUE)
+
+# Outgroup vs. coreligionists
+wilcox.test(Data$preOutgroupvCorel, Data$postOutgroupvCorel, paired = TRUE)
+
+# Outgroup vs. coreligionists
+wilcox.test(Data$preOutgroupvCorel, Data$postOutgroupvCorel, paired = TRUE)
+
+# Coreligionists vs. own village
+wilcox.test(Data$preCorelvOwnVillage, Data$postCorelvOwnVillage, paired = TRUE)
+
+
+# Outgroup vs. self (binary)
+mcnemar.test(Data$preOutgroupvSelfbinary, Data$postOutgroupvSelfbinary)
+
+# Coreligionists vs. self (binary)
+mcnemar.test(Data$preCorelvSelfbinary, Data$postCorelv.Selfbinary)
+
+# Outgroup vs. coreligionists (binary)
+mcnemar.test(Data$preOutgroupvCorelbinary, Data$postOutgroupvCorelbinary)
+
+# Coreligionists vs. own village (binary)
+mcnemar.test(Data$preCorelvOwnVillagebinary, Data$postCorelvOwnVillagebinary)
+```
+The Wilcoxon signed rank test for coreligionists vs. self yielded the same results as reported in the manuscript, *V* = 4251, *p* = .010.
+
+The Wilcoxon signed rank test for outgroup vs. self yielded the same results as reported in the manuscript, *V* = 5063, *p* < .001.
+
+The Wilcoxon signed rank test for outgroup vs. coreligionists yielded the same results as reported in the manuscript, *V* = 3543.5, *p* = .014.
+
+The Wilcoxon signed rank test for coreligionists vs. own village yielded the same p-value as reported in the manuscript, the *V*-value is different probably due to a reporting mistake, *V* = 2864.5 (2843.5 in the manuscript), *p* = .323.
+
+The within-subjects McNemar chi-squared test for self vs. outgroup yielded the same results as reported in the manuscript, $\chi^2$(1, *N* = 164) = 11.16, *p* < .001. 
+
+The within-subjects McNemar chi-squared test for self vs. coreligionists yielded the same results as reported in the manuscript, $\chi^2$(1, *N* = 164) = 3.02, *p* = .082. 
+
+The within-subjects McNemar chi-squared test for outgroup vs. coreligionists yielded the same results as reported in the manuscript, $\chi^2$(1, *N* = 164) = 5.82, *p* = .016. 
+
+The within-subjects McNemar chi-squared test for coreligionists vs. own village yielded the same results as reported in the manuscript, $\chi^2$(1, *N* = 164) = 0.94, *p* = .332. 
+
+**Conclusion**: All results were fully replicable. 
+
+## How conisstent was behavior change after the cyclone? 
+```{r consistency after cyclone}
+# Coreligionists vs. self
+table(Data$net_corel2_ord) / length(Data$net_corel2_ord)
+
+# Outgroup vs. self
+table(Data$net_outgroup4_ord) / length(Data$net_outgroup4_ord)
+
+# Coreligionists vs. own village 
+table(Data$net_corel1_ord) / length(Data$net_corel1_ord)
+
+# Outgroup vs. coreligionists
+table(Data$net_outgroup3_ord) / length(Data$net_outgroup3_ord)
+```
+Coreligionists vs. self:
+
+* Less: 42.1%
+* Same: 29.9%
+* More: 28.0%
+
+Outgroup vs. self:
+
+* Less: 47.6%
+* Same: 25.6%
+* More: 26.8%
+
+Coreligionists vs. own village:
+
+* Less: 33.5%
+* Same: 38.4%
+* More: 28.0%
+
+Outgroup vs. coreligionists:
+
+* Less: 37.8% (38.0% reported in manuscript)
+* Same: 35.4% (35.6% reported in manuscript)
+* More: 26.2% (26.4% reported in manuscript)
+
+**Conclusion**: All results were fully replicable, slight deviations in percentages for outgroup vs. corelitionists. 
+
+## Did people's experiences during and immediately after the cyclone predict prosocial giving? 
+```{r tobit}
+# Coreligionists vs. self
+CS <- AER::tobit(postCorelvSelf ~ PROPDAM + FEAR + INJURY + NEED + preCorelvSelf + Site, 
+            data = Data)
+summary(CS)
+
+# Self vs. outgroup
+SO <- AER::tobit(postOutgroupvSelf ~ PROPDAM + FEAR + INJURY + NEED + preOutgroupvSelf 
+            + Site, data = Data)
+summary(SO)
+
+# Own village vs. coreligionists
+VC <- AER::tobit(postCorelvOwnVillage ~ PROPDAM + FEAR + INJURY + NEED + preCorelvOwnVillage 
+            + Site, data = Data)
+summary(VC)
+
+# Coreligionists vs. outgroup
+CO <- AER::tobit(postOutgroupvCorel ~ PROPDAM + FEAR + INJURY + NEED + preOutgroupvCorel 
+            + Site, data = Data)
+summary(CO)
+```
+The tobit regression for coreligionist vs. self showed similar results as reported in the manuscript, intercept = 2.47, damage = -0.28, need = -0.20, injury = -0.08, fear = 0.48, precyclone allocation = 0.34, site = -0.39. 
+
+The tobit regression for self vs. outgroup showed similar results as reported in the manuscript, intercept = 2.52, damage = -0.50, need = -0.36, injury = 0.04, fear = 0.57, precyclone allocation = 0.44, site = 0.08. 
+
+The tobit regression for coreligionist vs. own village showed similar results as reported in the manuscript, intercept = 3.64, damage = -0.23, need = -0.11, injury = -0.20, fear = 0.28, precyclone allocation = 0.28, site = 0.21.
+
+The tobit regression for self vs. outgroup showed similar results as reported in the manuscript, intercept = 4.03, damage = -0.36, need = 0.13, injury = 0.05, fear = 0.05, precyclone allocation = 0.19, site = -0.62.
+
+**Conclusion**: The results were reproducible, sometimes with slightly different values. It was not always clear which variable (e.g., preSelfvCorel or preCorelvSelf was used). In general, a codebook explaining all variables would have been helpful. 
+
+```{r logistic}
+# Self vs. coreligionist
+CS <- glm(postCorelv.Selfbinary ~ PROPDAM + NEED + INJURY + FEAR + preCorelvSelfbinary 
+          + Site, data = Data, family = "binomial")
+summary(CS)
+
+# Self vs. outgroup
+SO <- glm(postOutgroupvSelfbinary ~ PROPDAM + NEED + INJURY + FEAR + preOutgroupvSelfbinary 
+          + Site, data = Data, family = "binomial")
+summary(SO)
+
+# Own village vs. coreligionist
+VC <- glm(postCorelvOwnVillagebinary ~ PROPDAM + NEED + INJURY + FEAR 
+          + preCorelvOwnVillagebinary + Site, data = Data, family = "binomial")
+summary(VC)
+
+# Coreligionist vs. outgroup
+CO <- glm(postOutgroupvCorelbinary ~ PROPDAM + FEAR + INJURY + NEED + 
+            preOutgroupvCorelbinary + Site, data = Data, family = "binomial")
+summary(CO)
+```
+**Conclusion**: Here, I could not reproduce any of the results. However, I may not have the required expertise for this. 
+
+
+**Overall conclusion**: The results reported in the manuscript were reproducible sometimes with slight deviations. I could, however, not reproduce the logistic regressions. In general, it would have been easier to reproduce the analysis if the authors made at least a codebook with the variable labels and the corresponding description available, especially since this is also encouraged when applying for an open data badge ("Confirm that there is sufficient information for an independent researcher to reproduce all of the reported results, including codebook if relevant."). 

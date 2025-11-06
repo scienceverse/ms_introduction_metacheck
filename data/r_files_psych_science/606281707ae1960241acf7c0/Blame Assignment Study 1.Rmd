@@ -1,0 +1,291 @@
+---
+title: "Blame Assignment - Study 1"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+#Set Working Directory & Load Packages
+```{r}
+#set working directory
+setwd("~/Desktop/blameassignment")
+
+#load packages
+library(psych)
+library(effects)
+library(corrplot)
+library(corrgram)
+library(stats)
+library(plotrix)
+library(plyr)
+library(dplyr)
+
+library(tidyverse)
+library(ggplot2)
+
+```
+
+#Load in Anonymized Data (this is the file available on OSF)
+```{r}
+#load in data frame
+qualtrics <- read.csv("Blame Assignment Study 1 Anon.csv", stringsAsFactors = FALSE)
+
+#turn all blanks to NA
+qualtrics <- qualtrics %>% mutate_all(na_if,"")
+
+#no headers
+df <- qualtrics %>%
+  filter(DistributionChannel == "anonymous") #212 entries
+
+#frequency of each ID
+df.duplicateIDs <- df %>% 
+  group_by(anon_id) %>% 
+  dplyr::summarise(freq=n())
+
+#df that has only unique IDs
+df.unique <- df.duplicateIDs %>%
+  filter(freq == 1)
+
+#only retain rows in original data file that are in the "unique" df
+df.2 <- 
+  df %>% 
+  filter(anon_id %in% c(df.unique$anon_id))
+
+#filter out participants who completed related earlier study
+df.2 <- df.2 %>% 
+  subset(anon_id!="17")
+df.2 <- df.2 %>% 
+  subset(anon_id!="22")
+df.2 <- df.2 %>% 
+  subset(anon_id!="25")
+df.2 <- df.2 %>% 
+  subset(anon_id!="29")
+df.2 <- df.2 %>% 
+  subset(anon_id!="36")
+df.2 <- df.2 %>% 
+  subset(anon_id!="39")
+df.2 <- df.2 %>% 
+  subset(anon_id!="62")
+df.2 <- df.2 %>% 
+  subset(anon_id!="67")
+df.2 <- df.2 %>% 
+  subset(anon_id!="83")
+df.2 <- df.2 %>% 
+  subset(anon_id!="158")
+df.2 <- df.2 %>% 
+  subset(anon_id!="169")
+df.2 <- df.2 %>% 
+  subset(anon_id!="186")
+df.2 <- df.2 %>% 
+  subset(anon_id!="189")
+df.2 <- df.2 %>% 
+  subset(anon_id!="195")
+
+#filter out those who did not consent
+df.2 <- df.2 %>% 
+  filter(consent==1)
+
+```
+
+#Make Condition Variable
+```{r}
+#condition
+df.2$condition <- rep(NA,nrow(df.2))
+
+df.2$condition[!is.na(df.2$unpackedisrael_1)] <- 1 #Unpacked Israel
+df.2$condition[!is.na(df.2$unpackedpalestine_1)] <- 2 #Unpacked Palestine
+
+table(df.2$condition, useNA="ifany")
+df.2 <- df.2 %>% filter(condition<3)
+
+table(df.2$condition)
+```
+
+#Data Cleaning
+```{r}
+#delete Qualtrics columns
+df.2$Status <- NULL
+df.2$Progress <- NULL
+df.2$Duration..in.seconds. <- NULL
+df.2$Finished <- NULL
+df.2$RecipientLastName <- NULL
+df.2$RecipientFirstName <- NULL
+df.2$RecipientEmail <- NULL
+df.2$ExternalReference <- NULL
+df.2$DistributionChannel <- NULL
+df.2$UserLanguage <- NULL
+
+```
+
+#Finalize Clean Data
+```{r}
+#create new data frame
+df.3 <- df.2
+
+#check consent
+table(df.3$consent)
+
+#check conditions
+table(df.3$condition)
+
+#turn all variables to numeric
+df.4 <- data.frame(lapply(df.3, function(x) as.numeric(as.character(x))))
+
+```
+
+#Data Demographics
+```{r}
+#gender
+tablegender <- table(df.4$gender)
+prop.table(tablegender)*100
+
+#age
+df.4 %>% summarize(mean_age=mean(age, na.rm=TRUE),
+            sd_age=sd(age, na.rm=TRUE),
+            se_age=sd(age, na.rm=TRUE)/sqrt(n()),
+            lower_age=mean(age, na.rm=TRUE) - sd(age, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_age=mean(age, na.rm=TRUE) + sd(age, na.rm=TRUE)/sqrt(n())*1.96)
+
+#nationality
+table(df.4$nationality)
+
+```
+
+#Create Identification & Political Orientation Variables
+```{r}
+#identification
+df.identification <- df.4 %>%
+  select(identification_1:identification_4)
+
+df.4$identification <- rowMeans(df.identification, na.rm=TRUE, dims=1)
+
+psych::alpha(df.identification)
+
+#political orientation
+table(df.4$politicalorientation)
+
+```
+
+#Create Blame Variables
+```{r}
+#Condition 1: Unpacked Israel
+#Condition 2: Unpacked Palestine
+
+#unpacked Israel
+df.4 <- df.4 %>% 
+  mutate(c1_blamepalestine = unpackedisrael_4)
+
+#unpacked Palestine
+df.4 <- df.4 %>% 
+  mutate(c2_blamepalestine = unpackedpalestine_2 +
+           unpackedpalestine_3 +
+           unpackedpalestine_4)
+
+#blame Palestine variable
+df.4$blamepalestine <- rep(NA,nrow(df.4))
+
+df.4$blamepalestine <- pmax(df.4$c1_blamepalestine, df.4$c2_blamepalestine, na.rm=TRUE)
+
+summary(df.4$blamepalestine)
+
+#blame Israel variable
+df.4$blameisrael <- rep(NA,nrow(df.4))
+
+df.4$blameisrael <- 100-df.4$blamepalestine
+
+summary(df.4$blameisrael)
+
+```
+
+#Analyses
+```{r}
+#Condition 1: Unpacked Israel
+#Condition 2: Unpacked Palestine
+
+#turn numeric variables into factors
+df.4$condition <- as.factor(df.4$condition)
+
+#T test - main analysis
+df.ttestcondition1 <- df.4 %>% filter(condition==1)
+df.ttestcondition2 <- df.4 %>% filter(condition==2)
+
+t.test(df.ttestcondition1$blameisrael, df.ttestcondition2$blameisrael)
+
+library(lsr)
+cohensD(df.ttestcondition1$blameisrael, df.ttestcondition2$blameisrael)
+
+#summary statistics by condition
+df.4 %>% dplyr::group_by(condition) %>% 
+  summarize(mean_blamepalestine=mean(blamepalestine, na.rm=TRUE),
+            sd_blamepalestine=sd(blamepalestine, na.rm=TRUE),
+            se_blamepalestine=sd(blamepalestine, na.rm=TRUE)/sqrt(n()),
+            lower_blamepalestine=mean(blamepalestine, na.rm=TRUE) - sd(blamepalestine, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_blamepalestine=mean(blamepalestine, na.rm=TRUE) + sd(blamepalestine, na.rm=TRUE)/sqrt(n())*1.96)
+
+#correlations
+cor.test(df.4$identification, df.4$blameisrael)
+
+cor.test(df.ttestcondition1$politicalorientation, df.ttestcondition1$unpackedisrael_3) #Israel left bloc
+cor.test(df.ttestcondition1$politicalorientation, df.ttestcondition1$unpackedisrael_1) #Israel right bloc
+cor.test(df.ttestcondition1$politicalorientation, df.ttestcondition1$unpackedisrael_2) #Israel center bloc
+
+```
+
+#online supplementary materials - blame assigned to each subgroup
+```{r}
+#Condition 1: Unpacked Israel
+#Condition 2: Unpacked Palestine
+
+#Condition 1: Unpacked Israel
+df.condition1 <- df.4 %>% filter(condition==1) %>% select(unpackedisrael_1, unpackedisrael_2, unpackedisrael_3, unpackedisrael_4)
+
+df.condition1 <- df.condition1 %>% 
+  rename(unpackedisrael_israelrightwingbloc = unpackedisrael_1) %>% 
+  rename(unpackedisrael_israelcenterbloc = unpackedisrael_2) %>% 
+  rename(unpackedisrael_israelleftwingbloc = unpackedisrael_3) %>% 
+  rename(unpackedisrael_palestine = unpackedisrael_4)
+
+df.condition1 <- df.condition1 %>% mutate(participantid = row_number())
+
+df.condition1.long <- df.condition1 %>% pivot_longer(
+  !participantid,
+  names_to = "group",
+  names_prefix = "unpackedisrael_",
+  values_to = "blame",
+  values_drop_na = FALSE)
+
+condition1table <- df.condition1.long %>% group_by(group) %>% 
+  summarize(mean_blame=mean(blame, na.rm=TRUE),
+            sd_blame=sd(blame, na.rm=TRUE),
+            se_blame=sd(blame, na.rm=TRUE)/sqrt(n()),
+            lower_blame=mean(blame, na.rm=TRUE) - sd(blame, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_blame=mean(blame, na.rm=TRUE) + sd(blame, na.rm=TRUE)/sqrt(n())*1.96)
+
+
+#Condition 2: Unpacked Palestine
+df.condition2 <- df.4 %>% filter(condition==2) %>% select(unpackedpalestine_1, unpackedpalestine_2, unpackedpalestine_3, unpackedpalestine_4)
+
+df.condition2 <- df.condition2 %>% 
+  rename(unpackedpalestine_israel = unpackedpalestine_1) %>% 
+  rename(unpackedpalestine_palestinehamasmovement = unpackedpalestine_2) %>% 
+  rename(unpackedpalestine_palestinefatahmovement = unpackedpalestine_3) %>% 
+  rename(unpackedpalestine_palestineislamicjihadmovement = unpackedpalestine_4)
+
+df.condition2 <- df.condition2 %>% mutate(participantid = row_number())
+
+df.condition2.long <- df.condition2 %>% pivot_longer(
+  !participantid,
+  names_to = "group",
+  names_prefix = "unpackedpalestine_",
+  values_to = "blame",
+  values_drop_na = FALSE)
+
+condition2table <- df.condition2.long %>% group_by(group) %>% 
+  summarize(mean_blame=mean(blame, na.rm=TRUE),
+            sd_blame=sd(blame, na.rm=TRUE),
+            se_blame=sd(blame, na.rm=TRUE)/sqrt(n()),
+            lower_blame=mean(blame, na.rm=TRUE) - sd(blame, na.rm=TRUE)/sqrt(n())*1.96,
+            upper_blame=mean(blame, na.rm=TRUE) + sd(blame, na.rm=TRUE)/sqrt(n())*1.96)
+
+```

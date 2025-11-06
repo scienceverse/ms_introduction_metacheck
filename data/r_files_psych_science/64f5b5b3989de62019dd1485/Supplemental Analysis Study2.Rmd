@@ -1,0 +1,363 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+ ---
+ title: "Prejudice and Narcissism"
+ author: "Matthias Ziegler & Oliver Keenan"
+ date: "`r format(Sys.time(), '%d %B, %Y')`"
+ output:
+   html_document:
+   code_folding: hide
+   number_sections: yes
+   toc: yes
+   toc_float: yes
+editor_options:
+ chunk_output_type: inline
+---
+# Preps
+
+
+
+```{r}
+library(tidyverse)
+library(lavaan)
+library(lmtest)
+library(sandwich)
+source(paste0(getwd(), "/CFA_functions_Matthias.R"))
+vc <- function(x){vcovHC(x, type = "HC4")}
+
+dat <- rio::import(paste0(getwd(),"/Study2.sav"))
+
+
+dat <- dat %>% mutate(PrejT1 = furniture::rowmeans(ant_t1,sexT_t1,homo_t1,PreUK_t1),
+                      PrejT0 = furniture::rowmeans(ant_t0,sexT_t0,homo_t0,PreUK_t0)) 
+
+```
+
+
+```{r}
+# Regressions
+dat$CN_t0 = round(dat$CN_t0)
+dat$CN_t0 = as.numeric(dat$CN_t0)
+
+
+mod1 <- lm(PrejT1 ~ PrejT0 + group, dat)
+
+summary(mod1)
+waldtest(mod1, vcov = vc) 
+
+
+mod2 <- lm(PrejT1 ~ PrejT0 + (CN_t0) * group, dat)
+
+summary(mod2)
+waldtest(mod2, vcov = vc)
+waldtest(mod1, mod2, vcov = vc) 
+
+   
+
+```
+
+
+```{r}
+# Regression table
+library(sjPlot)
+
+tab_model(mod1, mod2,  
+                  string.est = "b(SE)",
+                  #string.std = "β",
+                  strings = c(ci = "95%CI LL,UL", stat = "t"),
+                  show.se = TRUE, collapse.se = T, 
+                  ci.hyphen = "&comma;",
+                  title = "",
+                  show.intercept = F,
+                  dv.labels = c("Model 1", "Model 2", "Model 3"),
+                  #show.std = F,
+                  show.est = T,
+                  show.stat= F,
+                  col.order = c("est", "se", "ci", "stat", "p"#, #"std.est", "std.se"
+                                ),
+                  emph.p = F
+                  ,vcov.fun = "HC4"
+)
+```
+
+Model 1
+```{r}
+# ANOVA figure
+library(emmeans)
+library(rstatix)
+library(broom)
+library(ggpubr)
+res.aov <- aov(PrejT1 ~ PrejT0 + group, dat)
+res.aov <- dat %>% anova_test(PrejT1 ~ PrejT0 + group)
+coeftest(res.aov, vcov = vc)
+get_anova_table(res.aov)
+pwc <- dat %>% 
+  emmeans_test(
+    PrejT1 ~ group, covariate = PrejT0,
+    p.adjust.method = "bonferroni"
+    )
+pwc
+pwc <- pwc %>% add_xy_position(x = "group", fun = "mean_se")
+pwc
+
+ggpubr::ggline(get_emmeans(pwc), x = "group", y = "emmean") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) + 
+  stat_pvalue_manual(pwc, hide.ns = TRUE, tip.length = FALSE) +
+  labs(x = "Training", y = "Prejudice",
+    subtitle = get_test_label(res.aov, detailed = TRUE)[-2]
+      ) + scale_x_discrete(labels=c('Wait-List Control', 'Mindful-Gratitude Practice'))
+```
+
+Model 2 - Simple slopes
+```{r}
+
+interactions::sim_slopes(mod2, pred = "CN_t0", modx = "group", robust = "HC4", confint = T, digits = 3) 
+ 
+
+sjPlot::plot_model(mod2, type = "pred", terms = c("CN_t0", "group"), vcov.fun = "HC4", colors = c("blue", "red")) + 
+  labs(x = "Collective Narcissism", y = "Prejudice", colour = "", title = "") + theme_classic() + theme(text = element_text(size = 12), legend.title = element_blank()) + coord_cartesian(ylim = c(1, 6), xlim = c(1, 6)) + scale_colour_manual(values = c("blue", "red"), labels=c('Wait-List Control',  'Mindful-Gratitude Practice')) + scale_fill_manual(values = c("blue", "red"))
+
+
+
+```
+
+
+Now I will specify and test a latent change score model.
+
+```{r}
+lcsm <- "
+#Building parts
+pre.t0=~a*ant_t0+b*sexT_t0+c*homo_t0+d*PreUK_t0
+pre.t1=~a*ant_t1+b*sexT_t1+c*homo_t1+d*PreUK_t1
+
+ant_t0~~ant_t1
+sexT_t0~~sexT_t1
+homo_t0~~homo_t1
+PreUK_t0~~PreUK_t1
+
+ant_t0 ~ ai*1
+sexT_t0 ~ bi*1
+homo_t0 ~ ci*1
+PreUK_t0 ~ di*1
+
+ant_t1 ~ ai*1
+sexT_t1 ~ bi*1
+homo_t1 ~ ci*1
+PreUK_t1 ~ di*1
+
+#Actual model
+
+pre.t1~1*pre.t0
+pre.t1~~0*pre.t1
+
+delta=~1*pre.t1
+
+delta~pre.t0
+
+delta~NA*1
+"
+
+
+```
+
+## LCSM test
+```{r}
+fit.lcsm <- cfa(lcsm,data=dat, estimator="mlr")
+#fit.lcsm <- cfa(lcsm,data=dat, estimator="mlr", meanstructure = T, group = "group")
+getFit(fit.lcsm)
+summary(fit.lcsm, standardized =TRUE, fit.measures=TRUE, rsquare = T)
+#parameterestimates(fit.lcsm)
+
+```
+
+So, that model works nicely. Now, I will not split into a multiple group model (too few cases). Instead, I will regress the change score (delta) on the group variable (like a t test).
+
+## Group differences
+### Model
+```{r}
+lcsm.group <- paste(lcsm, "delta~group", sep="\n")
+cat(lcsm.group)
+```
+
+### Model test
+```{r}
+fit.lcsm.group <- cfa(lcsm.group,data=dat, estimator="mlr")
+getFit(fit.lcsm.group)
+summary(fit.lcsm.group, standardized =TRUE, fit.measures=TRUE, rsquare = T)
+# parameterestimates(fit.lcsm.group)
+```
+
+Comparing different models (Hypothesis 3)
+# Moderators terms
+
+moderator term for collective narcissism
+
+```{r}
+dat$CNbyGroup <- scale(dat$CN_t0, center=TRUE, scale = FALSE)*scale(dat$group, center=TRUE, scale = FALSE)
+```
+
+
+moderator term for ingroup satisfaction
+```{r}
+dat$ISbyGroup <- scale(dat$IS_t0, center=TRUE, scale = FALSE)*scale(dat$group, center=TRUE, scale = FALSE)
+```
+
+moderator term for ingroup identification
+```{r}
+dat$SIbyGroup <- scale(dat$SI_t0, center=TRUE, scale = FALSE)*scale(dat$group, center=TRUE, scale = FALSE)
+```
+moderator term for social dominance orientation
+
+```{r}
+dat$SDObyGroup <- scale(dat$sdo_t0, center=TRUE, scale = FALSE)*scale(dat$group, center=TRUE, scale = FALSE)
+```
+
+moderator term for right-wing authoritarianism
+
+```{r}
+dat$RWAbyGroup <- scale(dat$RWA_t0, center=TRUE, scale = FALSE)*scale(dat$group, center=TRUE, scale = FALSE)
+```
+
+moderator term for individual narcissism
+
+```{r}
+dat$NPIbyGroup <- scale(dat$NPI_t0, center=TRUE, scale = FALSE)*scale(dat$group, center=TRUE, scale = FALSE)
+```
+
+
+### Model
+
+Each block to be run separately for each model test
+
+#CN
+```{r}
+lcsm.group.n <- paste(lcsm.group, "delta~CN_t0", "delta~CNbyGroup", sep="\n")
+cat(lcsm.group.n)
+```
+
+#ID
+```{r}
+lcsm.group.n <- paste(lcsm.group, "delta~SI_t0", "delta~SIbyGroup", sep="\n")
+cat(lcsm.group.n)
+```
+
+#SDO
+```{r}
+lcsm.group.n <- paste(lcsm.group, "delta~sdo_t0", "delta~SDObyGroup",  sep="\n")
+cat(lcsm.group.n)
+```
+
+#RWA
+```{r}
+lcsm.group.n <- paste(lcsm.group, "delta~RWA_t0", "delta~RWAbyGroup",  sep="\n")
+cat(lcsm.group.n)
+```
+
+#NPI
+```{r}
+lcsm.group.n <- paste(lcsm.group, "delta~NPI_t0", "delta~NPIbyGroup",  sep="\n")
+cat(lcsm.group.n)
+```
+
+
+### Model test
+To be run separately for each model specification including each moderator term
+```{r}
+fit.lcsm.group.n <- cfa(lcsm.group.n,data=dat, estimator="mlr")
+getFit(fit.lcsm.group.n)
+summary(fit.lcsm.group.n, standardized =TRUE, fit.measures=TRUE, rsquare = T)
+s <- subset(parameterestimates(fit.lcsm.group.n, ci=TRUE, level=.95, standardized = T), parameterestimates(fit.lcsm.group.n, ci=TRUE)$lhs=="delta")
+s %>% select(lhs, rhs, est, se, std.all, pvalue) #%>% flextable::flextable()
+```
+
+
+### Model test
+```{r}
+
+fit.lcsm.group.n <- cfa(lcsm.group.n,data=dat, estimator="mlr")
+getFit(fit.lcsm.group.n)
+summary(fit.lcsm.group.n, standardized =TRUE, fit.measures=TRUE, rsquare=TRUE)
+
+
+```
+
+Simple slopes following Preacher http://www.quantpsy.org/interact/mlr2.htm
+```{r}
+
+# 206 = df = 219 - 13
+# squared standard errors
+.220^2 #delta ~1 (intercept - b0) = .0484, coef = -.575
+.041^2 #CN _t0  (b1) = .001681, coef = .055
+.051^2 #group (b2) = .002601, coef = -.139
+.076^2 #CN X Group (b3) = .005776, coef = -.229
+# covariances
+vcov(fit.lcsm.group.n)["delta~group", "delta~1"] # -0.0027804
+vcov(fit.lcsm.group.n)["delta~CNbyGroup", "delta~CN_t0"] # .00083041
+
+# 95% Confidence interval information for all parameters
+parameterestimates(fit.lcsm.group.n, ci=TRUE, level=.9)
+# 95% Confidence interval information for teh change score parameters only
+s <- subset(parameterestimates(fit.lcsm.group.n, ci=TRUE, level=.95, standardized = T), parameterestimates(fit.lcsm.group.n, ci=TRUE)$lhs=="delta")
+
+```
+
+
+    TWO-WAY INTERACTION SIMPLE SLOPES OUTPUT
+
+Your Input
+=======================================================
+  X1        = -2
+  X2        = 2
+  cv1       = 0
+  cv2       = 1
+  Intercept = -0.575
+  X Slope   = 0.055
+  Z Slope   = -0.139
+  XZ Slope  = -0.229
+  df        = 35
+  alpha     = 0.05
+
+Asymptotic (Co)variances
+=======================================================
+  var(b0) 0.0484
+  var(b1) 0.001681
+  var(b2) 0.002601
+  var(b3) 0.005776
+  cov(b2,b0) -0.0027804
+  cov(b3,b1) 0.00083041
+
+Simple Intercepts and Slopes at Conditional Values of Z
+=======================================================
+  At Z = cv1...
+    simple intercept = -0.575(0.22), t=-2.6136, p=0.0131
+    simple slope     = 0.055(0.041), t=1.3415, p=0.1884
+  At Z = cv2...
+    simple intercept = -0.714(0.2132), t=-3.3495, p=0.0019
+    simple slope     = -0.174(0.0955), t=-1.8222, p=0.077
+
+Points to Plot
+=======================================================
+  Line for cv1:  From {X=-2, Y=-0.685} to {X=2, Y=-0.465}
+  Line for cv2:  From {X=-2, Y=-0.366} to {X=2, Y=-1.062}
+
+*Regions of significance output suppressed because
+ moderator is dichotomous.
+ 
+ 
+```{r}
+xx <- c(-2,2)   #  <-- change to alter plot dims
+yy <- c(-1.2012,-0.366)   #  <-- change to alter plot dims
+leg <- c(-2,-1.0968)   #  <-- change to alter legend location
+x <- c(-2,2)   #  <-- x-coords for lines
+y1 <- c(-0.685,-0.465)
+y2 <- c(-0.366,-1.062)
+plot(xx,yy,type='n',font=2,font.lab=2,xlab='X',ylab='Y',main='MLR 2-Way Interaction Plot')
+lines(x,y1,lwd=3,lty=1,col=1)
+lines(x,y2,lwd=3,lty=5,col=2)
+points(x,y1,col=1,pch=16)
+points(x,y2,col=1,pch=16)
+legend(leg[1],leg[2],legend=c('CVz1(1)','CVz1(2)'),lwd=c(3,3),lty=c(1,5),col=c(1,2))
+```

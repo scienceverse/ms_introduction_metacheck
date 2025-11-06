@@ -1,0 +1,1626 @@
+
+## R analysis for the Muslim Warmth Religion Paper, Shaver et al.
+## Author of Script: Joseph Bulbulia  contact: joseph.bulbulia@icloud.com
+## Date: 17 AUG 2015.
+
+## Shaver, J., Troughton, G., Sibley, C. G., Bulbulia, J. (2016). 
+## Religion and the unmaking of prejudice towards Muslims: evidence from ## a large national sample. PLoS ONE, 11, e0150209.
+```{r}
+###  HANDY SCRIPT TO CITE R PACKAGES
+citation(package = "base", lib.loc = "/Users/josephbulbulia/Dropbox/BIBS")
+toLatex(sessionInfo(), locale = FALSE)
+
+sapply(names(sessionInfo()$otherPkgs), function(x) print(citation(x), style = "Bibtex"))
+
+out <- sapply(names(sessionInfo()$otherPkgs), 
+              function(x) print(citation(x), style = "Bibtex"))
+print(out)
+
+##############################################################################
+
+### LOAD NZAVS DATA
+system.time(
+  longiM <- as.data.frame(read.table("/Users/josephbulbulia/Dropbox/Chris_Joe_Bulbulia/NZAVS_SPSS_Longitudinal_Dataset.csv",
+                                     header=TRUE,
+                                     sep=",",
+                                     na.strings = "-9999")))
+
+# SAVE FILE FOR FUTURE USE (commented out)
+# rm(dat)  # remove anything called "dat"
+ #saveRDS(longiM, "longiM")
+ #longiM<- readRDS("longiM")
+
+# make sure this is data frame
+dat<- as.data.frame(longiM)
+
+# Check how many cases
+nrow(dat)  #23064
+
+# Use dplyr for data manipulation
+library(dplyr)
+#REMOVE ANYTHING CALLED THIS:
+rm(dat5)
+
+# Select out Wave 5 only
+library(dplyr)
+dat5<-dat%>%
+  filter(T05 ==1)
+
+# Check variables
+# str(dat5)
+# Check cases
+#nrow(dat5)  # 18264
+
+# Create ID variable 
+dat5$Id <- factor(1:nrow(dat5))
+
+#Exlpore
+hist(dat5$T5.ETH.Warm.Muslims)
+
+
+## HERE WE CREATE VARIABLES FOR TYPES OF RELIGION, ETHNICITY. WE USE THESE TO OMIT MUSLIMS AND ASIANS AND ARABS FROM THE SAMPLE. WE DON'T USE THE CHRISTIAN VARIABLE FOR ANY ANALYSIS AS THIS IS COLINEAR WITH RELIGIOUS ID -- MOST IN OUR SAMPLE WHO ARE RELIGIOUS ARE ALSO CHRISTIAN.
+
+
+library(dplyr)
+
+## Remove anything called this
+rm(f1)
+## Create variables for subsetting out muslims, etc.
+f1<- dat5%>%
+  mutate(muslim = ifelse(Census.Religion.L1.T5==4,1,0))%>%
+  mutate(muslim = factor(muslim))%>%  # we will come back to use this  variable, not relevant now
+  mutate(christian = ifelse(Census.Religion.L1.T5==2|Census.Religion.L1.T5==6,1,0))%>%
+  mutate(christian = factor(christian))%>%
+  mutate(RELID.T5 = ifelse(Religious.T5 == 0, 0, Religion.Identification.T5))%>%
+  mutate(CHURCH.T5 = ifelse(RELID.T5 == 0 |Religion.Church.T5 ==0, 0, Religion.Church.T5))%>%
+  mutate(MidEast= ifelse(EthL3.MiddleEastern.T5 ==1, 1, 0))%>%
+  mutate(T5.Education = ifelse(Education.L1.T5 == -2, NA, Education.L1.T5))#
+
+
+# filter only people born in NZ, no muslims and no MidEast
+###### SAVE   #######
+##saveRDS(f1, "f1")
+###f1<- readRDS("f1")
+
+
+
+library(dplyr)
+
+### HERE WE FILTER OUT THE PEOPLE WHO WERE BORN OVERSEAS (I.E. IMMIGRANTS, MIDEASTERN PEOPLE, AND MUSLIMS)
+rm(js000)
+js000<- f1%>%
+  filter(muslim==0 & MidEast==0 & Born.NZ.T5==1)
+
+
+## Some initial data exploration
+boxplot(js000$T5.ETH.Warm.Muslims, notch =TRUE)
+boxplot(js000$T5.ETH.Warm.Immigrants, notch =TRUE)
+boxplot(js000$T5.ETH.Warm.Arabs, notch =TRUE)
+
+## THIS LEAVES US WITH 13974
+nrow(js000)  #13974   number of people who were born in NZ, not MidEastern, not Muslim and were not NAs
+table(js000$Urban.T5)
+
+### THESE ARE DESCRIPTIVE DATA WITH NO MUSLIMS OR IMMIGRANTS OR MIDEASTERNERS
+###CrossTab
+
+
+### DATA CHECKS = good
+table(js000$muslim, exclude=NULL)#0  good 
+table(js000$MidEast,exclude=NULL) # ZERO = good
+table(js000$Born.NZ.T5,exclude=NULL)#all cases = good
+
+## JUST A TEST ##  looks OK
+print(xtabs(~ Urban.T5 + EthL2.Euro.T5, js000, sparse = TRUE))
+# We use more variables to get better imputation
+
+###### SAVE   #######
+## saveRDS(js000, "js000")
+## js000<- readRDS("js000")
+
+## CHECK  
+nrow(js000) # 13974 = OK
+library(dplyr)
+
+## REMOVE ANYTHING CALLED THIS
+rm(js00)
+
+##
+js00 <- js000%>%
+  select(Id,
+         Age.T5, 
+         Gender.T5, 
+         Partner.T5,
+         #Education.L2.T5,
+         T5.Education,
+         Employed.T5,
+         EthL2.Euro.T5, 
+         ChildrenNum.T5, 
+         Hours.Children.T5,
+         Hours.Work.T5,
+         NZDep_2013.T04, 
+         Hours.AsiansOTH.T5,
+         Household.INC.T5,
+         #T5.Pos.Cont.Asian,
+         T5.ETH.Anger.Immigrants,
+         T5.ETH.Anger.Muslims,
+         T5.ETH.Anger.Asians,
+         T5.ETH.Warm.Muslims,
+         T5.ETH.Warm.Asians,
+         T5.ETH.Anger.Arabs,
+         T5.ETH.Warm.Arabs,
+         T5.ETH.Warm.Immigrants,
+         Hours.AsiansFRD.T5,
+         T5.Neg.Cont.Asian,
+         #T5.PWI,
+         CHURCH.T5,
+         #Rel.EthPartL2.Asian.T5,
+         Partner.T5,
+         Pol.Orient.T5, 
+         Urban.T5,
+         Census.Religion.L2.T5,  #New
+         Census.Religion.L1.T5, #New
+         Census.Religion.L3.T5, 
+         CharityDonate.T5,
+         Hours.Charity.T5,
+         RELID.T5,
+         #T5.ETH.Anx.Asian,
+         #muslim,
+         T5.RWA,
+         T5.SDO,
+         Comp.World01.T5,
+         Dang.World01.T5,
+         #EthL2.Asian.T5,
+         #T5.LIFESAT,
+         #christian,
+         Hours.News.T5,
+         Parent.T5)%>%
+  mutate(Id = factor(Id),
+         Age.T5 = as.numeric(Age.T5),
+         Gender.T5 = factor(Gender.T5),
+         Household.INC.T5 = as.numeric(Household.INC.T5),
+         #NZDep.T1,
+         NZDep_2013.T04 = as.numeric(NZDep_2013.T04),
+         EthL2.Euro.T5 = factor(EthL2.Euro.T5),
+         # Religious.T1 = factor(Religious.T1),
+         Partner.T5 = factor(Partner.T5),
+         #Religion.L4.Cats.T1,
+         RELID.T5 = as.numeric(RELID.T5),
+         #ChildrenNum.T1, 
+         #ChildrenHome.T1,   
+         CharityDonate.T5 = as.numeric(CharityDonate.T5),
+         Hours.Charity.T5 = as.integer(Hours.Charity.T5),
+         Urban.T5 = factor(Urban.T5),
+         Pol.Orient.T5 = as.numeric(Pol.Orient.T5),
+         # T5.LIFESAT = as.numeric(T5.LIFESAT),
+         Employed.T5 = factor(Employed.T5),
+         Household.INC.T5 = as.numeric(Household.INC.T5),
+         T5.Education = as.numeric(T5.Education),
+         #EthL2.Asian.T5= factor(EthL2.Asian.T5),
+         #Rel.EthPartL2.Asian.T5 = factor(Rel.EthPartL2.Asian.T5),
+         # Religion.Church.T1, Not there
+         Census.Religion.L1.T5 = factor(Census.Religion.L1.T5),
+         Census.Religion.L2.T5 = factor(Census.Religion.L2.T5),
+         Census.Religion.L3.T5 = factor(Census.Religion.L3.T5),
+         ChildrenNum.T5 = as.integer(ChildrenNum.T5),
+         Hours.Work.T5 = as.integer(Hours.Work.T5),
+         Hours.Children.T5 = as.integer(Hours.Children.T5),
+         Hours.AsiansFRD.T5=as.integer(Hours.AsiansFRD.T5),
+       #  christian = factor(christian),
+         CHURCH.T5 = as.integer(CHURCH.T5),
+         Hours.News.T5 =as.integer(Hours.News.T5),
+         Parent.T5 = factor(Parent.T5))
+
+
+### CHECKS, LOOKS GOOD
+table(js00$Age.T5,exclude=NULL) 
+table(js00$ChildrenNum.T5,exclude=NULL) 
+table(js00$Partner.T5,exclude=NULL) 
+
+### CHECKS, LOOKS GOOD
+table(js00$Parent.T5,exclude=NULL) 
+table(js00$Parent.T5,exclude=NULL) 
+table(js00$Parent.T5,exclude=NULL) 
+table(js00$EthL2.Euro.T5,exclude=NULL) 
+###table(dev5$ChildrenNum.T5)
+
+## CHECK, looks good
+str(js00)
+########################### SAVE  ################################
+##saveRDS(js00,"js00")
+##js00<- readRDS("js00")
+js00 <- as.data.frame(js00) # Note we need to make this a data frame or else Amelia will have problems 
+#                             (so don't use the as data table function in dyplr)
+
+
+### IMPUTATION
+library(Amelia)
+
+## LEAVE WARMTH OUT BECAUSE THIS CAN BE ESTIMATED USING MCMCglmm 
+### We include more variables to improve imputation. (i.e. even variables we won't use in the analysis.)
+js.am<-amelia(js00,
+              m = 5,
+              # cs=NULL,
+              noms = c(
+                       "Urban.T5",
+                       "EthL2.Euro.T5", 
+                       "Partner.T5",
+                       "Gender.T5",
+                       "Employed.T5",
+                       "Parent.T5"),
+              ords = "T5.Education",
+              idvars=c("Id","Census.Religion.L3.T5","Census.Religion.L2.T5","Census.Religion.L1.T5", "T5.ETH.Warm.Arabs", "T5.ETH.Warm.Immigrants", "T5.ETH.Warm.Muslims"),
+              sqrts = c("Hours.Work.T5","Hours.Children.T5","Hours.Charity.T5","Hours.News.T5"),
+              logs =c("CharityDonate.T5", "Household.INC.T5","CHURCH.T5"))
+
+### SAVE  ##
+
+
+## SAVE IMPUTED DATA SET
+## saveRDS(js.am, "js.am")
+## js.am<- readRDS("js.am")
+
+# DIAGNOSTIC
+missmap(js.am)
+
+
+
+
+#CHECKS: look good
+mean(js.am$imputations[[1]]$T5.Education) 
+mean(js.am$imputations[[2]]$T5.Education)  
+mean(js.am$imputations[[3]]$T5.Education) 
+mean(js.am$imputations[[4]]$T5.Education) 
+mean(js.am$imputations[[5]]$T5.Education) 
+
+
+# CHECKS: look good
+hist(js.am$imputations[[1]]$T5.Education)  
+hist(js.am$imputations[[2]]$T5.Education)  
+hist(js.am$imputations[[3]]$T5.Education)  
+hist(js.am$imputations[[4]]$T5.Education)   
+hist(js.am$imputations[[5]]$T5.Education)  
+
+
+
+
+## CENTER AND STANDARISE IMPUTED DATA SETS
+rm(js.imp.SC)
+
+## This is a function in amelia
+js.imp.SC <- transform.amelia(js.am,
+                              Age.T5.C = scale(Age.T5, center=TRUE, scale =FALSE),
+                              Pol.Orient.T5.S = scale(Pol.Orient.T5,center=TRUE, scale =FALSE),
+                              NZDep_2013.T04.S = scale(NZDep_2013.T04),
+                              LOG.Household.INC.T5 = log(Household.INC.T5 + 1),
+                              RELID.T5.S = scale(RELID.T5,center=TRUE, scale =TRUE),
+                              CHURCH.T5.C = scale(CHURCH.T5,center=TRUE, scale =FALSE),
+                              T5.RWA.S = scale(T5.RWA),
+                              T5.SDO.S = scale(T5.SDO))
+
+
+
+################################## save this  ##############################################
+##  saveRDS(js.imp.SC, "js.imp.SC")
+### js.imp.SC<- readRDS("js.imp.SC")
+############################################################################################
+##### MCMC MODELS  ##################
+
+library(MCMCglmm)
+library(coefplot2)
+
+### PRIOR We use parameter expanded priors as recommended by hadfield. 
+
+prior8ef = list(R = list(V = diag(3)*.1, nu=4),  
+                 G=list(G1=list(V=diag(3),nu=4, alpha.mu = rep(0,3), alpha.V = diag(3)*100)))
+
+
+############################################################################################
+############ MCMC MODELS 
+#############################################################################################
+
+
+
+m <- 5  
+wrm.m.mcmc.out <- NULL
+for(i in 1:m) {
+  wrm.m.mcmc.out[[i]] <-MCMCglmm(cbind(T5.ETH.Warm.Arabs,T5.ETH.Warm.Muslims,T5.ETH.Warm.Immigrants) ~ 
+                                   trait-1 +
+                                   trait:RELID.T5.S +  
+                                   trait:log(CHURCH.T5+1) +
+                                   trait:Pol.Orient.T5.S +
+                                   trait:Age.T5.C + 
+                                   trait:T5.Education + 
+                                   trait:Employed.T5 +
+                                   trait:EthL2.Euro.T5 +
+                                   trait:Gender.T5 + 
+                                   trait:NZDep_2013.T04.S +
+                                   trait:Parent.T5 +
+                                   trait:Partner.T5 + 
+                                   trait:Urban.T5,
+                                 random= ~us(trait):Census.Religion.L3.T5,
+                                 rcov = ~corgh(trait):units, #
+                                 family= c("gaussian", "gaussian","gaussian"),
+                                 prior=prior8ef,
+                                 verbose=TRUE, 
+                                 nitt=53000,
+                                 data=js.imp.SC$imputations[[i]])
+}
+
+
+
+# SAVE ALL RESULTS
+##saveRDS(wrm.m.mcmc.out, "wrm.m.mcmc.out")
+## wrm.m.mcmc.out<- readRDS("wrm.m.mcmc.out")
+summary(wrm.m.mcmc.out[[1]] )
+
+## TEST 
+library(coefplot2)
+summary(wrm.m.mcmc.out[[1]])
+coefplot2(wrm.m.mcmc.out[[1]],  col.pts=c("blue","red","gray"), intercept=TRUE)
+coefplot2(wrm.m.mcmc.out[[1]]$VCV, intercept=TRUE)
+rm(wrm.m.mcmc.out.v1)
+### TABLE
+m<-5
+wrm.m.mcmc.out.v1<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v1 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,1]))
+  wrm.m.mcmc.out.v1.tab<-summary(wrm.m.mcmc.out.v1)
+  wrm.m.mcmc.out.v1.reg <- as.data.frame(wrm.m.mcmc.out.v1.tab$statistics) 
+  wrm.m.mcmc.out.v1.reg.r<- round(wrm.m.mcmc.out.v1.reg,4)
+  wrm.m.mcmc.out.v1.reg.mean <- wrm.m.mcmc.out.v1.reg.r[1,1]
+  wrm.m.mcmc.out.v1.reg.sd <- wrm.m.mcmc.out.v1.reg.r[2,1]
+}
+
+
+#test
+wrm.m.mcmc.out.v1.reg.mean
+wrm.m.mcmc.out.v1.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[2]])
+
+
+m<-5
+wrm.m.mcmc.out.v2<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v2 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,2]))
+  wrm.m.mcmc.out.v2.tab<-summary(wrm.m.mcmc.out.v2)
+  wrm.m.mcmc.out.v2.reg <- as.data.frame(wrm.m.mcmc.out.v2.tab$statistics) 
+  wrm.m.mcmc.out.v2.reg.r<- round(wrm.m.mcmc.out.v2.reg,4)
+  wrm.m.mcmc.out.v2.reg.mean <- wrm.m.mcmc.out.v2.reg.r[1,1]
+  wrm.m.mcmc.out.v2.reg.sd <- wrm.m.mcmc.out.v2.reg.r[2,1]
+}
+wrm.m.mcmc.out.v2.reg.mean
+wrm.m.mcmc.out.v2.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[2]])
+
+
+m<-5
+wrm.m.mcmc.out.v3<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v3 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,3]))
+  wrm.m.mcmc.out.v3.tab<-summary(wrm.m.mcmc.out.v3)
+  wrm.m.mcmc.out.v3.reg <- as.data.frame(wrm.m.mcmc.out.v3.tab$statistics) 
+  wrm.m.mcmc.out.v3.reg.r<- round(wrm.m.mcmc.out.v3.reg,4)
+  wrm.m.mcmc.out.v3.reg.mean <- wrm.m.mcmc.out.v3.reg.r[1,1]
+  wrm.m.mcmc.out.v3.reg.sd <- wrm.m.mcmc.out.v3.reg.r[2,1]
+}
+wrm.m.mcmc.out.v3.reg.mean
+wrm.m.mcmc.out.v3.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+m<-5
+wrm.m.mcmc.out.v4<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v4 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,4]))
+  wrm.m.mcmc.out.v4.tab<-summary(wrm.m.mcmc.out.v4)
+  wrm.m.mcmc.out.v4.reg <- as.data.frame(wrm.m.mcmc.out.v4.tab$statistics) 
+  wrm.m.mcmc.out.v4.reg.r<- round(wrm.m.mcmc.out.v4.reg,4)
+  wrm.m.mcmc.out.v4.reg.mean <- wrm.m.mcmc.out.v4.reg.r[1,1]
+  wrm.m.mcmc.out.v4.reg.sd <- wrm.m.mcmc.out.v4.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v4.reg.mean
+wrm.m.mcmc.out.v4.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+
+m<-5
+wrm.m.mcmc.out.v5<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v5 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,5]))
+  wrm.m.mcmc.out.v5.tab<-summary(wrm.m.mcmc.out.v5)
+  wrm.m.mcmc.out.v5.reg <- as.data.frame(wrm.m.mcmc.out.v5.tab$statistics) 
+  wrm.m.mcmc.out.v5.reg.r<- round(wrm.m.mcmc.out.v5.reg,4)
+  wrm.m.mcmc.out.v5.reg.mean <- wrm.m.mcmc.out.v5.reg.r[1,1]
+  wrm.m.mcmc.out.v5.reg.sd <- wrm.m.mcmc.out.v5.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v5.reg.mean
+wrm.m.mcmc.out.v5.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v6<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v6 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,6]))
+  wrm.m.mcmc.out.v6.tab<-summary(wrm.m.mcmc.out.v6)
+  wrm.m.mcmc.out.v6.reg <- as.data.frame(wrm.m.mcmc.out.v6.tab$statistics) 
+  wrm.m.mcmc.out.v6.reg.r<- round(wrm.m.mcmc.out.v6.reg,4)
+  wrm.m.mcmc.out.v6.reg.mean <- wrm.m.mcmc.out.v6.reg.r[1,1]
+  wrm.m.mcmc.out.v6.reg.sd <- wrm.m.mcmc.out.v6.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v6.reg.mean
+wrm.m.mcmc.out.v6.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v7<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v7 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,7]))
+  wrm.m.mcmc.out.v7.tab<-summary(wrm.m.mcmc.out.v7)
+  wrm.m.mcmc.out.v7.reg <- as.data.frame(wrm.m.mcmc.out.v7.tab$statistics) 
+  wrm.m.mcmc.out.v7.reg.r<- round(wrm.m.mcmc.out.v7.reg,4)
+  wrm.m.mcmc.out.v7.reg.mean <- wrm.m.mcmc.out.v7.reg.r[1,1]
+  wrm.m.mcmc.out.v7.reg.sd <- wrm.m.mcmc.out.v7.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v7.reg.mean
+wrm.m.mcmc.out.v7.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v8<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v8 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,8]))
+  wrm.m.mcmc.out.v8.tab<-summary(wrm.m.mcmc.out.v8)
+  wrm.m.mcmc.out.v8.reg <- as.data.frame(wrm.m.mcmc.out.v8.tab$statistics) 
+  wrm.m.mcmc.out.v8.reg.r<- round(wrm.m.mcmc.out.v8.reg,4)
+  wrm.m.mcmc.out.v8.reg.mean <- wrm.m.mcmc.out.v8.reg.r[1,1]
+  wrm.m.mcmc.out.v8.reg.sd <- wrm.m.mcmc.out.v8.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v8.reg.mean
+wrm.m.mcmc.out.v8.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+m<-5
+wrm.m.mcmc.out.v9<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v9 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,9]))
+  wrm.m.mcmc.out.v9.tab<-summary(wrm.m.mcmc.out.v9)
+  wrm.m.mcmc.out.v9.reg <- as.data.frame(wrm.m.mcmc.out.v9.tab$statistics) 
+  wrm.m.mcmc.out.v9.reg.r<- round(wrm.m.mcmc.out.v9.reg,4)
+  wrm.m.mcmc.out.v9.reg.mean <- wrm.m.mcmc.out.v9.reg.r[1,1]
+  wrm.m.mcmc.out.v9.reg.sd <- wrm.m.mcmc.out.v9.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v9.reg.mean
+wrm.m.mcmc.out.v9.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v10<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v10 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,10]))
+  wrm.m.mcmc.out.v10.tab<-summary(wrm.m.mcmc.out.v10)
+  wrm.m.mcmc.out.v10.reg <- as.data.frame(wrm.m.mcmc.out.v10.tab$statistics) 
+  wrm.m.mcmc.out.v10.reg.r<- round(wrm.m.mcmc.out.v10.reg,4)
+  wrm.m.mcmc.out.v10.reg.mean <- wrm.m.mcmc.out.v10.reg.r[1,1]
+  wrm.m.mcmc.out.v10.reg.sd <- wrm.m.mcmc.out.v10.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v10.reg.mean
+wrm.m.mcmc.out.v10.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+m<-5
+wrm.m.mcmc.out.v11<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v11 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,11]))
+  wrm.m.mcmc.out.v11.tab<-summary(wrm.m.mcmc.out.v11)
+  wrm.m.mcmc.out.v11.reg <- as.data.frame(wrm.m.mcmc.out.v11.tab$statistics) 
+  wrm.m.mcmc.out.v11.reg.r<- round(wrm.m.mcmc.out.v11.reg,4)
+  wrm.m.mcmc.out.v11.reg.mean <- wrm.m.mcmc.out.v11.reg.r[1,1]
+  wrm.m.mcmc.out.v11.reg.sd <- wrm.m.mcmc.out.v11.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v11.reg.mean
+wrm.m.mcmc.out.v11.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v12<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v12 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,12]))
+  wrm.m.mcmc.out.v12.tab<-summary(wrm.m.mcmc.out.v12)
+  wrm.m.mcmc.out.v12.reg <- as.data.frame(wrm.m.mcmc.out.v12.tab$statistics) 
+  wrm.m.mcmc.out.v12.reg.r<- round(wrm.m.mcmc.out.v12.reg,4)
+  wrm.m.mcmc.out.v12.reg.mean <- wrm.m.mcmc.out.v12.reg.r[1,1]
+  wrm.m.mcmc.out.v12.reg.sd <- wrm.m.mcmc.out.v12.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v12.reg.mean
+wrm.m.mcmc.out.v12.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v13<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v13 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,13]))
+  wrm.m.mcmc.out.v13.tab<-summary(wrm.m.mcmc.out.v13)
+  wrm.m.mcmc.out.v13.reg <- as.data.frame(wrm.m.mcmc.out.v13.tab$statistics) 
+  wrm.m.mcmc.out.v13.reg.r<- round(wrm.m.mcmc.out.v13.reg,4)
+  wrm.m.mcmc.out.v13.reg.mean <- wrm.m.mcmc.out.v13.reg.r[1,1]
+  wrm.m.mcmc.out.v13.reg.sd <- wrm.m.mcmc.out.v13.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v13.reg.mean
+wrm.m.mcmc.out.v13.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+wrm.m.mcmc.out.v14<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v14 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,14]))
+  wrm.m.mcmc.out.v14.tab<-summary(wrm.m.mcmc.out.v14)
+  wrm.m.mcmc.out.v14.reg <- as.data.frame(wrm.m.mcmc.out.v14.tab$statistics) 
+  wrm.m.mcmc.out.v14.reg.r<- round(wrm.m.mcmc.out.v14.reg,4)
+  wrm.m.mcmc.out.v14.reg.mean <- wrm.m.mcmc.out.v14.reg.r[1,1]
+  wrm.m.mcmc.out.v14.reg.sd <- wrm.m.mcmc.out.v14.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v14.reg.mean
+wrm.m.mcmc.out.v14.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+m<-5
+wrm.m.mcmc.out.v15<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v15 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,15]))
+  wrm.m.mcmc.out.v15.tab<-summary(wrm.m.mcmc.out.v15)
+  wrm.m.mcmc.out.v15.reg <- as.data.frame(wrm.m.mcmc.out.v15.tab$statistics) 
+  wrm.m.mcmc.out.v15.reg.r<- round(wrm.m.mcmc.out.v15.reg,4)
+  wrm.m.mcmc.out.v15.reg.mean <- wrm.m.mcmc.out.v15.reg.r[1,1]
+  wrm.m.mcmc.out.v15.reg.sd <- wrm.m.mcmc.out.v15.reg.r[2,1]
+}
+
+#test
+wrm.m.mcmc.out.v15.reg.mean
+wrm.m.mcmc.out.v15.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[2]])
+
+
+m<-5
+wrm.m.mcmc.out.v16<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v16 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,16]))
+  wrm.m.mcmc.out.v16.tab<-summary(wrm.m.mcmc.out.v16)
+  wrm.m.mcmc.out.v16.reg <- as.data.frame(wrm.m.mcmc.out.v16.tab$statistics) 
+  wrm.m.mcmc.out.v16.reg.r<- round(wrm.m.mcmc.out.v16.reg,4)
+  wrm.m.mcmc.out.v16.reg.mean <- wrm.m.mcmc.out.v16.reg.r[1,1]
+  wrm.m.mcmc.out.v16.reg.sd <- wrm.m.mcmc.out.v16.reg.r[2,1]
+}
+wrm.m.mcmc.out.v16.reg.mean
+wrm.m.mcmc.out.v16.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[2]])
+
+
+m<-5
+wrm.m.mcmc.out.v17<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v17 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,17]))
+  wrm.m.mcmc.out.v17.tab<-summary(wrm.m.mcmc.out.v17)
+  wrm.m.mcmc.out.v17.reg <- as.data.frame(wrm.m.mcmc.out.v17.tab$statistics) 
+  wrm.m.mcmc.out.v17.reg.r<- round(wrm.m.mcmc.out.v17.reg,4)
+  wrm.m.mcmc.out.v17.reg.mean <- wrm.m.mcmc.out.v17.reg.r[1,1]
+  wrm.m.mcmc.out.v17.reg.sd <- wrm.m.mcmc.out.v17.reg.r[2,1]
+}
+wrm.m.mcmc.out.v17.reg.mean
+wrm.m.mcmc.out.v17.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+m<-5
+wrm.m.mcmc.out.v18<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v18 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,18]))
+  wrm.m.mcmc.out.v18.tab<-summary(wrm.m.mcmc.out.v18)
+  wrm.m.mcmc.out.v18.reg <- as.data.frame(wrm.m.mcmc.out.v18.tab$statistics) 
+  wrm.m.mcmc.out.v18.reg.r<- round(wrm.m.mcmc.out.v18.reg,4)
+  wrm.m.mcmc.out.v18.reg.mean <- wrm.m.mcmc.out.v18.reg.r[1,1]
+  wrm.m.mcmc.out.v18.reg.sd <- wrm.m.mcmc.out.v18.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v18.reg.mean
+wrm.m.mcmc.out.v18.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+
+m<-5
+wrm.m.mcmc.out.v19<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v19 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,19]))
+  wrm.m.mcmc.out.v19.tab<-summary(wrm.m.mcmc.out.v19)
+  wrm.m.mcmc.out.v19.reg <- as.data.frame(wrm.m.mcmc.out.v19.tab$statistics) 
+  wrm.m.mcmc.out.v19.reg.r<- round(wrm.m.mcmc.out.v19.reg,4)
+  wrm.m.mcmc.out.v19.reg.mean <- wrm.m.mcmc.out.v19.reg.r[1,1]
+  wrm.m.mcmc.out.v19.reg.sd <- wrm.m.mcmc.out.v19.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v19.reg.mean
+wrm.m.mcmc.out.v19.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v20<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v20 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,20]))
+  wrm.m.mcmc.out.v20.tab<-summary(wrm.m.mcmc.out.v20)
+  wrm.m.mcmc.out.v20.reg <- as.data.frame(wrm.m.mcmc.out.v20.tab$statistics) 
+  wrm.m.mcmc.out.v20.reg.r<- round(wrm.m.mcmc.out.v20.reg,4)
+  wrm.m.mcmc.out.v20.reg.mean <- wrm.m.mcmc.out.v20.reg.r[1,1]
+  wrm.m.mcmc.out.v20.reg.sd <- wrm.m.mcmc.out.v20.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v20.reg.mean
+wrm.m.mcmc.out.v20.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+m<-5
+wrm.m.mcmc.out.v21<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v21 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,21]))
+  wrm.m.mcmc.out.v21.tab<-summary(wrm.m.mcmc.out.v21)
+  wrm.m.mcmc.out.v21.reg <- as.data.frame(wrm.m.mcmc.out.v21.tab$statistics) 
+  wrm.m.mcmc.out.v21.reg.r<- round(wrm.m.mcmc.out.v21.reg,4)
+  wrm.m.mcmc.out.v21.reg.mean <- wrm.m.mcmc.out.v21.reg.r[1,1]
+  wrm.m.mcmc.out.v21.reg.sd <- wrm.m.mcmc.out.v21.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v21.reg.mean
+wrm.m.mcmc.out.v21.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+m<-5
+wrm.m.mcmc.out.v22<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v22 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,22]))
+  wrm.m.mcmc.out.v22.tab<-summary(wrm.m.mcmc.out.v22)
+  wrm.m.mcmc.out.v22.reg <- as.data.frame(wrm.m.mcmc.out.v22.tab$statistics) 
+  wrm.m.mcmc.out.v22.reg.r<- round(wrm.m.mcmc.out.v22.reg,4)
+  wrm.m.mcmc.out.v22.reg.mean <- wrm.m.mcmc.out.v22.reg.r[1,1]
+  wrm.m.mcmc.out.v22.reg.sd <- wrm.m.mcmc.out.v22.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v22.reg.mean
+wrm.m.mcmc.out.v22.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+m<-5
+wrm.m.mcmc.out.v23<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v23 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,23]))
+  wrm.m.mcmc.out.v23.tab<-summary(wrm.m.mcmc.out.v23)
+  wrm.m.mcmc.out.v23.reg <- as.data.frame(wrm.m.mcmc.out.v23.tab$statistics) 
+  wrm.m.mcmc.out.v23.reg.r<- round(wrm.m.mcmc.out.v23.reg,4)
+  wrm.m.mcmc.out.v23.reg.mean <- wrm.m.mcmc.out.v23.reg.r[1,1]
+  wrm.m.mcmc.out.v23.reg.sd <- wrm.m.mcmc.out.v23.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v23.reg.mean
+wrm.m.mcmc.out.v23.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v24<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v24 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,24]))
+  wrm.m.mcmc.out.v24.tab<-summary(wrm.m.mcmc.out.v24)
+  wrm.m.mcmc.out.v24.reg <- as.data.frame(wrm.m.mcmc.out.v24.tab$statistics) 
+  wrm.m.mcmc.out.v24.reg.r<- round(wrm.m.mcmc.out.v24.reg,4)
+  wrm.m.mcmc.out.v24.reg.mean <- wrm.m.mcmc.out.v24.reg.r[1,1]
+  wrm.m.mcmc.out.v24.reg.sd <- wrm.m.mcmc.out.v24.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v24.reg.mean
+wrm.m.mcmc.out.v24.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+
+m<-5
+wrm.m.mcmc.out.v25<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v25 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,25]))
+  wrm.m.mcmc.out.v25.tab<-summary(wrm.m.mcmc.out.v25)
+  wrm.m.mcmc.out.v25.reg <- as.data.frame(wrm.m.mcmc.out.v25.tab$statistics) 
+  wrm.m.mcmc.out.v25.reg.r<- round(wrm.m.mcmc.out.v25.reg,4)
+  wrm.m.mcmc.out.v25.reg.mean <- wrm.m.mcmc.out.v25.reg.r[1,1]
+  wrm.m.mcmc.out.v25.reg.sd <- wrm.m.mcmc.out.v25.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v25.reg.mean
+wrm.m.mcmc.out.v25.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v26<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v26 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,26]))
+  wrm.m.mcmc.out.v26.tab<-summary(wrm.m.mcmc.out.v26)
+  wrm.m.mcmc.out.v26.reg <- as.data.frame(wrm.m.mcmc.out.v26.tab$statistics) 
+  wrm.m.mcmc.out.v26.reg.r<- round(wrm.m.mcmc.out.v26.reg,4)
+  wrm.m.mcmc.out.v26.reg.mean <- wrm.m.mcmc.out.v26.reg.r[1,1]
+  wrm.m.mcmc.out.v26.reg.sd <- wrm.m.mcmc.out.v26.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v26.reg.mean
+wrm.m.mcmc.out.v26.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+
+m<-5
+wrm.m.mcmc.out.v27<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v27 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,27]))
+  wrm.m.mcmc.out.v27.tab<-summary(wrm.m.mcmc.out.v27)
+  wrm.m.mcmc.out.v27.reg <- as.data.frame(wrm.m.mcmc.out.v27.tab$statistics) 
+  wrm.m.mcmc.out.v27.reg.r<- round(wrm.m.mcmc.out.v27.reg,4)
+  wrm.m.mcmc.out.v27.reg.mean <- wrm.m.mcmc.out.v27.reg.r[1,1]
+  wrm.m.mcmc.out.v27.reg.sd <- wrm.m.mcmc.out.v27.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v27.reg.mean
+wrm.m.mcmc.out.v27.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+wrm.m.mcmc.out.v28<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v28 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,28]))
+  wrm.m.mcmc.out.v28.tab<-summary(wrm.m.mcmc.out.v28)
+  wrm.m.mcmc.out.v28.reg <- as.data.frame(wrm.m.mcmc.out.v28.tab$statistics) 
+  wrm.m.mcmc.out.v28.reg.r<- round(wrm.m.mcmc.out.v28.reg,4)
+  wrm.m.mcmc.out.v28.reg.mean <- wrm.m.mcmc.out.v28.reg.r[1,1]
+  wrm.m.mcmc.out.v28.reg.sd <- wrm.m.mcmc.out.v28.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v28.reg.mean
+wrm.m.mcmc.out.v28.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+
+m<-5
+wrm.m.mcmc.out.v29<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v29 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,29]))
+  wrm.m.mcmc.out.v29.tab<-summary(wrm.m.mcmc.out.v29)
+  wrm.m.mcmc.out.v29.reg <- as.data.frame(wrm.m.mcmc.out.v29.tab$statistics) 
+  wrm.m.mcmc.out.v29.reg.r<- round(wrm.m.mcmc.out.v29.reg,4)
+  wrm.m.mcmc.out.v29.reg.mean <- wrm.m.mcmc.out.v29.reg.r[1,1]
+  wrm.m.mcmc.out.v29.reg.sd <- wrm.m.mcmc.out.v29.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v29.reg.mean
+wrm.m.mcmc.out.v29.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v30<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v30 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,30]))
+  wrm.m.mcmc.out.v30.tab<-summary(wrm.m.mcmc.out.v30)
+  wrm.m.mcmc.out.v30.reg <- as.data.frame(wrm.m.mcmc.out.v30.tab$statistics) 
+  wrm.m.mcmc.out.v30.reg.r<- round(wrm.m.mcmc.out.v30.reg,4)
+  wrm.m.mcmc.out.v30.reg.mean <- wrm.m.mcmc.out.v30.reg.r[1,1]
+  wrm.m.mcmc.out.v30.reg.sd <- wrm.m.mcmc.out.v30.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v30.reg.mean
+wrm.m.mcmc.out.v30.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+m<-5
+wrm.m.mcmc.out.v31<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v31 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,31]))
+  wrm.m.mcmc.out.v31.tab<-summary(wrm.m.mcmc.out.v31)
+  wrm.m.mcmc.out.v31.reg <- as.data.frame(wrm.m.mcmc.out.v31.tab$statistics) 
+  wrm.m.mcmc.out.v31.reg.r<- round(wrm.m.mcmc.out.v31.reg,4)
+  wrm.m.mcmc.out.v31.reg.mean <- wrm.m.mcmc.out.v31.reg.r[1,1]
+  wrm.m.mcmc.out.v31.reg.sd <- wrm.m.mcmc.out.v31.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v31.reg.mean
+wrm.m.mcmc.out.v31.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+m<-5
+wrm.m.mcmc.out.v32<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v32 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,32]))
+  wrm.m.mcmc.out.v32.tab<-summary(wrm.m.mcmc.out.v32)
+  wrm.m.mcmc.out.v32.reg <- as.data.frame(wrm.m.mcmc.out.v32.tab$statistics) 
+  wrm.m.mcmc.out.v32.reg.r<- round(wrm.m.mcmc.out.v32.reg,4)
+  wrm.m.mcmc.out.v32.reg.mean <- wrm.m.mcmc.out.v32.reg.r[1,1]
+  wrm.m.mcmc.out.v32.reg.sd <- wrm.m.mcmc.out.v32.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v32.reg.mean
+wrm.m.mcmc.out.v32.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+m<-5
+wrm.m.mcmc.out.v33<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v33 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,33]))
+  wrm.m.mcmc.out.v33.tab<-summary(wrm.m.mcmc.out.v33)
+  wrm.m.mcmc.out.v33.reg <- as.data.frame(wrm.m.mcmc.out.v33.tab$statistics) 
+  wrm.m.mcmc.out.v33.reg.r<- round(wrm.m.mcmc.out.v33.reg,4)
+  wrm.m.mcmc.out.v33.reg.mean <- wrm.m.mcmc.out.v33.reg.r[1,1]
+  wrm.m.mcmc.out.v33.reg.sd <- wrm.m.mcmc.out.v33.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v33.reg.mean
+wrm.m.mcmc.out.v33.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v34<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v34 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,34]))
+  wrm.m.mcmc.out.v34.tab<-summary(wrm.m.mcmc.out.v34)
+  wrm.m.mcmc.out.v34.reg <- as.data.frame(wrm.m.mcmc.out.v34.tab$statistics) 
+  wrm.m.mcmc.out.v34.reg.r<- round(wrm.m.mcmc.out.v34.reg,4)
+  wrm.m.mcmc.out.v34.reg.mean <- wrm.m.mcmc.out.v34.reg.r[1,1]
+  wrm.m.mcmc.out.v34.reg.sd <- wrm.m.mcmc.out.v34.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v34.reg.mean
+wrm.m.mcmc.out.v34.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+
+m<-5
+wrm.m.mcmc.out.v35<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v35 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,35]))
+  wrm.m.mcmc.out.v35.tab<-summary(wrm.m.mcmc.out.v35)
+  wrm.m.mcmc.out.v35.reg <- as.data.frame(wrm.m.mcmc.out.v35.tab$statistics) 
+  wrm.m.mcmc.out.v35.reg.r<- round(wrm.m.mcmc.out.v35.reg,4)
+  wrm.m.mcmc.out.v35.reg.mean <- wrm.m.mcmc.out.v35.reg.r[1,1]
+  wrm.m.mcmc.out.v35.reg.sd <- wrm.m.mcmc.out.v35.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v35.reg.mean
+wrm.m.mcmc.out.v35.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v36<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v36 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,36]))
+  wrm.m.mcmc.out.v36.tab<-summary(wrm.m.mcmc.out.v36)
+  wrm.m.mcmc.out.v36.reg <- as.data.frame(wrm.m.mcmc.out.v36.tab$statistics) 
+  wrm.m.mcmc.out.v36.reg.r<- round(wrm.m.mcmc.out.v36.reg,4)
+  wrm.m.mcmc.out.v36.reg.mean <- wrm.m.mcmc.out.v36.reg.r[1,1]
+  wrm.m.mcmc.out.v36.reg.sd <- wrm.m.mcmc.out.v36.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v36.reg.mean
+wrm.m.mcmc.out.v36.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+
+
+
+
+m<-5
+wrm.m.mcmc.out.v37<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v37 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,37]))
+  wrm.m.mcmc.out.v37.tab<-summary(wrm.m.mcmc.out.v37)
+  wrm.m.mcmc.out.v37.reg <- as.data.frame(wrm.m.mcmc.out.v37.tab$statistics) 
+  wrm.m.mcmc.out.v37.reg.r<- round(wrm.m.mcmc.out.v37.reg,4)
+  wrm.m.mcmc.out.v37.reg.mean <- wrm.m.mcmc.out.v37.reg.r[1,1]
+  wrm.m.mcmc.out.v37.reg.sd <- wrm.m.mcmc.out.v37.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v37.reg.mean
+wrm.m.mcmc.out.v37.reg.sd
+#Look at a few summaries
+summary(wrm.m.mcmc.out[[1]])
+summary(wrm.m.mcmc.out[[3]])
+
+
+m<-5
+wrm.m.mcmc.out.v38<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v38 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,38]))
+  wrm.m.mcmc.out.v38.tab<-summary(wrm.m.mcmc.out.v38)
+  wrm.m.mcmc.out.v38.reg <- as.data.frame(wrm.m.mcmc.out.v38.tab$statistics) 
+  wrm.m.mcmc.out.v38.reg.r<- round(wrm.m.mcmc.out.v38.reg,4)
+  wrm.m.mcmc.out.v38.reg.mean <- wrm.m.mcmc.out.v38.reg.r[1,1]
+  wrm.m.mcmc.out.v38.reg.sd <- wrm.m.mcmc.out.v38.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v38.reg.mean
+wrm.m.mcmc.out.v38.reg.sd
+#Look at a few summaries
+
+m<-5
+wrm.m.mcmc.out.v39<-NULL
+for(i in 1:m){
+  wrm.m.mcmc.out.v39 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$Sol[,39]))
+  wrm.m.mcmc.out.v39.tab<-summary(wrm.m.mcmc.out.v39)
+  wrm.m.mcmc.out.v39.reg <- as.data.frame(wrm.m.mcmc.out.v39.tab$statistics) 
+  wrm.m.mcmc.out.v39.reg.r<- round(wrm.m.mcmc.out.v39.reg,4)
+  wrm.m.mcmc.out.v39.reg.mean <- wrm.m.mcmc.out.v39.reg.r[1,1]
+  wrm.m.mcmc.out.v39.reg.sd <- wrm.m.mcmc.out.v39.reg.r[2,1]
+}
+
+wrm.m.mcmc.out.v39.reg.mean
+wrm.m.mcmc.out.v39.reg.sd
+
+
+
+# Combine vectors for means
+wrm.m.mcmc.out.coef.vect <- c(
+  wrm.m.mcmc.out.v1.reg.mean,
+  wrm.m.mcmc.out.v2.reg.mean,
+  wrm.m.mcmc.out.v3.reg.mean,
+  wrm.m.mcmc.out.v4.reg.mean,
+  wrm.m.mcmc.out.v5.reg.mean,
+  wrm.m.mcmc.out.v6.reg.mean,
+  wrm.m.mcmc.out.v7.reg.mean,
+  wrm.m.mcmc.out.v8.reg.mean,
+  wrm.m.mcmc.out.v9.reg.mean,
+  wrm.m.mcmc.out.v10.reg.mean,
+  wrm.m.mcmc.out.v11.reg.mean,
+  wrm.m.mcmc.out.v12.reg.mean,
+  wrm.m.mcmc.out.v13.reg.mean,
+  wrm.m.mcmc.out.v14.reg.mean,
+  wrm.m.mcmc.out.v15.reg.mean,
+  wrm.m.mcmc.out.v16.reg.mean,
+  wrm.m.mcmc.out.v17.reg.mean,
+  wrm.m.mcmc.out.v18.reg.mean,
+  wrm.m.mcmc.out.v19.reg.mean,
+  wrm.m.mcmc.out.v20.reg.mean,
+  wrm.m.mcmc.out.v21.reg.mean,
+  wrm.m.mcmc.out.v22.reg.mean,
+  wrm.m.mcmc.out.v23.reg.mean,
+  wrm.m.mcmc.out.v24.reg.mean,
+  wrm.m.mcmc.out.v25.reg.mean,
+  wrm.m.mcmc.out.v26.reg.mean,
+  wrm.m.mcmc.out.v27.reg.mean,
+  wrm.m.mcmc.out.v28.reg.mean,
+  wrm.m.mcmc.out.v29.reg.mean,
+  wrm.m.mcmc.out.v30.reg.mean,
+  wrm.m.mcmc.out.v31.reg.mean,
+  wrm.m.mcmc.out.v32.reg.mean,
+  wrm.m.mcmc.out.v33.reg.mean,
+  wrm.m.mcmc.out.v34.reg.mean,
+  wrm.m.mcmc.out.v35.reg.mean,
+  wrm.m.mcmc.out.v36.reg.mean,
+  wrm.m.mcmc.out.v37.reg.mean,
+  wrm.m.mcmc.out.v38.reg.mean,
+  wrm.m.mcmc.out.v39.reg.mean
+  ) 
+
+
+# Combine vectors for sds
+wrm.m.mcmc.out.sd.vect <- c(
+  wrm.m.mcmc.out.v1.reg.sd,
+  wrm.m.mcmc.out.v2.reg.sd,
+  wrm.m.mcmc.out.v3.reg.sd,
+  wrm.m.mcmc.out.v4.reg.sd,
+  wrm.m.mcmc.out.v5.reg.sd,
+  wrm.m.mcmc.out.v6.reg.sd,
+  wrm.m.mcmc.out.v7.reg.sd,
+  wrm.m.mcmc.out.v8.reg.sd,
+  wrm.m.mcmc.out.v9.reg.sd,
+  wrm.m.mcmc.out.v10.reg.sd,
+  wrm.m.mcmc.out.v11.reg.sd,
+  wrm.m.mcmc.out.v12.reg.sd,
+  wrm.m.mcmc.out.v13.reg.sd,
+  wrm.m.mcmc.out.v14.reg.sd,
+  wrm.m.mcmc.out.v15.reg.sd,
+  wrm.m.mcmc.out.v16.reg.sd,
+  wrm.m.mcmc.out.v17.reg.sd,
+  wrm.m.mcmc.out.v18.reg.sd,
+  wrm.m.mcmc.out.v19.reg.sd,
+  wrm.m.mcmc.out.v20.reg.sd,
+  wrm.m.mcmc.out.v21.reg.sd,
+  wrm.m.mcmc.out.v22.reg.sd,
+  wrm.m.mcmc.out.v23.reg.sd,
+  wrm.m.mcmc.out.v24.reg.sd,
+  wrm.m.mcmc.out.v25.reg.sd,
+  wrm.m.mcmc.out.v26.reg.sd,
+  wrm.m.mcmc.out.v27.reg.sd,
+  wrm.m.mcmc.out.v28.reg.sd,
+  wrm.m.mcmc.out.v29.reg.sd,
+  wrm.m.mcmc.out.v30.reg.sd,
+  wrm.m.mcmc.out.v31.reg.sd,
+  wrm.m.mcmc.out.v32.reg.sd,
+  wrm.m.mcmc.out.v33.reg.sd,
+  wrm.m.mcmc.out.v34.reg.sd,
+  wrm.m.mcmc.out.v35.reg.sd,
+  wrm.m.mcmc.out.v36.reg.sd,
+  wrm.m.mcmc.out.v37.reg.sd,
+  wrm.m.mcmc.out.v38.reg.sd,
+  wrm.m.mcmc.out.v39.reg.sd) 
+
+
+
+# Get column names
+wrm.m.mcmc.out.names<- names(as.data.frame(wrm.m.mcmc.out[[i]]$Sol)    ) 
+wrm.m.mcmc.out.names 
+%
+
+wrm.m.mcmc.out.names.new <-c("Intcpt.Arab", "Intcpt.Muslim", "Intcpt.Immgrnt",
+                             "S.RELIG.ID.Arab", "S.RELIG.ID.Muslim", "S.RELIG.ID.Immgrnt",
+                             "LOG.CHURCH.Arab", "LOG.CHURCH.Muslim", "LOG.CHURCH.Immgrnt",
+                             "S.CONSRVTVE.Arab", "S.CONSRVTVE.Muslim", "S.CONSRVTVE.Immgrnt",
+                             "C.AGE.Arab", "C.AGE.Muslim", "C.AGE.Immgrnt",
+                             "EDU.Arab", "EDU.Muslim", "EDU.Immgrnt",
+                             "EMPLYD.Arab", "EMPLYD.Muslim", "EMPLYD.Immgrnt",
+                             "EURO.Arab", "EURO.Muslim", "EURO.Immgrnt",
+                             "MALE.Arab", "MALE.Muslim", "MALE.Immgrnt",
+                             "S.NZDEP.2013.Arab", "S.NZDEP.2013..Muslim", "S.NZDEP.2013.Immgrnt",
+                             "PARENT.Arab", "PARENT.Muslim", "PARENT.Immgrnt",
+                             "PARTNER.Arab", "PARTNER.Muslim", "PARTNER.Immgrnt",
+                             "URBAN.Arab", "URBAN.Muslim", "URBAN.Immgrnt")
+# plot of coefs using study variable names
+
+
+library(coefplot2)
+coefplot2(wrm.m.mcmc.out.coef.vect,  wrm.m.mcmc.out.sd.vect, varnames=wrm.m.mcmc.out.names.new, main="Regression Estimates: Warmth Arabs,Muslims,Immigrants")
+
+
+
+## FOR REPORTING SUMMARY OF RESULTS
+
+###START HERE
+wrm.m.mcmc.out.names[[1]]   #Name of coefficient
+wrm.m.mcmc.out.v1.tab  # print the whole list
+round(wrm.m.mcmc.out.v1.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v1.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v1.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+
+wrm.m.mcmc.out.names[[2]]   #Name of coefficient
+wrm.m.mcmc.out.v2.tab  # print the whole list
+round(wrm.m.mcmc.out.v2.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v2.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v2.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[3]]   #Name of coefficient
+wrm.m.mcmc.out.v3.tab  # print the whole list
+round(wrm.m.mcmc.out.v3.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v3.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v3.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[4]]   #Name of coefficient
+wrm.m.mcmc.out.v4.tab  # print the whole list
+round(wrm.m.mcmc.out.v4.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v4.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v4.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[5]]   #Name of coefficient
+wrm.m.mcmc.out.v5.tab  # print the whole list
+round(wrm.m.mcmc.out.v5.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v5.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v5.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[6]]   #Name of coefficient
+wrm.m.mcmc.out.v6.tab  # print the whole list
+round(wrm.m.mcmc.out.v6.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v6.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v6.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[7]]   #Name of coefficient
+wrm.m.mcmc.out.v7.tab  # print the whole list
+round(wrm.m.mcmc.out.v7.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v7.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v7.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[8]]   #Name of coefficient
+wrm.m.mcmc.out.v8.tab  # print the whole list
+round(wrm.m.mcmc.out.v8.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v8.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v8.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[9]]   #Name of coefficient
+wrm.m.mcmc.out.v9.tab  # print the whole list
+round(wrm.m.mcmc.out.v9.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v9.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v9.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[10]]   #Name of coefficient
+wrm.m.mcmc.out.v10.tab  # print the whole list
+round(wrm.m.mcmc.out.v10.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v10.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v10.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[11]]   #Name of coefficient
+wrm.m.mcmc.out.v11.tab  # print the whole list
+round(wrm.m.mcmc.out.v11.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v11.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v11.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[12]]   #Name of coefficient
+wrm.m.mcmc.out.v12.tab  # print the whole list
+round(wrm.m.mcmc.out.v12.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v12.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v12.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[13]]   #Name of coefficient
+wrm.m.mcmc.out.v13.tab  # print the whole list
+round(wrm.m.mcmc.out.v13.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v13.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v13.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[14]]   #Name of coefficient
+wrm.m.mcmc.out.v14.tab  # print the whole list
+round(wrm.m.mcmc.out.v14.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v14.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v14.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[15]]   #Name of coefficient
+wrm.m.mcmc.out.v15.tab  # print the whole list
+round(wrm.m.mcmc.out.v15.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v15.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v15.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[16]]   #Name of coefficient
+wrm.m.mcmc.out.v16.tab  # print the whole list
+round(wrm.m.mcmc.out.v16.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v16.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v16.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[17]]   #Name of coefficient
+wrm.m.mcmc.out.v17.tab  # print the whole list
+round(wrm.m.mcmc.out.v17.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v17.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v17.tab$quantiles[[5]],3) # Report the lower 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[18]]   #Name of coefficient
+wrm.m.mcmc.out.v18.tab  # print the whole list
+round(wrm.m.mcmc.out.v18.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v18.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v18.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[19]]   #Name of coefficient
+wrm.m.mcmc.out.v19.tab  # print the whole list
+round(wrm.m.mcmc.out.v19.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v19.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v19.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[20]]   #Name of coefficient
+wrm.m.mcmc.out.v20.tab  # print the whole list
+round(wrm.m.mcmc.out.v20.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v20.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v20.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[21]]   #Name of coefficient
+wrm.m.mcmc.out.v21.tab  # print the whole list
+round(wrm.m.mcmc.out.v21.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v21.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v21.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[22]]   #Name of coefficient
+wrm.m.mcmc.out.v22.tab  # print the whole list
+round(wrm.m.mcmc.out.v22.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v22.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v22.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[23]]   #Name of coefficient
+wrm.m.mcmc.out.v23.tab  # print the whole list
+round(wrm.m.mcmc.out.v23.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v23.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v23.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[24]]   #Name of coefficient
+wrm.m.mcmc.out.v24.tab  # print the whole list
+round(wrm.m.mcmc.out.v24.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v24.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v24.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[25]]   #Name of coefficient
+wrm.m.mcmc.out.v25.tab  # print the whole list
+round(wrm.m.mcmc.out.v25.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v25.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v25.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[26]]   #Name of coefficient
+wrm.m.mcmc.out.v26.tab  # print the whole list
+round(wrm.m.mcmc.out.v26.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v26.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v26.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[27]]   #Name of coefficient
+wrm.m.mcmc.out.v27.tab  # print the whole list
+round(wrm.m.mcmc.out.v27.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v27.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v27.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[28]]   #Name of coefficient
+wrm.m.mcmc.out.v28.tab  # print the whole list
+round(wrm.m.mcmc.out.v28.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v28.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v28.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[29]]   #Name of coefficient
+wrm.m.mcmc.out.v29.tab  # print the whole list
+round(wrm.m.mcmc.out.v29.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v29.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v29.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[30]]   #Name of coefficient
+wrm.m.mcmc.out.v30.tab  # print the whole list
+round(wrm.m.mcmc.out.v30.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v30.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v30.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[31]]   #Name of coefficient
+wrm.m.mcmc.out.v31.tab  # print the whole list
+round(wrm.m.mcmc.out.v31.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v31.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v31.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[32]]   #Name of coefficient
+wrm.m.mcmc.out.v32.tab  # print the whole list
+round(wrm.m.mcmc.out.v32.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v32.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v32.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[33]]   #Name of coefficient
+wrm.m.mcmc.out.v33.tab  # print the whole list
+round(wrm.m.mcmc.out.v33.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v33.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v33.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[34]]   #Name of coefficient
+wrm.m.mcmc.out.v34.tab  # print the whole list
+round(wrm.m.mcmc.out.v34.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v34.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v34.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[35]]   #Name of coefficient
+wrm.m.mcmc.out.v35.tab  # print the whole list
+round(wrm.m.mcmc.out.v35.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v35.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v35.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[36]]   #Name of coefficient
+wrm.m.mcmc.out.v36.tab  # print the whole list
+round(wrm.m.mcmc.out.v36.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v36.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v36.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[37]]   #Name of coefficient
+wrm.m.mcmc.out.v37.tab  # print the whole list
+round(wrm.m.mcmc.out.v37.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v37.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v37.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.names[[38]]   #Name of coefficient
+wrm.m.mcmc.out.v38.tab  # print the whole list
+round(wrm.m.mcmc.out.v38.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v38.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v38.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+wrm.m.mcmc.out.names[[39]]   #Name of coefficient
+wrm.m.mcmc.out.v39.tab  # print the whole list
+round(wrm.m.mcmc.out.v39.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v39.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v39.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+wrm.m.mcmc.out.done
+wrm.m.mcmc.out.done
+wrm.m.mcmc.out.done
+
+
+
+wrm.m.mcmc.out.names[[39]]   #Name of coefficient
+wrm.m.mcmc.out.v39.tab  # print the whole list
+round(wrm.m.mcmc.out.v39.tab$quantiles[[3]],3) # Report the mean
+round(wrm.m.mcmc.out.v39.tab$quantiles[[1]],3)# Report the lower 95% HPD interval
+round(wrm.m.mcmc.out.v39.tab$quantiles[[5]],3) # Report the UPPER 95% HPD interval
+
+
+
+
+### TEST
+# m<-5
+# wrm.m.mcmc.out.vcv.1<-NULL
+# for(i in 1:m){
+#   wrm.m.mcmc.out.vcv.1 <-  as.mcmc(c(wrm.m.mcmc.out[[i]]$VCV[,1]))
+#   wrm.m.mcmc.out.vcv.1.tab<-summary(wrm.m.mcmc.out.vcv.1)
+#   wrm.m.mcmc.out.vcv.1.reg <- as.data.frame(wrm.m.mcmc.out.vcv.1.tab$statistics) 
+#   wrm.m.mcmc.out.vcv.1.reg.r<- round(wrm.m.mcmc.out.vcv.1.reg,4)
+#   wrm.m.mcmc.out.vcv.1.reg.mean <- wrm.m.mcmc.out.vcv.1.reg.r[1,1]
+#   wrm.m.mcmc.out.vcv.1.sd <- wrm.m.mcmc.out.vcv.1.reg.r[2,1]
+# }
+# 
+# 
+# wrm.m.mcmc.out.vcv.1.reg.mean
+# wrm.m.mcmc.out.vcv.1.sd
+# 
+# 
+# wrm.m.mcmc.out.vcv.1.tab
+# mean(wrm.m.mcmc.out[[1]]$VCV[,1])
+# summary(wrm.m.mcmc.out[[1]]$VCV)
+# 
+
+
+
+###################################
+### MODEL USING NON-IMPUTED DATA
+###################################
+
+library(dplyr)
+nimp.js<-js00%>%
+  filter(!is.na(RELID.T5), 
+         !is.na(CHURCH.T5),
+         !is.na(Pol.Orient.T5),
+         !is.na(Age.T5),
+         !is.na(T5.Education),
+         !is.na(Employed.T5),
+         !is.na(EthL2.Euro.T5),
+         !is.na(Gender.T5),
+         !is.na(NZDep_2013.T04),
+         !is.na(Partner.T5), 
+         !is.na(Urban.T5),
+         !is.na(Parent.T5))%>%
+  mutate(Pol.Orient.T5.S =scale(Pol.Orient.T5),
+         CHURCH.T5.C = scale(CHURCH.T5,center=TRUE, scale =FALSE),
+         NZDep_2013.T04.S = scale(NZDep_2013.T04),
+         Age.T5.C = scale(Age.T5, center=TRUE, scale=FALSE),
+         Employed.T5 = factor(Employed.T5),
+         EthL2.Euro.T5 = factor(EthL2.Euro.T5),
+         Gender.T5 = factor(Gender.T5),
+         Partner.T5=factor(Partner.T5),
+         Urban.T5 = factor(Urban.T5),
+         RELID.T5.S = scale(RELID.T5)  )
+
+str(nimp.js)
+
+## SAME PRIOR 
+prior8ef = list(R = list(V = diag(3)*.1, nu=4),
+                G=list(G1=list(V=diag(3),nu=4, alpha.mu = rep(0,3), alpha.V = diag(3)*100)))
+
+library(MCMCglmm)
+library(coefplot2)
+ni.wrm.m.mcmc.out <-MCMCglmm(cbind(T5.ETH.Warm.Arabs,T5.ETH.Warm.Muslims,T5.ETH.Warm.Immigrants) ~ 
+                               trait-1 +
+                               trait:RELID.T5.S +  
+                               trait:log(CHURCH.T5+1) +
+                               trait:Pol.Orient.T5.S +
+                               trait:Age.T5.C + 
+                               trait:T5.Education + 
+                               trait:Employed.T5 +
+                               trait:EthL2.Euro.T5 +
+                               trait:Gender.T5 + 
+                               trait:NZDep_2013.T04.S +
+                               trait:Parent.T5 +
+                               trait:Partner.T5 + 
+                               trait:Urban.T5,
+                             random= ~us(trait):Census.Religion.L3.T5,
+                             rcov = ~corgh(trait):units, #
+                             family= c("gaussian", "gaussian","gaussian"),
+                             prior=prior8ef,
+                             verbose=TRUE, 
+                             nitt=13000,
+                             data=nimp.js)
+
+
+summary(ni.wrm.m.mcmc.out)
+library(coefplot2)
+coefplot2(ni.wrm.m.mcmc.out, intercept=TRUE)
+
+
+## SAVE RESULTS
+#saveRDS(ni.wrm.m.mcmc.out, "ni.wrm.m.mcmc.out")
+#ni.wrm.m.mcmc.out<- readRDS("ni.wrm.m.mcmc.out")
+
+## HERE'S A PLOT OF THE IMPUTED DATA ONLY
+library(coefplot2)
+coefplot2(wrm.m.mcmc.out.coef.vect, 
+          wrm.m.mcmc.out.sd.vect, 
+          varnames=wrm.m.mcmc.out.names.new, 
+          col.pts=c("Blue","Red","Gray"), 
+          main="Regression Estimates: Warmth Arabs (blue),Muslims (red),Immigrants (gray)")
+
+
+
+library(coefplot2)
+summary(ni.wrm.m.mcmc.out)
+coeftab(ni.wrm.m.mcmc.out)
+
+
+
+
+## COMPARE IMPUTE AND NOT IMPUTE
+# NAMES FROM ABOVE
+coefplot2(ni.wrm.m.mcmc.out, main="Regression Estimates: Red = Imputed, Blue = Pairwise Delete", 
+          col.pts="red", 
+          varnames=wrm.m.mcmc.out.names.new, 
+          intercept=TRUE)
+coefplot2(wrm.m.mcmc.out, col.pts="blue", 
+         intercept = TRUE,
+         add=TRUE)
+
+
+```
+

@@ -1,0 +1,187 @@
+---
+title: 'Pilot study, data analyses'
+author: "Sonja Kunz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+    code_download: yes
+---
+
+# Background
+
+The pilot study investigated whether consumers perceive healthy and tasty food to be differently frequent in different types of restaurants.
+
+### Design and procedure
+
+8 conditions in a within-subjects design; Each Participant read four short descriptions of different restaurant types: A typical fast-food chain, a trendy street-food joint, an upscale scene restaurant, a school or university cafeteria. For each restaurant, participants indicated the perceived frequency of healthy and tasty food. 
+
+### Dependent measures
+
+The dependent variable was participants’ perceived frequency of healthy and tasty food in each restaurant, which we assessed in two ways: 
+
+Participants indicated how healthy and tasty most people in their country expect the food to be in each type of restaurant, each on a slider scale from 1 = *very unhealthy/not tasty at all* to 100 = *very healthy/very tasty*. 
+They also estimated the relative percentages of healthy versus unhealthy and tasty versus not tasty food in each restaurant (Base rate estimates). They indicated their estimates each on two slider scales from 0 % to 100 %, which had to amount to 100% for health and taste base rates.
+
+Load packages
+```{r, message=FALSE}
+library(tidyverse)
+library(misty)
+library(rstatix)
+library(knitr)
+library(ggplot2)
+library(ggpubr)
+library(jtools)
+library(sjPlot)
+library(Rmisc)
+```
+
+Import processed data.
+
+```{r, message=FALSE}
+dat <- read.csv2('Data/Pilot_data_processed.csv')
+```
+
+# Main analyses
+
+We tested how frequent consumers estimated healthy and tasty food in each restaurant type.
+
+We calculated a repeated measures ANOVA, testing the effect of the within-subject factors restaurant type (fast-food, street-food, scene restaurant, cafeteria), estimate type (health vs. taste) and their interaction on the perceived frequency estimate. Of main interest was the interaction between restaurant and estimate type.
+
+```{r, include=FALSE}
+# Restructure health and taste frequency estimates from wide into long format for repeated measures ANOVA, convert the restaurant and estimate type variables into factors. 
+dat_long <- 
+  dat %>% 
+  select(id, study_run, contains('freq')) %>% 
+  pivot_longer(cols=-c('id','study_run'),
+               names_to = c('trial'),
+               values_to = 'rating'
+  ) %>% 
+  mutate(restaurant_type = case_when(grepl('1', trial) ~ 1,
+                                     grepl('2', trial) ~ 2,
+                                     grepl('3', trial) ~ 3,
+                                     grepl('4', trial) ~ 4),
+         rating_type = case_when(grepl('health', trial) ~ 1,
+                                 grepl('taste', trial) ~ 2)
+  ) %>% 
+  mutate(restaurant_type = factor(restaurant_type,
+                                  levels = c('1', '2', '3', '4'),
+                                  labels= c('Fast-Food Chain', 'Street-Food Joint', 'Upscale Restaurant', 'Cafeteria')),
+         rating_type = factor(rating_type,
+                              levels = c('1', '2'),
+                              labels= c('Healthy Food', 'Tasty Food'))
+  )
+
+```
+
+## Descriptive statistics
+
+```{r, echo=FALSE}
+# Check the mean, standard deviation, standard error and 95% confidence interval of the estimates for each rating type and restaurant.
+est_sum <- summarySE(dat_long, measurevar="rating", groupvars=c('restaurant_type', 'rating_type'))
+est_sum %>% 
+  kable(format = 'markdown', digits = 2,
+        col.names = c('Restaurant', 'Estimate type','N', 'Mean estimate', 'Std. Dev.', 'Std. Error', '95% CI'), 
+        caption = 'Mean frequency estimates by restaurant type and estimate type')
+
+```
+
+## ANOVA
+
+```{r}
+aov_freq <-
+  dat_long %>% 
+  anova_test(., dv = rating, wid = id,
+             within = c(rating_type, restaurant_type), type = 3, effect.size = 'pes') %>% 
+  get_anova_table()
+
+```
+
+```{r, echo=FALSE}
+colnames(aov_freq) <- c('Effect', 'df~$GG$~/nominator', 'df~$GG$~/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(aov_freq) <- c('Estimate type', 'Restaurant type', 'Estimate*Restaurant type')
+
+kable(aov_freq[-1],format = 'markdown', digits = 2)
+```
+
+The strong interaction between estimate type and restaurant type indicates that frequency estimates of healthy and tasty food differed across restaurants. To follow up, we calculated pairwise comparisons of frequency estimates between restaurant types at each level of estimate type (healthy and tasty food) as well as between estimates of healthy and tasty foods within each restaurant type.
+
+### Pairwise comparisons
+
+```{r, echo=FALSE}
+freq_pw <- 
+  dat_long %>%
+  group_by(rating_type) %>%
+  pairwise_t_test(rating ~ restaurant_type, p.adjust.method = "bonferroni") 
+
+kable(freq_pw[-c(2,5,6)], format = 'markdown', digits = 2,
+        caption = 'Pairwise comparisons of frequency estimates between restaurant types within each estimate type',
+        col.names = c('Estimate type', 'Restaurant 1', 'Restaurant 2', '$p$', 'Sign', '$p.adj$', 'Sign. adj.'))
+```
+
+```{r, echo=FALSE}
+freq_pw <- 
+  dat_long %>%
+  group_by(restaurant_type) %>%
+  pairwise_t_test(rating ~ rating_type, p.adjust.method = "bonferroni") 
+
+kable(freq_pw[-c(2,5,6)], format = 'markdown', digits = 2,
+        caption = 'Pairwise comparisons of frequency estimates between estimate types within each restaurant type',
+        col.names = c('Restaurant type', 'Estimate type 1', 'Estimate type 2', '$p$', 'Sign', '$p.adj$', 'Sign. adj.'))
+```
+
+Frequency estimates of tasty food differed significantly (*p* < .001) between all restaurants except the street-food joint and upscale restaurant.
+Participants expected more tasty foods in both the street-food joint and upscale restaurant than the fast-food chain, followed by the cafeteria.
+Frequency estimates of healthy food differed significantly (*p* < .001) between all restaurants except the street-food joint and cafeteria. 
+Participants expected more healthy foods in the upscale restaurant than both the street-food joint and the cafeteria, followed by the fast-food chain.
+
+Frequency estimates differed significantly (*p* < .001) between healthy and tasty food in each restaurant type. Participants expected more tasty than healthy food in the fast-food chain, street-food joint, and upscale scene restaurant. Conversely, they expected more healthy than tasty food in the cafeteria.
+
+## Plot the results
+
+```{r, echo=FALSE}
+est_sum %>%
+  ggplot(aes(x=restaurant_type, y=rating, fill=rating_type)) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=rating-ci, ymax=rating+ci),
+                width=.2,                   
+                position=position_dodge(.9)) +
+  coord_cartesian(ylim = c(1, 100))+
+  theme_apa() +
+  labs(x = 'Restaurant Type', 
+       y = 'Mean Estimates')+
+  theme(legend.position = 'top',
+        axis.title.y = element_text(face = 'bold', size = 18),
+        axis.title.x = element_text(face = 'bold', size = 18),
+        legend.text = element_text(size = 18),
+        text = element_text(size = 16)) 
+```
+
+# Control analyses
+
+Some participants completed the study online, whereas others participated in the lab. This is indicated by variable `study_run`. To check whether this affected the results, we ran the main analysis again, while including this variable as a factor.
+
+## ANOVA
+
+```{r}
+aov_freq <-
+  dat_long %>% 
+  anova_test(., dv = rating, wid = id, between = study_run,
+             within = c(rating_type, restaurant_type), type = 3, effect.size = 'pes') %>% 
+  get_anova_table()
+```
+
+```{r, echo=FALSE}
+colnames(aov_freq) <- c('Effect', 'df~$GG$~/nominator', 'df~$GG$~/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(aov_freq) <- c('Lab/online', 'Estimate type', 'Restaurant type', 'Lab/online*Estimate type', 'Lab/online*Restaurant type', 'Estimate type*Restaurant type', 'Lab/online\\*Estimate type\\*Restaurant type')
+
+kable(aov_freq[-1],format = 'markdown', digits = 2)
+```
+
+# Summary of results
+
+Participants perceived different frequencies of healthy and tasty foods in the different restaurant types. In particular, they expected more tasty and less healthy food in a fast-food chain compared with a school or university cafeteria. 
+
+Whether participants completed the study online or in the lab did not influence the results.

@@ -1,0 +1,175 @@
+---
+title: "Reproducing Wojcik et al.^[Note: This file was initially uploaded on 14.07.2020. I edited it on 31.03.2022 to edit a typo in the reference and replace the words 'replicated', 'replicating', and 'replicable' with 'reproduced', 'reproducing', and 'reproducible'.]"
+subtitle: "Unconscious Detection of One’s Own Image"
+author: Sophia Crüwell
+output:
+  pdf_document: default
+  pdf = document: default
+  html_notebook: default
+---
+
+```{r message=FALSE, warning=FALSE}
+library(rstatix)
+library(readxl)
+library(lsr)
+dat <- read.csv2("Data_public.csv")
+RTbox <- read_excel("RTs_after_boxcox.xls", col_types = "numeric")
+```
+# Summary
+The results are mostly reproducible. Issues that arose seem to be typos, and possibly selective one-sided BF analysis. The data for the behavioural control experiment do not seem to be provided alongside the summarised data. The summarised data are provided on the OSF (https://osf.io/4e7h9/). As specified in the corrigendum, the data provided only include “mean amplitudes, reaction times, and visibility measures”. 
+
+
+# Results
+## Behavioral results
+### Dot-probe tasks
+```{r}
+maskedRT <- wilcox.test(RTbox$RT_Uncon_Valid, RTbox$RT_Uncon_Inavlid, 
+                        alternative = "two.sided", paired = TRUE)
+
+unmaskedRT <- t.test(RTbox$RT_Con_Valid, RTbox$RT_Con_Invalid, paired = TRUE)
+
+```
+
+#### Results reported in the paper:
+A Wilcoxon signed rank test indicated no significant differences between RTs for congruent and incongruent trials in the masked dot-probe task, W = 129.0, p = .06, BF = 2.13 (alternative hypothesis 2.1 times more likely, anecdotal evidence for the alternative hypothesis). RTs obtained in the unmasked dot-probe task did not differ between the congruent and incongruent trials, t(17) = -0.71, p = .487, BF = 0.30 (null hypothesis 3.3 times more likely, moderate evidence).
+
+#### Reproduced:
+A Wilcoxon signed rank test indicated no significant differences between RTs for congruent and incongruent trials in the masked dot-probe task, W = `r maskedRT$statistic`, p = `r maskedRT$p.value`, BF = 2.128 (see JASP file 1). RTs obtained in the unmasked dot-probe task did not differ between the congruent and incongruent trials, t(17) = `r unmaskedRT$statistic`, p = `r unmaskedRT$p.value`, BF = 0.304 (see JASP file 1).
+
+
+
+### Identification tasks
+```{r}
+maskedDprime <- t.test(dat$Masked_D_prime)
+maskedDprimeD <- cohensD(dat$Masked_D_prime)
+
+unmaskedDprime <- t.test(dat$Umasked_D_prime)
+unmaskedDprimeD <- cohensD(dat$Umasked_D_prime)
+```
+
+#### Results reported in the paper:
+Participants performed at chance in identifying their own face in the masked identification task, t(17) = 1.57, p = .135, 95% CI for the mean difference = [-0.07, 0.5], BF = 0.68 (null hypothesis 1.5 times more likely, anecdotal evidence). In contrast, d' values were significantly different from 0 in the unmasked identification task, t(17) = 3.85, p = .001, 95% CI = [0.73, 2.51], d = 0.91, BF = 23.98 (alternative hypothesis 24 times more likely, strong evidence).
+
+#### Reproduced:
+Participants performed at chance in identifying their own face in the masked identification task, t(17) = `r maskedDprime$statistic`, p = `r maskedDprime$p.value`, 95% CI for the mean difference = [`r maskedDprime$conf.int[1]`, `r maskedDprime$conf.int[2]`], BF = 0.684 (see JASP file 2). In contrast, d' values were significantly different from 0 in the unmasked identification task, t(17) = `r unmaskedDprime$statistic`, p = `r unmaskedDprime$p.value`, 95% CI = [`r unmaskedDprime$conf.int[1]`, `r unmaskedDprime$conf.int[2]`], d = `r unmaskedDprimeD`, BF = 29.983 (see JASP file 2).
+
+#### Issues:
+The Bayes Factor is not correct (23.98 vs 29.98). This seems to be a typo as the decimal places match.
+
+
+## ERP results
+
+### Masked dot-probe
+```{r}
+maskedERP <- t.test(dat$Masked_contr_Early, dat$Masked_ipsi_Early, paired = TRUE)
+
+meanMasked_contr_Early <- mean(dat$Masked_contr_Early)
+meanMasked_ipsi_Early <- mean(dat$Masked_ipsi_Early)
+
+d1 <- cohensD(x = dat$Masked_contr_Early, y = dat$Masked_ipsi_Early, method = "paired")
+```
+#### Results reported in the paper: 
+
+For the masked dot-probe task, a paired-samples t test (contralateral vs. ipsilateral) was performed to assess the presence of an early N2pc, t(17) = -2.34, p = .031, 95% CI for the mean difference between contralateral and ipsilateral amplitudes = [-0.48, -0.03], d = -0.55, BF = 4.07 (alternative hypothesis 4.1 times more likely, moderate evidence). It indicated that the overall mean amplitudes of the contralateral waveform were more negative (M = -0.02 µV) than the mean amplitudes of the ipsilateral waveform (M = 0.23 µV).
+
+#### Reproduced:
+For the masked dot-probe task, a paired-samples t test (contralateral vs. ipsilateral) was performed to assess the presence of an early N2pc, t(17) = `r maskedERP$statistic`, p = `r maskedERP$p.value`, 95% CI for the mean difference between contralateral and ipsilateral amplitudes = [`r maskedERP$conf.int[1]`, `r maskedERP$conf.int[2]`], d = `r d1`, BF = 4.07 (see JASP File 2). It indicated that the overall mean amplitudes of the contralateral waveform were more negative (M = `r meanMasked_contr_Early` µV) than the mean amplitudes of the ipsilateral waveform (M = `r meanMasked_ipsi_Early` µV).
+
+
+#### Issues:
+Not reported that Bayes Factor test is one sided.
+
+
+### Unmasked dot-probe
+```{r}
+unmaskedERP1 <- t.test(dat$Unmask_contr_Early, dat$Unmasked_Ipsi_Early, paired = TRUE)
+d2 <- cohensD(x=dat$Unmask_contr_Early, y=dat$Unmasked_Ipsi_Early, method = "paired") 
+#reported in paper: d = -0.67
+
+unmaskedERP2 <- t.test(dat$Unmask_contr_Late, dat$Unmask_ipsi_Late, paired = TRUE)
+d3 <- cohensD(x = dat$Unmask_contr_Late , y =dat$Unmask_ipsi_Late, method = "paired")
+
+meanUnmask_contr_Early <- mean(dat$Unmask_contr_Early)
+meanUnmasked_Ipsi_Early <- mean(dat$Unmasked_Ipsi_Early)
+
+meanUnmask_contr_Late <- mean(dat$Unmask_contr_Late)
+meanUnmask_ipsi_Late <- mean(dat$Unmask_ipsi_Late)
+```
+#### Results reported in the paper:
+For the unmasked dot-probe task, a paired-samples t test (contralateral vs. ipsilateral) indicated a clear early N2pc component, as amplitudes of the contralateral waveforms were more negative (M = 0.23 µV) than the amplitudes of the ipsilateral waveforms (M = 0.74 µV), t(17) = 2.91, p = .01, 95% CI = [-0.87, -0.14], d = -0.67, BF = 10.71 (alternative hypothesis 10.7 times more likely, strong evidence). A paired-samples t test was run (contralateral vs. ipsilateral) to test whether a late N2pc component was elicited. It showed that the amplitudes of the contralateral waveforms significantly differed (M = 3.24 µV) from the amplitudes of the ipsilateral waveforms (M = 3.61 µV), t(17) = 2.54, p = .021, 95% CI = [-0.68, -0.06], d = -0.6, BF = 5.66 (alternative hypothesis 5.7 times more likely, moderate evidence).
+
+#### Reproduced:
+For the unmasked dot-probe task, a paired-samples t test (contralateral vs. ipsilateral) indicated a clear early N2pc component, as amplitudes of the contralateral waveforms were more negative (M = `r meanUnmask_contr_Early` µV) than the amplitudes of the ipsilateral waveforms (M = `r meanUnmasked_Ipsi_Early` µV), t(17) = `r unmaskedERP1$statistic`, p = `r unmaskedERP1$p.value`, 95% CI = [`r unmaskedERP1$conf.int[1]`, `r unmaskedERP1$conf.int[2]`], d = `r d2`, BF = 10.713 (see JASP File 2). A paired-samples t test was run (contralateral vs. ipsilateral) to test whether a late N2pc component was elicited. It showed that the amplitudes of the contralateral waveforms significantly differed (M = `r meanUnmask_contr_Late` µV) from the amplitudes of the ipsilateral waveforms (M = `r meanUnmask_ipsi_Late` µV), t(17) = `r unmaskedERP2$statistic`, p = `r unmaskedERP2$p.value`, 95% CI = [`r unmaskedERP2$conf.int[1]`, `r unmaskedERP2$conf.int[2]`], d = `r d3`, BF = 5.66 (see JASP File 2).
+
+#### Issues:
+Not reported that Bayes Factor test is one sided.
+
+Slight error in effect size (should be d = `r d2` instead of d = -0.67).
+
+
+### Waveforms
+```{r}
+#masked
+maskedN2pc <- t.test(dat$maksed_N2pc_E) # reported in paper: p = .003
+
+#unmasked
+unmaskedN2pcE <- t.test(dat$unmasked_N2pc_E) #reported in paper: p=.015
+unmaskedN2pcL <- t.test(dat$unmasked_N2pc_L)
+```
+#### Results reported in paper:
+The nonparametric cluster-level one-sample t tests revealed a difference between contralateral and ipsilateral waveforms in the time window of 188 to 262 ms in the masked dot-probe task (p = .003). In the unmasked dot-probe task, two time windows differentiated the contralateral and ipsilateral waveforms: 214 ms to 282 ms (p = .015) and 306 ms to 364 ms (p = .022), respectively. These clusters are denoted in the lower panels of Figure 2 with difference waves (contralateral – ipsilateral).
+
+#### Reproduced:
+The nonparametric cluster-level one-sample t tests revealed a difference between contralateral and ipsilateral waveforms in the time window of 188 to 262 ms in the masked dot-probe task (p = `r maskedN2pc$p.value`). In the unmasked dot-probe task, two time windows differentiated the contralateral and ipsilateral waveforms: 214 ms to 282 ms (p = `r unmaskedN2pcE$p.value`) and 306 ms to 364 ms (p = `r unmaskedN2pcL$p.value`), respectively. These clusters are denoted in the lower panels of Figure 2 with difference waves (contralateral – ipsilateral).
+
+#### Issues:
+
+Two errors or typos in the p values for the unmasked time window 214ms to 282ms (this looks like it should be 0.010 instead of 0.015) and masked time window 188ms to 262ms (should be 0.03 instead of 0.003).
+
+
+## The validity of the masking procedure
+The visibility measure (d') observed in the masked identification task was not different from zero, but the Bayesian analysis provided only anecdotal evidence for the null hypothesis (i.e., no difference). Yet this can be explained by the fact that we used a relatively small sample of participants (N = 18). To further test the validity of the masking procedure, we conducted the following analyses.
+```{r}
+t.test(dat$Masked_D_prime)
+```
+
+### Subgroup analysis
+
+#### Results reported in paper:
+When we consider interindividual differences, it might be argued that some participants were conscious of the target presentation, and the early N2pc effect was influenced mainly by their data. Therefore, we divided the sample into two subgroups: One (n = 9) performed at chance level in the masked identification task (mean d' = -0.24), and another (n = 9) performed above chance (mean d' = 0.66). However, the group factor did not differentiate the N2pc amplitude, t(16) = 0.58, p = .573, BF = 0.46 (null hypothesis 2.2 times more likely, anecdotal evidence).
+
+#### Issue: 
+What are the subgroups?
+
+
+### N2pc and d' correlation
+```{r}
+corMasked <- cor.test(dat$maksed_N2pc_E, dat$Masked_D_prime)
+
+corUnmasked <- cor.test(dat$unmasked_N2pc_E, dat$Umasked_D_prime)
+
+corMasked$estimate
+corMasked$p.value
+
+corUnmasked$estimate
+corUnmasked$p.value
+
+```
+#### Results reported:
+Further, the amplitude of the early N2pc component observed in the masked dot-probe task did not correlate with the d' obtained in the masked identification task, r = -.2, p = .424, BF = 0.39 (null hypothesis 2.6 times more likely, anecdotal evidence), indicating no relation between visibility and attention shifts. In contrast, the amplitude of the early N2pc component elicited in the unmasked dot-probe task correlated negatively with the d' measured in the unmasked identification task, r = -.58, p = .011, BF = 5.87 (alternative hypothesis 5.9 times more likely, moderate evidence).
+
+#### Results reproduced:
+Further, the amplitude of the early N2pc component observed in the masked dot-probe task did not correlate with the d' obtained in the masked identification task, r = `r corMasked$estimate`, p = `r corMasked$p.value`, BF = 0.392 (see Jasp File 2), indicating no relation between visibility and attention shifts. In contrast, the amplitude of the early N2pc component elicited in the unmasked dot-probe task correlated negatively with the d' measured in the unmasked identification task, r = `r corUnmasked$estimate`, p = `r corUnmasked$p.value`, BF = 5.866 (see JASP File 2).
+
+#### Issues:
+None.
+
+
+### Behavioral control experiment
+
+#### Results reported:
+Masked stimuli can theoretically become more visible as a result of repeated exposure. To establish whether the fixed sequence of the experimental tasks (the identification task always occurred before the dot-probe task) had influenced the visibility measure, we conducted a behavioral control experiment (N = 17) with the tasks in reverse order. The visibility measurements acquired in both experiments were compared using a Wilcoxon rank-sum test because the d' distribution obtained in the control experiment deviated from normality. The results indicated that the tasks’ order did not influence the visibility measure, W = 166.0, p = .68, BF = 0.39 (null hypothesis 2.6 times more likely, anecdotal evidence).
+
+#### Issues:
+The data for this experiment do not seem to be provided.
+

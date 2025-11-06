@@ -1,0 +1,1873 @@
+---
+title: "Variable_Calculation"
+author: "Patricia Chen"
+date: "October 30, 2016"
+output: html_document
+---
+
+
+# Computing Variables
+
+This R file takes in the anonymized data and calculates a whole bunch of variables (e.g., number of resources used, matching the resources across the different time points, etc).
+
+
+```{r preamble, echo=FALSE, eval=TRUE}
+library(ggplot2)
+library('scales')
+library(Hmisc)
+library(corrplot)
+library(psych)
+library(psy)
+library(reshape2)
+library(reshape)
+library(lme4)
+library(nlme)
+library(lmerTest)
+
+#source("Graphs/summarySE.R")
+#source('bm.mediation.r')
+
+study1 = read.csv("study1_anonymized_release.csv", header=TRUE)
+study2 = read.csv("study2_anonymized_release.csv", header=TRUE)
+```
+
+
+
+```{r preparing-student-background-variables, echo=FALSE, eval=TRUE}
+#pre_intervention_GPA
+study1$pre_intervention_GPA = as.numeric(as.character(study1$pre_intervention_GPA))
+study1$highschoolGPA = as.numeric(as.character(study1$highschoolGPA))
+
+#race
+study1$race_dummy = factor(study1$race, levels=c("White/Caucasian", "Black", "Asian", 
+                                                 "Hispanic/ Latino/ Chicano/ Puerto Rican"),
+                           labels=c("White/Caucasian", "Black", "Asian", "Hispanic"))
+
+study1$classstanding = as.factor(study1$classstanding)
+
+study2$pre_intervention_GPA = as.numeric(as.character(study2$pre_intervention_GPA))
+study2$highschoolGPA_num = as.numeric(as.character(study2$highschoolGPA))
+study2$highschoolGPA[study2$highschoolGPA_num == 1]  = 2.0  # Note this is actually "2.0 or lower"
+study2$highschoolGPA[study2$highschoolGPA_num == 2]  = 2.1
+study2$highschoolGPA[study2$highschoolGPA_num == 3]  = 2.2
+study2$highschoolGPA[study2$highschoolGPA_num == 4]  = 2.3
+study2$highschoolGPA[study2$highschoolGPA_num == 5]  = 2.4
+study2$highschoolGPA[study2$highschoolGPA_num == 6]  = 2.5  
+study2$highschoolGPA[study2$highschoolGPA_num == 7]  = 2.6
+study2$highschoolGPA[study2$highschoolGPA_num == 8]  = 2.7 
+study2$highschoolGPA[study2$highschoolGPA_num == 9]  = 2.8
+study2$highschoolGPA[study2$highschoolGPA_num == 10] = 2.9
+study2$highschoolGPA[study2$highschoolGPA_num == 11] = 3.0
+study2$highschoolGPA[study2$highschoolGPA_num == 12] = 3.1
+study2$highschoolGPA[study2$highschoolGPA_num == 13] = 3.2
+study2$highschoolGPA[study2$highschoolGPA_num == 14] = 3.3
+study2$highschoolGPA[study2$highschoolGPA_num == 15] = 3.4
+study2$highschoolGPA[study2$highschoolGPA_num == 16] = 3.5
+study2$highschoolGPA[study2$highschoolGPA_num == 17] = 3.6
+study2$highschoolGPA[study2$highschoolGPA_num == 18] = 3.7
+study2$highschoolGPA[study2$highschoolGPA_num == 19] = 3.8
+study2$highschoolGPA[study2$highschoolGPA_num == 20] = 3.9
+study2$highschoolGPA[study2$highschoolGPA_num == 21] = 4.0
+study2$highschoolGPA[study2$highschoolGPA_num == 22] = NA
+
+# race
+study2$race_dummy = factor(study2$race, levels=c("White/Caucasian", "Black", "Asian", 
+                                                 "Hispanic/ Latino/ Chicano/ Puerto Rican"),
+                           labels=c("White/Caucasian", "Black", "Asian", "Hispanic"))
+
+
+### --- Calculating number of surveys completed --- ###
+study1$number_pre_complete = rowSums(study1[, c("didSurveyPreE1", "didSurveyPreE2")], na.rm=T)
+study1$number_post_complete = rowSums(study1[, c("didSurveyPostE1", "didSurveyPostE2")], na.rm=T)
+study1$total_surveys_complete = rowSums(study1[, c("didSurveyPreE1", "didSurveyPreE2", "didSurveyPostE1", "didSurveyPostE2")], na.rm=T)
+
+study2$number_pre_complete = rowSums(study2[, c("didSurveyPreE1", "didSurveyPreE2")], na.rm=T)
+study2$number_post_complete = rowSums(study2[, c("didSurveyPostE1", "didSurveyPostE2")], na.rm=T)
+study2$total_surveys_complete = rowSums(study2[, c("didSurveyPreE1", "didSurveyPreE2", "didSurveyPostE1", "didSurveyPostE2")], na.rm=T)
+
+
+## Exam and Final Course Performance EXCLUDING Bonus Points/ Extra Credit
+  # study1
+study1$grade_nobonus = study1$grade - (study1$total_surveys_complete*0.67)
+study1$exam_1_nobonus = study1$exam_1 - (study1$didSurveyPreE1*0.67)
+study1$exam_2_nobonus = study1$exam_2 - (study1$didSurveyPreE2*0.67)
+
+  #study2
+study2$grade_nobonus = study2$grade - (study2$total_surveys_complete*0.80)
+study2$exam_1_nobonus = study2$exam_1 - (study2$didSurveyPreE1*0.80)
+study2$exam_2_nobonus = study2$exam_2 - (study2$didSurveyPreE2*0.80)
+```
+
+
+
+## Strategic Behaviors Scale (only assessed in study2 post-E2)
+```{r strategic-behaviors, echo=FALSE, eval=TRUE, results='hide'}
+
+# Note that the strategic behaviors scale was only used in study2.
+# Scale aggregation done with pairwise deletion in paper. Results are the same when we use listwise deletion.
+
+cronbach(study2[,c(
+  "sm1_poE2_t1", 
+  "sm2_poE2_t2", 
+  "sm3_poE2_m1", 
+  "sm4_poE2_m2",
+  "sm5_poE2_cs1",
+  "sm6_poE2_cs2",
+  "sm7_poE2_ref1",
+  "sm8_poE2_ref2")])
+
+study2$strategic_behaviors_pw = rowMeans(study2[,c(
+  "sm1_poE2_t1", 
+  "sm2_poE2_t2", 
+  "sm3_poE2_m1", 
+  "sm4_poE2_m2",
+  "sm5_poE2_cs1",
+  "sm6_poE2_cs2",
+  "sm7_poE2_ref1",
+  "sm8_poE2_ref2"
+)], na.rm = TRUE)  #pairwise deletion
+
+# study2$strategic_behaviors_lw = rowMeans(study2[,c(
+#   "sm1_poE2_t1", 
+#   "sm2_poE2_t2", 
+#   "sm3_poE2_m1", 
+#   "sm4_poE2_m2",
+#   "sm5_poE2_cs1",
+#   "sm6_poE2_cs2",
+#   "sm7_poE2_ref1",
+#   "sm8_poE2_ref2"
+# )], na.rm = FALSE)  #listwise deletion
+
+```
+
+
+## Open-ended responses
+```{r open-ended responses, echo=FALSE, eval=TRUE, results='hide'}
+
+# For paper: five main strategies that they mentioned which were consistent with self-regulation theory: (1) explicit consideration of the exam format, (2) leveraging multiple resources synergistically, (3) a focus on promoting learning or understanding of the class material, (4) illustrating an understanding of personal strengths and weaknesses, and (5) recognizing that learning is a social process. 
+
+### Creating the engagement degree variables ###
+
+# Study 1
+study1$why1_examformat <- rowSums(study1[,c("E1_why1_relate.to.exam.format","E2_why1_relate.to.exam.format")], na.rm=TRUE)
+study1$why2_otherres <- rowSums(study1[,c("E1_why2_relate.to.other.resources","E2_why2_relate.to.other.resources")], na.rm=TRUE)
+study1$why3_learnundst <- rowSums(study1[,c("E1_why3_promote.learning.or.understanding","E2_why3_promote.learning.or.understanding")], na.rm=TRUE)
+study1$why4_selfknow <- rowSums(study1[,c("E1_why4_understanding.of.self","E2_why4_understanding.of.self")], na.rm=TRUE)
+study1$why5_sociallearn <- rowSums(study1[,c("E1_why5_recognize.social.learning.process","E1_why5_recognize.social.learning.process")], na.rm=TRUE)
+
+study1$plan1_when <- rowSums(study1[,c("E1_plan1_when","E2_plan1_when")], na.rm=TRUE)
+study1$plan2_where <- rowSums(study1[,c("E1_plan2_where","E2_plan2_where")], na.rm=TRUE)
+study1$plan3_how <- rowSums(study1[,c("E1_plan3_how","E2_plan3_how")], na.rm=TRUE)
+
+
+# Study 2
+study2$why1_examformat <- rowSums(study2[,c("E1_why1_relate.to.exam.format","E2_why1_relate.to.exam.format")], na.rm=TRUE)
+study2$why2_otherres <- rowSums(study2[,c("E1_why2_relate.to.other.resources","E2_why2_relate.to.other.resources")], na.rm=TRUE)
+study2$why3_learnundst <- rowSums(study2[,c("E1_why3_promote.learning.or.understanding","E2_why3_promote.learning.or.understanding")], na.rm=TRUE)
+study2$why4_selfknow <- rowSums(study2[,c("E1_why4_understanding.of.self","E2_why4_understanding.of.self")], na.rm=TRUE)
+study2$why5_sociallearn <- rowSums(study2[,c("E1_why5_recognize.social.learning.process","E1_why5_recognize.social.learning.process")], na.rm=TRUE)
+
+study2$plan1_when <- rowSums(study2[,c("E1_plan1_when","E2_plan1_when")], na.rm=TRUE)
+study2$plan2_where <- rowSums(study2[,c("E1_plan2_where","E2_plan2_where")], na.rm=TRUE)
+study2$plan3_how <- rowSums(study2[,c("E1_plan3_how","E2_plan3_how")], na.rm=TRUE)
+```
+
+
+## Emotion and Motivation variables
+```{r aggregating-emotions-across-exams-and-cohorts, echo=FALSE, results='hide', eval=TRUE}
+
+### Calculating variables ###
+## study1 ##
+  # anxious, frustrated, insecure
+cronbach(study1[,c("Anxious","Frustrated","Insecure")])
+cronbach(study1[,c("Anxious_E2","Frustrated_E2","Insecure_E2")])
+
+study1$E1_negemotions = rowMeans(study1[,c("Anxious","Frustrated","Insecure")], na.rm=TRUE)
+study1$E2_negemotions = rowMeans(study1[,c("Anxious_E2","Frustrated_E2","Insecure_E2")], na.rm=TRUE)
+
+
+
+### Rescaling variables so that study1 and study2 DVs match on scale ###
+
+   # rescaling variables to match study2 dataset #
+   # Study 1 was measured on a 1-9 Likert scale; while Study 2 was measured on a 1-7 Likert scale
+   # To do this, if a response was "X" on Study 1, it'll become:
+   #     (X - 1) * 6/8 + 1
+   #  on Study 2, because:
+   #      1) have to shift 1-9 to 0-8, so we subtract 1
+   #      2) then rescale to become 0-6, so we multiply by 6/8
+   #      3) then we need to change 0-6 to 1-7, so we add 1
+
+  study1$E1_negemotions_orig = study1$E1_negemotions
+  study1$E1_negemotions = (study1$E1_negemotions_orig-1)/8*6 + 1
+  study1$control.over.grade_orig = study1$control.over.grade
+  study1$control.over.grade = (study1$control.over.grade_orig-1)/8*5 + 1              # 6-point scale in study2
+  study1$extent.of.planning_poE1_orig = study1$extent.of.planning_poE1
+  study1$extent.of.planning_poE1 = (study1$extent.of.planning_poE1_orig-1)/8*6 + 1    # 7-point scale in study2
+  
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==1] = NA
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==2] = 1
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==3] = 2
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==4] = 3
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==5] = 4
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==6] = 5
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==7] = 6
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==8] = 7
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==9] = 8
+  study1$kept.to.plans_poE1[study1$kept.to.plans_poE1==10] = 9
+  
+  study1$kept.to.plans_poE1 = (study1$kept.to.plans_poE1-1)/8*6 + 1
+  
+  # from 9 point to 7 point
+  study1$motivation_orig = study1$motivation
+  study1$motivation = (study1$motivation_orig-1)/8*6 + 1
+  study1$importance_orig = study1$importance
+  study1$importance = (study1$importance_orig-1)/8*6 + 1
+  study1$confidence_orig = study1$confidence
+  study1$confidence = (study1$confidence_orig-1)/8*6 + 1
+  
+  study1$motivation_E2_orig = study1$motivation_E2
+  study1$motivation_E2 = (study1$motivation_E2_orig-1)/8*6 + 1
+  study1$importance_E2_orig = study1$importance_E2
+  study1$importance_E2 = (study1$importance_E2_orig-1)/8*6 + 1
+  study1$confidence_E2_orig = study1$confidence_E2
+  study1$confidence_E2 = (study1$confidence_E2_orig-1)/8*6 + 1
+
+  study1$E2_negemotions_orig = study1$E2_negemotions
+  study1$E2_negemotions = (study1$E2_negemotions_orig-1)/8*6 + 1
+  study1$control.over.grade_E2_orig = study1$control.over.grade_E2
+  study1$control.over.grade_E2 = (study1$control.over.grade_E2_orig-1)/8*5 + 1
+  study1$extent.of.planning_poE2_orig = study1$extent.of.planning_poE2
+  study1$extent.of.planning_poE2 = (study1$extent.of.planning_poE2_orig-1)/8*6 + 1
+
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==1] = NA
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==2] = 1
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==3] = 2
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==4] = 3
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==5] = 4
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==6] = 5
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==7] = 6
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==8] = 7
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==9] = 8
+  study1$kept.to.plans_poE2[study1$kept.to.plans_poE2==10] = 9
+  
+  study1$kept.to.plans_poE2 = (study1$kept.to.plans_poE2-1)/8*6 + 1  
+  
+
+
+## study2 ##
+# anxious, nervous, afraid, stressed were measured as the negative emotions, which students felt about their exams.
+cronbach(study2[,c("anxious", "nervous", "afraid", "stressed")])
+cronbach(study2[,c("anxious_E2", "nervous_E2", "afraid_E2", "stressed_E2")])
+
+study2$E1_negemotions = rowMeans(study2[,c("anxious", "nervous", "afraid", "stressed")], na.rm=TRUE) 
+study2$E2_negemotions = rowMeans(study2[,c("anxious_E2", "nervous_E2", "afraid_E2", "stressed_E2")], na.rm=TRUE)
+
+# control over grade variables
+study2$control.over.grade = rowMeans(study2[,c("control.over.grade.q1", "control.over.grade.q2")], na.rm=TRUE)
+study2$control.over.grade_E2 = rowMeans(study2[,c("control.over.grade_E2.q1", "control.over.grade_E2.q2")], na.rm=TRUE)
+
+```
+
+
+
+# Resources
+
+
+## Matching Resources Planned and Resources Used
+```{r calculating-resource-match-plan-and-did, echo=FALSE, eval=TRUE, warning='false'}
+
+  # calculating variables to match pre and post EXAM 1 #
+
+# We have 5 important variables:
+# group = 1 if they were in the treatment planning group
+# didPre = 1 if they did the pre exam survey
+# didPost = 1 if they did the post exam survey
+# plannedPre = 1 if that particular resource was planned during the pre exam survey
+# usedPost = 1 if that particular resource was used during the post exam survey
+#
+# We use a bitmap mapping to map these 5 variables into a number from 0-31. Not every number is possible, but
+#  the possibilities are listed in the following table.
+#    where "bitValue" = 2^4*group + 2^3 * didPre + 2^2 * plannedPre + 2^1 * didPost + 2^0 * usedPost
+#                     = 16*group  + 8*didPre + 4*plannedPre + 2*didPost + 1*usedPost
+# We grouped the variables into 7 groups:
+#     Planned Did
+#     Planned NotDid
+#     NotPlanned Did
+#     NotPlanned NotDid
+#     Planless Did
+#     Planless NotDid
+#     NA
+#
+#  and we used the following table to group the bitValues to these codes:
+# 
+# group didPre plannedPre   didPost  usedPost    bitValue    code
+#   1      1        1         1       1             31       Planned Did
+#   1      1        1         1       NA            30       Planned NotDid
+#   1      1        NA        1       1             27       NotPlanned Did
+#   1      1        NA        1       NA            26       NotPlanned NotDid
+#
+#   1      1        1         NA      NA            28       NA (can't tell if they did)
+#   1      1        NA        NA      NA            24       NA (can't tell if they did)
+#   1      NA       NA        1        1            19       Planless Did
+#   1      NA       NA        1       NA            18       Planless NotDid
+#   1      NA       NA        NA      NA            16       NA (can't tell if they did)
+#
+#   0      1         NA       1        1            11     Planless Did
+#   0      1         NA       1        NA           10     Planless NotDid
+#   0      1         NA       NA       NA           8      NA (can't tell if they did)
+#   0      NA        NA       1        1            3      Planless Did
+#   0      NA        NA       1        NA           2      Planless NotDid
+#   0      NA        NA       NA       NA           0      NA (can't tell if they did)
+
+# using the following code:
+study1$exam1_matched_resource_Lecture.notes = factor( (16*(study1[,"group"]==1)) +
+                                                      (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                      (4*!is.na(study1[,"Lecture.notes"])) +
+                                                      (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                      (1*!is.na(study1[,"used_Lecture.notes_poE1"])),
+                                                      levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                      labels=c("Planned Did", "Planned NotDid", 
+                                                               "NotPlanned Did", "NotPlanned NotDid",
+                                                               "Planless Did", "Planless Did", "Planless Did",
+                                                               "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Lecture.notes = factor(study1$exam1_matched_resource_Lecture.notes) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_Blue.Review = factor( (16*(study1[,"group"]==1)) +
+                                                    (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                    (4*!is.na(study1[,"Blue.Review"])) +
+                                                    (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                    (1*!is.na(study1[,"used_Blue.Review_poE1"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Blue.Review = factor(study1$exam1_matched_resource_Blue.Review) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_Past.req.HW = factor( (16*(study1[,"group"]==1)) +
+                                                    (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                    (4*!is.na(study1[,"Past.required.HW.problems"])) +
+                                                    (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                    (1*!is.na(study1[,"used_Past.required.HW.problems_poE1"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Past.req.HW = factor(study1$exam1_matched_resource_Past.req.HW) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_Past.rec.HW = factor( (16*(study1[,"group"]==1)) +
+                                                    (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                    (4*!is.na(study1[,"Past.recommended.HW.problems"])) +
+                                                    (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                    (1*!is.na(study1[,"used_Past.recommended.HW.problems_poE1"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Past.rec.HW = factor(study1$exam1_matched_resource_Past.rec.HW) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_Prac.exam.qn = factor( (16*(study1[,"group"]==1)) +
+                                                     (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                     (4*!is.na(
+                                                    study1[,"Practice.exam.questions..from.the.lab.workbook."])) +
+                                                     (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                     (1*!is.na(
+                                                study1[,"used_Practice.exam.questions..from.the.lab.workbook._poE1"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Prac.exam.qn = factor(study1$exam1_matched_resource_Prac.exam.qn) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_PR = factor( (16*(study1[,"group"]==1)) +
+                                           (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                           (4*!is.na(study1[,"Problem.Roulette"])) +
+                                           (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                           (1*!is.na(study1[,"used_Problem.Roulette_poE1"])),
+                                           levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                           labels=c("Planned Did", "Planned NotDid", 
+                                                    "NotPlanned Did", "NotPlanned NotDid",
+                                                    "Planless Did", "Planless Did", "Planless Did",
+                                                    "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_PR = factor(study1$exam1_matched_resource_PR) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_NTS = factor( (16*(study1[,"group"]==1)) +
+                                            (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                            (4*!is.na(study1[,"Name.That.Scenario"])) +
+                                            (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                            (1*!is.na(study1[,"used_Name.That.Scenario_poE1"])),
+                                            levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                            labels=c("Planned Did", "Planned NotDid", 
+                                                     "NotPlanned Did", "NotPlanned NotDid",
+                                                     "Planless Did", "Planless Did", "Planless Did",
+                                                     "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_NTS = factor(study1$exam1_matched_resource_NTS) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_ILP = factor( (16*(study1[,"group"]==1)) +
+                                            (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                            (4*!is.na(study1[,"Lab.materials..ILPs."])) +
+                                            (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                            (1*!is.na(study1[,"used_Lab.materials..ILPs._poE1"])),
+                                            levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                            labels=c("Planned Did", "Planned NotDid", 
+                                                     "NotPlanned Did", "NotPlanned NotDid",
+                                                     "Planless Did", "Planless Did", "Planless Did",
+                                                     "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_ILP = factor(study1$exam1_matched_resource_ILP) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_Textbook = factor( (16*(study1[,"group"]==1)) +
+                                                 (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                 (4*!is.na(study1[,"Textbook.readings"])) +
+                                                 (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                 (1*!is.na(study1[,"used_Textbook.readings_poE1"])),
+                                                 levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                 labels=c("Planned Did", "Planned NotDid", 
+                                                          "NotPlanned Did", "NotPlanned NotDid",
+                                                          "Planless Did", "Planless Did", "Planless Did",
+                                                          "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Textbook = factor(study1$exam1_matched_resource_Textbook) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_Formula.Card = factor( (16*(study1[,"group"]==1)) +
+                                                     (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                     (4*!is.na(study1[,"Yellow.formula.card"])) +
+                                                     (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                     (1*!is.na(study1[,"used_Yellow.formula.card_poE1"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Formula.Card = factor(study1$exam1_matched_resource_Formula.Card) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_Other.Students = factor((16*(study1[,"group"]==1)) +
+                                                      (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                      (4*!is.na(study1[,"Discussion.with.other.students"])) +
+                                                      (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                      (1*!is.na(study1[,"used_Discussion.with.other.students_poE1"])),
+                                                      levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                      labels=c("Planned Did", "Planned NotDid", 
+                                                               "NotPlanned Did", "NotPlanned NotDid",
+                                                               "Planless Did", "Planless Did", "Planless Did",
+                                                               "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Other.Students = factor(study1$exam1_matched_resource_Other.Students) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_OH.Professor = factor( (16*(study1[,"group"]==1)) +
+                                                     (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                     (4*!is.na(study1[,"Professor.office.hours"])) +
+                                                     (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                     (1*!is.na(study1[,"used_Professor.office.hours_poE1"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_OH.Professor = factor(study1$exam1_matched_resource_OH.Professor) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_OH.GSI = factor( (16*(study1[,"group"]==1)) +
+                                               (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                               (4*!is.na(study1[,"GSI.office.hours"])) +
+                                               (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                               (1*!is.na(study1[,"used_GSI.office.hours_poE1"])),
+                                               levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                               labels=c("Planned Did", "Planned NotDid", 
+                                                        "NotPlanned Did", "NotPlanned NotDid",
+                                                        "Planless Did", "Planless Did", "Planless Did",
+                                                        "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_OH.GSI = factor(study1$exam1_matched_resource_OH.GSI) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_Ask.Qn.Class = factor( (16*(study1[,"group"]==1)) +
+                                                     (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                     (4*!is.na(study1[,"Ask.questions.in.class"])) +
+                                                     (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                     (1*!is.na(study1[,"used_Ask.questions.in.class_poE1"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Ask.Qn.Class = factor(study1$exam1_matched_resource_Ask.Qn.Class) # need this line to drop repeated levels
+
+study1$exam1_matched_resource_Tutoring = factor( (16*(study1[,"group"]==1)) +
+                                                 (8*!is.na(study1[,"didSurveyPreE1"])) +
+                                                 (4*!is.na(study1[,"Private.tutoring"])) +
+                                                 (2*!is.na(study1[,"didSurveyPostE1"])) +
+                                                 (1*!is.na(study1[,"used_Private.tutoring_poE1"])),
+                                                 levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                 labels=c("Planned Did", "Planned NotDid", 
+                                                          "NotPlanned Did", "NotPlanned NotDid",
+                                                          "Planless Did", "Planless Did", "Planless Did",
+                                                          "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam1_matched_resource_Tutoring = factor(study1$exam1_matched_resource_Tutoring) # need this line to drop repeated levels
+
+  # calculating variables to match pre and post EXAM 2 #
+
+study1$exam2_matched_resource_Lecture.notes = factor( (16*(study1[,"group"]==1)) +
+                                                      (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                      (4*!is.na(study1[,"Lecture.notes_E2"])) +
+                                                      (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                      (1*!is.na(study1[,"used_Lecture.notes_poE2"])),
+                                                      levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                      labels=c("Planned Did", "Planned NotDid", 
+                                                               "NotPlanned Did", "NotPlanned NotDid",
+                                                               "Planless Did", "Planless Did", "Planless Did",
+                                                               "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Lecture.notes = factor(study1$exam2_matched_resource_Lecture.notes) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_Blue.Review = factor( (16*(study1[,"group"]==1)) +
+                                                    (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                    (4*!is.na(study1[,"Blue.Review_E2"])) +
+                                                    (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                    (1*!is.na(study1[,"used_Blue.Review_poE2"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Blue.Review = factor(study1$exam2_matched_resource_Blue.Review) # need this line to drop repeated levels
+
+
+study1$exam2_matched_resource_Past.req.HW = factor( (16*(study1[,"group"]==1)) +
+                                                    (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                    (4*!is.na(study1[,"Past.required.HW.problems_E2"])) +
+                                                    (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                    (1*!is.na(study1[,"used_Past.required.HW.problems_poE2"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Past.req.HW = factor(study1$exam2_matched_resource_Past.req.HW) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_Past.rec.HW = factor( (16*(study1[,"group"]==1)) +
+                                                    (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                    (4*!is.na(study1[,"Past.recommended.HW.problems_E2"])) +
+                                                    (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                    (1*!is.na(study1[,"used_Past.recommended.HW.problems_poE2"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Past.rec.HW = factor(study1$exam2_matched_resource_Past.rec.HW) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_Prac.exam.qn = factor( (16*(study1[,"group"]==1)) +
+                                                     (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                     (4*!is.na(
+                                                  study1[,"Practice.exam.questions..from.the.lab.workbook._E2"])) +
+                                                     (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                     (1*!is.na(
+                                              study1[,"used_Practice.exam.questions..from.the.lab.workbook._poE2"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Prac.exam.qn = factor(study1$exam2_matched_resource_Prac.exam.qn) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_PR = factor( (16*(study1[,"group"]==1)) +
+                                             (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                             (4*!is.na(study1[,"Problem.Roulette_E2"])) +
+                                             (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                             (1*!is.na(study1[,"used_Problem.Roulette_poE2"])),
+                                           levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                           labels=c("Planned Did", "Planned NotDid", 
+                                                    "NotPlanned Did", "NotPlanned NotDid",
+                                                    "Planless Did", "Planless Did", "Planless Did",
+                                                    "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_PR = factor(study1$exam2_matched_resource_PR) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_NTS = factor( (16*(study1[,"group"]==1)) +
+                                              (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                              (4*!is.na(study1[,"Name.That.Scenario_E2"])) +
+                                              (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                              (1*!is.na(study1[,"used_Name.That.Scenario_poE2"])),
+                                            levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                            labels=c("Planned Did", "Planned NotDid", 
+                                                     "NotPlanned Did", "NotPlanned NotDid",
+                                                     "Planless Did", "Planless Did", "Planless Did",
+                                                     "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_NTS = factor(study1$exam2_matched_resource_NTS) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_ILP = factor( (16*(study1[,"group"]==1)) +
+                                              (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                              (4*!is.na(study1[,"Lab.materials..ILPs._E2"])) +
+                                              (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                              (1*!is.na(study1[,"used_Lab.materials..ILPs._poE2"])),
+                                            levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                            labels=c("Planned Did", "Planned NotDid", 
+                                                     "NotPlanned Did", "NotPlanned NotDid",
+                                                     "Planless Did", "Planless Did", "Planless Did",
+                                                     "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_ILP = factor(study1$exam2_matched_resource_ILP) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_Textbook = factor( (16*(study1[,"group"]==1)) +
+                                                   (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                   (4*!is.na(study1[,"Textbook.readings_E2"])) +
+                                                   (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                   (1*!is.na(study1[,"used_Textbook.readings_poE2"])),
+                                                 levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                 labels=c("Planned Did", "Planned NotDid", 
+                                                          "NotPlanned Did", "NotPlanned NotDid",
+                                                          "Planless Did", "Planless Did", "Planless Did",
+                                                          "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Textbook = factor(study1$exam2_matched_resource_Textbook) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_Formula.Card = factor( (16*(study1[,"group"]==1)) +
+                                                       (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                       (4*!is.na(study1[,"Yellow.formula.card_E2"])) +
+                                                       (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                       (1*!is.na(study1[,"used_Yellow.formula.card_poE2"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Formula.Card = factor(study1$exam2_matched_resource_Formula.Card) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_Other.Students = factor( (16*(study1[,"group"]==1)) +
+                                                         (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                         (4*!is.na(study1[,"Discussion.with.other.students_E2"])) +
+                                                         (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                         (1*!is.na(
+                                                           study1[,"used_Discussion.with.other.students_poE2"])),
+                                                       levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                       labels=c("Planned Did", "Planned NotDid", 
+                                                                "NotPlanned Did", "NotPlanned NotDid",
+                                                                "Planless Did", "Planless Did", "Planless Did",
+                                                                "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Other.Students = factor(study1$exam2_matched_resource_Other.Students) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_OH.Professor = factor( (16*(study1[,"group"]==1)) +
+                                                       (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                       (4*!is.na(study1[,"Professor.office.hours_E2"])) +
+                                                       (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                       (1*!is.na(study1[,"used_Professor.office.hours_poE2"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_OH.Professor = factor(study1$exam2_matched_resource_OH.Professor) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_OH.GSI = factor( (16*(study1[,"group"]==1)) +
+                                                 (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                 (4*!is.na(study1[,"GSI.office.hours_E2"])) +
+                                                 (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                 (1*!is.na(study1[,"used_GSI.office.hours_poE2"])),
+                                               levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                               labels=c("Planned Did", "Planned NotDid", 
+                                                        "NotPlanned Did", "NotPlanned NotDid",
+                                                        "Planless Did", "Planless Did", "Planless Did",
+                                                        "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_OH.GSI = factor(study1$exam2_matched_resource_OH.GSI) # need this line to drop repeated levels
+
+study1$exam2_matched_resource_Ask.Qn.Class = factor( (16*(study1[,"group"]==1)) +
+                                                       (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                       (4*!is.na(study1[,"Ask.questions.in.class_E2"])) +
+                                                       (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                       (1*!is.na(study1[,"used_Ask.questions.in.class_poE2"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Ask.Qn.Class = factor(study1$exam2_matched_resource_Ask.Qn.Class) # need this line to drop repeated levels
+
+
+study1$exam2_matched_resource_Tutoring = factor( (16*(study1[,"group"]==1)) +
+                                                   (8*!is.na(study1[,"didSurveyPreE2"])) +
+                                                   (4*!is.na(study1[,"Private.tutoring_E2"])) +
+                                                   (2*!is.na(study1[,"didSurveyPostE2"])) +
+                                                   (1*!is.na(study1[,"used_Private.tutoring_poE2"])),
+                                                 levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                 labels=c("Planned Did", "Planned NotDid", 
+                                                          "NotPlanned Did", "NotPlanned NotDid",
+                                                          "Planless Did", "Planless Did", "Planless Did",
+                                                          "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study1$exam2_matched_resource_Tutoring = factor(study1$exam2_matched_resource_Tutoring) # need this line to drop repeated levels
+
+
+
+# Study 2 #
+# calculating variables to match pre and post EXAM 1 #
+
+study2$exam1_matched_resource_Lecture.notes = factor( (16*(study2[,"group"]==1)) +
+                                                        (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                        (4*!is.na(study2[,"Lecture.notes"])) +
+                                                        (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                        (1*!is.na(study2[,"used_Lecture.notes_poE1"])),
+                                                      levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                      labels=c("Planned Did", "Planned NotDid", 
+                                                               "NotPlanned Did", "NotPlanned NotDid",
+                                                               "Planless Did", "Planless Did", "Planless Did",
+                                                               "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Lecture.notes = factor(study2$exam1_matched_resource_Lecture.notes) # need this line to drop repeated levels
+      
+study2$exam1_matched_resource_Blue.Review = factor( (16*(study2[,"group"]==1)) +
+                                                      (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                      (4*!is.na(study2[,"Blue.Review"])) +
+                                                      (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                      (1*!is.na(study2[,"used_Blue.Review_poE1"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Blue.Review = factor(study2$exam1_matched_resource_Blue.Review) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_Past.req.HW = factor( (16*(study2[,"group"]==1)) +
+                                                      (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                      (4*!is.na(study2[,"Past.required.HW.problems"])) +
+                                                      (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                      (1*!is.na(study2[,"used_Past.required.HW.problems_poE1"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Past.req.HW = factor(study2$exam1_matched_resource_Past.req.HW) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_Past.rec.HW = factor( (16*(study2[,"group"]==1)) +
+                                                      (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                      (4*!is.na(study2[,"Past.recommended.HW.problems"])) +
+                                                      (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                      (1*!is.na(study2[,"used_Past.recommended.HW.problems_poE1"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Past.rec.HW = factor(study2$exam1_matched_resource_Past.rec.HW) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_Prac.exam.qn = factor( (16*(study2[,"group"]==1)) +
+                                                       (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                       (4*!is.na(
+                                                        study2[,"Practice.exam.questions..from.the.lab.workbook."])) +
+                                                       (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                       (1*!is.na(
+                                              study2[,"used_Practice.exam.questions..from.the.lab.workbook._poE1"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Prac.exam.qn = factor(study2$exam1_matched_resource_Prac.exam.qn) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_PR = factor( (16*(study2[,"group"]==1)) +
+                                             (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                             (4*!is.na(study2[,"Problem.Roulette"])) +
+                                             (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                             (1*!is.na(study2[,"used_Problem.Roulette_poE1"])),
+                                           levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                           labels=c("Planned Did", "Planned NotDid", 
+                                                    "NotPlanned Did", "NotPlanned NotDid",
+                                                    "Planless Did", "Planless Did", "Planless Did",
+                                                    "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_PR = factor(study2$exam1_matched_resource_PR) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_NTS = factor( (16*(study2[,"group"]==1)) +
+                                              (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                              (4*!is.na(study2[,"Name.That.Scenario"])) +
+                                              (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                              (1*!is.na(study2[,"used_Name.That.Scenario_poE1"])),
+                                            levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                            labels=c("Planned Did", "Planned NotDid", 
+                                                     "NotPlanned Did", "NotPlanned NotDid",
+                                                     "Planless Did", "Planless Did", "Planless Did",
+                                                     "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_NTS = factor(study2$exam1_matched_resource_NTS) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_ILP = factor( (16*(study2[,"group"]==1)) +
+                                              (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                              (4*!is.na(study2[,"Lab.materials..ILPs."])) +
+                                              (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                              (1*!is.na(study2[,"used_Lab.materials..ILPs._poE1"])),
+                                            levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                            labels=c("Planned Did", "Planned NotDid", 
+                                                     "NotPlanned Did", "NotPlanned NotDid",
+                                                     "Planless Did", "Planless Did", "Planless Did",
+                                                     "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_ILP = factor(study2$exam1_matched_resource_ILP) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_Textbook = factor( (16*(study2[,"group"]==1)) +
+                                                   (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                   (4*!is.na(study2[,"Textbook.readings"])) +
+                                                   (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                   (1*!is.na(study2[,"used_Textbook.readings_poE1"])),
+                                                 levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                 labels=c("Planned Did", "Planned NotDid", 
+                                                          "NotPlanned Did", "NotPlanned NotDid",
+                                                          "Planless Did", "Planless Did", "Planless Did",
+                                                          "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Textbook = factor(study2$exam1_matched_resource_Textbook) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_Formula.Card = factor( (16*(study2[,"group"]==1)) +
+                                                       (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                       (4*!is.na(study2[,"Yellow.formula.card"])) +
+                                                       (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                       (1*!is.na(study2[,"used_Yellow.formula.card_poE1"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Formula.Card = factor(study2$exam1_matched_resource_Formula.Card) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_Other.Students = factor( (16*(study2[,"group"]==1)) +
+                                                         (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                         (4*!is.na(study2[,"Discussion.with.other.students"])) +
+                                                         (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                         (1*!is.na(
+                                                           study2[,"used_Discussion.with.other.students_poE1"])),
+                                                       levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                       labels=c("Planned Did", "Planned NotDid", 
+                                                                "NotPlanned Did", "NotPlanned NotDid",
+                                                                "Planless Did", "Planless Did", "Planless Did",
+                                                                "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Other.Students = factor(study2$exam1_matched_resource_Other.Students) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_OH.Professor = factor( (16*(study2[,"group"]==1)) +
+                                                       (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                       (4*!is.na(study2[,"Professor.office.hours"])) +
+                                                       (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                       (1*!is.na(study2[,"used_Professor.office.hours_poE1"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_OH.Professor = factor(study2$exam1_matched_resource_OH.Professor) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_OH.GSI = factor( (16*(study2[,"group"]==1)) +
+                                                 (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                 (4*!is.na(study2[,"GSI.office.hours"])) +
+                                                 (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                 (1*!is.na(study2[,"used_GSI.office.hours_poE1"])),
+                                               levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                               labels=c("Planned Did", "Planned NotDid", 
+                                                        "NotPlanned Did", "NotPlanned NotDid",
+                                                        "Planless Did", "Planless Did", "Planless Did",
+                                                        "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_OH.GSI = factor(study2$exam1_matched_resource_OH.GSI) # need this line to drop repeated levels
+      
+study2$exam1_matched_resource_Ask.Qn.Class = factor( (16*(study2[,"group"]==1)) +
+                                                       (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                       (4*!is.na(study2[,"Ask.questions.in.class"])) +
+                                                       (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                       (1*!is.na(study2[,"used_Ask.questions.in.class_poE1"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Ask.Qn.Class = factor(study2$exam1_matched_resource_Ask.Qn.Class) # need this line to drop repeated levels
+
+study2$exam1_matched_resource_Tutoring = factor( (16*(study2[,"group"]==1)) +
+                                                   (8*!is.na(study2[,"didSurveyPreE1"])) +
+                                                   (4*!is.na(study2[,"Private.tutoring"])) +
+                                                   (2*!is.na(study2[,"didSurveyPostE1"])) +
+                                                   (1*!is.na(study2[,"used_Private.tutoring_poE1"])),
+                                                 levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                 labels=c("Planned Did", "Planned NotDid", 
+                                                          "NotPlanned Did", "NotPlanned NotDid",
+                                                          "Planless Did", "Planless Did", "Planless Did",
+                                                          "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam1_matched_resource_Tutoring = factor(study2$exam1_matched_resource_Tutoring) # need this line to drop repeated levels
+
+  # calculating variables to match pre and post EXAM 2 #
+
+study2$exam2_matched_resource_Lecture.notes = factor( (16*(study2[,"group"]==1)) +
+                                                        (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                        (4*!is.na(study2[,"Lecture.notes_E2"])) +
+                                                        (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                        (1*!is.na(study2[,"used_Lecture.notes_poE2"])),
+                                                      levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                      labels=c("Planned Did", "Planned NotDid", 
+                                                               "NotPlanned Did", "NotPlanned NotDid",
+                                                               "Planless Did", "Planless Did", "Planless Did",
+                                                               "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Lecture.notes = factor(study2$exam2_matched_resource_Lecture.notes) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_Blue.Review = factor( (16*(study2[,"group"]==1)) +
+                                                      (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                      (4*!is.na(study2[,"Blue.Review_E2"])) +
+                                                      (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                      (1*!is.na(study2[,"used_Blue.Review_poE2"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Blue.Review = factor(study2$exam2_matched_resource_Blue.Review) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_Past.req.HW = factor( (16*(study2[,"group"]==1)) +
+                                                      (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                      (4*!is.na(study2[,"Past.required.HW.problems_E2"])) +
+                                                      (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                      (1*!is.na(study2[,"used_Past.required.HW.problems_poE2"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Past.req.HW = factor(study2$exam2_matched_resource_Past.req.HW) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_Past.rec.HW = factor( (16*(study2[,"group"]==1)) +
+                                                      (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                      (4*!is.na(study2[,"Past.recommended.HW.problems_E2"])) +
+                                                      (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                      (1*!is.na(study2[,"used_Past.recommended.HW.problems_poE2"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Past.rec.HW = factor(study2$exam2_matched_resource_Past.rec.HW) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_Prac.exam.qn = factor((16*(study2[,"group"]==1)) +
+                                                      (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                      (4*!is.na(
+                                                  study2[,"Practice.exam.questions..from.the.lab.workbook._E2"])) +
+                                                      (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                      (1*!is.na(
+                                          study2[,"used_Practice.exam.questions..from.the.lab.workbook._poE2"])),
+                                                    levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                    labels=c("Planned Did", "Planned NotDid", 
+                                                             "NotPlanned Did", "NotPlanned NotDid",
+                                                             "Planless Did", "Planless Did", "Planless Did",
+                                                             "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Prac.exam.qn = factor(study2$exam2_matched_resource_Prac.exam.qn) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_PR = factor( (16*(study2[,"group"]==1)) +
+                                             (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                             (4*!is.na(study2[,"Problem.Roulette_E2"])) +
+                                             (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                             (1*!is.na(study2[,"used_Problem.Roulette_poE2"])),
+                                           levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                           labels=c("Planned Did", "Planned NotDid", 
+                                                    "NotPlanned Did", "NotPlanned NotDid",
+                                                    "Planless Did", "Planless Did", "Planless Did",
+                                                    "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_PR = factor(study2$exam2_matched_resource_PR) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_NTS = factor( (16*(study2[,"group"]==1)) +
+                                              (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                              (4*!is.na(study2[,"Name.That.Scenario_E2"])) +
+                                              (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                              (1*!is.na(study2[,"used_Name.That.Scenario_poE2"])),
+                                            levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                            labels=c("Planned Did", "Planned NotDid", 
+                                                     "NotPlanned Did", "NotPlanned NotDid",
+                                                     "Planless Did", "Planless Did", "Planless Did",
+                                                     "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_NTS = factor(study2$exam2_matched_resource_NTS) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_ILP = factor( (16*(study2[,"group"]==1)) +
+                                              (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                              (4*!is.na(study2[,"Lab.materials..ILPs._E2"])) +
+                                              (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                              (1*!is.na(study2[,"used_Lab.materials..ILPs._poE2"])),
+                                            levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                            labels=c("Planned Did", "Planned NotDid", 
+                                                     "NotPlanned Did", "NotPlanned NotDid",
+                                                     "Planless Did", "Planless Did", "Planless Did",
+                                                     "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_ILP = factor(study2$exam2_matched_resource_ILP) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_Textbook = factor( (16*(study2[,"group"]==1)) +
+                                                   (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                   (4*!is.na(study2[,"Textbook.readings_E2"])) +
+                                                   (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                   (1*!is.na(study2[,"used_Textbook.readings_poE2"])),
+                                                 levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                 labels=c("Planned Did", "Planned NotDid", 
+                                                          "NotPlanned Did", "NotPlanned NotDid",
+                                                          "Planless Did", "Planless Did", "Planless Did",
+                                                          "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Textbook = factor(study2$exam2_matched_resource_Textbook) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_Formula.Card = factor( (16*(study2[,"group"]==1)) +
+                                                       (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                       (4*!is.na(study2[,"Yellow.formula.card_E2"])) +
+                                                       (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                       (1*!is.na(study2[,"used_Yellow.formula.card_poE2"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Formula.Card = factor(study2$exam2_matched_resource_Formula.Card) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_Other.Students = factor( (16*(study2[,"group"]==1)) +
+                                                         (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                         (4*!is.na(study2[,"Discussion.with.other.students_E2"])) +
+                                                         (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                         (1*!is.na(
+                                                           study2[,"used_Discussion.with.other.students_poE2"])),
+                                                       levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                       labels=c("Planned Did", "Planned NotDid", 
+                                                                "NotPlanned Did", "NotPlanned NotDid",
+                                                                "Planless Did", "Planless Did", "Planless Did",
+                                                                "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Other.Students = factor(study2$exam2_matched_resource_Other.Students) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_OH.Professor = factor( (16*(study2[,"group"]==1)) +
+                                                       (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                       (4*!is.na(study2[,"Professor.office.hours_E2"])) +
+                                                       (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                       (1*!is.na(study2[,"used_Professor.office.hours_poE2"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_OH.Professor = factor(study2$exam2_matched_resource_OH.Professor) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_OH.GSI = factor( (16*(study2[,"group"]==1)) +
+                                                 (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                 (4*!is.na(study2[,"GSI.office.hours_E2"])) +
+                                                 (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                 (1*!is.na(study2[,"used_GSI.office.hours_poE2"])),
+                                               levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                               labels=c("Planned Did", "Planned NotDid", 
+                                                        "NotPlanned Did", "NotPlanned NotDid",
+                                                        "Planless Did", "Planless Did", "Planless Did",
+                                                        "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_OH.GSI = factor(study2$exam2_matched_resource_OH.GSI) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_Ask.Qn.Class = factor( (16*(study2[,"group"]==1)) +
+                                                       (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                       (4*!is.na(study2[,"Ask.questions.in.class_E2"])) +
+                                                       (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                       (1*!is.na(study2[,"used_Ask.questions.in.class_poE2"])),
+                                                     levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                     labels=c("Planned Did", "Planned NotDid", 
+                                                              "NotPlanned Did", "NotPlanned NotDid",
+                                                              "Planless Did", "Planless Did", "Planless Did",
+                                                              "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Ask.Qn.Class = factor(study2$exam2_matched_resource_Ask.Qn.Class) # need this line to drop repeated levels
+
+study2$exam2_matched_resource_Tutoring = factor( (16*(study2[,"group"]==1)) +
+                                                   (8*!is.na(study2[,"didSurveyPreE2"])) +
+                                                   (4*!is.na(study2[,"Private.tutoring_E2"])) +
+                                                   (2*!is.na(study2[,"didSurveyPostE2"])) +
+                                                   (1*!is.na(study2[,"used_Private.tutoring_poE2"])),
+                                                 levels=c(31,30,27,26,  19,11,3,  18,10,2),
+                                                 labels=c("Planned Did", "Planned NotDid", 
+                                                          "NotPlanned Did", "NotPlanned NotDid",
+                                                          "Planless Did", "Planless Did", "Planless Did",
+                                                          "Planless NotDid", "Planless NotDid", "Planless NotDid"))
+study2$exam2_matched_resource_Tutoring = factor(study2$exam2_matched_resource_Tutoring) # need this line to drop repeated levels
+
+```
+
+
+## Calculating Total Resources Planned vs. Used by Each Individual
+```{r planned-vs-used, echo=FALSE, eval=TRUE}
+
+  ### study1 ###
+
+study1$TOTPlannedDid_E1 = rowSums(study1[,c("exam1_matched_resource_Lecture.notes", 
+                                            "exam1_matched_resource_Blue.Review",                             
+                                            "exam1_matched_resource_Past.req.HW",                             
+                                            "exam1_matched_resource_Past.rec.HW",                             
+                                            "exam1_matched_resource_Prac.exam.qn",                            
+                                            "exam1_matched_resource_PR",                                      
+                                            "exam1_matched_resource_NTS",                                     
+                                            "exam1_matched_resource_ILP",                                     
+                                            "exam1_matched_resource_Textbook",                                
+                                            "exam1_matched_resource_Formula.Card",                            
+                                            "exam1_matched_resource_Other.Students",                          
+                                            "exam1_matched_resource_OH.Professor",                            
+                                            "exam1_matched_resource_OH.GSI",                                  
+                                            "exam1_matched_resource_Ask.Qn.Class",                            
+                                            "exam1_matched_resource_Tutoring")]=="Planned Did", 
+                                  na.rm=TRUE) * study1$didSurveyPostE1
+
+study1$TOTPlannedNotDid_E1 = rowSums(study1[,c("exam1_matched_resource_Lecture.notes",                          
+                                               "exam1_matched_resource_Blue.Review",                             
+                                               "exam1_matched_resource_Past.req.HW",                             
+                                               "exam1_matched_resource_Past.rec.HW",                             
+                                               "exam1_matched_resource_Prac.exam.qn",                            
+                                               "exam1_matched_resource_PR",                                      
+                                               "exam1_matched_resource_NTS",                                     
+                                               "exam1_matched_resource_ILP",                                     
+                                               "exam1_matched_resource_Textbook",                                
+                                               "exam1_matched_resource_Formula.Card",                            
+                                               "exam1_matched_resource_Other.Students",                          
+                                               "exam1_matched_resource_OH.Professor",                            
+                                               "exam1_matched_resource_OH.GSI",                                  
+                                               "exam1_matched_resource_Ask.Qn.Class",                            
+                                               "exam1_matched_resource_Tutoring")]=="Planned NotDid", 
+                                     na.rm=TRUE)  * study1$didSurveyPostE1
+
+study1$TOTNotPlannedDid_E1 = rowSums(study1[,c("exam1_matched_resource_Lecture.notes",           
+                                               "exam1_matched_resource_Blue.Review",                             
+                                               "exam1_matched_resource_Past.req.HW",                             
+                                               "exam1_matched_resource_Past.rec.HW",                             
+                                               "exam1_matched_resource_Prac.exam.qn",                            
+                                               "exam1_matched_resource_PR",                                      
+                                               "exam1_matched_resource_NTS",                                     
+                                               "exam1_matched_resource_ILP",                                     
+                                               "exam1_matched_resource_Textbook",                                
+                                               "exam1_matched_resource_Formula.Card",                            
+                                               "exam1_matched_resource_Other.Students",                          
+                                               "exam1_matched_resource_OH.Professor",                            
+                                               "exam1_matched_resource_OH.GSI",                                  
+                                               "exam1_matched_resource_Ask.Qn.Class",                            
+                                               "exam1_matched_resource_Tutoring")]=="NotPlanned Did", 
+                                     na.rm=TRUE)  * study1$didSurveyPostE1
+
+study1$TOTNotPlannedNotDid_E1 = rowSums(study1[,c("exam1_matched_resource_Lecture.notes",                          
+                                                  "exam1_matched_resource_Blue.Review",                             
+                                                  "exam1_matched_resource_Past.req.HW",                             
+                                                  "exam1_matched_resource_Past.rec.HW",                             
+                                                  "exam1_matched_resource_Prac.exam.qn",                            
+                                                  "exam1_matched_resource_PR",                                      
+                                                  "exam1_matched_resource_NTS",                                     
+                                                  "exam1_matched_resource_ILP",                                     
+                                                  "exam1_matched_resource_Textbook",                                
+                                                  "exam1_matched_resource_Formula.Card",                            
+                                                  "exam1_matched_resource_Other.Students",                          
+                                                  "exam1_matched_resource_OH.Professor",                            
+                                                  "exam1_matched_resource_OH.GSI",                                  
+                                                  "exam1_matched_resource_Ask.Qn.Class",                            
+                                                  "exam1_matched_resource_Tutoring")]=="NotPlanned NotDid", 
+                                        na.rm=TRUE)   * study1$didSurveyPostE1
+
+study1$TOTPlanlessDid_E1 = rowSums(study1[,c("exam1_matched_resource_Lecture.notes",                          
+                                             "exam1_matched_resource_Blue.Review",                             
+                                             "exam1_matched_resource_Past.req.HW",                             
+                                             "exam1_matched_resource_Past.rec.HW",                             
+                                             "exam1_matched_resource_Prac.exam.qn",                            
+                                             "exam1_matched_resource_PR",                                      
+                                             "exam1_matched_resource_NTS",                                     
+                                             "exam1_matched_resource_ILP",                                     
+                                             "exam1_matched_resource_Textbook",                                
+                                             "exam1_matched_resource_Formula.Card",                            
+                                             "exam1_matched_resource_Other.Students",                          
+                                             "exam1_matched_resource_OH.Professor",                            
+                                             "exam1_matched_resource_OH.GSI",                                  
+                                             "exam1_matched_resource_Ask.Qn.Class",                            
+                                             "exam1_matched_resource_Tutoring")]=="Planless Did", 
+                                   na.rm=TRUE)  * study1$didSurveyPostE1
+
+study1$TOTPlanlessNotDid_E1 = rowSums(study1[,c("exam1_matched_resource_Lecture.notes",                          
+                                                "exam1_matched_resource_Blue.Review",                             
+                                                "exam1_matched_resource_Past.req.HW",                             
+                                                "exam1_matched_resource_Past.rec.HW",                             
+                                                "exam1_matched_resource_Prac.exam.qn",                            
+                                                "exam1_matched_resource_PR",                                      
+                                                "exam1_matched_resource_NTS",                                     
+                                                "exam1_matched_resource_ILP",                                     
+                                                "exam1_matched_resource_Textbook",                                
+                                                "exam1_matched_resource_Formula.Card",                            
+                                                "exam1_matched_resource_Other.Students",                          
+                                                "exam1_matched_resource_OH.Professor",                            
+                                                "exam1_matched_resource_OH.GSI",                                  
+                                                "exam1_matched_resource_Ask.Qn.Class",                            
+                                                "exam1_matched_resource_Tutoring")]=="Planless NotDid", 
+                                      na.rm=TRUE)   * study1$didSurveyPostE1
+
+study1$TOTPlannedDid_E2 = rowSums(study1[,c("exam2_matched_resource_Lecture.notes",                          
+                                            "exam2_matched_resource_Blue.Review",                             
+                                            "exam2_matched_resource_Past.req.HW",                             
+                                            "exam2_matched_resource_Past.rec.HW",                             
+                                            "exam2_matched_resource_Prac.exam.qn",                            
+                                            "exam2_matched_resource_PR",                                      
+                                            "exam2_matched_resource_NTS",                                     
+                                            "exam2_matched_resource_ILP",                                     
+                                            "exam2_matched_resource_Textbook",                                
+                                            "exam2_matched_resource_Formula.Card",                            
+                                            "exam2_matched_resource_Other.Students",                          
+                                            "exam2_matched_resource_OH.Professor",                            
+                                            "exam2_matched_resource_OH.GSI",                                  
+                                            "exam2_matched_resource_Ask.Qn.Class",                            
+                                            "exam2_matched_resource_Tutoring")]=="Planned Did", 
+                                  na.rm=TRUE)  * study1$didSurveyPostE2
+
+study1$TOTPlannedNotDid_E2 = rowSums(study1[,c("exam2_matched_resource_Lecture.notes",                          
+                                               "exam2_matched_resource_Blue.Review",                             
+                                               "exam2_matched_resource_Past.req.HW",                             
+                                               "exam2_matched_resource_Past.rec.HW",                             
+                                               "exam2_matched_resource_Prac.exam.qn",                            
+                                               "exam2_matched_resource_PR",                                      
+                                               "exam2_matched_resource_NTS",                                     
+                                               "exam2_matched_resource_ILP",                                     
+                                               "exam2_matched_resource_Textbook",                                
+                                               "exam2_matched_resource_Formula.Card",                            
+                                               "exam2_matched_resource_Other.Students",                          
+                                               "exam2_matched_resource_OH.Professor",                            
+                                               "exam2_matched_resource_OH.GSI",                                  
+                                               "exam2_matched_resource_Ask.Qn.Class",                            
+                                               "exam2_matched_resource_Tutoring")]=="Planned NotDid", 
+                                     na.rm=TRUE) * study1$didSurveyPostE2
+
+study1$TOTNotPlannedDid_E2 = rowSums(study1[,c("exam2_matched_resource_Lecture.notes",                          
+                                               "exam2_matched_resource_Blue.Review",                             
+                                               "exam2_matched_resource_Past.req.HW",                             
+                                               "exam2_matched_resource_Past.rec.HW",                             
+                                               "exam2_matched_resource_Prac.exam.qn",                            
+                                               "exam2_matched_resource_PR",                                      
+                                               "exam2_matched_resource_NTS",                                     
+                                               "exam2_matched_resource_ILP",                                     
+                                               "exam2_matched_resource_Textbook",                                
+                                               "exam2_matched_resource_Formula.Card",                            
+                                               "exam2_matched_resource_Other.Students",                          
+                                               "exam2_matched_resource_OH.Professor",                            
+                                               "exam2_matched_resource_OH.GSI",                                  
+                                               "exam2_matched_resource_Ask.Qn.Class",                            
+                                               "exam2_matched_resource_Tutoring")]=="NotPlanned Did", 
+                                     na.rm=TRUE) * study1$didSurveyPostE2
+
+study1$TOTNotPlannedNotDid_E2 = rowSums(study1[,c("exam2_matched_resource_Lecture.notes",                          
+                                                  "exam2_matched_resource_Blue.Review",                             
+                                                  "exam2_matched_resource_Past.req.HW",                             
+                                                  "exam2_matched_resource_Past.rec.HW",                             
+                                                  "exam2_matched_resource_Prac.exam.qn",                            
+                                                  "exam2_matched_resource_PR",                                      
+                                                  "exam2_matched_resource_NTS",                                     
+                                                  "exam2_matched_resource_ILP",                                     
+                                                  "exam2_matched_resource_Textbook",                                
+                                                  "exam2_matched_resource_Formula.Card",                            
+                                                  "exam2_matched_resource_Other.Students",                          
+                                                  "exam2_matched_resource_OH.Professor",                            
+                                                  "exam2_matched_resource_OH.GSI",                                  
+                                                  "exam2_matched_resource_Ask.Qn.Class",                            
+                                                  "exam2_matched_resource_Tutoring")]=="NotPlanned NotDid", 
+                                        na.rm=TRUE) * study1$didSurveyPostE2
+
+study1$TOTPlanlessDid_E2 = rowSums(study1[,c("exam2_matched_resource_Lecture.notes",                          
+                                             "exam2_matched_resource_Blue.Review",                             
+                                             "exam2_matched_resource_Past.req.HW",                             
+                                             "exam2_matched_resource_Past.rec.HW",                             
+                                             "exam2_matched_resource_Prac.exam.qn",                            
+                                             "exam2_matched_resource_PR",                                      
+                                             "exam2_matched_resource_NTS",                                     
+                                             "exam2_matched_resource_ILP",                                     
+                                             "exam2_matched_resource_Textbook",                                
+                                             "exam2_matched_resource_Formula.Card",                            
+                                             "exam2_matched_resource_Other.Students",                          
+                                             "exam2_matched_resource_OH.Professor",                            
+                                             "exam2_matched_resource_OH.GSI",                                  
+                                             "exam2_matched_resource_Ask.Qn.Class",                            
+                                             "exam2_matched_resource_Tutoring")]=="Planless Did", 
+                                   na.rm=TRUE) * study1$didSurveyPostE2
+
+study1$TOTPlanlessNotDid_E2 = rowSums(study1[,c("exam2_matched_resource_Lecture.notes",                          
+                                                "exam2_matched_resource_Blue.Review",                             
+                                                "exam2_matched_resource_Past.req.HW",                             
+                                                "exam2_matched_resource_Past.rec.HW",                             
+                                                "exam2_matched_resource_Prac.exam.qn",                            
+                                                "exam2_matched_resource_PR",                                      
+                                                "exam2_matched_resource_NTS",                                     
+                                                "exam2_matched_resource_ILP",                                     
+                                                "exam2_matched_resource_Textbook",                                
+                                                "exam2_matched_resource_Formula.Card",                            
+                                                "exam2_matched_resource_Other.Students",                          
+                                                "exam2_matched_resource_OH.Professor",                            
+                                                "exam2_matched_resource_OH.GSI",                                  
+                                                "exam2_matched_resource_Ask.Qn.Class",                            
+                                                "exam2_matched_resource_Tutoring")]=="Planless NotDid", 
+                                      na.rm=TRUE) * study1$didSurveyPostE2
+
+### study2 ###
+
+study2$TOTPlannedDid_E1 = rowSums(study2[,c("exam1_matched_resource_Lecture.notes",                          
+                                            "exam1_matched_resource_Blue.Review",                             
+                                            "exam1_matched_resource_Past.req.HW",                             
+                                            "exam1_matched_resource_Past.rec.HW",                             
+                                            "exam1_matched_resource_Prac.exam.qn",                            
+                                            "exam1_matched_resource_PR",                                      
+                                            "exam1_matched_resource_NTS",                                     
+                                            "exam1_matched_resource_ILP",                                     
+                                            "exam1_matched_resource_Textbook",                                
+                                            "exam1_matched_resource_Formula.Card",                            
+                                            "exam1_matched_resource_Other.Students",                          
+                                            "exam1_matched_resource_OH.Professor",                            
+                                            "exam1_matched_resource_OH.GSI",                                  
+                                            "exam1_matched_resource_Ask.Qn.Class",                            
+                                            "exam1_matched_resource_Tutoring")]=="Planned Did", 
+                                  na.rm=TRUE) * study2$didSurveyPostE1
+
+study2$TOTPlannedNotDid_E1 = rowSums(study2[,c("exam1_matched_resource_Lecture.notes",                          
+                                               "exam1_matched_resource_Blue.Review",                             
+                                               "exam1_matched_resource_Past.req.HW",                             
+                                               "exam1_matched_resource_Past.rec.HW",                             
+                                               "exam1_matched_resource_Prac.exam.qn",                            
+                                               "exam1_matched_resource_PR",                                      
+                                               "exam1_matched_resource_NTS",                                     
+                                               "exam1_matched_resource_ILP",                                     
+                                               "exam1_matched_resource_Textbook",                                
+                                               "exam1_matched_resource_Formula.Card",                            
+                                               "exam1_matched_resource_Other.Students",                          
+                                               "exam1_matched_resource_OH.Professor",                            
+                                               "exam1_matched_resource_OH.GSI",                                  
+                                               "exam1_matched_resource_Ask.Qn.Class",                            
+                                               "exam1_matched_resource_Tutoring")]=="Planned NotDid", 
+                                     na.rm=TRUE) * study2$didSurveyPostE1
+
+study2$TOTNotPlannedDid_E1 = rowSums(study2[,c("exam1_matched_resource_Lecture.notes",                          
+                                               "exam1_matched_resource_Blue.Review",                             
+                                               "exam1_matched_resource_Past.req.HW",                             
+                                               "exam1_matched_resource_Past.rec.HW",                             
+                                               "exam1_matched_resource_Prac.exam.qn",                            
+                                               "exam1_matched_resource_PR",                                      
+                                               "exam1_matched_resource_NTS",                                     
+                                               "exam1_matched_resource_ILP",                                     
+                                               "exam1_matched_resource_Textbook",                                
+                                               "exam1_matched_resource_Formula.Card",                            
+                                               "exam1_matched_resource_Other.Students",                          
+                                               "exam1_matched_resource_OH.Professor",                            
+                                               "exam1_matched_resource_OH.GSI",                                  
+                                               "exam1_matched_resource_Ask.Qn.Class",                            
+                                               "exam1_matched_resource_Tutoring")]=="NotPlanned Did", 
+                                     na.rm=TRUE) * study2$didSurveyPostE1
+
+study2$TOTNotPlannedNotDid_E1 = rowSums(study2[,c("exam1_matched_resource_Lecture.notes",                          
+                                                  "exam1_matched_resource_Blue.Review",                             
+                                                  "exam1_matched_resource_Past.req.HW",                             
+                                                  "exam1_matched_resource_Past.rec.HW",                             
+                                                  "exam1_matched_resource_Prac.exam.qn",                            
+                                                  "exam1_matched_resource_PR",                                      
+                                                  "exam1_matched_resource_NTS",                                     
+                                                  "exam1_matched_resource_ILP",                                     
+                                                  "exam1_matched_resource_Textbook",                                
+                                                  "exam1_matched_resource_Formula.Card",                            
+                                                  "exam1_matched_resource_Other.Students",                          
+                                                  "exam1_matched_resource_OH.Professor",                            
+                                                  "exam1_matched_resource_OH.GSI",                                  
+                                                  "exam1_matched_resource_Ask.Qn.Class",                            
+                                                  "exam1_matched_resource_Tutoring")]=="NotPlanned NotDid", 
+                                        na.rm=TRUE) * study2$didSurveyPostE1
+
+study2$TOTPlanlessDid_E1 = rowSums(study2[,c("exam1_matched_resource_Lecture.notes",                          
+                                             "exam1_matched_resource_Blue.Review",                             
+                                             "exam1_matched_resource_Past.req.HW",                             
+                                             "exam1_matched_resource_Past.rec.HW",                             
+                                             "exam1_matched_resource_Prac.exam.qn",                            
+                                             "exam1_matched_resource_PR",                                      
+                                             "exam1_matched_resource_NTS",                                     
+                                             "exam1_matched_resource_ILP",                                     
+                                             "exam1_matched_resource_Textbook",                                
+                                             "exam1_matched_resource_Formula.Card",                            
+                                             "exam1_matched_resource_Other.Students",                          
+                                             "exam1_matched_resource_OH.Professor",                            
+                                             "exam1_matched_resource_OH.GSI",                                  
+                                             "exam1_matched_resource_Ask.Qn.Class",                            
+                                             "exam1_matched_resource_Tutoring")]=="Planless Did", 
+                                   na.rm=TRUE) * study2$didSurveyPostE1
+
+study2$TOTPlanlessNotDid_E1 = rowSums(study2[,c("exam1_matched_resource_Lecture.notes",                          
+                                                "exam1_matched_resource_Blue.Review",                             
+                                                "exam1_matched_resource_Past.req.HW",                             
+                                                "exam1_matched_resource_Past.rec.HW",                             
+                                                "exam1_matched_resource_Prac.exam.qn",                            
+                                                "exam1_matched_resource_PR",                                      
+                                                "exam1_matched_resource_NTS",                                     
+                                                "exam1_matched_resource_ILP",                                     
+                                                "exam1_matched_resource_Textbook",                                
+                                                "exam1_matched_resource_Formula.Card",                            
+                                                "exam1_matched_resource_Other.Students",                          
+                                                "exam1_matched_resource_OH.Professor",                            
+                                                "exam1_matched_resource_OH.GSI",                                  
+                                                "exam1_matched_resource_Ask.Qn.Class",                            
+                                                "exam1_matched_resource_Tutoring")]=="Planless NotDid", 
+                                      na.rm=TRUE) * study2$didSurveyPostE1
+
+study2$TOTPlannedDid_E2 = rowSums(study2[,c("exam2_matched_resource_Lecture.notes",                          
+                                            "exam2_matched_resource_Blue.Review",                             
+                                            "exam2_matched_resource_Past.req.HW",                             
+                                            "exam2_matched_resource_Past.rec.HW",                             
+                                            "exam2_matched_resource_Prac.exam.qn",                            
+                                            "exam2_matched_resource_PR",                                      
+                                            "exam2_matched_resource_NTS",                                     
+                                            "exam2_matched_resource_ILP",                                     
+                                            "exam2_matched_resource_Textbook",                                
+                                            "exam2_matched_resource_Formula.Card",                            
+                                            "exam2_matched_resource_Other.Students",                          
+                                            "exam2_matched_resource_OH.Professor",                            
+                                            "exam2_matched_resource_OH.GSI",                                  
+                                            "exam2_matched_resource_Ask.Qn.Class",                            
+                                            "exam2_matched_resource_Tutoring")]=="Planned Did", 
+                                  na.rm=TRUE) * study2$didSurveyPostE2
+
+study2$TOTPlannedNotDid_E2 = rowSums(study2[,c("exam2_matched_resource_Lecture.notes",                          
+                                               "exam2_matched_resource_Blue.Review",                             
+                                               "exam2_matched_resource_Past.req.HW",                             
+                                               "exam2_matched_resource_Past.rec.HW",                             
+                                               "exam2_matched_resource_Prac.exam.qn",                            
+                                               "exam2_matched_resource_PR",                                      
+                                               "exam2_matched_resource_NTS",                                     
+                                               "exam2_matched_resource_ILP",                                     
+                                               "exam2_matched_resource_Textbook",                                
+                                               "exam2_matched_resource_Formula.Card",                            
+                                               "exam2_matched_resource_Other.Students",                          
+                                               "exam2_matched_resource_OH.Professor",                            
+                                               "exam2_matched_resource_OH.GSI",                                  
+                                               "exam2_matched_resource_Ask.Qn.Class",                            
+                                               "exam2_matched_resource_Tutoring")]=="Planned NotDid", 
+                                     na.rm=TRUE) * study2$didSurveyPostE2
+
+study2$TOTNotPlannedDid_E2 = rowSums(study2[,c("exam2_matched_resource_Lecture.notes",                          
+                                               "exam2_matched_resource_Blue.Review",                             
+                                               "exam2_matched_resource_Past.req.HW",                             
+                                               "exam2_matched_resource_Past.rec.HW",                             
+                                               "exam2_matched_resource_Prac.exam.qn",                            
+                                               "exam2_matched_resource_PR",                                      
+                                               "exam2_matched_resource_NTS",                                     
+                                               "exam2_matched_resource_ILP",                                     
+                                               "exam2_matched_resource_Textbook",                                
+                                               "exam2_matched_resource_Formula.Card",                            
+                                               "exam2_matched_resource_Other.Students",                          
+                                               "exam2_matched_resource_OH.Professor",                            
+                                               "exam2_matched_resource_OH.GSI",                                  
+                                               "exam2_matched_resource_Ask.Qn.Class",                            
+                                               "exam2_matched_resource_Tutoring")]=="NotPlanned Did", 
+                                     na.rm=TRUE) * study2$didSurveyPostE2
+
+study2$TOTNotPlannedNotDid_E2 = rowSums(study2[,c("exam2_matched_resource_Lecture.notes",                          
+                                                  "exam2_matched_resource_Blue.Review",                             
+                                                  "exam2_matched_resource_Past.req.HW",                             
+                                                  "exam2_matched_resource_Past.rec.HW",                             
+                                                  "exam2_matched_resource_Prac.exam.qn",                            
+                                                  "exam2_matched_resource_PR",                                      
+                                                  "exam2_matched_resource_NTS",                                     
+                                                  "exam2_matched_resource_ILP",                                     
+                                                  "exam2_matched_resource_Textbook",                                
+                                                  "exam2_matched_resource_Formula.Card",                            
+                                                  "exam2_matched_resource_Other.Students",                          
+                                                  "exam2_matched_resource_OH.Professor",                            
+                                                  "exam2_matched_resource_OH.GSI",                                  
+                                                  "exam2_matched_resource_Ask.Qn.Class",                            
+                                                  "exam2_matched_resource_Tutoring")]=="NotPlanned NotDid", 
+                                        na.rm=TRUE) * study2$didSurveyPostE2
+
+study2$TOTPlanlessDid_E2 = rowSums(study2[,c("exam2_matched_resource_Lecture.notes",                          
+                                             "exam2_matched_resource_Blue.Review",                             
+                                             "exam2_matched_resource_Past.req.HW",                             
+                                             "exam2_matched_resource_Past.rec.HW",                             
+                                             "exam2_matched_resource_Prac.exam.qn",                            
+                                             "exam2_matched_resource_PR",                                      
+                                             "exam2_matched_resource_NTS",                                     
+                                             "exam2_matched_resource_ILP",                                     
+                                             "exam2_matched_resource_Textbook",                                
+                                             "exam2_matched_resource_Formula.Card",                            
+                                             "exam2_matched_resource_Other.Students",                          
+                                             "exam2_matched_resource_OH.Professor",                            
+                                             "exam2_matched_resource_OH.GSI",                                  
+                                             "exam2_matched_resource_Ask.Qn.Class",                            
+                                             "exam2_matched_resource_Tutoring")]=="Planless Did", 
+                                   na.rm=TRUE) * study2$didSurveyPostE2
+
+study2$TOTPlanlessNotDid_E2 = rowSums(study2[,c("exam2_matched_resource_Lecture.notes",                          
+                                                "exam2_matched_resource_Blue.Review",                             
+                                                "exam2_matched_resource_Past.req.HW",                             
+                                                "exam2_matched_resource_Past.rec.HW",                             
+                                                "exam2_matched_resource_Prac.exam.qn",                            
+                                                "exam2_matched_resource_PR",                                      
+                                                "exam2_matched_resource_NTS",                                     
+                                                "exam2_matched_resource_ILP",                                     
+                                                "exam2_matched_resource_Textbook",                                
+                                                "exam2_matched_resource_Formula.Card",                            
+                                                "exam2_matched_resource_Other.Students",                          
+                                                "exam2_matched_resource_OH.Professor",                            
+                                                "exam2_matched_resource_OH.GSI",                                  
+                                                "exam2_matched_resource_Ask.Qn.Class",                            
+                                                "exam2_matched_resource_Tutoring")]=="Planless NotDid", 
+                                      na.rm=TRUE) * study2$didSurveyPostE2
+
+
+
+```
+
+
+
+## Mean Usefulness Ratings of Resources
+```{r usefulness, echo=FALSE, eval=TRUE}
+# study1 
+
+study1$allexams_MeanUsefulness = rowMeans(study1[,c("usefulness_Lecture.notes_poE1",                                
+                                                    "usefulness_Blue.Review_poE1",                                    
+                                                    "usefulness_Past.required.HW.problems_poE1" ,                     
+                                                    "usefulness_Past.recommended.HW.problems_poE1" ,                  
+                                                    "usefulness_Practice.exam.questions..from.the.lab.workbook._poE1",
+                                                    "usefulness_Problem.Roulette_poE1",                             
+                                                    "usefulness_Name.That.Scenario_poE1",                           
+                                                    "usefulness_Lab.materials..ILPs._poE1",                         
+                                                    "usefulness_Textbook.readings_poE1",                            
+                                                    "usefulness_Yellow.formula.card_poE1" ,                         
+                                                    "usefulness_Discussion.with.other.students_poE1",               
+                                                    "usefulness_Professor.office.hours_poE1",                       
+                                                    "usefulness_GSI.office.hours_poE1",                           
+                                                    "usefulness_Ask.questions.in.class_poE1",                       
+                                                    "usefulness_Private.tutoring_poE1",
+                                                    "usefulness_Lecture.notes_poE2",                                
+                                                    "usefulness_Blue.Review_poE2",                                  
+                                                    "usefulness_Past.required.HW.problems_poE2" ,                   
+                                                    "usefulness_Past.recommended.HW.problems_poE2" ,
+                                                    "usefulness_Practice.exam.questions..from.the.lab.workbook._poE2",
+                                                    "usefulness_Problem.Roulette_poE2",                             
+                                                    "usefulness_Name.That.Scenario_poE2",                           
+                                                    "usefulness_Lab.materials..ILPs._poE2",                         
+                                                    "usefulness_Textbook.readings_poE2",                            
+                                                    "usefulness_Yellow.formula.card_poE2" ,                         
+                                                    "usefulness_Discussion.with.other.students_poE2",               
+                                                    "usefulness_Professor.office.hours_poE2",                       
+                                                    "usefulness_GSI.office.hours_poE2"  ,                           
+                                                    "usefulness_Ask.questions.in.class_poE2",                       
+                                                    "usefulness_Private.tutoring_poE2")], 
+                                          na.rm=TRUE) * study1$didSurveyPostE1 * study1$didSurveyPostE2
+
+study1$allexamsprepost_MeanUsefulness = rowMeans(
+  study1[,c("usefulness_Lecture.notes_poE1",
+            "usefulness_Blue.Review_poE1",
+            "usefulness_Past.required.HW.problems_poE1" ,
+            "usefulness_Past.recommended.HW.problems_poE1", 
+            "usefulness_Practice.exam.questions..from.the.lab.workbook._poE1",
+            "usefulness_Problem.Roulette_poE1",                             
+            "usefulness_Name.That.Scenario_poE1",                           
+            "usefulness_Lab.materials..ILPs._poE1",                         
+            "usefulness_Textbook.readings_poE1",                            
+            "usefulness_Yellow.formula.card_poE1" ,                         
+            "usefulness_Discussion.with.other.students_poE1",               
+            "usefulness_Professor.office.hours_poE1",                       
+            "usefulness_GSI.office.hours_poE1",                           
+            "usefulness_Ask.questions.in.class_poE1",                       
+            "usefulness_Private.tutoring_poE1",
+            "usefulness_Lecture.notes_poE2",                                
+            "usefulness_Blue.Review_poE2",                                  
+            "usefulness_Past.required.HW.problems_poE2" ,                   
+            "usefulness_Past.recommended.HW.problems_poE2" ,
+            "usefulness_Practice.exam.questions..from.the.lab.workbook._poE2",
+            "usefulness_Problem.Roulette_poE2",                             
+            "usefulness_Name.That.Scenario_poE2",                           
+            "usefulness_Lab.materials..ILPs._poE2",                         
+            "usefulness_Textbook.readings_poE2",                            
+            "usefulness_Yellow.formula.card_poE2" ,                         
+            "usefulness_Discussion.with.other.students_poE2",               
+            "usefulness_Professor.office.hours_poE2",                       
+            "usefulness_GSI.office.hours_poE2"  ,                           
+            "usefulness_Ask.questions.in.class_poE2",                       
+            "usefulness_Private.tutoring_poE2")], 
+  na.rm=TRUE) * study1$didSurveyPostE1 * study1$didSurveyPostE2 * study1$didSurveyPreE1 * study1$didSurveyPreE2
+
+study1$allexamspost_numberOfResourcedUsed = rowSums(
+  study1[,c("used_Lecture.notes_poE1",                                  
+            "used_Blue.Review_poE1",                                    
+            "used_Past.required.HW.problems_poE1",                      
+            "used_Past.recommended.HW.problems_poE1",                   
+            "used_Practice.exam.questions..from.the.lab.workbook._poE1",
+            "used_Problem.Roulette_poE1",                               
+            "used_Name.That.Scenario_poE1",                             
+            "used_Lab.materials..ILPs._poE1",                           
+            "used_Textbook.readings_poE1",                              
+            "used_Yellow.formula.card_poE1",                            
+            "used_Discussion.with.other.students_poE1",                 
+            "used_Professor.office.hours_poE1",                         
+            "used_GSI.office.hours_poE1",                               
+            "used_Ask.questions.in.class_poE1",                         
+            "used_Private.tutoring_poE1", 
+            "used_Lecture.notes_poE2",
+            "used_Blue.Review_poE2",
+            "used_Past.required.HW.problems_poE2",                         
+            "used_Past.recommended.HW.problems_poE2",                      
+            "used_Practice.exam.questions..from.the.lab.workbook._poE2",   
+            "used_Problem.Roulette_poE2",                                  
+            "used_Name.That.Scenario_poE2",                                
+            "used_Lab.materials..ILPs._poE2",                              
+            "used_Textbook.readings_poE2",                                 
+            "used_Yellow.formula.card_poE2" ,                              
+            "used_Discussion.with.other.students_poE2" ,                   
+            "used_Professor.office.hours_poE2",                            
+            "used_GSI.office.hours_poE2",                                  
+            "used_Ask.questions.in.class_poE2",                            
+            "used_Private.tutoring_poE2")], 
+  na.rm=TRUE) * study1$didSurveyPostE1 * study1$didSurveyPostE2
+
+study1$allexamsprepost_numberOfResourcedUsed = rowSums(
+  study1[,c("used_Lecture.notes_poE1",                                  
+            "used_Blue.Review_poE1",                                    
+            "used_Past.required.HW.problems_poE1",                      
+            "used_Past.recommended.HW.problems_poE1",                   
+            "used_Practice.exam.questions..from.the.lab.workbook._poE1",
+            "used_Problem.Roulette_poE1",                               
+            "used_Name.That.Scenario_poE1",                             
+            "used_Lab.materials..ILPs._poE1",                           
+            "used_Textbook.readings_poE1",                              
+            "used_Yellow.formula.card_poE1",                            
+            "used_Discussion.with.other.students_poE1",                 
+            "used_Professor.office.hours_poE1",                         
+            "used_GSI.office.hours_poE1",                               
+            "used_Ask.questions.in.class_poE1",                         
+            "used_Private.tutoring_poE1", 
+            "used_Lecture.notes_poE2",
+            "used_Blue.Review_poE2",
+            "used_Past.required.HW.problems_poE2",                         
+            "used_Past.recommended.HW.problems_poE2",                      
+            "used_Practice.exam.questions..from.the.lab.workbook._poE2",   
+            "used_Problem.Roulette_poE2",                                  
+            "used_Name.That.Scenario_poE2",                                
+            "used_Lab.materials..ILPs._poE2",                              
+            "used_Textbook.readings_poE2",                                 
+            "used_Yellow.formula.card_poE2" ,                              
+            "used_Discussion.with.other.students_poE2" ,                   
+            "used_Professor.office.hours_poE2",                            
+            "used_GSI.office.hours_poE2",                                  
+            "used_Ask.questions.in.class_poE2",                            
+            "used_Private.tutoring_poE2")], 
+  na.rm=TRUE) * study1$didSurveyPostE1 * study1$didSurveyPostE2 * study1$didSurveyPreE1 * study1$didSurveyPreE2
+
+# study2
+study2$allexams_MeanUsefulness = rowMeans(study2[,c("usefulness_Lecture.notes_poE1",                                  
+                                                    "usefulness_Blue.Review_poE1",                                    
+                                                    "usefulness_Past.required.HW.problems_poE1" ,                     
+                                                    "usefulness_Past.recommended.HW.problems_poE1" ,                  
+                                                    "usefulness_Practice.exam.questions..from.the.lab.workbook._poE1",
+                                                    "usefulness_Problem.Roulette_poE1",                               
+                                                    "usefulness_Name.That.Scenario_poE1",                             
+                                                    "usefulness_Lab.materials..ILPs._poE1",                           
+                                                    "usefulness_Textbook.readings_poE1",                              
+                                                    "usefulness_Yellow.formula.card_poE1" ,                           
+                                                    "usefulness_Discussion.with.other.students_poE1",                 
+                                                    "usefulness_Professor.office.hours_poE1",                         
+                                                    "usefulness_GSI.office.hours_poE1"  ,                             
+                                                    "usefulness_Ask.questions.in.class_poE1",                         
+                                                    "usefulness_Private.tutoring_poE1",
+                                                    "usefulness_Lecture.notes_poE2",                                  
+                                                    "usefulness_Blue.Review_poE2",                                    
+                                                    "usefulness_Past.required.HW.problems_poE2" ,                     
+                                                    "usefulness_Past.recommended.HW.problems_poE2" ,                  
+                                                    "usefulness_Practice.exam.questions..from.the.lab.workbook._poE2",
+                                                    "usefulness_Problem.Roulette_poE2",                               
+                                                    "usefulness_Name.That.Scenario_poE2",                             
+                                                    "usefulness_Lab.materials..ILPs._poE2",                           
+                                                    "usefulness_Textbook.readings_poE2",                              
+                                                    "usefulness_Yellow.formula.card_poE2" ,                           
+                                                    "usefulness_Discussion.with.other.students_poE2",                 
+                                                    "usefulness_Professor.office.hours_poE2",                         
+                                                    "usefulness_GSI.office.hours_poE2"  ,                             
+                                                    "usefulness_Ask.questions.in.class_poE2",                         
+                                                    "usefulness_Private.tutoring_poE2")], 
+                                          na.rm=TRUE) * study2$didSurveyPostE1 * study2$didSurveyPostE2
+
+study2$allexamsprepost_MeanUsefulness = rowMeans(
+  study2[,c("usefulness_Lecture.notes_poE1",                                  
+            "usefulness_Blue.Review_poE1",                                    
+            "usefulness_Past.required.HW.problems_poE1" ,                     
+            "usefulness_Past.recommended.HW.problems_poE1" ,                  
+            "usefulness_Practice.exam.questions..from.the.lab.workbook._poE1",
+            "usefulness_Problem.Roulette_poE1",                               
+            "usefulness_Name.That.Scenario_poE1",                             
+            "usefulness_Lab.materials..ILPs._poE1",                           
+            "usefulness_Textbook.readings_poE1",                              
+            "usefulness_Yellow.formula.card_poE1" ,                           
+            "usefulness_Discussion.with.other.students_poE1",                 
+            "usefulness_Professor.office.hours_poE1",                         
+            "usefulness_GSI.office.hours_poE1"  ,                             
+            "usefulness_Ask.questions.in.class_poE1",                         
+            "usefulness_Private.tutoring_poE1",
+            "usefulness_Lecture.notes_poE2",                                  
+            "usefulness_Blue.Review_poE2",                                    
+            "usefulness_Past.required.HW.problems_poE2" ,                     
+            "usefulness_Past.recommended.HW.problems_poE2" ,                  
+            "usefulness_Practice.exam.questions..from.the.lab.workbook._poE2",
+            "usefulness_Problem.Roulette_poE2",                               
+            "usefulness_Name.That.Scenario_poE2",                             
+            "usefulness_Lab.materials..ILPs._poE2",                           
+            "usefulness_Textbook.readings_poE2",                              
+            "usefulness_Yellow.formula.card_poE2" ,                           
+            "usefulness_Discussion.with.other.students_poE2",                 
+            "usefulness_Professor.office.hours_poE2",                         
+            "usefulness_GSI.office.hours_poE2"  ,                             
+            "usefulness_Ask.questions.in.class_poE2",                         
+            "usefulness_Private.tutoring_poE2")], 
+  na.rm=TRUE) * study2$didSurveyPostE1 * study2$didSurveyPostE2 * study2$didSurveyPreE1 * study2$didSurveyPreE2
+
+
+study2$allexamspost_numberOfResourcedUsed = rowSums(
+  study2[,c("used_Lecture.notes_poE1",                                  
+            "used_Blue.Review_poE1",                                    
+            "used_Past.required.HW.problems_poE1",                      
+            "used_Past.recommended.HW.problems_poE1",                   
+            "used_Practice.exam.questions..from.the.lab.workbook._poE1",
+            "used_Problem.Roulette_poE1",                               
+            "used_Name.That.Scenario_poE1",                             
+            "used_Lab.materials..ILPs._poE1",                           
+            "used_Textbook.readings_poE1",                              
+            "used_Yellow.formula.card_poE1",                            
+            "used_Discussion.with.other.students_poE1",                 
+            "used_Professor.office.hours_poE1",                         
+            "used_GSI.office.hours_poE1",                               
+            "used_Ask.questions.in.class_poE1",                         
+            "used_Private.tutoring_poE1", 
+            "used_Lecture.notes_poE2",
+            "used_Blue.Review_poE2",
+            "used_Past.required.HW.problems_poE2",                         
+            "used_Past.recommended.HW.problems_poE2",                      
+            "used_Practice.exam.questions..from.the.lab.workbook._poE2",   
+            "used_Problem.Roulette_poE2",                                  
+            "used_Name.That.Scenario_poE2",                                
+            "used_Lab.materials..ILPs._poE2",                              
+            "used_Textbook.readings_poE2",                                 
+            "used_Yellow.formula.card_poE2" ,                              
+            "used_Discussion.with.other.students_poE2" ,                   
+            "used_Professor.office.hours_poE2",                            
+            "used_GSI.office.hours_poE2",                                  
+            "used_Ask.questions.in.class_poE2",                            
+            "used_Private.tutoring_poE2")], 
+  na.rm=TRUE) * study2$didSurveyPostE1 * study2$didSurveyPostE2
+
+study2$allexamsprepost_numberOfResourcedUsed = rowSums(
+  study2[,c("used_Lecture.notes_poE1",                                  
+            "used_Blue.Review_poE1",                                    
+            "used_Past.required.HW.problems_poE1",                      
+            "used_Past.recommended.HW.problems_poE1",                   
+            "used_Practice.exam.questions..from.the.lab.workbook._poE1",
+            "used_Problem.Roulette_poE1",                               
+            "used_Name.That.Scenario_poE1",                             
+            "used_Lab.materials..ILPs._poE1",                           
+            "used_Textbook.readings_poE1",                              
+            "used_Yellow.formula.card_poE1",                            
+            "used_Discussion.with.other.students_poE1",                 
+            "used_Professor.office.hours_poE1",                         
+            "used_GSI.office.hours_poE1",                               
+            "used_Ask.questions.in.class_poE1",                         
+            "used_Private.tutoring_poE1", 
+            "used_Lecture.notes_poE2",
+            "used_Blue.Review_poE2",
+            "used_Past.required.HW.problems_poE2",                         
+            "used_Past.recommended.HW.problems_poE2",                      
+            "used_Practice.exam.questions..from.the.lab.workbook._poE2",   
+            "used_Problem.Roulette_poE2",                                  
+            "used_Name.That.Scenario_poE2",                                
+            "used_Lab.materials..ILPs._poE2",                              
+            "used_Textbook.readings_poE2",                                 
+            "used_Yellow.formula.card_poE2" ,                              
+            "used_Discussion.with.other.students_poE2" ,                   
+            "used_Professor.office.hours_poE2",                            
+            "used_GSI.office.hours_poE2",                                  
+            "used_Ask.questions.in.class_poE2",                            
+            "used_Private.tutoring_poE2")], 
+  na.rm=TRUE) * study2$didSurveyPostE1 * study2$didSurveyPostE2 * study2$didSurveyPreE1 * study2$didSurveyPreE2
+
+```
+
+
+
+
+
+```{r write-to-file, eval=TRUE}
+write.csv(study1, "study1_analysis_release.csv", row.names=F)
+write.csv(study2, "study2_analysis_release.csv", row.names=F)
+```
+
+## Creating Emotion and Motivational Variables Long Form Dataset.
+```{r creating-emo-motiv-long-dataset, echo=FALSE, eval=TRUE}
+
+temp1a=study1[c("ID", "group", "exam_1", 
+                "TOTPlannedDid_E1", "TOTPlannedNotDid_E1",
+                "TOTNotPlannedDid_E1", "TOTNotPlannedNotDid_E1",
+                "TOTPlanlessDid_E1", "TOTPlanlessNotDid_E1",
+                "E1_negemotions", "control.over.grade",
+                "extent.of.planning_poE1", "kept.to.plans_poE1")]
+
+colnames(temp1a) = c("ID", "group", "exam", 
+                     "PlannedDid", "PlannedNotDid",
+                     "NotPlannedDid", "NotPlannedNotDid",
+                     "PlanlessDid", "PlanlessNotDid",
+                     "negemotions","control.over.grade",
+                     "extent.of.planning_poE", "kept.to.plans_poE")
+temp1a$examNum = 1
+temp1a$year = 0
+
+
+temp1b=study1[c("ID", "group", "exam_2", 
+                "TOTPlannedDid_E2", "TOTPlannedNotDid_E2",
+                "TOTNotPlannedDid_E2", "TOTNotPlannedNotDid_E2",
+                "TOTPlanlessDid_E2", "TOTPlanlessNotDid_E2",
+                "E2_negemotions", "control.over.grade_E2",
+                "extent.of.planning_poE2", "kept.to.plans_poE2")]
+
+colnames(temp1b) = c("ID", "group", "exam", 
+                     "PlannedDid", "PlannedNotDid",
+                     "NotPlannedDid", "NotPlannedNotDid",
+                     "PlanlessDid", "PlanlessNotDid",
+                     "negemotions","control.over.grade",
+                     "extent.of.planning_poE", "kept.to.plans_poE")
+
+temp1b$examNum = 2
+temp1b$year = 0
+
+study1_stack = rbind(temp1a, temp1b) 
+
+temp2a=study2[c("ID", "group", "exam_1", 
+                "TOTPlannedDid_E1", "TOTPlannedNotDid_E1",
+                "TOTNotPlannedDid_E1", "TOTNotPlannedNotDid_E1",
+                "TOTPlanlessDid_E1", "TOTPlanlessNotDid_E1",
+                "E1_negemotions", "control.over.grade",
+                "extent.of.planning_poE1", "kept.to.plans_poE1")]
+
+colnames(temp2a) = c("ID", "group", "exam", 
+                     "PlannedDid", "PlannedNotDid",
+                     "NotPlannedDid", "NotPlannedNotDid",
+                     "PlanlessDid", "PlanlessNotDid",
+                     "negemotions","control.over.grade",
+                     "extent.of.planning_poE", "kept.to.plans_poE")
+temp2a$examNum = 1
+temp2a$year = 1
+
+
+temp2b=study2[c("ID", "group", "exam_2", 
+                "TOTPlannedDid_E2", "TOTPlannedNotDid_E2",
+                "TOTNotPlannedDid_E2", "TOTNotPlannedNotDid_E2",
+                "TOTPlanlessDid_E2", "TOTPlanlessNotDid_E2",
+                "E2_negemotions", "control.over.grade_E2",
+                "extent.of.planning_poE2", "kept.to.plans_poE2")]
+
+colnames(temp2b) = c("ID", "group", "exam", 
+                     "PlannedDid", "PlannedNotDid",
+                     "NotPlannedDid", "NotPlannedNotDid",
+                     "PlanlessDid", "PlanlessNotDid",
+                     "negemotions","control.over.grade",
+                     "extent.of.planning_poE", "kept.to.plans_poE")
+temp2b$examNum = 2
+temp2b$year = 1
+
+study2_stack = rbind(temp2a, temp2b)
+
+study1_2_stack = rbind(study1_stack, study2_stack)
+
+emotion_motivation_dataset = study1_2_stack[,c("year", "ID", "group", "examNum", 
+                  "exam", "PlannedDid", "NotPlannedDid", "PlannedNotDid", 
+                  "NotPlannedNotDid", "PlanlessDid", "PlanlessNotDid",
+                  "negemotions", "control.over.grade", "extent.of.planning_poE", "kept.to.plans_poE")]
+
+# write.csv(emotion_motivation_dataset, "emotion_motivation_variables_release.csv", row.names=F)
+
+```
+
+
+
+## 2 Mechanisms (Resource Use & Metacog SR) Creating Dataset Combining Across Years, Not Exams 
+```{r prepost, echo=FALSE, eval=FALSE}
+study1_temp = study1[c("ID", "group", "grade", "allexams_MeanUsefulness", "allexamspost_numberOfResourcedUsed")]
+study1_temp$strategic_behaviors_pw = NA
+study1_temp$year = 0
+
+study2_temp = study2[c("ID", "group", "grade", "allexams_MeanUsefulness", "allexamspost_numberOfResourcedUsed", "strategic_behaviors_pw")]
+study2_temp$year = 1
+
+study1_2_mechstack_prepost = rbind(study1_temp, study2_temp)
+colnames(study1_2_mechstack_prepost) = c("ID", "group", "grade", "resourceuse", "numresourcesused", "selfreflection", "year")
+
+write.csv(study1_2_mechstack_prepost, "study1and2_mechstack_prepost.csv", row.names=F)
+
+```
+
+
+

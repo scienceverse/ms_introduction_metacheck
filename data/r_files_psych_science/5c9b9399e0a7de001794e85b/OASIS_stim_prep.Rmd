@@ -1,0 +1,194 @@
+---
+title: "OASIS pics preparation - R Notebook"
+output: html_notebook
+---
+This notebook serves to
+1) read in the overview data for the OASIS pictures
+2) divide the pictures by valence (low/middle/high)
+3) create stimulus sets for uncertainty study (rating)
+4) add a column in the data set with the picname
+5) select only pics in the range 2:5 (arousal and valence)
+6) elimintate the nudes images
+
+```{r}
+#load needed libraries
+library(OneR)
+library(tm)
+library(plyr)
+library(dplyr)
+library(Hmisc)
+```
+
+
+#########################################################
+1) read in the overview data for the OASIS pictures
+#########################################################
+```{r}
+rm(list=ls())
+graphics.off()
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))  # sets the directory of location of this script as the current directory
+oasis_data <- read.csv('OASIS_mod.csv')
+```
+
+
+
+#########################################################
+3) get a rough overview over the data
+#########################################################
+```{r}
+summary(oasis_data)
+```
+
+#########################################################
+4) select only pics in the range 2:5 (arousal and valence)
+#########################################################
+```{r}
+reduced_oasis_data <- subset(oasis_data, Valence_mean>=3 & Valence_mean<=5)
+fully_reduced_oasis_data <- subset(oasis_data,Arousal_mean>=3 & Arousal_mean<=5)
+summary(fully_reduced_oasis_data)
+```
+
+#########################################################
+6) elimintate the nudes images
+#########################################################
+```{r}
+# # find nudes in data frame
+# l <- sapply(colnames(fully_reduced_oasis_data), function(x) grep("Nude", fully_reduced_oasis_data[,x]))
+# nude_index <- l$Theme
+# #eliminate all rows of nude_index
+# no_nudes_oasis <-  fully_reduced_oasis_data[which(rownames(fully_reduced_oasis_data) %nin% nude_index), ] #491 remaining pics
+no_nudes_oasis <- fully_reduced_oasis_data[!grepl("Nude", fully_reduced_oasis_data$Theme),]
+summary(no_nudes_oasis)
+```
+
+#########################################################
+6) eliminate redundant images and rename some from same category
+e.g. cemetery=funeral=graveyard
+#########################################################
+```{r}
+no_nudes_oasis <- subset(no_nudes_oasis, Theme !='Bored face 1') # being eliminated 
+no_nudes_oasis <- subset(no_nudes_oasis, Theme !='Dummy 1') #already out due to valence_mean criterion
+reduced_data <- no_nudes_oasis
+
+reduced_data$Theme_mod <- revalue(no_nudes_oasis$Theme, c("Funeral 1"="Cemetery 6", "Graveyard 1"="Cemetery 7","Graveyard 2"="Cemetery 8","Graveyard 3"="Cemetery 9","Graveyard 4"="Cemetery 10", "Angry pose 1"= "Angry face 6", "Angry pose 2"="Angry face 7"))
+```
+
+#########################################################
+6) find unique names pics (select one per name manually)
+#########################################################
+```{r}
+#remove numbers from Theme variable
+reduced_data$Theme_new <- removeNumbers(as.character(reduced_data$Theme_mod))
+summary(reduced_data)
+length(unique(as.factor(reduced_data$Theme_new)))
+
+# Problem with additional white space in war (scenes) --> remove all white spaces from the strings
+reduced_data$Theme_new <- gsub("\\s", "", reduced_data$Theme_new)  
+```
+#########################################################
+2) find unique theme images
+#########################################################
+```{r}
+# look for ambiguous Themes, that share more than one category, e.g. war is person(3) and scences(2)
+myvars <- c('Theme_new', 'Category')
+my_check_set <- reduced_data[myvars]
+my_table <- table(my_check_set)
+my_table <- ifelse(my_table>0,1,0)
+items_per_category <- colSums(my_table)
+my_table <- as.data.frame(my_table)
+my_table$Rowsum <- as.data.frame(rowSums(my_table))
+to_exclude <- subset(my_table, Rowsum>1)
+double_category_themes <- row.names(to_exclude)
+
+newdata <- reduced_data[!(reduced_data$Theme_new %in% double_category_themes),]
+summary(newdata)
+test_frame <- as.data.frame(table(newdata$Theme_new))
+
+
+single_image_themes <- subset(test_frame,Freq==1 )
+multi_image_themes <- subset(test_frame,Freq>1 )
+
+single_images_df <- newdata[newdata$Theme_new %in% single_image_themes$Var1,]
+multi_images_df <- newdata[!(newdata$Theme_new %in% single_image_themes$Var1),]
+#save data frames
+write.csv(single_images_df,'single_images_df.csv')
+write.csv(multi_images_df,'multi_images_df.csv')
+# next step outside R: select most prominent item from multi_images_df per theme --> done by two independent raters
+```
+
+
+```{r}
+# subset data per category
+animals <- subset(newdata, Category=='Animal')
+length(unique(animals$Theme_new))
+
+objects <- subset(newdata, Category=='Object')
+length(unique(objects$Theme_new))
+
+persons <- subset(newdata, Category=='Person')
+length(unique(persons$Theme_new))
+
+scenes <- subset(newdata, Category=='Scene')
+length(unique(scenes$Theme_new))
+```
+
+```{r}
+
+```
+
+#########################################################
+2) add a column in the data set with the picname
+#########################################################
+```{r}
+reduced_data$Pic_name <- paste0(reduced_data$Theme,'.bmp')#or .bmp
+```
+
+
+
+######################################################################
+6) divide the pictures by valence (low/middle/high) and save new data
+#####################################################################
+
+```{r}
+# library(OneR)
+# no_nudes_oasis$Valence_cat <- bin(no_nudes_oasis$Valence_mean, nbins = 3,labels=c('low','middle','high'),method='content')
+# summary(no_nudes_oasis)
+# p <- ggplot(no_nudes_oasis, aes(Valence_mean, Arousal_mean)) +
+#   geom_point(aes(color = Valence_cat, shape = Category), size = 5) +
+#   ggtitle("Groupwise Valence")
+# plot(p)
+
+```
+
+
+```{r}
+write.csv(no_nudes_oasis,'OASIS_data_reduced.csv')
+```
+
+
+```{r}
+#additional: look at median split data
+library(ggplot2)
+library(OneR)
+oasis_data <- read.csv('OASIS_data_reduced.csv')
+mymedian <- median(oasis_data$Valence_mean)
+oasis_data_pos <- subset(oasis_data,Valence_mean>=mymedian)
+oasis_data_pos$Valence_cat_norm <- bin(oasis_data_pos$Valence_mean, nbins = 3,labels=c('low','middle','high'),method='content')
+
+pos <- ggplot(oasis_data_pos, aes(Valence_mean, Arousal_mean)) +
+  geom_point(aes(color = Valence_cat_norm, shape = Category), size = 5) +
+  ggtitle("Groupwise Valence Positive")
+plot(pos)
+
+oasis_data_neg <- subset(oasis_data,Valence_mean<mymedian)
+oasis_data_neg$Valence_cat_norm <- bin(oasis_data_neg$Valence_mean, nbins = 3,labels=c('low','middle','high'),method='content')
+
+neg <- ggplot(oasis_data_neg, aes(Valence_mean, Arousal_mean)) +
+  geom_point(aes(color = Valence_cat_norm, shape = Category), size = 5) +
+  ggtitle("Groupwise Valence Negative")
+plot(neg)
+#save the data separately
+write.csv(oasis_data_pos,'OASIS_data_pos.csv')
+write.csv(oasis_data_neg,'OASIS_data_neg.csv')
+```
+

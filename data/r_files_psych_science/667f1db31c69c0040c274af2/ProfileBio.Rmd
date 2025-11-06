@@ -1,0 +1,341 @@
+---
+title: "ProfileBio"
+output: html_document
+---
+
+# Load Libraries
+
+```{r libraries, message=FALSE}
+options(contrasts = c("contr.sum", "contr.poly"))
+options(digits = 10)
+
+library(readxl)
+library(dplyr)
+library(tidyverse)
+library(rstatix)
+library(ggpubr)
+library(here)
+library(dplyr)
+library(openxlsx)
+library(tidyr)
+```
+
+# Data Wrangling
+```{r data wrangling}
+
+# Part 1 
+df_name <- read_excel("./12-13-22+Twitter+Profile+Experiment+Description+Pretest_December+14%2C+2022_15.00.xlsx", n_max = 0) %>%
+            names()
+
+df_name <- str_replace(df_name, "_9_TEXT" , "TEXT")
+
+df_Qualtrics1 <- read_excel("./12-13-22+Twitter+Profile+Experiment+Description+Pretest_December+14%2C+2022_15.00.xlsx",
+                            skip = 2,
+                            col_names = df_name) 
+
+df_Qualtrics1 <- df_Qualtrics1 %>%
+  filter(CompletionCode == "4NRUJGE8") 
+
+df_Qualtrics_long1 <- df_Qualtrics1 %>%
+  pivot_longer(cols = `1_feelings_therm_1`:`3_PO_TARGET`, 
+                names_to = c("BioNo", "Attributes"),
+                names_pattern = "(\\d)_(.*)",
+                values_to = "Value")
+
+
+df_Qualtrics_lw <- df_Qualtrics_long1 %>%
+  pivot_wider(names_from = "Attributes",
+              values_from = "Value") %>%
+  rename(feelings_therm = feelings_therm_1)
+
+df_Qualtrics_lw <- df_Qualtrics_lw %>%
+  mutate(
+    BioSet_Phrase = NA_character_,
+    BioSet_PhraseOrder = NA_character_,
+    BioSet_Partisan = NA_character_,
+    BioSet_PartisanOrder = NA_character_
+  )
+
+df_Qualtrics_lw <- df_Qualtrics_lw %>%
+  mutate(
+    BioSet_Partisan_1 = replace_na(BioSet_Partisan_1, "NAPartisan"),
+    BioSet_Partisan_2 = replace_na(BioSet_Partisan_2, "NAPartisan"),
+    BioSet_Partisan_3 = replace_na(BioSet_Partisan_3, "NAPartisan")
+  )
+
+
+df_Qualtrics_lw <- df_Qualtrics_lw %>%
+  mutate(
+    BioSet_Phrase = case_when(
+      !is.na(BioPhraseSet_1) ~ as.character(BioPhraseSet_1),
+      !is.na(BioPhraseSet_2) ~ paste(BioSet_Phrase, as.character(BioPhraseSet_2), sep = ", "),
+      !is.na(BioPhraseSet_3) ~ paste(BioSet_Phrase, as.character(BioPhraseSet_3), sep = ", "),
+      TRUE ~ BioSet_Phrase  
+    ),
+    BioSet_PhraseOrder = paste(
+      BioPhraseSet_1,
+      BioPhraseSet_2,
+      BioPhraseSet_3,
+      sep = ", "
+    ),
+    BioSet_Partisan = case_when(
+      !is.na(BioSet_Partisan_1) ~ as.character(BioSet_Partisan_1),
+      !is.na(BioSet_Partisan_2) ~ paste(BioSet_Partisan, as.character(BioSet_Partisan_2), sep = ", "),
+      !is.na(BioSet_Partisan_3) ~ paste(BioSet_Partisan, as.character(BioSet_Partisan_3), sep = ", "),
+      TRUE ~ BioSet_Partisan  
+    ),
+    BioSet_PartisanOrder = paste(
+      BioSet_Partisan_1,
+      BioSet_Partisan_2,
+      BioSet_Partisan_3,
+      sep = ", "
+    )
+  )
+
+
+df_Qualtrics_lw <- df_Qualtrics_lw %>% mutate(BioSet_Partisan = replace_na(BioSet_Partisan, "None,"))
+df_Qualtrics_lw$Full_Bio <- paste0(df_Qualtrics_lw$BioSet_Partisan, " ", df_Qualtrics_lw$BioSet_Phrase)
+
+df_Qualtrics_lw$RaterPartisan_BioPhrase <- paste0(df_Qualtrics_lw$party_binary, "-Rater, ", df_Qualtrics_lw$BioSet_Phrase)
+
+
+# Part 2 
+df_name2 <- read_excel("./12-13-22+Twitter+Profile+Experiment+Description+Pretest+-+Part2_December+19%2C+2022_16.38.xlsx", n_max = 0) %>%
+            names()
+
+df_name2 <- str_replace(df_name2, "_9_TEXT" , "TEXT")
+
+df_Qualtrics2 <- read_excel("./12-13-22+Twitter+Profile+Experiment+Description+Pretest+-+Part2_December+19%2C+2022_16.38.xlsx",
+                            skip = 2,
+                            col_names = df_name2)
+
+df_Qualtrics2 <- df_Qualtrics2 %>%
+  filter(CompletionCode == "4NRUJGE8")
+
+df_Qualtrics_long <- df_Qualtrics2 %>%
+  pivot_longer(cols = `1_feelings_therm_1`:`5_PO_TARGET`, 
+                names_to = c("BioNo", "Attributes"),
+                names_pattern = "(\\d)_(.*)",
+                values_to = "Value")
+
+
+df_Qualtrics_l2w <- df_Qualtrics_long %>%
+  pivot_wider(names_from = "Attributes",
+              values_from = "Value") %>%
+  rename(feelings_therm = feelings_therm_1)
+
+df_Qualtrics_l2w$BioSet_Phrase <- "NA"
+df_Qualtrics_l2w$BioSet_PhraseOrder <- "NA"
+
+for (i in 1:nrow(df_Qualtrics_l2w)) {
+  
+  df_Qualtrics_l2w[i,(ncol(df_Qualtrics_l2w)-1):ncol(df_Qualtrics_l2w)] <- 
+    df_Qualtrics_l2w[i,colnames(df_Qualtrics_l2w %>% select(ends_with(df_Qualtrics_l2w$BioNo[i])))]
+
+}
+
+df_Qualtrics_l2w$RaterPartisan_BioPhrase <- paste0(df_Qualtrics_l2w$party_binary, "-Rater, ", df_Qualtrics_l2w$BioSet_Phrase)
+
+
+```
+
+#  Feeling Therm and PO Target Mean/SD 
+```{r}
+#Strongly Republican  (1) 
+#Moderately Republican  (2) 
+#Somewhat Republican  (3) 
+#Neither Democrat Nor Republican  (4) 
+#Somewhat Democrat  (5) 
+#Moderately Democrat  (6) 
+#Strongly Democrat  (7) 
+
+# Part 1  
+psych::describe(df_Qualtrics_lw$feelings_therm)
+psych::describe(df_Qualtrics_lw$PO_TARGET)
+
+# Part 2 
+psych::describe(df_Qualtrics_l2w$feelings_therm)
+psych::describe(df_Qualtrics_l2w$PO_TARGET)
+
+```
+
+
+# Summary by group: PO_TARGET
+  
+```{r}
+
+# Part 1 
+PO_TARGET_ttest_byBioPartisan1 <- df_Qualtrics_lw %>%
+  compare_means(PO_TARGET ~ BioSet_Partisan, data = .,
+                group.by = "RaterPartisan_BioPhrase",
+                method = "t.test")
+
+PO_TARGET_Sum_byBioPartisan1 <- df_Qualtrics_lw %>%
+  group_by(RaterPartisan_BioPhrase, BioSet_Partisan, BioSet_Phrase, party_binary) %>%
+  get_summary_stats(PO_TARGET, type = "mean_sd") %>%
+  pivot_wider(values_from = n:sd,
+              names_from = BioSet_Partisan
+              ) %>%
+  left_join(PO_TARGET_ttest_byBioPartisan1, by = "RaterPartisan_BioPhrase")
+
+
+# Part 2 
+PO_TARGET_ttest_bymturkerPartisan <- df_Qualtrics_l2w %>%
+  compare_means(PO_TARGET ~ party_binary, data = .,
+                group.by = "BioSet_Phrase", #Full_Bio
+                method = "t.test")
+
+PO_TARGET_Sum_byRaterParty <- df_Qualtrics_l2w %>%
+  group_by(BioSet_Phrase, party_binary) %>% #Full_Bio, BioSet_Partisan, 
+  get_summary_stats(PO_TARGET, type = "mean_sd") %>%
+  pivot_wider(values_from = n:sd,
+              names_from = party_binary
+              ) %>%
+  left_join(PO_TARGET_ttest_bymturkerPartisan, by = "BioSet_Phrase")
+
+```
+
+# Summary by group: feelings_therm
+
+```{r}
+
+# Part 1 
+FT_ttest_byBioPartisan1 <- df_Qualtrics_lw %>%
+  compare_means(feelings_therm ~ BioSet_Partisan, data = .,
+                group.by = "RaterPartisan_BioPhrase",
+                method = "t.test")
+
+FT_Sum_byBioPartisan1 <- df_Qualtrics_lw %>%
+  group_by(RaterPartisan_BioPhrase, BioSet_Partisan, BioSet_Phrase, party_binary) %>%
+  get_summary_stats(feelings_therm, type = "mean_sd") %>%
+  pivot_wider(values_from = n:sd,
+              names_from = BioSet_Partisan
+              ) %>%
+  left_join(FT_ttest_byBioPartisan1, by = "RaterPartisan_BioPhrase")
+
+
+# Part 2 
+FT_ttest_bymturkerPartisan2 <- df_Qualtrics_l2w %>%
+  compare_means(feelings_therm ~ party_binary, data = .,
+                group.by = "BioSet_Phrase", #Full_BioBioSet_Phrase
+                method = "t.test")
+
+FT_Sum_byRaterParty1 <- df_Qualtrics_l2w %>%
+  group_by(BioSet_Phrase, party_binary) %>% #Full_Bio, BioSet_Partisan, 
+  get_summary_stats(feelings_therm, type = "mean_sd") %>%
+  pivot_wider(values_from = n:sd,
+              names_from = party_binary
+              ) %>%
+  left_join(FT_ttest_bymturkerPartisan2, by = "BioSet_Phrase")
+
+```
+
+# ORDER 
+```{r}
+
+# Part 1 
+df_order_ttest <- compare_means(PO_TARGET ~ BioSet_PhraseOrder, 
+                                df_Qualtrics_l2w, 
+                                group.by = "BioSet_Phrase", #Full_Bio
+                                method = "t.test")
+
+
+df_order_Sum_byOrder <- df_Qualtrics_l2w %>%
+  group_by(BioSet_Phrase, BioSet_PhraseOrder) %>% #Full_Bio
+  get_summary_stats(PO_TARGET, type = "mean_sd")%>%
+  mutate(Order = rep(LETTERS[1:2], length.out = n())) %>%
+  select(-BioSet_PhraseOrder) %>%
+  pivot_wider(values_from = n:sd,
+              names_from = Order
+              ) %>%
+  left_join(df_order_ttest, by = "BioSet_Phrase")
+
+# Part 2 
+df_order_ttest2 <- compare_means(PO_TARGET ~ BioSet_PhraseOrder, 
+                                df_Qualtrics_l2w, 
+                                group.by = "BioSet_Phrase", #Full_Bio
+                                method = "t.test")
+
+
+df_order_Sum_byOrder2 <- df_Qualtrics_l2w %>%
+  group_by(BioSet_Phrase, BioSet_PhraseOrder) %>% #Full_Bio
+  get_summary_stats(PO_TARGET, type = "mean_sd")%>%
+  mutate(Order = rep(LETTERS[1:2], length.out = n())) %>%
+  select(-BioSet_PhraseOrder) %>%
+  pivot_wider(values_from = n:sd,
+              names_from = Order
+              ) %>%
+  left_join(df_order_ttest2, by = "BioSet_Phrase")
+```
+
+# Write Results into EXCEL
+```{r eval=FALSE}
+
+# Part 1
+ls_df1 <- ls()[str_detect(ls(), "_Sum_")]
+for (i in 1:length(ls_df1)){
+   eval(
+    parse(
+      
+      text = paste0(
+        "write.xlsx( x=",
+        ls_df1[i],
+        ", file='OUTPUT_Ttest",
+        Sys.Date(),
+        ".xlsx',sheetName='",
+        ls_df1[i],
+        "', append = TRUE)"
+      )
+    )
+  )
+}
+
+bioprase_lst1 <- unique(df_Qualtrics_lw$BioSet_Phrase)
+
+for (i in bioprase_lst1) {
+  print(i)
+  df_Qualtrics_lw %>%
+  subset(party_binary == 2) %>%
+  subset(BioSet_Phrase == i) %>%
+  t.test(PO_TARGET~1, 
+         mu=4, 
+         data = .) %>%
+    print()
+  
+}
+
+# Part 2
+ls_df2 <- ls()[str_detect(ls(), "_Sum_")]
+for (i in 1:length(ls_df2)){
+   eval(
+    parse(
+      
+      text = paste0(
+        "write.xlsx( x=",
+        ls_df2[i],
+        ", file='OUTPUT_Ttest",
+        Sys.Date(),
+        ".xlsx',sheetName='",
+        ls_df2[i],
+        "', append = TRUE)"
+      )
+    )
+  )
+}
+
+bioprase_lst2 <- unique(df_Qualtrics_l2w$BioSet_Phrase)
+
+for (i in bioprase_lst2) {
+  print(i)
+  df_Qualtrics_l2w %>%
+  subset(party_binary == 2) %>%
+  subset(BioSet_Phrase == i) %>%
+  t.test(PO_TARGET~1, 
+         mu=4, 
+         data = .) %>%
+    print()
+  
+}
+
+```
+

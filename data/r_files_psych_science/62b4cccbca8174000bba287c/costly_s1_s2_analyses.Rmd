@@ -1,0 +1,1261 @@
+---
+title: 'Parental Political Ideology Influences How Children Punish'
+author: "Rachel Leshin"
+date: "6/23/2022"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r libraries, include=FALSE}
+
+#Load in libraries
+
+library(ggplot2)
+library(plyr)
+library(psych)
+library(lmSupport)
+library(dplyr)
+library(lme4)
+library(Rmisc)
+library(tidyr)
+library(readr)
+library(here)
+library(hablar)
+library(tidyverse)
+library(effects)
+library(questionr)
+library(Hmisc)
+library(emmeans)
+library(interactions)
+library(DescTools)
+
+```
+
+```{r file description}
+
+#This file contains both primary and supplementary analyses for Study 1 and Study 2. Additional primary analyses involving secondary data of parents' ideological beliefs can be found in a separate R file (costly_s2_idbelief_analyses.Rmd). Additionaly supplementary analyses of children's performance on the Experiment 2 pilot can be found in a separate R file (costly_s2_pilot.Rmd).
+
+```
+
+```{r load graphing function, include = FALSE}
+
+brx = function(x) {
+  
+  output = pretty(range(x), 
+                  n = nclass.Sturges(x),min.n = 1)
+  return(output)
+  
+}
+
+```
+
+```{r upload PANDA data, include = FALSE}
+
+##Read in cleaned PANDA data file
+panda_raw <- read.csv(here::here("costly_data_s2.csv"), header = TRUE)
+panda <- panda_raw[-c(1)]
+
+```
+
+```{r upload CMOM data, include = FALSE}
+
+##Read in cleaned CMOM data file
+cmom_raw <- read.csv(here::here("costly_data_s1.csv"), header = TRUE)
+cmom <- cmom_raw
+
+```
+
+```{r make CMOM and PANDA data in alignment, include = FALSE}
+
+##Change demo data to match PANDA
+
+#Race
+cmom <- cmom %>%
+  mutate(race_bin = case_when(
+    RacialEthno == "White" ~ "White",
+    RacialEthno == "Black" ~ "Black",
+    RacialEthno == "Asian" ~ "Asian",
+    RacialEthno == "Hispanic" ~ "Hispanic",
+    RacialEthno == "African American" ~ "Black",
+    RacialEthno == "White/Jewish" ~ "White",
+    RacialEthno == "White/Caucasian" ~ "White",
+    RacialEthno == "White/Colombian" ~ "Mixed",
+    RacialEthno == "White/Asian" ~ "Mixed",
+    RacialEthno == "Puerto Rican/New Zealand" ~ "Mixed",
+    RacialEthno == "Pakistani" ~ "Asian",
+    RacialEthno == "Malaysian Chinese" ~ "Asian",
+    RacialEthno == "Latino" ~ "Hispanic",
+    RacialEthno == "Latina/Black" ~ "Mixed",
+    RacialEthno == "Jewish" ~ "White",
+    RacialEthno == "Irish/Jewish" ~ "White",
+    RacialEthno == "Indian" ~ "Asian",
+    RacialEthno == "Hispanish" ~ "Hispanic",
+    RacialEthno == "Greek/Latin" ~ "Mixed",
+    RacialEthno == "European" ~ "White",
+    RacialEthno == "Dominician/Black" ~ "Mixed",
+    RacialEthno == "Dominican and African American" ~ "Mixed",
+    RacialEthno == "Cuaucasian" ~ "White",
+    RacialEthno == "Chinese/Caucasian" ~ "Mixed",
+    RacialEthno == "Chinese, Caucasian" ~ "Mixed",
+    RacialEthno == "Caucasian/Asian" ~ "Mixed",
+    RacialEthno == "Caucasian" ~ "White",
+    RacialEthno == "Cacuasian" ~ "White",
+    RacialEthno == "British" ~ "White",
+    RacialEthno == "Black/White/Cuban" ~ "Mixed",
+    RacialEthno == "Black/Hispanic, Biracial" ~ "Mixed",
+    RacialEthno == "Black/Dominican" ~ "Mixed",
+    RacialEthno == "Black and Russian" ~ "Mixed",
+    RacialEthno == "Biracial" ~ "Mixed",
+    RacialEthno == "Asian/White" ~ "Mixed",
+    RacialEthno == "Asian/Caucasian" ~ "Mixed",
+    RacialEthno == "Asian/Black" ~ "Mixed",
+    RacialEthno == "Asian Indian" ~ "Asian",
+    RacialEthno == "Arab-American/Anglo" ~ "Mixed",
+    RacialEthno == "African American/Hispanic" ~ "Mixed",
+    RacialEthno == "AA/C/PR" ~ "Mixed",
+    RacialEthno == "" ~ "NA"))
+
+#Political ID
+cmom <- cmom %>%
+  mutate(Political_New = Political + 1)
+
+#Mean center political ID
+cmom$Political_New_C <- scale(cmom$Political_New, center = TRUE, scale = FALSE)
+cmom$Political_New_C <- as.numeric(as.character(cmom$Political_New_C))
+
+panda$pol_id_new_c <- scale(panda$pol_id_new, center = TRUE, scale = FALSE)
+panda$pol_id_new_c <- as.numeric(as.character(panda$pol_id_new_c))
+
+#Delete kids with NAs in pol ID column and condition column
+panda <- panda %>%
+  filter(!is.na(pol_id_new))
+
+#Count how many people have spousal ideology variable data
+sum(complete.cases(panda$pol_id_spouse))
+
+#See correlation between between pol_id_new and pol_id_spouse
+corr.test(panda$pol_id_new, panda$pol_id_spouse)
+
+#Ceate variable to combine pol ID of parent 1 and spouse
+panda$pol_id_2spouse <- rowMeans(subset(panda, select = c(pol_id_new, pol_id_spouse)))
+
+#Create variable that incorporates polid_2spouse for 2 spouse families; otherwise pulls from pol_id_new
+panda$pol_id_combo <- ifelse(is.na(panda$pol_id_spouse), panda$pol_id_new, panda$pol_id_2spouse)
+
+#Check that new ar is calculated properly
+check <- panda %>%
+  select(ID, pol_id_new, pol_id_spouse, pol_id_2spouse, pol_id_combo)
+
+#Check that we have the all participants with pol ID accounted for
+sum(complete.cases(panda$pol_id_combo))
+
+#Mean-center new var (combined pol ID of parent 1 and spouse)
+panda$pol_id_combo_c <- scale(panda$pol_id_combo, center = TRUE, scale = FALSE)
+
+#Make group assignment same as PANDA
+cmom <- cmom %>%
+  mutate(Group_New = factor(Group, labels = c("Ingroup", "Outgroup")))
+
+panda <- panda %>%
+  mutate(condition = factor(condition_group, labels = c("Ingroup, Outgroup")))
+
+#Gender
+cmom$Gender <- factor(cmom$Gender, levels = c("M", "F"))
+
+#Delete CMOM kids without condition assignment
+cmom <- cmom %>%
+  filter(!is.na(Group_New))
+
+##Condense dfs to relevant columns
+cmom <- cmom %>%
+  select(SID, Gender, race_bin, ExactAge, AgeC, YoungOld, SignPlacement, Badge, Group_New, Group, Version, Slide, WhoseBook, HardEasy, ThinkGetToGo, LessonCont, ImportantCont, ThinkYouGo, WishCont, SadCont, Recall, BadCont, TroubleCont, PlayWIth, NiceNot, WentDown, Political_New, Political_New_C, Authoritarian, Disciplinary, Fairness)
+
+#Write .csv files
+write.csv(panda, "costly_panda.csv")
+write.csv(cmom, "costly_cmom.csv")
+
+```
+
+### PANDA sample
+
+#### Child Demographics
+```{r get demo info, include = FALSE}
+
+#Create df with just kids who we have polID for (N = 181)
+panda <- panda %>%
+  filter(!is.na(pol_id_new))
+
+#Age
+psych::describe(panda$age)
+
+#Gender
+prop.table(xtabs(~gender, data = panda))
+
+#Race
+prop.table(xtabs(~race_bin, data = panda))
+
+#Condition
+xtabs(~condition_group, data = panda)
+
+```
+
+#### Parent Demographics
+```{r prep parent demographic graphs panda, include = FALSE}
+
+#Pol id (Parent 1)
+psych::describe(panda$pol_id_new)
+xtabs(~pol_id_new, data = panda)
+
+#Pol id (combined)
+psych::describe(panda$pol_id_combo)
+xtabs(~pol_id_combo, data = panda)
+
+```
+
+#### Liking of video
+```{r did kids like the video, include = FALSE}
+
+#Liking video
+prop.table(xtabs(~q_like_video_bin, data = panda)) 
+prop.table(xtabs(~q_like_video_full, data = panda)) 
+
+#Wanting to watch another video
+prop.table(xtabs(~q_want_watch_bin, data = panda)) 
+prop.table(xtabs(~q_want_watch_full, data = panda)) 
+
+```
+
+#### Comprehension Questions
+```{r compute accuracy for comp questions, include = FALSE}
+
+#Group membership comprehension
+
+#Individual comprehension questions (1-4)
+prop.table(xtabs(~group_correct, data = panda)) #94% correctly identified their own group membership
+prop.table(xtabs(~target_correct, data = panda)) #98% correctly verified group of target (Stacy/Ethan)
+prop.table(xtabs(~target_comp_correct, data = panda)) #95% correctly determined if they were in the same/different group as target
+prop.table(xtabs(~liking_correct, data = panda)) #67% liked their own group most 
+
+#Find average percentage across all 4 comprehension questions
+comp_only <- data.frame(correct_all = c(panda[,"group_correct"], panda[,"liking_correct"], panda[,"target_correct"], panda[,"target_comp_correct"]))
+
+#Overall comprehension
+prop.table(xtabs(~correct_all, data = comp_only)) #89% correct overall
+
+#Comprehension of transgression
+prop.table(xtabs(~q_what_do, data = panda)) 
+prop.table(xtabs(~q_nice_not_nice, data = panda)) 
+
+#Opening/locking vid bank comprehension
+prop.table(xtabs(~q_lock_comp, data = panda)) 
+prop.table(xtabs(~q_open_comp, data = panda)) 
+
+#Final comprehension question
+prop.table(xtabs(~q_mancheck_remind, data = panda)) 
+
+```
+
+##### Check for moderation of comprehension qs by pol ID
+```{r comp qs by pol ID, include = FALSE}
+
+#What group are you a part of?
+model_group_pol <- glm(group_correct ~ pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_group_pol) #ns
+
+#What group is the target a part of?
+model_target_pol <- glm(target_correct ~ pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_target_pol) #ns
+
+#Are you guys in the same or a different group?
+model_comp_pol <- glm(target_comp_correct ~ pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_comp_pol) #ns
+
+#Who do you like better?
+model_like_pol <- glm(liking_correct ~ pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_like_pol) #ns
+
+#Comprehension of transgression
+model_trans_pol <- glm(q_what_do ~ pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_trans_pol) #ns
+
+#Comprehension of nice/not nice
+model_nicenot_pol <- glm(q_nice_not_nice ~ pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_nicenot_pol) #ns
+
+#Comprehension of lock function
+model_lock_pol <- glm(q_lock_comp ~ pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_lock_pol) #ns
+
+#Comprehension of open function
+model_open_pol <- glm(q_open_comp ~ pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_open_pol) #ns
+
+#Comprehension of open function
+model_remind_pol <- glm(q_mancheck_remind ~ pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_remind_pol) #ns
+
+```
+
+#### Costly punishment decision
+```{r descriptives for punishment choice, include = FALSE}
+
+#Make punish_decide into factor
+panda$q_punish_decideF <- as.factor(as.character(panda$q_punish_decide))
+
+#Create new df with no NAs
+panda_nona <- panda %>%
+  filter(!is.na(q_punish_decide))
+
+#Proportion of punishment (without NA)
+prop.table(xtabs(~q_punish_decideF, data = panda_nona))
+
+#Proportion of punishment (with NA)
+panda[48] <- lapply(panda[48], addNA)
+prop.table(xtabs(~q_punish_decideF, data = panda))
+
+#Does age influence punishment?
+model_punish_age <- glm(q_punish_decide ~ age_c, family = binomial, data = panda)
+summary(model_punish_age)
+
+```
+
+#### Test for relation between desire to punish (non-costly) and costly  punishment
+```{r exploratory analyses of costly and non-costly punishment, include = FALSE}
+
+#Does children's belief that kid should get to watch the video affect punishment?
+punish_getto <- glm(q_punish_decide ~ q_get_to_watch, family = binomial, data = panda)
+summary(punish_getto)
+
+#Add in age
+punish_getto <- glm(q_punish_decide ~ q_get_to_watch*age_c, family = binomial, data = panda)
+summary(punish_getto)
+
+#Get means of children saying transgressor should get to watch video
+punish_getto_summary <- panda %>%
+    dplyr::summarize(q_get_to_watch_mean = mean(q_get_to_watch, na.rm = TRUE))
+sd(panda$q_get_to_watch, na.rm = TRUE)
+
+#Does ideology moderate this relation?
+punish_getto_pol <- glm(q_punish_decide ~ q_get_to_watch*age_c*pol_id_new_c, family = binomial, data = panda)
+summary(punish_getto_pol)
+
+#Does condition moderate this relation?
+punish_getto_cond <- glm(q_punish_decide ~ q_get_to_watch*age_c*condition_group, family = binomial, data = panda)
+summary(punish_getto_cond)
+
+```
+
+#### Test for relation between validation measures and costly punishment
+```{r probing validation questions, include = TRUE}
+
+#Post-punishment questions
+
+##1 - Happiness/sadness of transgressor after locking or leaving open
+t.test(x = panda$q_feel_lock,
+       y = panda$q_feel_open)
+
+#Get SDs
+panda <- panda %>%
+  mutate(q_feel_all = case_when(
+    !is.na(q_feel_lock) ~ q_feel_lock,
+    !is.na(q_feel_open) ~ q_feel_open))
+
+sd(panda$q_feel_all, na.rm = TRUE)
+
+#Run as model
+punish_feel <- lm(q_feel_all ~ q_punish_decide*age_c, data = panda)
+summary(punish_feel)
+
+##2 - Perceptions of what the transgressor will do next time? (1 = tear, 0 = hold)
+punish_next <- glm(q_next_time ~ q_punish_decide*age_c, family = binomial, data = panda)
+summary(punish_next)
+
+#Re-code next time to reflect change in behavior; 1 = hold and 0 = tear
+panda <- panda %>%
+  mutate(change_behavior = 1 - q_next_time)
+
+#Run with change behavior as variable
+punish_change <- glm(change_behavior ~ q_punish_decide*age_c, family = binomial, data = panda)
+summary(punish_change)
+
+#Get means
+(punish_change_summary <- panda %>%
+    group_by(q_punish_decide) %>%
+    dplyr::summarize(change_behavior_mean = mean(change_behavior, na.rm = TRUE)))
+
+#Get sd
+sd(panda$change_behavior, na.rm = TRUE)
+
+##3 - Perception of why the transgressor acted how they did? (1 = bad person, 0 = bad day)
+punish_why <- glm(q_person_day ~ q_punish_decide*age_c, family = binomial, data = panda)
+summary(punish_why)
+
+#Get means
+(punish_why_summary <- panda %>%
+    group_by(q_punish_decide) %>%
+    dplyr::summarize(q_person_day = mean(q_person_day, na.rm = TRUE)))
+
+#Get sd
+sd(panda$q_person_day, na.rm = TRUE)
+
+##4 - Desire to play with transgressor in the future? (0 = yes, 1 = no)
+punish_play <- glm(q_play_with ~ q_punish_decide*age_c, family = binomial, data = panda)
+summary(punish_play)
+
+#Get means
+(punish_play_summary <- panda %>%
+    group_by(q_punish_decide) %>%
+    dplyr::summarize(q_play_with = mean(q_play_with, na.rm = TRUE)))
+
+#Get sd
+sd(panda$q_play_with, na.rm = TRUE)
+
+##5 - Perceptions of transgressor's remorse? (0 = yes, 1 = no)
+punish_bad <- glm(q_feel_bad ~ q_punish_decide*age_c, family = binomial, data = panda)
+summary(punish_bad)
+
+#Get means
+(punish_bad_summary <- panda %>%
+    group_by(q_punish_decide) %>%
+    dplyr::summarize(q_feel_bad = mean(q_feel_bad, na.rm = TRUE)))
+
+#Recode such that 1 = feels remorse
+panda <- panda %>%
+  mutate(q_feel_badyes = 1 - q_feel_bad)
+
+#Get means
+(punish_yesbad_summary <- panda %>%
+    group_by(q_punish_decide) %>%
+    dplyr::summarize(q_feelbadyes = mean(q_feel_badyes, na.rm = TRUE)))
+
+```
+
+#### Interaction and simple effects of CP by political ideology*group
+```{r interaction and simple effects of CP, include = FALSE}
+
+#Does punishment vary by condition, political ideology, and age?
+model_punish_cond_pol_age <- glm(q_punish_decide ~ condition_group*pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_punish_cond_pol_age) 
+
+#Check simple effects (within in- and out-group)
+model_punish_cond_pol_age_simp <- glm(q_punish_decide ~ condition_group/pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_punish_cond_pol_age_simp) 
+
+#Calculate pseudo-R2
+PseudoR2(model_punish_cond_pol_age, c("Nagel"))
+
+```
+
+#### Follow up on 2-way interaction of CP: Johnson-Neyman technique
+```{r follow up on 2-way cp interaction, include = FALSE}
+
+#First, change condition to numeric variable (for J-N to run)
+panda <- panda %>%
+  mutate(condition_num = case_when(
+    condition_group == "ingroup_toogit" ~ 0,
+    condition_group == "outgroup_flurp" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+model_punish_cond_pol_age_JN <- glm(q_punish_decide ~ condition_num*pol_id_new*age_c, family = binomial, data = panda)
+summary(model_punish_cond_pol_age_JN) 
+
+#J-N analysis code from other website
+jn_panda <- johnson_neyman(
+  model_punish_cond_pol_age_JN,
+  condition_num,
+  pol_id_new,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,7),
+  title = "Johnson-Neyman plot: PANDA"
+)
+jn_panda
+
+```
+
+#### Interaction and simple effects of CP by political ideology*group (Parents 1 and 2; SOM)
+```{r simple effects of CP, include = FALSE}
+
+#Does punishment vary by condition, political ideology, and age?
+model_punish_cond_polcombo_age <- glm(q_punish_decide ~ condition_group*pol_id_combo_c*age_c, family = binomial, data = panda)
+summary(model_punish_cond_polcombo_age) 
+
+#Check simple effects (within in- and out-group)
+model_punish_cond_polcombo_age_simp <- glm(q_punish_decide ~ condition_group/pol_id_combo_c*age_c, family = binomial, data = panda)
+summary(model_punish_cond_polcombo_age_simp) 
+
+#Verify with filtering
+model_punish_cond_polcombo_age_ingroup <- glm(q_punish_decide ~ pol_id_combo_c*age_c, family = binomial, data = subset(panda, condition_group == "ingroup_toogit"))
+summary(model_punish_cond_polcombo_age_ingroup)
+
+model_punish_cond_polcombo_age_outgroup <- glm(q_punish_decide ~ pol_id_combo_c*age_c, family = binomial, data = subset(panda, condition_group == "outgroup_flurp"))
+summary(model_punish_cond_polcombo_age_outgroup)
+
+#Calculate pseudo-R2
+PseudoR2(model_punish_cond_polcombo_age, c("Nagel"))
+
+```
+
+#### Follow up on 2-way interaction of CP: Johnson-Neyman technique (Parents 1 and 2; SOM)
+```{r follow up on 2-way cp interaction, include = FALSE}
+
+#First, change condition to numeric variable (for J-N to run)
+panda <- panda %>%
+  mutate(condition_num = case_when(
+    condition_group == "ingroup_toogit" ~ 0,
+    condition_group == "outgroup_flurp" ~ 1,
+  ))
+
+#Return pol_id_combo to numeric
+panda$pol_id_combo <- as.numeric(as.character(panda$pol_id_combo))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+model_punish_cond_polcombo_age_JN <- glm(q_punish_decide ~ condition_num*pol_id_combo*age_c, family = binomial, data = panda)
+summary(model_punish_cond_polcombo_age_JN) 
+
+#J-N analysis code from other website
+jn_panda_combo <- johnson_neyman(
+  model_punish_cond_polcombo_age_JN,
+  condition_num,
+  pol_id_combo,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,7),
+  title = "Johnson-Neyman plot: PANDA"
+)
+jn_panda_combo
+
+```
+
+##### Plot punishment by political ideology*condition on CP (predicted)
+```{r plot predicted means punishment, include = FALSE}
+
+#Make labels for plot
+pol_label7 <- c("1 \n Very \n liberal", "2", "3", "4","5", "6", "7 \n Very \n conservative")
+
+#Reproduce model we're plotting (but without pol mean-centered)
+model_punish_cond_pol_age1 <- glm(q_punish_decide ~ condition_group*pol_id_new*age_c, family = binomial, data = panda)
+summary(model_punish_cond_pol_age1) 
+
+#Get predicted means
+predicted_3way_panda <-effect("condition_group*pol_id_new*age_c",
+                                    mod=model_punish_cond_pol_age1, confidence.level = .975)
+predicted_3way_panda<-as.data.frame(predicted_3way_panda)
+
+#Plot predicted means
+plot_punish_pol_cond1_model <- ggplot() + 
+  geom_jitter(data = panda, aes(x = pol_id_new, y = q_punish_decide, 
+                  group = condition_group, color = condition_group), alpha = .7, height = .1) +
+  stat_smooth(data = predicted_3way_panda, aes(x = pol_id_new, y = fit,
+                                               group = condition_group, color = condition_group),
+              method = "glm", method.args =list(family="binomial"), 
+              fill = "#F6F3FF",
+              se = TRUE,
+              size = 2) +
+  theme_classic() + 
+  labs(x = "Parents' Political Ideology",  
+  y ="Decision to Enact Costly Punishment\nAgainst Transgressor",
+  color = "Transgressor's\nGroup") +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7),
+                     labels = pol_label7) +
+  scale_y_continuous(breaks = c(0,1), labels = c("No", "Yes")) + 
+  geom_segment(aes(x = 1.65, y = .60, xend = 1.15, yend = .60), arrow = arrow(length = unit(0.5, "cm")), color = "#0E2EE4", size = 1.2) +
+  geom_segment(aes(x = 6.00, y = .42, xend = 6.85, yend = .42), arrow = arrow(length = unit(0.5, "cm")), color = "#E40E0E", size = 1.2) +
+  geom_vline(xintercept = 1.726, linetype = "dashed", size = 1.2, color = "#0E2EE4") +
+  geom_vline(xintercept = 5.889, linetype = "dashed", size = 1.2, color = "#E40E0E") +
+    scale_color_manual(
+    values = c("#8C8C8C", "#1F1F1F"),
+    labels = c("Ingroup", "Outgroup")) +
+  theme(axis.title.x = element_text(size = 13, color = "black"),
+        axis.title.y = element_text(size = 13, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        legend.title = element_text(size = 13, color = "black"),
+        legend.text = element_text(size = 10, color = "black"))
+plot_punish_pol_cond1_model
+
+ggsave("figure5.pdf", width = 170, height = 100, units = "mm", dpi = 300)
+
+```
+
+#### Test for 2-way interaction on non-costly punishment
+```{r test for effect on non-costly punishment, include = FALSE}
+
+#Non-costly punishment (pre-costly paradigm)
+model_getwatch_cond_pol_age <- glm(q_get_to_watch ~ condition_group*pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_getwatch_cond_pol_age) #ns
+
+#Get means for non-costly punishment
+(noncost_pun_summary <- panda %>%
+  dplyr::summarize(q_get_to_watch = mean(q_get_to_watch, na.rm = TRUE)))
+
+#Calculate SD
+sd(panda$q_get_to_watch, na.rm = TRUE)
+
+```
+
+#### Test for 2-way interaction on beliefs about punishment
+```{r test secondary questions, include = FALSE}
+
+#Does time to punish vary by political ideology*condition?
+model_time_cond_pol_age <- lm(q_punish_time ~ condition_group*pol_id_new_c*age_c, data = panda)
+summary(model_time_cond_pol_age) #no main or interactive effects
+
+#Does the perception that the transgressor will transgress next time vary by condition*political ideology?
+model_nexttime_cond_pol_age <- glm(q_next_time ~ condition_group*pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_nexttime_cond_pol_age) #no main or interactive effects
+
+model_nexttime_rev_cond_pol_age <- glm(change_behavior ~ condition_group*pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_nexttime_rev_cond_pol_age) #no main or interactive effects
+
+#Does the attribution of the transgressor's actions (person vs. situation) vary by condition*political ideology?
+model_personday_cond_pol_age <- glm(q_person_day ~ condition_group*pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_personday_cond_pol_age) #no main or interactive effects
+
+#Does desire to play with transgressor another time vary by condition*political ideology*age?
+model_playwith_cond_pol_age <- glm(q_play_with ~ condition_group*pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_playwith_cond_pol_age) #INTERACTION
+
+#Does perception that transgressor feels bad vary by condition*political ideology*age?
+model_feelbad_cond_pol_age <- glm(q_feel_bad ~ condition_group*pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_feelbad_cond_pol_age) #no main or interactive effects
+
+```
+
+#### Simple effects of Play With by political ideology*group
+```{r simple effects of play with, include = FALSE}
+
+#Does desire to play with transgressor another time vary by condition*political ideology*age?
+model_playwith_cond_pol_age <- glm(q_play_with ~ condition_group*pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_playwith_cond_pol_age) #INTERACTION
+
+#Check simple effects (within in- and out-group)
+model_playwith_cond_pol_age_simp <- glm(q_play_with ~ condition_group/pol_id_new_c*age_c, family = binomial, data = panda)
+summary(model_playwith_cond_pol_age_simp) 
+
+```
+
+#### Follow up on 2-way interaction of Play With: Johnson-Neyman technique
+```{r follow up on 2-way play with interaction, include = FALSE}
+
+#First, change condition to numeric variable (for J-N to run)
+panda <- panda %>%
+  mutate(condition_num = case_when(
+    condition_group == "ingroup_toogit" ~ 0,
+    condition_group == "outgroup_flurp" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+model_playwith_cond_pol_age_JN <- glm(q_play_with ~ condition_num*pol_id_new*age_c, family = binomial, data = panda)
+summary(model_playwith_cond_pol_age_JN) 
+
+#J-N analysis code from other website
+jn_panda_play <- johnson_neyman(
+  model_playwith_cond_pol_age_JN,
+  condition_num,
+  pol_id_new,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,7),
+  title = "Johnson-Neyman plot: PANDA"
+)
+jn_panda_play
+
+```
+
+#### Test for 2-way interaction on beliefs about punishment (Parents 1 and 2; SOM)
+```{r test secondary questions, include = FALSE}
+
+#Does time to punish vary by political ideology*condition?
+model_time_cond_polcombo_age <- lm(q_punish_time ~ condition_group*pol_id_combo_c*age_c, data = panda)
+summary(model_time_cond_polcombo_age) #no main or interactive effects
+
+#Does the perception that the transgressor will transgress next time vary by condition*political ideology?
+model_nexttime_cond_polcombo_age <- glm(q_next_time ~ condition_group*pol_id_combo_c*age_c, family = binomial, data = panda)
+summary(model_nexttime_cond_polcombo_age) #2-way interaction between political ID and age
+
+model_nexttime_rev_cond_polcombo_age <- glm(change_behavior ~ condition_group*pol_id_combo_c*age_c, family = binomial, data = panda)
+summary(model_nexttime_rev_cond_polcombo_age) 
+
+#Does the attribution of the transgressor's actions (person vs. situation) vary by condition*political ideology?
+model_personday_cond_polcombo_age <- glm(q_person_day ~ condition_group*pol_id_combo_c*age_c, family = binomial, data = panda)
+summary(model_personday_cond_polcombo_age)  #no main or interactive effects
+
+#Does desire to play with transgressor another time vary by condition*political ideology?
+model_playwith_cond_polcombo_age <- glm(q_play_with ~ condition_group*pol_id_combo_c*age_c, family = binomial, data = panda)
+summary(model_playwith_cond_polcombo_age) #INTERACTION
+
+#Does perception that transgressor feels bad vary by condition*political ideology?
+model_feelbad_cond_polcombo_age <- glm(q_feel_bad ~ condition_group*pol_id_combo_c*age_c, family = binomial, data = panda)
+summary(model_feelbad_cond_polcombo_age) #no main or interactive effects
+
+```
+
+#### Simple effects of Play With by political ideology*group (Parents 1 and 2; SOM)
+```{r simple effects of play with, include = FALSE}
+
+#Does desire to play with transgressor another time vary by condition*political ideology*age?
+model_playwith_cond_polcombo_age <- glm(q_play_with ~ condition_group*pol_id_combo_c*age_c, family = binomial, data = panda)
+summary(model_playwith_cond_polcombo_age) #INTERACTION
+
+#Check simple effects (within in- and out-group)
+model_playwith_cond_polcombo_age_simp <- glm(q_play_with ~ condition_group/pol_id_combo_c*age_c, family = binomial, data = panda)
+summary(model_playwith_cond_polcombo_age_simp) 
+
+#Check with filtering
+model_playwith_cond_polcombo_age_simp_ingroup <- glm(q_play_with ~ pol_id_combo_c*age_c, family = binomial, data = subset(panda, condition_group == "ingroup_toogit"))
+summary(model_playwith_cond_polcombo_age_simp_ingroup) 
+
+model_playwith_cond_polcombo_age_simp_outgroup <- glm(q_play_with ~ pol_id_combo_c*age_c, family = binomial, data = subset(panda, condition_group == "outgroup_flurp"))
+summary(model_playwith_cond_polcombo_age_simp_outgroup) 
+
+```
+
+#### Follow up on 2-way interaction of Play With: Johnson-Neyman technique (Parents 1 and 2; SOM)
+```{r follow up on 2-way play with interaction, include = FALSE}
+
+#First, change condition to numeric variable (for J-N to run)
+panda <- panda %>%
+  mutate(condition_num = case_when(
+    condition_group == "ingroup_toogit" ~ 0,
+    condition_group == "outgroup_flurp" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+model_playwith_cond_polcombo_age_JN <- glm(q_play_with ~ condition_num*pol_id_combo*age_c, family = binomial, data = panda)
+summary(model_playwith_cond_polcombo_age_JN) 
+
+#J-N analysis code from other website
+jn_panda_play_combo <- johnson_neyman(
+  model_playwith_cond_polcombo_age_JN,
+  condition_num,
+  pol_id_combo,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,7),
+  title = "Johnson-Neyman plot: PANDA"
+)
+jn_panda_play_combo
+
+```
+
+#### Plot punishment by political ideology*condition on Play With (predicted)
+```{r plot predicted means play with, include = FALSE}
+
+#Make labels for plot
+pol_label7 <- c("1 \n Very \n liberal", "2", "3", "4","5", "6", "7 \n Very \n conservative")
+
+#Reproduce model we're plotting
+model_playwith_cond_pol_age <- glm(q_play_with ~ condition_group*pol_id_new*age_c, family = binomial, data = panda)
+summary(model_playwith_cond_pol_age) #INTERACTION
+
+#Get predicted means
+predicted_3way_panda_play <-effect("condition_group*pol_id_new*age_c",
+                                    mod=model_playwith_cond_pol_age, confidence.level = .975)
+predicted_3way_panda_play <-as.data.frame(predicted_3way_panda_play)
+
+#Plot predicted means
+plot_play_pol_cond1_model <- ggplot() + 
+  geom_jitter(data = panda, aes(x = pol_id_new, y = q_play_with, 
+                  group = condition_group, color = condition_group), alpha = .7, height = .1) +
+  geom_smooth(data = predicted_3way_panda_play, aes(x = pol_id_new, y = fit,
+                                               group = condition_group, color = condition_group),
+              method = "glm", method.args = list(family="binomial"),
+              fill = "#F6F3FF",
+              se = TRUE,
+              size = 2) +
+  theme_classic() + 
+  labs(x = "Parents' Political Ideology",  
+  y ="Decision to Reject\nFuture Playdate with Trangressor",
+  color = "Transgressor's\nGroup") +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7),
+                     labels = pol_label7) +
+  scale_y_continuous(breaks = c(0,1), labels = c("No", "Yes")) + 
+  geom_segment(aes(x = 4.750, y = .37, xend = 6.5, yend = .37), arrow = arrow(length = unit(0.5, "cm")), color = "#E40E0E", size = 1.2) +
+  geom_vline(xintercept = 4.653, linetype = "dashed", size = 1.2, color = "#E40E0E") +
+  scale_color_manual(
+    values = c("#8C8C8C", "#1F1F1F"),
+    labels = c("Ingroup", "Outgroup")) +
+  theme(axis.title.x = element_text(size = 13, color = "black"),
+        axis.title.y = element_text(size = 13, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        legend.title = element_text(size = 13, color = "black"),
+        legend.text = element_text(size = 10, color = "black"))
+plot_play_pol_cond1_model
+
+```
+
+#### Test ideology*condition interaction with other parent measures
+```{r test other parent measures as moderators, include = FALSE}
+
+#Control for authoritarianism
+model_punish_cond_pol_age_author1 <- glm(q_punish_decide ~ condition_group*pol_id_new_c*age_c + author_avg, family = binomial, data = panda)
+summary(model_punish_cond_pol_age_author1) #2-way interaction p = .04
+
+#Control for agency vs. resp
+model_punish_cond_pol_age_agenresp1 <- glm(q_punish_decide ~ condition_group*pol_id_new_c*age_c + agen_resp_new, family = binomial, data = panda)
+summary(model_punish_cond_pol_age_agenresp1) #2-way remains
+
+#Control for religiosity
+model_punish_cond_pol_age_rel <- glm(q_punish_decide ~ condition_group*pol_id_new_c*age_c + rel, family = binomial, data = panda)
+summary(model_punish_cond_pol_age_rel) #2-way close (p = .117)
+
+#Control for cr
+model_punish_cond_pol_age_cr1 <- glm(q_punish_decide ~ condition_group*pol_id_new_c*age_c + cr_avg, family = binomial, data = panda)
+summary(model_punish_cond_pol_age_cr1) #2-way remains
+
+#Explore potential moderators of 2-way interaction - test as predictors in place of ideology
+
+#Authoritarianism
+model_punish_cond_author_age1 <- glm(q_punish_decide ~ condition_group*author_avg*age_c, family = binomial, data = panda)
+summary(model_punish_cond_author_age1) #no 2-way emerges (p = .468)
+
+#Agency vs. Responsibility
+model_punish_cond_agenresp_age <- glm(q_punish_decide ~ condition_group*agen_resp_new*age_c, family = binomial, data = panda)
+summary(model_punish_cond_agenresp_age) #no 2-way emerges (p = .207)
+
+#Religiosity
+model_punish_cond_rel_age <- glm(q_punish_decide ~ condition_group*rel*age_c, family = binomial, data = panda)
+summary(model_punish_cond_rel_age) #no 2-way emerges (p = .482)
+
+#Child-rearing values
+model_punish_cond_cr_age1 <- glm(q_punish_decide ~ condition_group*cr_avg*age_c, family = binomial, data = panda)
+summary(model_punish_cond_cr_age1) #no main or interactive effects (p = .769)
+
+```
+
+#### Test ideology*condition interaction with neighborhood measures (by Zip)
+```{r process and analyze zipcode data, include = FALSE}
+
+#Change name to "zip"
+colnames(panda)[colnames(panda) == "Zip.Code"] <- "zip"
+
+#Trim df to just ID and zip
+zip <- panda %>%
+  select(ID, zip)
+write.csv(zip, "costly5_zip.csv")
+
+#Read in zipcode data
+zip_raw <- read.csv(here::here("zip_code_data_s2.csv"), header = TRUE)
+zip <- zip_raw
+
+#Merge data
+panda_zip <- merge(panda, zip_raw, by = c("ID", "zip"))
+
+#Calculate population totals of minority diversity (i.e., all but White)
+panda_zip <- panda_zip %>%
+  mutate(tot.pop = tot_native_pop + tot_pacif_pop + tot_asian_pop + tot_black_pop + tot_hisp_pop + tot_other_pop + tot_white_pop) %>%
+  mutate(tot.pop.div = 1 - (tot_white_pop / tot.pop))
+
+panda_zip$tblack_0to10
+
+#Rename columns as needed
+colnames(panda_zip)[colnames(panda_zip) == "Fraction_College_Graduates_in_2012.16"] <- "frac_coll"
+colnames(panda_zip)[colnames(panda_zip) == "Poverty_Rate_in_2012.16"] <- "pov_rate"
+colnames(panda_zip)[colnames(panda_zip) == "Median_Rent_2012.16"] <- "med_rent"
+colnames(panda_zip)[colnames(panda_zip) == "twhite_0to10"] <- "pro_white"
+colnames(panda_zip)[colnames(panda_zip) == "tblack_0to10"] <- "pro_black"
+
+#Test zipcode vars as covariates and predictors
+
+#Total population
+model_punish_totpop <- glm(q_punish_decide ~ condition_group*total_population*age_c, family = binomial, data = panda_zip)
+summary(model_punish_totpop) #no 2-way interaction (p = .31)
+
+model_punish_totpop_cov <- glm(q_punish_decide ~ condition_group*pol_id_new_c*age_c + total_population, family = binomial, data = panda_zip)
+summary(model_punish_totpop_cov) #2-way exists controlling for total pop (p = .011)
+
+#Total population diversity
+model_punish_popdiv <- glm(q_punish_decide ~ condition_group*tot.pop.div*age_c, family = binomial, data = panda_zip)
+summary(model_punish_popdiv) #no 2-way interaction (.1466)
+
+model_punish_popdiv_cov <- glm(q_punish_decide ~ condition_group*pol_id_new_c*age_c + tot.pop.div, family = binomial, data = panda_zip)
+summary(model_punish_popdiv_cov) #2-way exists, controlling for pop diversity (p = .0099)
+
+#All college grad percentage
+model_punish_colgrad <- glm(q_punish_decide ~ condition_group*all_col_grad*age_c, family = binomial, data = panda_zip)
+summary(model_punish_colgrad) #no 2-way interaction (.947)
+
+model_punish_colgrad_cov <- glm(q_punish_decide ~ condition_group*pol_id_new_c*age_c + all_col_grad, family = binomial, data = panda_zip)
+summary(model_punish_colgrad_cov) #2-way exists, controlling for college grad (p = .018)
+
+```
+
+#### Correlation of parent measures
+```{r corr among parent DVs panda, include = FALSE}
+
+#Create df with parent measures
+parent_panda <- panda %>%
+  select(pol_id_new, author_avg, agen_resp_new, rel, cr_avg,)
+parent_panda <- as.matrix(parent_panda)
+parent_panda_corr <- rcorr(parent_panda)
+
+#Convert to df
+parent_panda_corr_r <- as.data.frame(parent_panda_corr$r)
+parent_panda_corr_r <- format(parent_panda_corr_r, digits = 2)
+parent_panda_corr_r
+#Export corr table
+write.csv(parent_panda_corr_r, "parent_panda_prim_corr.csv")
+parent_panda_corr
+
+```
+
+#### Correlation of neighborhood measures
+```{r corr among neighborhood DVs panda, include = FALSE}
+
+#Create df with parent measures
+neighborhood_panda <- panda_zip %>%
+  select(pol_id_new, total_population, tot.pop.div, all_col_grad)
+neighborhood_panda <- as.matrix(neighborhood_panda)
+neighborhood_panda <- rcorr(neighborhood_panda)
+
+#Convert to df
+neighborhood_panda_r <- as.data.frame(neighborhood_panda$r)
+neighborhood_panda_r <- format(neighborhood_panda_r, digits = 2)
+neighborhood_panda_r
+#Export corr table
+write.csv(neighborhood_panda_r, "neighborhood_panda_r.csv")
+neighborhood_panda
+
+```
+
+### CMOM sample
+
+#### Child demographics
+```{r prep child demographic graphs, include = FALSE}
+
+##Create df with just kids who we have condition for (N = 88)
+cmom <- cmom %>%
+  filter(!is.na(Group_New))
+
+#Age 
+psych::describe(cmom$ExactAge)
+
+#Gender
+prop.table(xtabs(~Gender, data = cmom))
+
+#Race
+cmom[3] <- lapply(cmom[3], addNA)
+prop.table(xtabs(~race_bin, data = cmom))
+
+#Condition
+
+#Make condition into factor
+cmom$Group_New <- as.factor(as.character(cmom$Group_New))
+xtabs(~Group_New, data = cmom)
+
+```
+
+#### Parent demographics
+```{r prep parent demographic graphs cmom, include = FALSE}
+
+#Pol id 
+psych::describe(cmom$Political_New)
+xtabs(~Political_New, data = cmom)
+
+```
+
+#### Costly punishment decision
+```{r punishment choice, include = FALSE} 
+
+#Make SignPlacement into factor
+cmom$SignPlacement <- as.factor(as.character(cmom$SignPlacement))
+
+#Proportion of punishment
+prop.table(xtabs(~SignPlacement, data = cmom))
+
+```
+
+#### Interaction and simple effects of CP by political ideology*group
+```{r test 2-way interaction cmom, include = FALSE}
+
+#Two-way interaction (without badge)
+model_punish_cond_pol2 <- glm(SignPlacement ~ Group_New*Political_New_C, family = binomial, data = cmom)
+summary(model_punish_cond_pol2)
+
+#Control for badge
+model_punish_cond_pol2_badge <- glm(SignPlacement ~ Group_New*Political_New_C + Badge, family = binomial, data = cmom)
+summary(model_punish_cond_pol2_badge)
+
+##Follow-up tests
+
+#Analyses of simple slopes
+model_punish_cond_pol2_simp <- glm(SignPlacement ~ Group_New/Political_New_C, family = binomial, data = cmom)
+summary(model_punish_cond_pol2_simp)
+
+#Calculate pseudo-R2
+PseudoR2(model_punish_cond_pol2, c("Nagel"))
+
+```
+
+#### Follow up on 2-way interaction of CP: Johnson-Neyman technique
+```{r follow up on 2-way interaction at SDs cmom, include = FALSE}
+
+#Does punishment vary by condition, political ideology, and age? 
+
+#First, change condition to numeric variable
+cmom <- cmom %>%
+  mutate(Group_num = case_when(
+    Group_New == "Ingroup" ~ 0,
+    Group_New == "Outgroup" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability)
+model_punish_cond_pol2_JN <- glm(SignPlacement ~ Group_num*Political_New, family = binomial, data = cmom)
+summary(model_punish_cond_pol2_JN) 
+
+#J-N analysis code from other website
+jn_cmom <- johnson_neyman(
+  model_punish_cond_pol2_JN,
+  Group_num,
+  Political_New,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = NULL,
+  title = "Johnson-Neyman plot: CMOM"
+)
+jn_cmom
+
+```
+
+#### Plot 2-way interaction (raw)
+```{r plot raw, include = FALSE}
+
+#Make labels for plot
+pol_label5 <- c("1 \n Very \n liberal", "2", "3", "4", "5 \n Very \n conservative")
+
+#Make SignPlacement into numeric
+cmom$SignPlacement <- as.numeric(as.character(cmom$SignPlacement))
+
+plot_punish_pol_cond2 <- ggplot(cmom,
+  aes(x = Political_New,
+      y = SignPlacement)) +
+  geom_jitter(aes(group = Group_New, color = Group_New), alpha = .4, height = .1) +
+  geom_smooth(aes(group = Group_New, color = Group_New),
+              method = "glm", method.args = list(family="binomial"),
+              fill = "#F6F3FF",
+              se = TRUE,
+              size = 2) +
+  theme_classic() + 
+  labs(x = "Parents' Political Ideology",  
+  y ="Decision to Enact Costly Punishment\nAgainst Transgressor",
+  color = "Transgressor's\nGroup") +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5),
+                   labels = pol_label5) +
+  scale_y_continuous(breaks = c(0,1), labels = c("No", "Yes")) + 
+  geom_vline(xintercept = 3.628, linetype = "dashed", size = 1.2, color = "#E40E0E") +
+  geom_segment(aes(x = 3.72, y = .65, xend = 4.5, yend = .65), arrow = arrow(length = unit(0.5, "cm")), color = "#E40E0E", size = 1.2) +
+  scale_color_manual(
+    values = c("#8C8C8C", "#1F1F1F")) +
+  theme(axis.title.x = element_text(size = 13, color = "black"),
+        axis.title.y = element_text(size = 13, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        legend.title = element_text(size = 13, color = "black"),
+        legend.text = element_text(size = 10, color = "black")) +
+  expand_limits(x = 5)
+plot_punish_pol_cond2
+
+ggsave("figure2.pdf", width = 170, height = 100, units = "mm", dpi = 300)
+
+```
+
+### Omnibus analyses (SOM)
+
+#### Combine dfs
+```{r create df for omnibus analyses, include = TRUE}
+
+#Create new panda df to manipulate
+panda_bind <- panda %>%
+  mutate(cp = q_punish_decide,
+         group = condition_group,
+         pol = pol_id_new,
+         age = age,
+         SID = as.character(ID),
+         study = 2)
+
+#Recode condition column
+panda_bind <- panda_bind %>%
+  mutate(group = case_when(
+    group == "ingroup_toogit" ~ "Ingroup",
+    group == "outgroup_flurp" ~ "Outgroup"
+    ))
+
+#Condense to relevant columns
+panda_bind <- panda_bind %>%
+  select(SID, group, pol, age, cp, study)
+
+#Create new cmom df to manipulate
+cmom_bind <- cmom %>%
+  mutate(cp = SignPlacement,
+         group = Group_New,
+         pol = 1.4*Political_New,
+         age = ExactAge,
+         SID = as.character(SID),
+         study = 1)
+
+#Condense to relevant columns
+cmom_bind <- cmom_bind %>%
+  select(SID, group, pol, age, cp, study)
+
+#Create omni df of both frames
+omni <- rbind(panda_bind, cmom_bind)
+
+#Turn group into factor and cp into numeric
+omni$group <- as.factor(omni$group)
+omni$cp <- as.numeric(omni$cp)
+omni$study <- as.factor(as.character(omni$study))
+
+#Mean-center age variable
+omni$age_c <- scale(omni$age, center = TRUE, scale = FALSE) 
+
+#Mean-center pol ideology variable
+omni$pol_c <- scale(omni$pol, center = TRUE, scale = FALSE) 
+
+mean(omni$age, na.rm = TRUE)
+mean(omni$pol, na.rm = TRUE)
+
+```
+
+#### Interaction and simple effects of CP by ideology*group
+```{r run omnibus models, include = TRUE}
+
+#Run model with study as interacting term
+model_punish_omni_int <- glm(cp ~ group*pol_c*age_c*study, family = binomial, data = omni)
+summary(model_punish_omni_int)
+
+#Run model with study as covariate
+model_punish_omni <- glm(cp ~ group*pol_c*age_c + study, family = binomial, data = omni)
+summary(model_punish_omni)
+
+#Check simple effects (within in- and out-group)
+model_punish_omni_simp_ingroup <- glm(cp ~ pol_c*age_c + study, family = binomial, data = subset(omni, group == "Ingroup"))
+summary(model_punish_omni_simp_ingroup) #ME for in-group
+
+model_punish_omni_simp_outgroup <- glm(cp ~ pol_c*age_c + study, family = binomial, data = subset(omni, group == "Outgroup"))
+summary(model_punish_omni_simp_outgroup) #no ME for out-group
+
+#Calculate pseudo-R2
+PseudoR2(model_punish_omni, c("Nagel"))
+
+```
+
+#### Follow up on 2-way interaction: Johnson-Neyman technique
+```{r follow up on 2-way interaction at SDs panda omni, include = TRUE}
+
+#First, change condition to numeric variable (for J-N to run)
+omni <- omni %>%
+  mutate(group_num = case_when(
+    group == "Ingroup" ~ 0,
+    group == "Outgroup" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+model_punish_omni_JN <- glm(cp ~ group_num*pol*age_c + study, family = binomial, data = omni)
+summary(model_punish_omni_JN)
+
+#J-N analysis code from other website
+jn_omni <- johnson_neyman(
+  model_punish_omni_JN,
+  group_num,
+  pol,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,7),
+  title = "Johnson-Neyman plot: Omni"
+)
+jn_omni #on both sides of plot
+
+```
+
+##### Plot punishment by political ideology*condition on CP (predicted)
+```{r plot predicted means punishment omni, include = TRUE}
+
+#Make labels for plot
+pol_label7 <- c("1 \n Very \n liberal", "2", "3", "4","5", "6", "7 \n Very \n conservative")
+
+#Reproduce model we're plotting (but without pol mean-centered)
+model_punish_omni <- glm(cp ~ group*pol*age_c + study, family = binomial, data = omni)
+summary(model_punish_omni)
+
+#Get predicted means
+predicted_3way_omni<-effect("group*pol*age_c",
+                                    mod=model_punish_omni, confidence.level = .975)
+predicted_3way_omni<-as.data.frame(predicted_3way_omni)
+
+#Plot predicted means with logistic look
+plot_punish_pol_cond_omni <- ggplot() + 
+  geom_jitter(data = omni, aes(x = pol, y = cp, 
+                  group = group, color = group), alpha = .4, height = .1) +
+  stat_smooth(data = predicted_3way_omni, aes(x = pol, y = fit,
+                                               group = group, color = group),
+              method = "glm", method.args =list(family="binomial"), 
+              fill = "#BFBEC3",
+              se = TRUE) +
+  theme_classic() + 
+  labs(x = "Parents' Political Ideology",  
+  y ="Decision to Enact Costly Punishment\nAgainst Transgressor",
+  color = "Transgressor's\n Group") +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7),
+                     labels = pol_label7) +
+  scale_y_continuous(breaks = c(0,1), labels = c("No", "Yes")) + 
+  geom_vline(xintercept = c(1.450, 4.675), linetype = "dashed", size = 1) +
+    scale_color_manual(
+    values = c("#1a8cff", "#ff884d"),
+    labels = c("Ingroup", "Outgroup")) +
+  theme(axis.title.x = element_text(size = 13),
+        axis.title.y = element_text(size = 13),
+        axis.text = element_text(size = 10),
+        legend.title = element_text(size = 13),
+        legend.text = element_text(size = 10))
+
+```

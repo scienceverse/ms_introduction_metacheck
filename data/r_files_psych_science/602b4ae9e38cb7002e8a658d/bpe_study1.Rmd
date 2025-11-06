@@ -1,0 +1,32 @@
+---
+title: "BPE_Study1"
+author: "Luiza Santos"
+date: "2/15/2021"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(psych)
+library(corrplot)
+library(magrittr)
+library(scales)
+library(MASS)
+```
+
+## Opening Data
+
+```{r}
+study1 <- read_csv("/Users/luiza/Projects/ERIM/Study_1/bpe_study1.csv")
+```
+## Models
+
+```{r}
+model1 <- lm(rescale(coop) ~ rescale(bpe) + rescale(pt) + rescale(ec) + party_strength + age + race + gender + edu, data = study1)
+summary(model1)
+confint(model1)
+model2 <- lm(rescale(animosity) ~ rescale(bpe) + rescale(pt) + rescale(ec) + party_strength + age + race + gender + edu, data = study1)
+summary(model2)
+confint(model2)
+```
+

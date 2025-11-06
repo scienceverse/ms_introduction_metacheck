@@ -1,0 +1,120 @@
+---
+title: "Bae 2019 Stage 1 Reanalysis Attempt"
+author: "Deborah Apthorp"
+date: "21/07/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This is the first pass of my attempt to reanalyse the data in Bae and Luck (2019), "Reactivation of Previous Experiences in a Working Memory Task". The paper reports an experiment where participants were asked to report the orientation of a teardrop-shaped pointer in a series of trials, in a working memory task. During this task, EEG data were recorded. The authors then performed a machine learning analysis of the ERP data, showing that the orientation of the stimulus from the *previous* trial could be decoded above chance from the ERP data of the *current* trial (a previous paper reports that the orientation of the current stimulus can be similarly decoded). 
+
+The data and code for this trial that earned the authors an Open Data badge is on the OSF. There are two folders labelled "Experiment 1 data and analysis code" and "Experiment 2 data and analysis code". I downloaded this on 21st May, 2020. The data and code are in MATLAB format (.mat for the data and .m for the code). There is a single function for each folder, and a data file for each participant. The data for each participant contains a structure with fields called "eeg", "time", "orientations", "targetOriBin", "locationAngle", "targetLocBin", and "OrientationReport". I am assuming that "OrientationReport" is the behavioural data. 
+
+The MATLAB function for each experiment could be run with a little tweaking (it needs the Parallel Processing Toolbox, and the directory needed to be relabelled in one of the functions. Also, EEGlab is needed, and needs to be in the path during analysis). However, this function did not produce any statistical analyses or plots. It only produced a separate file for each participant with a somewhat impenetrable structure, named "Orientation_Results_ERPbased_PreviousTrial_[subNumber].mat". 
+
+Loading this results file yields a structure called "svmECOC", which has the fields nChans (16), nBins (16), nIter (20), nBlocks (3), frequencies ([0,6]), time (1x100 double), window (4), Fs (250), nElectrodes (27), posBin (for Experiment 2 - 639x1 double), nTrials (639), blocks (639 x 20 double), nTrialsPerBlock (208), and the two matrices which I presume are key to the results: targets (a 4-D double) and modelPredict (also a 4-D double). 
+
+The size of each of these last two matrices, ascertained using "size(svmECOC.modelPredict)", is [20 x 100 x 3 x 16]. I am presuming, from the Methods, that there were 20 iterations across 16 orientations for three test data sets (3 cross-validations) across 100 time points. 
+
+The authors state: 
+
+> After all iterations of the cross-validation procedure were completed, decoding accuracy was collapsed across the 16 orientations, across the three cross-validations, and across the 20 iterations, producing a decoding percentage for a given time point that was based on 960 decoding attempts (16 orientations × 3 cross validations × 20 iterations).
+
+However, they do not provide code to do this, or to do the preprocessing and statistical procedures that followed: 
+
+> As noted above, this decoding procedure was applied separately at each time point for a given participant, producing one decoding accuracy value for each time point (aggregated across cross-validations and iterations). To minimize noise in this function, we smoothed the decoding accuracy values across time points using a 5-point moving window (equivalent to a time window of ±40 ms). The smoothed functions were then submitted to statistical analyses (which took into account the autocorrelation produced by the smoothing). The temporal precision resulting from the entire data-processing pipeline was ±50 ms.
+
+This is the point at which I gave up on the first pass. The authors also report a statistical procedure for which they do not provide code: 
+
+> If the pattern of voltage over the 27 electrodes at a given time point contained information about the previous-trial orientation, then decoding accuracy would be greater than chance (.0625). To compare decoding accuracy with chance at each time point while controlling for multiple comparisons, we used a nonparametric cluster-based permutation technique (Groppe, Urbach, & Kutas, 2011). This method provides an intelligent correction for multiple comparisons and does not require normally distributed data.
+
+In short, it is not possible to replicate the reported results given the code and data provided on the OSF. 
+
+On a second pass, I did some tinkering and realised that the last dimension of the matrix is the orientation bin - so there were 16, and the "targets" matrix is organised from 1:16 along that dimension. So the accuracy for a given pass along that dimension is the proportion of numbers in the modelPredict matrix along that dimension that are equal to that value. 
+
+I was able to write a small MATLAB script to re-organise the data to extract the accuracies. I have included this in the OSF folder related to my replication attempt. 
+
+I then tried to replicate the smoothing by using the inbuilt MATLAB function ('smooth.m') and using a 5-point window with a moving average, as the authors say they do in the paper. I've then used a function "ShadedErrorBar.m" to plot the standard errors along the smoothed curve, but this is probably not what they used, since they claim their statistical analyses took the autocorrelation into account (but do not say how). 
+
+I was not able to replicate the cluster-based permutation tests as the authors do not provide enough detail for this. 
+
+```{octave Replicate_Bae_Accuracy.m, eval = FALSE}
+
+rootDir = uigetdir('Please select the overall directory'); % Base directory where you have everything
+expNumber = input('Which experiment do you want to analyse (1 or 2)?  '); % input a number 
+inDir = [rootDir, '/', 'Experiment ' num2str(expNumber) ' data and analysis code/Results/' ]; 
+% make sure results are in "Results" folder 
+[~, names] = getFileNames(inDir); % calls a function I wrote to get the file names 
+ 
+accuracyMatrix = zeros(length(names), 16, 100); % preallocate an empty matrix the right size
+ 
+ for p = 1:length(names)
+     load([inDir, names{p}]) % load the data 
+     for ori = 1:16
+         for t = 1:100
+             correctAnswer = svmECOC.targets(1,t,1, ori); % slight hack to get correct answer
+             mat = svmECOC.modelPredict(:,t,:, ori);
+             % make a matrix of model predictions for this time point & ori
+             numCorrect = sum(mat(:)==correctAnswer); % count number correct in the matrix
+             propCorrect = numCorrect/numel(mat); % divide by total number in the matrix
+             accuracyMatrix(p, ori, t) = propCorrect; % add that value to the accuracy matrix 
+         end
+     end
+ end
+ 
+averageAcrossOriBins = squeeze(mean(accuracyMatrix, 2)); 
+% average accuracy across the second dimension (orientation bins) 
+% and squeeze to get rid of the singleton dimension
+ 
+ %% smooth data 
+ 
+ averageAcrossOriBins_smoothed = smoothdata( averageAcrossOriBins,2, 'movmean',5); 
+ % use inbuilt MATLAB function to smooth the data with a moving average across a 5-point window
+ 
+ 
+ %% Make figure
+ se_timeSeries = std(averageAcrossOriBins,1)/sqrt( size(averageAcrossOriBins_smoothed,1));
+ if expNumber ==1
+     col = 'b';
+ else
+     col = 'r'; 
+ end
+ 
+ figure;
+ 
+ shadedErrorBar(svmECOC.time,mean(averageAcrossOriBins_smoothed,1),se_timeSeries', col);
+ set (gca,'FontSize',14) % set font size
+ xlabel('Time (ms)', 'FontSize', 18)
+ ylabel('Decoding Accuracy', 'FontSize', 18)
+ ylim([.05 .09])
+ title(['Experiment ' num2str(expNumber)], 'FontSize', 18);
+ 
+ %% Write results to file 
+ 
+ writematrix(averageAcrossOriBins, [rootDir '/Experiment_' num2str(expNumber) '_Overall_Results_accuracy.csv']);
+ writematrix(averageAcrossOriBins_smoothed , [rootDir '/Experiment_' num2str(expNumber) '_Overall_Results_accuracy_smoothed.csv']);
+
+```
+
+## Experiment 1 accuracies
+
+```{r Exp1fig, echo=FALSE, out.width = "90%", fig.align="center", fig.cap  = "\\label{fig:Exp1fig} The figure produced by my custom MATLAB code shows the accuracies from Experiment 1 as provided by re-running the SVM code provided by the authors on the compiled ERP data. This somewhat resembles Figure 2c, although I had to guess about the smoothing, as the authors have not detailed exactly how this was carried out. Shaded regions represent +/- 1 standard error. " }
+
+knitr::include_graphics('Experiment1.png')
+```
+
+## Experiment 2 accuracies 
+
+```{r Exp2fig, echo=FALSE, out.width = "90%", fig.align="center", fig.cap  = "\\label{fig:Exp2fig} The figure produced by my custom MATLAB code shows the accuracies from Experiment 2 as provided by re-running the SVM code provided by the authors on the compiled ERP data. This somewhat resembles Figure 2d, although I had to guess about the smoothing, as the authors have not detailed how this was carried out. Shaded regions represent +/- 1 standard error. " }
+
+knitr::include_graphics('Experiment2.png')
+```
+
+## Conclusion
+
+It was a lot of work (approx. 10 hours) to get this far, and I am still unable to reproduce the results in the paper with any clarity. 

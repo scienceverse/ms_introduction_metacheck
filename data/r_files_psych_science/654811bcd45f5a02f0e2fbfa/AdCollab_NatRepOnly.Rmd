@@ -1,0 +1,362 @@
+---
+title: "AdCollabMultiLevelModelsNatRepOnly_Sep152023"
+output: html_document
+date: "2023-09-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE}
+setwd("~/Desktop")
+x <- read.csv("AdCollabData.csv", as.is = TRUE)
+
+# load libraries
+library(dplyr)
+library(tidyr)
+library(sandwich)
+library(lmtest)
+library(lme4)
+library(MASS)
+library(ggeffects)
+library(lmerTest)
+library(ggplot2)
+```
+
+## Only keep nationally representative samples (YouGov, Lucid)
+```{r}
+x <- x %>% filter(study == "F"|study == "G"|study == "I"|study == "K"|study == "L"|study == "M"|study == "N"|study == "O"|study == "P"|study == "Q"|study == "R"|study == "S"|study == "T")
+
+table(x$study)
+```
+
+## DemRep
+```{r}
+#x$demrep <- x$demreptemp #create temp variable 
+
+#x$demrep <- x$demrepParty # 
+#x$demrep <- x$demreptemp # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+#x$demrep <- x$trump2016 # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+#x$demrep <- x$demrep_c # STEVE WILL RUN MODELS WITH THIS VARIABLE
+#x$demrep <- x$conservative # STEVE WILL RUN MODELS WITH THIS VARIABLE 
+
+#for demrep_c only!
+#x$demrep <- (1-0)/(6-1)*(x$demrep-6)+1
+
+x$demrep <- 1-x$demrep
+
+table(x$demrep)
+```
+
+Model #5: Evaluation
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluation <- subset(x, x$evaluation_treatment == 1 | x$control == 1)
+xtabs(~dataEvaluation$evaluation_treatment)
+
+#Check Which Studies Only Have Control Data
+dataEvaluation %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Study T 
+dataEvaluation <- subset(dataEvaluation, dataEvaluation$study != "D" 
+                     & dataEvaluation$study != "E"
+                     & dataEvaluation$study != "F"
+                     & dataEvaluation$study != "N"
+                     & dataEvaluation$study != "O"
+                     & dataEvaluation$study != "T")
+
+model_lmer1 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluation, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer1)
+```
+
+Model #6: Evaluation & Importance
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluationImportance <- subset(x, x$evaluation_treatment == 1 | x$control == 1 | x$importance_treatment == 1)
+
+#Check Which Studies Only Have Control Data
+dataEvaluationImportance %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Studies
+dataEvaluationImportance <- subset(dataEvaluationImportance, dataEvaluationImportance$study != "E"
+                     & dataEvaluationImportance$study != "F"
+                     & dataEvaluationImportance$study != "N"
+                     & dataEvaluationImportance$study != "T")
+
+model_lmer2 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluationImportance, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer2)
+```
+
+## DemRep_c
+```{r}
+#x$demrep <- x$demreptemp #create temp variable 
+
+#x$demrep <- x$demrepParty # 
+#x$demrep <- x$demreptemp # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+#x$demrep <- x$trump2016 # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+x$demrep <- x$demrep_c # STEVE WILL RUN MODELS WITH THIS VARIABLE
+#x$demrep <- x$conservative # STEVE WILL RUN MODELS WITH THIS VARIABLE 
+
+#for demrep_c only!
+x$demrep <- (1-0)/(6-1)*(x$demrep-6)+1
+
+x$demrep <- 1-x$demrep
+
+table(x$demrep)
+```
+
+Model #5: Evaluation
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluation <- subset(x, x$evaluation_treatment == 1 | x$control == 1)
+xtabs(~dataEvaluation$evaluation_treatment)
+
+#Check Which Studies Only Have Control Data
+dataEvaluation %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Study T 
+dataEvaluation <- subset(dataEvaluation, dataEvaluation$study != "D" 
+                     & dataEvaluation$study != "E"
+                     & dataEvaluation$study != "F"
+                     & dataEvaluation$study != "N"
+                     & dataEvaluation$study != "O"
+                     & dataEvaluation$study != "T")
+
+model_lmer3 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluation, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer3)
+```
+
+Model #6: Evaluation & Importance
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluationImportance <- subset(x, x$evaluation_treatment == 1 | x$control == 1 | x$importance_treatment == 1)
+
+#Check Which Studies Only Have Control Data
+dataEvaluationImportance %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Studies
+dataEvaluationImportance <- subset(dataEvaluationImportance, dataEvaluationImportance$study != "E"
+                     & dataEvaluationImportance$study != "F"
+                     & dataEvaluationImportance$study != "N"
+                     & dataEvaluationImportance$study != "T")
+
+model_lmer4 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluationImportance, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer5)
+```
+
+## DemRepParty
+```{r}
+#x$demrep <- x$demreptemp #create temp variable 
+
+x$demrep <- x$demrepParty # 
+#x$demrep <- x$demreptemp # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+#x$demrep <- x$trump2016 # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+#x$demrep <- x$demrep_c # STEVE WILL RUN MODELS WITH THIS VARIABLE
+#x$demrep <- x$conservative # STEVE WILL RUN MODELS WITH THIS VARIABLE 
+
+#for demrep_c only!
+#x$demrep <- (1-0)/(6-1)*(x$demrep-6)+1
+
+x$demrep <- 1-x$demrep
+
+table(x$demrep)
+```
+
+Model #5: Evaluation
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluation <- subset(x, x$evaluation_treatment == 1 | x$control == 1)
+xtabs(~dataEvaluation$evaluation_treatment)
+
+#Check Which Studies Only Have Control Data
+dataEvaluation %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Study T 
+dataEvaluation <- subset(dataEvaluation, dataEvaluation$study != "D" 
+                     & dataEvaluation$study != "E"
+                     & dataEvaluation$study != "F"
+                     & dataEvaluation$study != "N"
+                     & dataEvaluation$study != "O"
+                     & dataEvaluation$study != "T")
+
+model_lmer5 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluation, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer5)
+```
+
+Model #6: Evaluation & Importance
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluationImportance <- subset(x, x$evaluation_treatment == 1 | x$control == 1 | x$importance_treatment == 1)
+
+#Check Which Studies Only Have Control Data
+dataEvaluationImportance %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Studies
+dataEvaluationImportance <- subset(dataEvaluationImportance, dataEvaluationImportance$study != "E"
+                     & dataEvaluationImportance$study != "F"
+                     & dataEvaluationImportance$study != "N"
+                     & dataEvaluationImportance$study != "T")
+
+model_lmer6 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluationImportance, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer6)
+```
+
+## conservative
+```{r}
+#x$demrep <- x$demreptemp #create temp variable 
+
+#x$demrep <- x$demrepParty # 
+#x$demrep <- x$demreptemp # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+#x$demrep <- x$trump2016 # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+#x$demrep <- x$demrep_c # STEVE WILL RUN MODELS WITH THIS VARIABLE
+x$demrep <- x$conservative # STEVE WILL RUN MODELS WITH THIS VARIABLE 
+
+#for demrep_c only!
+#x$demrep <- (1-0)/(6-1)*(x$demrep-6)+1
+
+x$demrep <- 1-x$demrep
+
+table(x$demrep)
+```
+
+Model #5: Evaluation
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluation <- subset(x, x$evaluation_treatment == 1 | x$control == 1)
+xtabs(~dataEvaluation$evaluation_treatment)
+
+#Check Which Studies Only Have Control Data
+dataEvaluation %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Study T 
+dataEvaluation <- subset(dataEvaluation, dataEvaluation$study != "D" 
+                     & dataEvaluation$study != "E"
+                     & dataEvaluation$study != "F"
+                     & dataEvaluation$study != "N"
+                     & dataEvaluation$study != "O"
+                     & dataEvaluation$study != "T")
+
+model_lmer7 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluation, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer7)
+```
+
+Model #6: Evaluation & Importance
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluationImportance <- subset(x, x$evaluation_treatment == 1 | x$control == 1 | x$importance_treatment == 1)
+
+#Check Which Studies Only Have Control Data
+dataEvaluationImportance %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Studies
+dataEvaluationImportance <- subset(dataEvaluationImportance, dataEvaluationImportance$study != "E"
+                     & dataEvaluationImportance$study != "F"
+                     & dataEvaluationImportance$study != "N"
+                     & dataEvaluationImportance$study != "T")
+
+model_lmer8 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluationImportance, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer8)
+```
+
+## trump2016
+```{r}
+#x$demrep <- x$demreptemp #create temp variable 
+
+#x$demrep <- x$demrepParty # 
+#x$demrep <- x$demreptemp # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+x$demrep <- x$trump2016 # JON - NEXT RUN ALL MODELS WITH THIS VARIABLE AS DEMREP
+#x$demrep <- x$demrep_c # STEVE WILL RUN MODELS WITH THIS VARIABLE
+#x$demrep <- x$conservative # STEVE WILL RUN MODELS WITH THIS VARIABLE 
+
+#for demrep_c only!
+#x$demrep <- (1-0)/(6-1)*(x$demrep-6)+1
+
+x$demrep <- 1-x$demrep
+
+table(x$demrep)
+```
+
+Model #5: Evaluation
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluation <- subset(x, x$evaluation_treatment == 1 | x$control == 1)
+xtabs(~dataEvaluation$evaluation_treatment)
+
+#Check Which Studies Only Have Control Data
+dataEvaluation %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Study T 
+dataEvaluation <- subset(dataEvaluation, dataEvaluation$study != "D" 
+                     & dataEvaluation$study != "E"
+                     & dataEvaluation$study != "F"
+                     & dataEvaluation$study != "N"
+                     & dataEvaluation$study != "O"
+                     & dataEvaluation$study != "T")
+
+model_lmer9 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluation, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer9)
+```
+
+Model #6: Evaluation & Importance
+```{r}
+
+#Subset, Just Evaluation
+dataEvaluationImportance <- subset(x, x$evaluation_treatment == 1 | x$control == 1 | x$importance_treatment == 1)
+
+#Check Which Studies Only Have Control Data
+dataEvaluationImportance %>% group_by(study) %>% 
+  dplyr::summarize(condition = mean(condition, na.rm = TRUE))
+
+#Drop Studies
+dataEvaluationImportance <- subset(dataEvaluationImportance, dataEvaluationImportance$study != "E"
+                     & dataEvaluationImportance$study != "F"
+                     & dataEvaluationImportance$study != "N"
+                     & dataEvaluationImportance$study != "T")
+
+model_lmer10 <- lmer(rating ~ headline_true*treated*demrep + (1+headline_true|study/id) + (1+treated*demrep|item_num), data=dataEvaluationImportance, control = lmerControl(optimizer ="bobyqa", calc.derivs = FALSE))
+summary(model_lmer10)
+```
+
+```{r}
+setwd("~/Desktop")
+saveRDS(model_lmer1, file="model_lmer1")
+saveRDS(model_lmer2, file="model_lmer2")
+saveRDS(model_lmer3, file="model_lmer3")
+saveRDS(model_lmer4, file="model_lmer4")
+saveRDS(model_lmer5, file="model_lmer5")
+saveRDS(model_lmer6, file="model_lmer6")
+saveRDS(model_lmer7, file="model_lmer7")
+saveRDS(model_lmer8, file="model_lmer8")
+saveRDS(model_lmer9, file="model_lmer9")
+saveRDS(model_lmer10, file="model_lmer10")
+```
+
+Test that uploading works.
+```{r}
+setwd("~/Desktop")
+boop <- readRDS("model_lmer3")
+summary(boop)
+#check that linear hypoth test works here.
+summary(model_lmer3)
+```
+
+

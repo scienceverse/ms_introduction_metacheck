@@ -1,0 +1,1259 @@
+---
+title: "Perspective Taking on Attitude Change - Study 2"
+output:
+  tufte::tufte_handout: default
+date: "Last revised October 16,2018"
+---
+
+#**Overview**
+
+This document presents the data analysis, including both R code and output, for Study 2. It begins with the main analysis used in the paper, then moves on to redo the analyses with no exclusions (pg 23), and excluding people who indicated the midpoint (pg 30). The results are consistent across the 3 analyses strategies. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment=NA, warning=FALSE, message=FALSE, echo=FALSE)
+library(psych)
+library(knitr)
+library(tidyr)
+library(broom)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(dplyr)
+library(lsr)
+library(Rmisc)
+```
+
+#Data Cleaning
+
+We begin with the full dataset of 1411 people who took the survey, then we remove the people who failed the attention check, took the survey more than once, or who were excluded based on an independent coder's judgement of whether they (1) generated an argument and (2) the argument was for the appropriate side. After exclusions, we're left with 1252 people. 
+
+```{r}
+d_RAW <- read.csv("Study 2 T1 full data set anonymized.csv")
+d_RAW$MID <- as.character(d_RAW$MID)
+d_RAW$username <- as.character(d_RAW$username)
+
+d_nonsense <- filter(d_RAW, Exclude. == "Y")
+
+d_full <- d_RAW
+d_full$duplicated <- duplicated(d_full$MID)
+
+d <- d_full %>%
+  dplyr::filter(att.check == 3) %>%
+  dplyr::filter(Exclude. != "Y") %>%
+  dplyr::filter(duplicated == "FALSE") %>%
+  dplyr::select(-X) 
+
+d$condition <- factor(d$condition, levels = c("control", "opposing party argument", "same party argument"), labels = c("control", "PT-different", "PT-same"))
+```
+
+We ultimately collected data from 1,411 participants on Amazon’s Mechanical Turk. Consistent with our preregistration plan, we excluded 159 (11.3%) who failed the attention check, completed the survey multiple times, or did not follow instructions. This resulted in a sample of 1,252 participants (58.1% female, Mage = 36.0).
+
+#Descriptive Statistics
+
+##Participant Gender
+
+1 indicates female, 2 indicates male, 3 indicates other
+```{r}
+table(d$dem.gender)
+```
+
+##Participant Age
+
+```{r, echo=FALSE}
+#Participants indicated their age range; the middle of the range was used as an estimate of their age, in order to obtain the mean and sd across participants.
+
+d$dem.age <- factor(d$dem.age)
+d$age <- ifelse(d$dem.age == 1, 21, NA)
+d$age <- ifelse(d$dem.age == 2, 29.5, d$age)
+d$age <- ifelse(d$dem.age == 3, 39.5, d$age)
+d$age <- ifelse(d$dem.age == 4, 49.5, d$age)
+d$age <- ifelse(d$dem.age == 5, 59.5, d$age)
+d$age <- ifelse(d$dem.age == 6, 69.5, d$age)
+d$age <- ifelse(d$dem.age == 7, 79.5, d$age)
+```
+
+Mean and CI for age:
+
+```{r}
+CI(d$age, ci = 0.95)
+```
+
+
+
+\newpage
+
+#Initial Attitude Distribution
+
+We begin by comparing the initial distribution of attitudes by condition to confirm random assignment
+
+```{r}
+model1 <- lm(Q1.att_1 ~ condition, d)
+kable(tidy(model1))
+kable(summary(model1)$fstatistic)
+aov <- aov(model1)
+etaSquared(aov)
+```
+
+PT-same:
+```{r}
+pts <- filter(d, condition == "PT-same")
+CI(pts$Q1.att_1, ci=0.95)
+```
+
+PT-different:
+```{r}
+ptd <- filter(d, condition == "PT-different")
+CI(ptd$Q1.att_1, ci=0.95)
+```
+
+Control:
+```{r}
+control <- filter(d, condition == "control")
+CI(control$Q1.att_1, ci=0.95)
+```
+
+There were no differences in initial attitudes, F(2, 1249) = 1.05, p = 0.35. 
+
+
+
+#Midpoint
+
+How many people indicated the midpoint?
+```{r}
+d_50 <- dplyr::filter(d, Q1.att_1 == 50)
+nrow(d_50)
+
+d_noneutral <- dplyr::filter(d, Q1.att_1 != 50)
+```
+
+Participants who indicated a neutral attitude (exactly the midpoint; N = 31) were randomly assigned to a side. All significant relationships reported remain significant when these participants are excluded (See pg 30).
+
+\newpage
+
+
+# Receptiveness
+
+Receptiveness is measured by 4 items, specifically:
+
+- How receptive do you feel towards the specific argument that you wrote about?
+
+- How open-minded do you feel towards the specific argument that you wrote about?
+
+- How receptive do you feel towards the perspective (in favor of/against) UBI in general?
+
+- How open-minded do you feel towards the perspective (in favor of/against) UBI in general?
+
+# Creating an index for receptiveness
+
+We begin by computing the alpha for receptiveness
+
+```{r}
+receptiveness <- dplyr::select(d, recep1.arg, recep2.arg, recep3.gen, recep4.gen)
+alphaRecep <- psych::alpha(receptiveness)
+kable(alphaRecep$total)
+```
+
+Because our alpha is acceptable (alpha = 0.86), we then comine the 4 receptiveness items into a single index.
+```{r}
+d$receptiveIndex <- (d$recep1.arg + d$recep2.arg + d$recep3.gen + d$recep4.gen)/4
+```
+
+\newpage
+
+#Analysis strategy
+
+Our hypothesis is that the negative impact of perspective taking on receptiveness and attitude change is due to value incongruence. Thus, we expect that in the opposing party argument, we will see the previous pattern, such that there will be less receptiveness. On the other hand, in the control and same party argument conditions, we expect to see greater receptiveness and attitude change. 
+
+Therefore to test this hypothesis, we use planned orthogonal contrasts, first comparing the PT - different ideology condition to the other two conditions, then comparing control and PT - same ideology to one another. The results are also comparable if we use dummy coding (with control as the reference group), rather than planned contrasts
+
+```{r}
+contrasts(d$condition) <- cbind(c(1, -2, 1), c(1, 0, -1))
+contrasts(d$condition)
+```
+
+\newpage
+
+# Effect of condition on receptiveness
+
+```{r}
+recep_model <- lm(receptiveIndex ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(recep_model)$fstatistic)
+aov <- aov(recep_model)
+etaSquared(aov)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r}
+kable(tidy(recep_model))
+```
+
+#Calculate F's from t's (t-statistics above)
+We also calculate the F statistics (t squared), in order to report the statistics in consistent way for those more familiar with SPSS outputs.
+
+Contrast 1:
+```{r}
+contrast1F = 5.812^2
+contrast1F
+```
+
+Cohen's d for control and PT/same vs. different
+```{r}
+d_controlandsame <- dplyr::filter(d, condition == "control" | condition == "PT-same")
+d_diff <- dplyr::filter(d, condition == "PT-different")
+
+cohensD(d_controlandsame$receptiveIndex, d_diff$receptiveIndex)
+```
+
+Contrast 2:
+```{r}
+contrast2F = 1.807^2
+contrast2F
+```
+
+Cohen's d for control vs. PT/same
+```{r}
+d_control <- dplyr::filter(d, condition == "control")
+d_same <- dplyr::filter(d, condition == "PT-same")
+
+cohensD(d_control$receptiveIndex, d_same$receptiveIndex)
+```
+
+
+
+First, the manipulation affected receptiveness, F(2, 1249) = 18.35, p < .001. Participants in the control and perspective-taking/same ideology conditions were significantly more receptive than participants in the perspective-taking/different ideology condition, F(1, 1249) = 33.77, p < .001. Participants were marginally more receptive in the perspective-taking/same ideology condition than in the control, F(1, 1249) = 3.27, p = .07. 
+
+\newpage
+
+#Alternative analysis: Dummy coding
+
+We also run the analysis using control as the reference group
+
+```{r}
+contrasts(d$condition) <- cbind(c(0, 1, 0), c(0, 0, 1))
+contrasts(d$condition)
+
+model1 <- lm(receptiveIndex ~ condition, d)
+kable(tidy(model1))
+
+contrasts(d$condition) <- cbind(c(1, -2, 1), c(1, 0, -1))
+
+d_control <- filter(d, condition == "control")
+d_PTs <- filter(d, condition == "PT-same")
+d_PTd <- filter(d, condition == "PT-different")
+```
+
+Cohen's D for Control vs. Different:
+```{r}
+cohensD(d_control$receptiveIndex, d_PTd$receptiveIndex)
+```
+
+Cohen's D for Control vs. Same:
+```{r}
+cohensD(d_control$receptiveIndex, d_PTs$receptiveIndex)
+```
+
+
+Relative to the control, generating counterattitudinal arguments from the perspective of someone with different values undermined receptiveness (t(1249) = -4.17, d = .28, p < .001) whereas generating counterattitudinal arguments from the perspective of someone with similar values marginally enhanced receptiveness (t(1249) = 1.85, d = .13, p = .07).
+
+
+\newpage
+
+#Attitude Change
+
+Attitude change is calculated as movement towards the counterattitudinal argument.
+
+```{r}
+d$att.change <- ifelse(d$side == "against", d$Q1.att_1 - d$Q2.attT2_1, NA)
+d$att.change <- ifelse(d$side == "in favor of", d$Q2.attT2_1 - d$Q1.att_1, d$att.change)
+```
+
+#Effect of Condition on Attitude change
+
+```{r}
+attchng_model <- lm(att.change ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(attchng_model)$fstatistic)
+aov <- aov(attchng_model)
+etaSquared(aov)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(attchng_model))
+```
+
+#Calculate F's from t's (t-statistics above)
+We also calculate the F statistics, in order to report the statistics in consistent way for those more familiar with SPSS outputs.
+
+Contrast 1:
+```{r}
+contrast1F = 6.44^2
+contrast1F
+```
+
+Cohen's d for control and PT/same vs. different
+```{r}
+d_controlandsame <- dplyr::filter(d, condition == "control" | condition == "PT-same")
+d_diff <- dplyr::filter(d, condition == "PT-different")
+
+cohensD(d_controlandsame$att.change, d_diff$att.change)
+```
+
+Contrast 2:
+```{r}
+contrast2F = 3.77^2
+contrast2F
+```
+
+Cohen's d for control vs. PT/same
+```{r}
+d_control <- dplyr::filter(d, condition == "control")
+d_same <- dplyr::filter(d, condition == "PT-same")
+
+cohensD(d_control$att.change, d_same$att.change)
+```
+
+Likewise, we found a significant effect on attitude change, F(2, 1249) = 27.42, p < .001. Participants in the control and perspective-taking/same ideology conditions experienced significantly more change than participants in the perspective-taking/different ideology condition, F(1, 1249) = 41.47, p < .001. In addition, change was greater in the perspective-taking/same ideology condition than in the control, F(1, 1249) = 14.21, p < .001. 
+
+\newpage
+
+#Alternative analysis: Dummy coding
+
+We also run the analysis using control as the reference group
+
+```{r}
+contrasts(d$condition) <- cbind(c(0, 1, 0), c(0, 0, 1))
+contrasts(d$condition)
+
+model1 <- lm(att.change ~ condition, d)
+kable(tidy(model1))
+
+contrasts(d$condition) <- cbind(c(1, -2, 1), c(1, 0, -1))
+
+d_control <- filter(d, condition == "control")
+d_PTs <- filter(d, condition == "PT-same")
+d_PTd <- filter(d, condition == "PT-different")
+```
+
+Cohen's D for Control vs. Different:
+```{r}
+cohensD(d_control$att.change, d_PTd$att.change)
+```
+
+Cohen's D for Control vs. Same:
+```{r}
+cohensD(d_control$att.change, d_PTs$att.change)
+```
+
+Viewed differently, relative to the control, generating counterattitudinal arguments from the perspective of someone with different values undermined attitude change (t(1249) = -3.79, d = .28, p < .001), whereas generating counterattitudinal arguments from the perspective of someone with similar values enhanced attitude change (t(1249) = 3.86, d = .24, p < .001). 
+
+\newpage
+
+#Attitude Change by Condition (as compared to 0)
+
+```{r}
+d_control <- filter(d, condition == "control")
+d_PTd <- filter(d, condition == "PT-different")
+d_PTs <- filter(d, condition == "PT-same")
+
+t.test(d_control$att.change)
+t.test(d_PTd$att.change)
+t.test(d_PTs$att.change)
+```
+
+Attitude change exceeded zero in each condition (ps < .005).
+
+\newpage
+
+
+#Value/Moral Congruence
+
+Value/Moral Congruence is measured by 3 items, specifically:
+
+- To what extent is this argument congruent with your own values?
+
+- To what extent does this argument fit with your worldview?
+
+- To what extent does this argument reflect your personal morals?
+
+##Creating an index for value congruence
+
+We begin by computing the alpha for value congruence
+
+```{r, echo=FALSE}
+valuecongruence <- dplyr::select(d, Q3.congruent, Q4.fitworldview, Q5.morals)
+alphaCongruence <- psych::alpha(valuecongruence)
+kable(alphaCongruence$total)
+```
+
+Because alpha is satisfactory (alpha = 0.93), we create a single index for value congruence. I've also recoded it so that higher means more congruent.
+```{r}
+d$congruence <- 8 - (d$Q3.congruent + d$Q4.fitworldview + d$Q5.morals)/3
+```
+
+#Effect of Condition on Value Congruence
+
+```{r}
+congr_model <- lm(congruence ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(congr_model)$fstatistic)
+aov <- aov(congr_model)
+etaSquared(aov)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(congr_model))
+```
+
+#Calculate F's from t's (t-statistics above)
+We also calculate the F statistics, in order to report the statistics in consistent way for those more familiar with SPSS outputs.
+
+Contrast 1:
+```{r}
+contrast1F = 8.34^2
+contrast1F
+```
+
+Cohen's d for control and PT/same vs. different
+```{r}
+d_controlandsame <- dplyr::filter(d, condition == "control" | condition == "PT-same")
+d_diff <- dplyr::filter(d, condition == "PT-different")
+
+cohensD(d_controlandsame$congruence, d_diff$congruence)
+```
+
+Contrast 2:
+```{r}
+contrast2F = 0.32^2
+contrast2F
+```
+
+Cohen's d for control vs. PT/same
+```{r}
+d_control <- dplyr::filter(d, condition == "control")
+d_same <- dplyr::filter(d, condition == "PT-same")
+
+cohensD(d_control$congruence, d_same$congruence)
+```
+
+Providing additional evidence, the manipulation affected the value-congruence index, F(2, 1249) = 34.78, p < .001. Participants in the control and perspective-taking/same ideology conditions perceived their arguments as more value-congruent than did participants in the perspective-taking/different ideology condition, F(1, 1249) = 69.55, p < .001. In this case, the control and perspective-taking/same ideology conditions did not differ from each other, F(1, 1249) = .10, p = .75). 
+
+#Alternative Analysis: Dummy coding
+
+We also run the analysis using control as the reference group
+
+```{r}
+contrasts(d$condition) <- cbind(c(0, 1, 0), c(0, 0, 1))
+contrasts(d$condition)
+
+model1 <- lm(congruence ~ condition, d)
+kable(tidy(model1))
+
+contrasts(d$condition) <- cbind(c(1, -2, 1), c(1, 0, -1))
+```
+
+Control and PT-different are significantly different from each other (p < .001), however control and PT-same are not significantly different from each other (p = .75). 
+
+
+```{r}
+#So that we can use the same data file we've been working with in our post-test, we save it, and pick up where we left off.
+
+write.csv(d, "Study 2 with indices anonymized.csv", row.names=FALSE)
+d_indexes <- d
+```
+
+
+\newpage
+
+#Mediation Analysis Strategy
+
+Next, we conduct multilevel mediation analysis, using the R package *mediation*.
+
+We scale our variables, in order to get standardized coefficients.
+```{r, warning=FALSE, message=FALSE, comment=NA}
+library(mediation)
+
+d$recep_s <- as.numeric(scale(d$receptiveIndex))
+d$att.change_s <- as.numeric(scale(d$att.change, center=FALSE, scale=TRUE))
+d$congruence_s <- as.numeric(scale(d$congruence))
+```
+
+Next, in order to get accurate estimates for mediation with a multicategorical independent variable, we employ the technique described in Hayes & Preacher (2014). Specifically, we code each of our contrasts into a variable (H1 and H2), and control for the other in our analysis with each, in order to estimate the mediation effect for each of our comparisons. 
+
+```{r}
+d$H1 <- 1
+d$H1 <- ifelse(d$condition == "PT-same", 1, d$H1)
+d$H1 <- ifelse(d$condition == "control", 1, d$H1)
+d$H1 <- ifelse(d$condition == "PT-different", -2, d$H1)
+
+d$H2 <- 0
+d$H2 <- ifelse(d$condition == "PT-same", 1, d$H2)
+d$H2 <- ifelse(d$condition == "control", -1, d$H2)
+```
+
+
+# Mediation Model 1: Condition -> Value Congruence -> Receptiveness
+
+## Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(congruence_s ~ H1 + H2, data=d)
+
+modely <- lm(recep_s ~ H1 + congruence_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+## Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+Value-congruence mediated decreased receptiveness in the perspective-taking/different ideology condition relative to other conditions (ab = .06, 95% CI = .04 to .08), but not increased receptiveness in the perspective-taking/same ideology condition relative to control (ab = .004, 95% CI = -.02 to .03). 
+
+
+# Mediation Model 2: Condition -> Value Congruence -> Attitude Change
+
+## Mediation for Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(congruence_s ~ H1 + H2, data=d)
+
+modely <- lm(att.change_s ~ H1 + congruence_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+##Mediation for Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+
+d_med <- d
+```
+
+Similarly, value-congruence mediated decreased attitude change in the perspective-taking/different ideology condition relative to other conditions (ab = .03, 95% CI = .01 to .04), but not increased attitude change in the perspective-taking/same ideology condition relative to control (ab = .002, 95% CI = -.009 to .01). 
+
+
+
+
+\newpage
+
+
+#Exploratory Analysis: Political Party Group Membership as Moderator
+
+##Manipulation Check/Political Party group membership
+
+Participants are asked two questions: "To what extent do you believe that (liberals/conservatives) have similar morals and values to you?". These were originally intended as a manipulation check, in order to ensure that in general, people viewed political party membership as a good proxy for values. We find that indeed, party membership is viewed as a good proxy for values.
+
+```{r}
+d <- dplyr::select(d, -recep_s, -att.change_s, -congruence_s)
+
+d_expl <- filter(d, is.na(Q9.lib.simval) == FALSE) %>%
+  filter(is.na(Q10.cons.simval) == FALSE)
+```
+
+
+```{r, comment=NA}
+d_expl$ideology <- ifelse(d_expl$dem.ideology > 4, "conservative", "liberal")
+```
+
+##How similar are you to liberals?
+```{r, comment=NA}
+d_lib <- filter(d_expl, ideology == "liberal")
+d_cons <- filter(d_expl, ideology == "conservative")
+
+t.test(d_lib$Q9.lib.simval, d_cons$Q9.lib.simval, paired=FALSE, var.equal = TRUE)
+```
+
+**Cohen's D**
+```{r}
+cohensD(d_lib$Q9.lib.simval, d_cons$Q9.lib.simval)
+```
+
+##How similar are you to conservatives?
+```{r, comment=NA}
+t.test(d_lib$Q10.cons.simval, d_cons$Q10.cons.simval, paired=FALSE, var.equal=TRUE)
+```
+
+**Cohen's D**
+```{r}
+cohensD(d_lib$Q10.cons.simval, d_cons$Q10.cons.simval)
+```
+
+As anticipated, liberals (versus conservatives) perceived other liberals as more similar to themselves (Mlib = 5.30, Mcons = 2.84, t(1246) = 33.56, d =  1.99, p < .001), and conservatives (versus liberals) perceived other conservatives as more similar to themselves (Mlib = 2.58, Mcons=5.28, t(1246) = -36.15, d = 2.14, p < .001). 
+
+
+#Distance scores
+
+Our value-congruence account suggests that the receptiveness and attitude change results might be especially likely to emerge when participants view themselves as more similar to the ingroup and different from the outgroup. Thus, we conducted exploratory analyses using participants’ self-reported similarity to liberals and conservatives. Only participants who completed both items were included in this analysis. 
+
+We computed the distance (i.e., difference) between participants’ perceptions of their similarity to liberals and conservatives and coded scores such that higher values indicated greater similarity (dissimilarity) to the ingroup (outgroup). For example, liberals who viewed themselves as highly similar and dissimilar to liberals and conservatives, respectively, would have high (positive) distance scores, whereas liberals who viewed themselves as similar to both groups (or as more similar to conservatives than liberals) would have low (or negative) distance scores. 
+
+```{r}
+d_expl$distance <- ifelse(d_expl$ideology == "liberal", d_expl$Q9.lib.simval - d_expl$Q10.cons.simval, d_expl$Q10.cons.simval - d_expl$Q9.lib.simval)
+
+d_expl$distance_cat <- ifelse(d_expl$distance < median(d_expl$distance, na.rm=TRUE), "low distance", "high distance")
+```
+
+\newpage
+
+#Attitude Change
+
+##Interaction effect (scaled variables, at the midpoint)
+```{r}
+contrasts(d_expl$condition) <- cbind(c(1, -2, 1), c(1, 0, -1))
+
+d_expl$att.change_s <- scale(d_expl$att.change, scale=TRUE, center=TRUE)
+d_expl$distance_s <- scale(d_expl$distance, scale=TRUE, center=TRUE)
+
+modmodel <- lm(att.change_s ~ condition*distance_s, d_expl)
+kable(tidy(modmodel))
+```
+
+We found significant interactions between condition (control and perspective-taking/same versus perspective-taking/different) and ingroup-outgroup distance on attitude change, beta = .04, t(1246) = 2.28, p = .03. In addition, we found a significant interaction between condition (control versus perspective-same) and ingroup-outgroup distance on attitude change, beta = -0.08, t(1246)=-2.28, p = 0.02.  
+
+
+##Johnson-Neyman point (unscaled, point where p = 0.05)
+
+The Johnson-Neyman point is 0.08, which is where p = 0.05. Above this point we see a significant difference in our primary contrast, while below the difference is not significant. Below is the output for this regression. 
+
+```{r}
+d_expl$distance_JN = d_expl$distance - 0.08
+kable(tidy(lm(att.change ~ condition*distance_JN, data=d_expl)))
+```
+
+
+
+
+\newpage
+
+##Receptiveness
+
+Second, we use distance to predict receptiveness by condition
+
+#Interaction Effect (scaled variables, at the midpoint)
+```{r}
+d_expl$receptiveIndex_s <- scale(d_expl$receptiveIndex, scale=TRUE, center=TRUE)
+modmodel <- lm(receptiveIndex_s ~ condition*distance_s, d_expl)
+kable(tidy(modmodel))
+```
+
+We found significant interactions between condition (control and perspective-taking/same versus perspective-taking/different) and ingroup-outgroup distance on receptiveness, beta = .10, t(1246) = 4.99, p < .001. We also found a marginally significant interaction between the second contrast (control verus perspective-taking/same) and ingroup-outgroup distance on receptiveness, beta = -.06, t(1246) = -1.73, p = .08.
+
+
+#Johnson-Neyman Numbers
+
+Below we run the regression at the points where p = .05: -1.382 (top) and 1.174 (bottom)
+
+```{r}
+d_expl$distance_JN = d_expl$distance - 1.382
+kable(tidy(lm(receptiveIndex ~ condition*distance_JN, data=d_expl)))
+
+d_expl$distance_JN = d_expl$distance + 1.174
+kable(tidy(lm(receptiveIndex ~ condition*distance_JN, data=d_expl)))
+```
+
+
+\newpage
+
+# Receptiveness Exploration
+
+Our receptiveness scale contains two types of items: those that tap into receptiveness towards the specific argument being written, and those that tap into receptiveness towards arguments on the issue in general. So, here we test whether it would be better to separate these two constructs.
+
+Argument items correlation:
+```{r}
+cor(d$recep1.arg, d$recep2.arg)
+```
+
+General items correlation:
+```{r}
+cor(d$recep3.gen, d$recep4.gen)
+```
+
+The alpha for using all 4 as an index (alpha = 0.86) is higher than using the pairs of two, which seems to indicate that these tap into a single construct, and justifies using the single index.
+
+\newpage
+
+# Means and CIs
+
+```{r}
+d <- d_indexes
+d_control <- filter(d, condition == "control")
+d_PTd <- filter(d, condition == "PT-different")
+d_PTs <- filter(d, condition == "PT-same")
+```
+
+##Receptiveness
+
+Control:
+```{r}
+CI(d_control$receptiveIndex, ci=0.95)
+```
+
+PT-Same:
+```{r}
+CI(d_PTs$receptiveIndex, ci=0.95)
+```
+
+PT-Different:
+```{r}
+CI(d_PTd$receptiveIndex, ci=0.95)
+```
+
+#Attitude Change
+
+Control:
+```{r}
+CI(d_control$att.change, ci=0.95)
+```
+
+PT-Same:
+```{r}
+CI(d_PTs$att.change, ci=0.95)
+```
+
+PT-Different:
+```{r}
+CI(d_PTd$att.change, ci=0.95)
+```
+
+
+#Value Congruence
+
+Control:
+```{r}
+CI(d_control$congruence, ci=0.95)
+```
+
+PT-Same:
+```{r}
+CI(d_PTs$congruence, ci=0.95)
+```
+
+PT-Different:
+```{r}
+CI(d_PTd$congruence, ci=0.95)
+```
+
+\newpage
+
+#Alternative Mediation Models
+
+# Alternative Model 1A: Condition -> Receptiveness -> Value Congruence
+
+## Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+d <- d_med
+
+modelm <- lm(recep_s ~ H1 + H2, data=d)
+
+modely <- lm(congruence_s ~ H1 + recep_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="recep_s")
+
+summary(med_model)
+```
+
+## Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="recep_s")
+
+summary(med_model)
+```
+
+
+
+# Alternative Model 1B: Condition -> Receptiveness -> Attitude Change
+
+## Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(recep_s ~ H1 + H2, data=d)
+
+modely <- lm(att.change_s ~ H1 + recep_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="recep_s")
+
+summary(med_model)
+```
+
+## Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="recep_s")
+
+summary(med_model)
+```
+
+
+# Alternative Model 2A: Condition -> Attitude Change -> Value Congruence
+
+## Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(att.change_s ~ H1 + H2, data=d)
+
+modely <- lm(congruence_s ~ H1 + att.change_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="att.change_s")
+
+summary(med_model)
+```
+
+## Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="att.change_s")
+
+summary(med_model)
+```
+
+
+
+# Alternative Model 2B: Condition -> Attitude Change -> Receptiveness
+
+## Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(att.change_s ~ H1 + H2, data=d)
+
+modely <- lm(recep_s ~ H1 + att.change_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="att.change_s")
+
+summary(med_model)
+```
+
+## Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="att.change_s")
+
+summary(med_model)
+```
+
+
+
+
+\newpage
+
+#**Analysis without exclusions**
+
+Below we rerun the key analyses from above, without exclusions. 
+
+```{r}
+d <- d_full
+contrasts(d$condition) <- cbind(c(1, -2, 1), c(1, 0, -1))
+```
+
+
+# Receptiveness
+
+# Compute an alpha, create an index
+
+```{r}
+receptiveness <- dplyr::select(d, recep1.arg, recep2.arg, recep3.gen, recep4.gen)
+alphaRecep <- psych::alpha(receptiveness)
+kable(alphaRecep$total)
+d$receptiveIndex <- (d$recep1.arg + d$recep2.arg + d$recep3.gen + d$recep4.gen)/4
+```
+
+# Effect of condition on receptiveness
+
+```{r}
+recep_model <- lm(receptiveIndex ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(recep_model)$fstatistic)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(recep_model))
+```
+
+
+
+
+
+\newpage
+
+#Attitude Change
+
+```{r}
+d$att.change <- ifelse(d$side == "against", d$Q1.att_1 - d$Q2.attT2_1, NA)
+d$att.change <- ifelse(d$side == "in favor of", d$Q2.attT2_1 - d$Q1.att_1, d$att.change)
+```
+
+#Effect of Condition on Attitude change
+
+```{r}
+attchng_model <- lm(att.change ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(attchng_model)$fstatistic)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(attchng_model))
+```
+
+
+
+
+\newpage
+
+
+#Value/Moral Congruence
+
+##Calculating an alpha and creating an index
+
+```{r, echo=FALSE}
+valuecongruence <- dplyr::select(d, Q3.congruent, Q4.fitworldview, Q5.morals)
+alphaCongruence <- psych::alpha(valuecongruence)
+kable(alphaCongruence$total)
+d$congruence <- 8 - (d$Q3.congruent + d$Q4.fitworldview + d$Q5.morals)/3
+```
+
+#Effect of Condition on Value Congruence
+
+```{r}
+congr_model <- lm(congruence ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(congr_model)$fstatistic)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(congr_model))
+```
+
+
+
+\newpage
+
+# Mediation Model 1: Condition -> Value Congruence -> Receptiveness
+
+```{r, warning=FALSE, message=FALSE, comment=NA}
+d$recep_s <- scale(d$receptiveIndex)
+d$att.change_s <- scale(d$att.change, center=FALSE, scale=TRUE)
+d$congruence_s <- as.numeric(scale(d$congruence))
+```
+
+```{r}
+d$H1 <- 1
+d$H1 <- ifelse(d$condition == "same party argument", 1, d$H1)
+d$H1 <- ifelse(d$condition == "control", 1, d$H1)
+d$H1 <- ifelse(d$condition == "opposing party argument", -2, d$H1)
+
+d$H2 <- 0
+d$H2 <- ifelse(d$condition == "same party argument", 1, d$H2)
+d$H2 <- ifelse(d$condition == "control", -1, d$H2)
+```
+
+
+## Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(congruence_s ~ H1 + H2, data=d)
+
+modely <- lm(recep_s ~ H1 + congruence_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+## Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+
+
+\newpage
+
+# Mediation Model 2: Condition -> Value Congruence -> Attitude Change
+
+## Mediation for Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(congruence_s ~ H1 + H2, data=d)
+
+modely <- lm(att.change_s ~ H1 + congruence_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+##Mediation for Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+
+
+\newpage
+
+#**Excluding Participants at the Midpoint**
+
+The remainder of the document replicates the above analyses when we exclude participants at the midpoint of the original attitudes scale. 
+
+```{r}
+d <- d_noneutral
+```
+
+# Receptiveness
+
+# Compute an alpha, create an index
+
+```{r}
+receptiveness <- dplyr::select(d, recep1.arg, recep2.arg, recep3.gen, recep4.gen)
+alphaRecep <- psych::alpha(receptiveness)
+kable(alphaRecep$total)
+d$receptiveIndex <- (d$recep1.arg + d$recep2.arg + d$recep3.gen + d$recep4.gen)/4
+```
+
+# Effect of condition on receptiveness
+
+```{r}
+recep_model <- lm(receptiveIndex ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(recep_model)$fstatistic)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(recep_model))
+```
+
+
+
+
+\newpage
+
+#Attitude Change
+
+```{r}
+d$att.change <- ifelse(d$side == "against", d$Q1.att_1 - d$Q2.attT2_1, NA)
+d$att.change <- ifelse(d$side == "in favor of", d$Q2.attT2_1 - d$Q1.att_1, d$att.change)
+```
+
+#Effect of Condition on Attitude change
+
+```{r}
+attchng_model <- lm(att.change ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(attchng_model)$fstatistic)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(attchng_model))
+```
+
+
+
+
+\newpage
+
+
+#Value/Moral Congruence
+
+##Calculating an alpha and creating an index
+
+```{r, echo=FALSE}
+valuecongruence <- dplyr::select(d, Q3.congruent, Q4.fitworldview, Q5.morals)
+alphaCongruence <- psych::alpha(valuecongruence)
+kable(alphaCongruence$total)
+d$congruence <- 8 - (d$Q3.congruent + d$Q4.fitworldview + d$Q5.morals)/3
+```
+
+#Effect of Condition on Value Congruence
+
+```{r}
+congr_model <- lm(congruence ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(congr_model)$fstatistic)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(congr_model))
+```
+
+
+\newpage
+
+
+#Mediation Analysis
+
+```{r, warning=FALSE, message=FALSE, comment=NA}
+d$recep_s <- scale(d$receptiveIndex)
+d$att.change_s <- scale(d$att.change, center=FALSE, scale=TRUE)
+d$congruence_s <- as.numeric(scale(d$congruence))
+
+d$H1 <- 1
+d$H1 <- ifelse(d$condition == "PT-same", 1, d$H1)
+d$H1 <- ifelse(d$condition == "control", 1, d$H1)
+d$H1 <- ifelse(d$condition == "PT-different", -2, d$H1)
+
+d$H2 <- 0
+d$H2 <- ifelse(d$condition == "PT-same", 1, d$H2)
+d$H2 <- ifelse(d$condition == "control", -1, d$H2)
+```
+
+
+# Mediation Model 1: Condition -> Value Congruence -> Receptiveness
+
+## Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(congruence_s ~ H1 + H2, data=d)
+
+modely <- lm(recep_s ~ H1 + congruence_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+## Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+
+
+# Mediation Model 2: Condition -> Value Congruence -> Attitude Change
+
+## Mediation for Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(congruence_s ~ H1 + H2, data=d)
+
+modely <- lm(att.change_s ~ H1 + congruence_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+##Mediation for Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+

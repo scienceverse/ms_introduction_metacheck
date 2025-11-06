@@ -1,0 +1,213 @@
+---
+title: "Exp. 3 & 4 - written response analysis"
+output: html_document
+---
+
+# Setup
+```{r setup, include=FALSE}
+rm(list=ls()) # empty the workspace
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r load libraries, message = F, warning = F, echo=FALSE}
+library(readr)
+library(tidyverse)
+library(stringr)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r catgeories}
+categories <- c("outside_event","object_info","original_owner_return","mental_state_info",
+                "physical_possession", "normative_judgments","other","not_an_explanation")
+```
+
+# Looking at coder agreement and resolving discprenacy
+## Import and tidy up data
+```{r import raw data}
+# read in coders 1 and 2 judgments
+coder1 <- read_csv("./data/exp-3and4/03.Coder1_fullsample_v1.csv")%>%
+  rename_at(vars(categories), ~ paste("c1",categories,sep="_"))%>%mutate(row_id = 1:n())
+coder1_long <- read_csv("./data/exp-3and4/03.Coder1_fullsample_v1.csv")%>%
+  mutate(row_id = 1:n())%>%gather(category, response, outside_event:not_an_explanation)
+
+coder2 <- read_csv("./data/exp-3and4/04.Coder2_fullsample_v1.csv")%>%
+  rename_at(vars(categories), ~ paste("c2",categories,sep="_"))%>%mutate(row_id = 1:n())
+coder2_long <- read_csv("./data/exp-3and4/04.Coder2_fullsample_v1.csv")%>%
+  mutate(row_id = 1:n())%>%gather(category, response, outside_event:not_an_explanation)
+
+# combine
+coder_data <- coder1%>%left_join(coder2)
+```
+
+## Looking at coder consistencies by category
+```{r create dataframe with consistency evaluations}
+coder_consistency <- coder_data%>%
+  mutate(outside_event=case_when(c1_outside_event==c2_outside_event ~ TRUE,
+                   TRUE ~ FALSE),
+         object_info=case_when(c1_object_info==c2_object_info ~ TRUE,
+                   TRUE ~ FALSE),
+         original_owner_return=case_when(c1_original_owner_return==c2_original_owner_return ~ TRUE,
+                   TRUE ~ FALSE),
+         mental_state_info=case_when(c1_mental_state_info==c2_mental_state_info ~ TRUE,
+                   TRUE ~ FALSE),
+         physical_possession=case_when(c1_physical_possession==c2_physical_possession ~ TRUE,
+                   TRUE ~ FALSE),
+         normative_judgments=case_when(c1_normative_judgments==c2_normative_judgments ~ TRUE,
+                   TRUE ~ FALSE),
+         other=case_when(c1_other==c2_other ~ TRUE,
+                   TRUE ~ FALSE),
+         not_an_explanation=case_when(c1_not_an_explanation==c2_not_an_explanation ~ TRUE,
+                   TRUE ~ FALSE))%>%
+  select(row_id, unique_id, written_response, outside_event, c1_outside_event,c2_outside_event,
+         object_info, c1_object_info, c2_object_info, 
+         original_owner_return, c1_original_owner_return, c2_original_owner_return,
+         mental_state_info, c1_mental_state_info, c2_mental_state_info,
+         physical_possession, c1_physical_possession, c2_physical_possession,
+         normative_judgments, c1_normative_judgments, c2_normative_judgments,
+         other, c1_other, c2_other,
+         not_an_explanation, c1_not_an_explanation, c2_not_an_explanation)
+```
+
+```{r check percentage of consistency}
+n_total_trials <- nrow(coder1)
+
+# aggregate
+coder_consistency%>%
+  select(row_id, unique_id, outside_event,object_info, original_owner_return, mental_state_info,
+         physical_possession, normative_judgments,other, not_an_explanation)%>%
+  gather(category,is_consistent,outside_event:not_an_explanation)%>%
+  summarise(sum(is_consistent),
+            percentage = sum(is_consistent)/nrow(coder1_long))
+cor.test(coder1_long$response, coder2_long$response, method="spearman")
+```
+
+# Export discrepant rows for Coder 3
+```{r}
+category_inconsistent_rows <- coder_consistency%>%
+  filter(!(outside_event==T & object_info==T & original_owner_return==T & mental_state_info==T &
+         physical_possession==T & normative_judgments==T & other==T & not_an_explanation==T))%>%
+  select(row_id, unique_id, written_response, outside_event,object_info, original_owner_return, mental_state_info,
+         physical_possession, normative_judgments,other, not_an_explanation)
+
+category_inconsistent_rows_toExport <- category_inconsistent_rows%>%
+  gather(category,is_consistent,outside_event:not_an_explanation)%>%
+  mutate(is_consistent = case_when(is_consistent==T ~ "",
+                                   TRUE ~ "X"))%>%
+  spread(category, is_consistent)%>%
+  select(row_id, unique_id, written_response, outside_event,object_info, original_owner_return, mental_state_info,
+         physical_possession, normative_judgments,other, not_an_explanation)
+
+# use write_csv() to export data
+```
+
+# Import Coder 3 responses and resolve discrepancy
+```{r import data and combine dataframe}
+coder3 <- read_csv("./data/exp-3and4/05.Coder3_discrepant_rows_v1.csv")%>%
+  select(-"...1")%>%
+  gather(category,response, outside_event:not_an_explanation)%>%
+  filter(is.na(response)==F)%>%
+  mutate(response=case_when(response=="Y" ~ 1, 
+                            TRUE ~ 0))%>%
+  rename(coder3 = response)
+
+relevant_row_category <- coder3%>%select(row_id, unique_id, category)
+
+coder1_inconsistent_rows <- relevant_row_category%>%
+  left_join(coder1_long)%>%
+  rename(coder1 = response)
+
+coder2_inconsistent_rows <- relevant_row_category%>%
+  left_join(coder2_long)%>%
+  rename(coder2 = response)
+
+all_coders <- coder3%>%left_join(coder1_inconsistent_rows)%>%left_join(coder2_inconsistent_rows)
+```
+
+```{r resolve discprenacy}
+resolved_row_category <- all_coders%>%
+  mutate(resolved_response = case_when(coder3==coder1 ~ coder1,TRUE ~ coder2))%>%
+  select(row_id, unique_id, written_response, category, resolved_response)%>%
+  mutate(row_category=paste(row_id,category,sep="-"))
+
+resolve_temp1 <- resolved_row_category%>%
+  left_join(coder1_long)%>%
+  mutate(response=case_when(response==resolved_response ~ response, TRUE ~ resolved_response))%>%
+  select(-resolved_response)
+
+resolve_temp2 <- coder1_long%>%
+  mutate(row_category=paste(row_id,category,sep="-"))%>%
+  filter(!row_category %in% resolved_row_category$row_category)
+
+final_data <- rbind(resolve_temp1,resolve_temp2)
+
+# write_csv(final_data, "./data/exp-3and4/06.final_data")
+```
+
+# Read in final data for analyses
+## Look at frequency of each category
+Within the consistent rows, what percentage said "yes" (1) versus "no"(0)
+```{r frequency of mentioning each category}
+final_data%>%
+  group_by(category)%>%
+  summarise(mean(response))
+```
+
+## Looking at the causal relation for the original_owner_return category
+```{r export data for coding}
+return_category_forExport <- final_data%>%
+  filter(category=="original_owner_return")%>%
+  filter(response==1)%>%
+  select(row_id, unique_id, written_response, category)%>%
+  mutate(causal_direction = "")
+```
+
+```{r import and analyze data}
+# coded data
+return_category <- read_csv("./data/exp-3and4/07.Coding_original_owner_return_causal_direction.csv")
+
+# Exp 3 and 4 ownership theory
+ownership_theory <- read_csv("./data/exp-3and4/00.exp3and4-ownership-theory.csv")
+
+nrow(return_category)
+
+return_category%>%
+  group_by(causal_direction_theory2consequence)%>%
+  summarise(n=n(),
+            perc = n/221)
+```
+
+## Ownership theory group by outside event categories
+```{r category: outside events}
+outside_event_theory <- final_data%>%
+  filter(category=="outside_event")%>%
+  filter(response==1)%>%
+  left_join(ownership_theory)
+
+outside_event_theory%>%
+  group_by(which_theory)%>%
+  summarise(n=n()/nrow(outside_event_theory))
+```
+
+```{r category: object info}
+object_info_theory <- final_data%>%
+  filter(category=="object_info")%>%
+  filter(response==1)%>%
+  left_join(ownership_theory)
+
+object_info_theory%>%
+  group_by(category, which_theory)%>%
+  summarise(n=n()/nrow(object_info_theory))
+```
+
+```{r category: object return}
+return_theory <- final_data%>%
+  filter(category=="original_owner_return")%>%
+  filter(response==1)%>%
+  left_join(ownership_theory)
+
+return_theory%>%
+  group_by(category, which_theory)%>%
+  summarise(n=n()/nrow(return_theory))
+```
+

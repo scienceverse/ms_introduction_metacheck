@@ -1,0 +1,939 @@
+---
+title: "Disagreement Video Coding"
+author: "Kristina Wald"
+date: '2023-01-05'
+output: 
+    html_document:
+      toc: TRUE
+    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(knitr)
+library(broom)
+library(psych)
+library(lubridate)
+library(bwrappers)
+library(afex)
+library(apa)
+library(emmeans)
+```
+
+```{r}
+# Import coding
+
+# Exp 2
+
+raw_video_coding_henry_exp2 <- read_csv(here::here("data", "disagreement_exp2_video_coding_2.csv"),
+                                          skip = 2) %>%
+  select(-`Going in to the interaction, to what extent do you think these participants agreed versus disagreed on the topic?\n(Type number only, from -5 = strongly disagree initially to 5 = strongly agree initially)`) %>%
+  # It looks like Henry added an extra row for video 98
+  filter(`Video Number \n` != 98)
+
+raw_video_coding_akshaj_exp2 <- read_csv(here::here("data", "disagreement_exp2_video_coding_1.csv"),
+                                          skip = 2) %>%
+  select(-`Going in to the interaction, to what extent do you think these participants agreed versus disagreed on the topic?\n(Type number only, from -5 = strongly disagree initially to 5 = strongly agree initially)`)
+
+
+# Exp 3
+
+raw_video_coding_joan_exp4 <- read_csv(here::here("data", "disagreement_exp3_video_coding_1.csv"),
+                                          skip = 3) %>%
+  select(-`Going in to the interaction, to what extent do you think these participants agreed versus disagreed on the topic?\n(Type number only, from -5 = strongly disagree initially to 5 = strongly agree initially)`)
+
+raw_video_coding_evalise_exp4 <- read_csv(here::here("data", "disagreement_exp3_video_coding_2.csv"),
+                                          skip = 3) %>%
+  select(-`Going in to the interaction, to what extent do you think these participants agreed versus disagreed on the topic?\n(Type number only, from -5 = strongly disagree initially to 5 = strongly agree initially)`)
+
+# Import cleaned datasets from the original experiments, selecting the key variables
+exp2_original_data <- read_csv(here::here("data", "disagreement_exp2_cleaned_data.csv")) %>%
+  dplyr::select(PairID, Condition, ConditionCombined, Enjoy, Hostile)
+
+exp4_original_data <- read_csv(here::here("data", "disagreement_exp3_cleaned_data.csv")) %>%
+  dplyr::select(session_number, agree_condition, mode_condition, enjoy, hostile)
+# Note that we were originally calling Experiment 3 "experiment 4," hence the labels here and throughout
+  
+```
+
+```{r}
+# Rename columns with shorter names
+
+# Henry
+henry_coding <- raw_video_coding_henry_exp2 %>%
+  rename(session_number = `Video Number \n`,
+         topic = `Topic Discussed (copy and paste "Label" from Discussion Topics tab)`,
+         minutes_on = `Total Number of Minutes Spent ON Topic\n(Type in the following format: min:sec (e.g., 6:50, 4:33, etc.); add the sum of the two videos if in monologue condition)`,
+         total_minutes = `Total Number of Minutes Spent Discussing\n(Type in the following format: min:sec (e.g., 6:50, 4:33, etc.); add the sum of the two videos if in monologue condition)\nOnly time spent actually discussing should be counted here (but this includes both time ON topic and time OFF topic)`,
+         express_agree = `To what extent did the participants express AGREEING with each other in this interaction?\n(Type number only, from 0 = none at all to 5 = complete agreement)`,
+         express_disagree = `To what extent did the participants express DISAGREEING with each other in this interaction?\n(Type number only, from 0 = none at all to 5 = complete agreement)`,
+         predicted_condition = `Which condition do you think participants were in? \n(Type "Agree," "Disagree")`,
+         enjoy = `How much did the participants seem to enjoy the interaction?\n(Type number only, from 0 = not at all to 10 = a lot)`,
+         hostile = `How much hostility was expressed during the interaction?\n(Type number only, from 0 = not at all to 10 = very)`,
+         notes = `(Optional) Any notes about this session? (E.g., did anything weird happen? Was there a big discrepancy in how much each participant seemed to enjoy the interaction? Anything else noteworthy?)`) %>%
+    # Changing format of time variable "minutes on." Note that R thinks the minutes are hours and the seconds are minutes.
+  mutate(minutes_only_on = hour(minutes_on),
+         seconds_only_on = minute(minutes_on),
+         time_fraction_on = minutes_only_on + (seconds_only_on / 60),
+         total_minutes_only = hour(total_minutes),
+         total_seconds_only = minute(total_minutes),
+         total_time_fraction = total_minutes_only + (total_seconds_only / 60),
+         predicted_condition = tolower(predicted_condition)) %>%
+  filter(!is.na(minutes_on)) 
+
+# Akshahj
+akshaj_coding <- raw_video_coding_akshaj_exp2 %>%
+  rename(session_number = `Video Number \n`,
+         topic = `Topic Discussed (copy and paste "Label" from Discussion Topics tab)`,
+         minutes_on = `Total Number of Minutes Spent ON Topic\n(Type in the following format: min:sec (e.g., 6:50, 4:33, etc.); add the sum of the two videos if in monologue condition)`,
+         total_minutes = `Total Number of Minutes Spent Discussing\n(Type in the following format: min:sec (e.g., 6:50, 4:33, etc.); add the sum of the two videos if in monologue condition)\nOnly time spent actually discussing should be counted here (but this includes both time ON topic and time OFF topic)`,
+         express_agree = `To what extent did the participants express AGREEING with each other in this interaction?\n(Type number only, from 0 = none at all to 5 = complete agreement)`,
+         express_disagree = `To what extent did the participants express DISAGREEING with each other in this interaction?\n(Type number only, from 0 = none at all to 5 = complete agreement)`,
+         predicted_condition = `Which condition do you think participants were in? \n(Type "Agree," "Disagree")`,
+         enjoy = `How much did the participants seem to enjoy the interaction?\n(Type number only, from 0 = not at all to 10 = a lot)`,
+         hostile = `How much hostility was expressed during the interaction?\n(Type number only, from 0 = not at all to 10 = very)`,
+         notes = `(Optional) Any notes about this session? (E.g., did anything weird happen? Was there a big discrepancy in how much each participant seemed to enjoy the interaction? Anything else noteworthy?)`) %>%
+    # Changing format of time variable "minutes on." Note that R thinks the minutes are hours and the seconds are minutes.
+  mutate(minutes_only_on = hour(minutes_on),
+         seconds_only_on = minute(minutes_on),
+         time_fraction_on = minutes_only_on + (seconds_only_on / 60),
+         total_minutes_only = hour(total_minutes),
+         total_seconds_only = minute(total_minutes),
+         total_time_fraction = total_minutes_only + (total_seconds_only / 60),
+         predicted_condition = tolower(predicted_condition)) %>%
+  filter(!is.na(minutes_on)) 
+
+# Joan
+joan_coding <- raw_video_coding_joan_exp4 %>%
+  rename(session_number = `Video Number \n`,
+         topic = `Topic Discussed (copy and paste "Label" from Discussion Topics tab)`,
+         minutes_on = `Total Number of Minutes Spent ON Topic\n(Type in the following format: min:sec (e.g., 6:50, 4:33, etc.); add the sum of the two videos if in monologue condition)`,
+         total_minutes = `Total Number of Minutes Spent Discussing\n(Type in the following format: min:sec (e.g., 6:50, 4:33, etc.); add the sum of the two videos if in monologue condition)\nOnly time spent actually discussing should be counted here (but this includes both time ON topic and time OFF topic)`,
+         express_agree = `To what extent did the participants express AGREEING with each other in this interaction?\n(Type number only, from 0 = none at all to 5 = complete agreement)`,
+         express_disagree = `To what extent did the participants express DISAGREEING with each other in this interaction?\n(Type number only, from 0 = none at all to 5 = complete agreement)`,
+         predicted_condition = `Which condition do you think participants were in? \n(Type "Agree," "Disagree")`,
+         enjoy = `How much did the participants seem to enjoy the interaction?\n(Type number only, from 0 = not at all to 10 = a lot)`,
+         hostile = `How much hostility was expressed during the interaction?\n(Type number only, from 0 = not at all to 10 = very)`,
+         notes = `(Optional) Any notes about this session? (E.g., did anything weird happen? Was there a big discrepancy in how much each participant seemed to enjoy the interaction? Anything else noteworthy?)`) %>%
+    # Changing format of time variable "minutes on." Note that R thinks the minutes are hours and the seconds are minutes.
+  mutate(minutes_only_on = hour(minutes_on),
+         seconds_only_on = minute(minutes_on),
+         time_fraction_on = minutes_only_on + (seconds_only_on / 60),
+         total_minutes_only = hour(total_minutes),
+         total_seconds_only = minute(total_minutes),
+         total_time_fraction = total_minutes_only + (total_seconds_only / 60),
+         predicted_condition = tolower(predicted_condition)) %>%
+  filter(!is.na(minutes_on)) %>%
+  # Exclude sessions where P's discussed different topics or there was a video from the wrong study in the pair (both in the monologue condition)
+  filter(session_number != 100, session_number != 104)
+
+# Evalise
+evalise_coding <- raw_video_coding_evalise_exp4 %>%
+  rename(session_number = `Video Number \n`,
+         topic = `Topic Discussed (copy and paste "Label" from Discussion Topics tab)`,
+         minutes_on = `Total Number of Minutes Spent ON Topic\n(Type in the following format: min:sec (e.g., 6:50, 4:33, etc.); add the sum of the two videos if in monologue condition)`,
+         total_minutes = `Total Number of Minutes Spent Discussing\n(Type in the following format: min:sec (e.g., 6:50, 4:33, etc.); add the sum of the two videos if in monologue condition)\nOnly time spent actually discussing should be counted here (but this includes both time ON topic and time OFF topic)`,
+         express_agree = `To what extent did the participants express AGREEING with each other in this interaction?\n(Type number only, from 0 = none at all to 5 = complete agreement)`,
+         express_disagree = `To what extent did the participants express DISAGREEING with each other in this interaction?\n(Type number only, from 0 = none at all to 5 = complete agreement)`,
+         predicted_condition = `Which condition do you think participants were in? \n(Type "Agree," "Disagree")`,
+         enjoy = `How much did the participants seem to enjoy the interaction?\n(Type number only, from 0 = not at all to 10 = a lot)`,
+         hostile = `How much hostility was expressed during the interaction?\n(Type number only, from 0 = not at all to 10 = very)`,
+         notes = `(Optional) Any notes about this session? (E.g., did anything weird happen? Was there a big discrepancy in how much each participant seemed to enjoy the interaction? Anything else noteworthy?)`) %>%
+    # Changing format of time variable "minutes on." Note that R thinks the minutes are hours and the seconds are minutes.
+  mutate(minutes_only_on = hour(minutes_on),
+         seconds_only_on = minute(minutes_on),
+         time_fraction_on = minutes_only_on + (seconds_only_on / 60),
+         total_minutes_only = hour(total_minutes),
+         total_seconds_only = minute(total_minutes),
+         total_time_fraction = total_minutes_only + (total_seconds_only / 60),
+         predicted_condition = tolower(predicted_condition)) %>%
+  filter(!is.na(minutes_on)) %>%
+  # Exclude sessions where P's discussed different topics or there was a video from the wrong study in the pair (both in the monologue condition)
+  filter(session_number != 100, session_number != 104) %>%
+  # Convert some numbers treated as characters into numberics
+  mutate(express_agree = as.numeric(express_agree),
+         express_disagree = as.numeric(express_disagree),
+         enjoy = as.numeric(enjoy))
+```
+
+
+```{r}
+# For original datasets, filter to one observation per session, so that can compare the conditions
+
+exp2_data_session_level <- exp2_original_data %>%
+  distinct(PairID, .keep_all = TRUE) %>%
+  # rename Pair ID column so name is consistent with coding file, and also get rid of the letters so that it's just the session numbers (so can match)
+  mutate(session_number = as.numeric(stringr::str_remove_all(PairID, "[A-Z]"))) %>%
+  mutate(agree_condition = fct_recode(factor(Condition),
+                                      "agree" = "1",
+                                      "disagree" = "2",
+                                      "agree" = "4",
+                                      "disagree" = "5"))
+
+exp4_data_session_level <- exp4_original_data %>%
+  distinct(session_number, .keep_all = TRUE)
+```
+
+```{r}
+# Create combined datasets (with original data) matched by session numbers - this data is session level, for condition predictions
+
+# Exp 2
+
+# Henry
+combined_exp2_henry <- left_join(henry_coding, exp2_data_session_level, by = "session_number") %>%
+  # Get rid of the subjective variables because they are not meaningful here (they are only from one participant, not an average of both)
+  dplyr::select(-Enjoy, -Hostile) %>%
+  mutate(correct_prediction = 0)
+
+# Create function for saying if condition prediction is correct or not
+for(i in seq_along(combined_exp2_henry$correct_prediction)) {
+  if(combined_exp2_henry$predicted_condition[i] == combined_exp2_henry$agree_condition[i]) {
+    combined_exp2_henry$correct_prediction[i] = 1
+  } else {
+    combined_exp2_henry$correct_prediction[i] = 0
+  }
+}
+
+# Akshaj
+combined_exp2_akshaj <- left_join(akshaj_coding, exp2_data_session_level, by = "session_number") %>%
+  # Get rid of the subjective variables because they are not meaningful here (they are only from one participant, not an average of both)
+  dplyr::select(-Enjoy, -Hostile) %>%
+  mutate(correct_prediction = 0)
+
+# Create function for saying if condition prediction is correct or not
+for(i in seq_along(combined_exp2_akshaj$correct_prediction)) {
+  if(combined_exp2_akshaj$predicted_condition[i] == combined_exp2_akshaj$agree_condition[i]) {
+    combined_exp2_akshaj$correct_prediction[i] = 1
+  } else {
+    combined_exp2_akshaj$correct_prediction[i] = 0
+  }
+}
+
+# Exp 3
+
+# Joan
+combined_exp4_joan <- left_join(joan_coding, exp4_data_session_level, by = "session_number") %>%
+  # Get rid of the subjective variables because they are not meaningful here (they are only from one participant, not an average of both)
+  dplyr::select(-enjoy.y, -hostile.y) %>%
+  rename(enjoy = enjoy.x,
+         hostile = hostile.x) %>%
+  mutate(correct_prediction = 0)
+
+# Create function for saying if condition prediction is correct or not
+for(i in seq_along(combined_exp4_joan$correct_prediction)) {
+  if(combined_exp4_joan$predicted_condition[i] == combined_exp4_joan$agree_condition[i]) {
+    combined_exp4_joan$correct_prediction[i] = 1
+  } else {
+    combined_exp4_joan$correct_prediction[i] = 0
+  }
+}
+
+# Evalise
+combined_exp4_evalise <- left_join(evalise_coding, exp4_data_session_level, by = "session_number") %>%
+  # Get rid of the subjective variables because they are not meaningful here (they are only from one participant, not an average of both)
+  dplyr::select(-enjoy.y, -hostile.y) %>%
+    rename(enjoy = enjoy.x,
+         hostile = hostile.x) %>%
+  mutate(correct_prediction = 0)
+
+# Create function for saying if condition prediction is correct or not
+for(i in seq_along(combined_exp4_evalise$correct_prediction)) {
+  if(combined_exp4_evalise$predicted_condition[i] == combined_exp4_evalise$agree_condition[i]) {
+    combined_exp4_evalise$correct_prediction[i] = 1
+  } else {
+    combined_exp4_evalise$correct_prediction[i] = 0
+  }
+}
+```
+
+```{r}
+# Combine coder datasets together and take average of ratings
+# Exp 2
+exp2_averaged_data <- inner_join(combined_exp2_henry, combined_exp2_akshaj, by = "session_number") %>%
+  # The condition column gets duplicated when combine, so will remove one and rename the other (below)
+  select(-agree_condition.y) %>%
+  mutate(avg_time_fraction_on = (time_fraction_on.x + time_fraction_on.y) / 2,
+         avg_total_time_fraction = (total_time_fraction.x + total_time_fraction.y) / 2,
+         avg_express_agree = (express_agree.x + express_agree.y) / 2,
+         avg_express_disagree = (express_disagree.x + express_disagree.y) / 2,
+         avg_enjoy = (enjoy.x + enjoy.y) / 2,
+         avg_hostile = (hostile.x + hostile.y) / 2) %>%
+  rename(agree_condition = agree_condition.x)
+
+exp4_averaged_data <- inner_join(combined_exp4_joan, combined_exp4_evalise, by = "session_number") %>%
+  select(-agree_condition.y, -mode_condition.y) %>%
+  mutate(avg_time_fraction_on = (time_fraction_on.x + time_fraction_on.y) / 2,
+         avg_total_time_fraction = (total_time_fraction.x + total_time_fraction.y) / 2,
+         avg_express_agree = (express_agree.x + express_agree.y) / 2,
+         avg_express_disagree = (express_disagree.x + express_disagree.y) / 2,
+         avg_enjoy = (enjoy.x + enjoy.y) / 2,
+         avg_hostile = (hostile.x + hostile.y) / 2) %>%
+  rename(agree_condition = agree_condition.x,
+         mode_condition = mode_condition.x)
+```
+
+\newpage
+
+# Main Analyses: Averaged Ratings by Conditions
+
+## Experiment 2
+
+**Time On Topic**
+
+```{r}
+exp2_averaged_data %>%
+  group_by(agree_condition) %>%
+  summarize(mean = mean(avg_time_fraction_on),
+            sd = sd(avg_time_fraction_on)) 
+```
+
+```{r}
+wrap.t.ind(exp2_averaged_data$avg_time_fraction_on, factor(exp2_averaged_data$agree_condition))
+```
+
+**Total Time**
+
+*In this study, discussion time was fixed at 10 min, so we would not expect differences between conditions.*
+
+```{r}
+exp2_averaged_data %>%
+  group_by(agree_condition) %>%
+  summarize(mean = mean(avg_total_time_fraction),
+            sd = sd(avg_total_time_fraction)) %>%
+  kable()
+```
+
+```{r}
+wrap.t.ind(exp2_averaged_data$avg_total_time_fraction, factor(exp2_averaged_data$agree_condition))
+```
+
+**Expressed Agreement**
+
+```{r}
+exp2_averaged_data %>%
+  group_by(agree_condition) %>%
+  summarize(mean = mean(avg_express_agree),
+            sd = sd(avg_express_agree)) 
+```
+
+```{r}
+wrap.t.ind(exp2_averaged_data$avg_express_agree, factor(exp2_averaged_data$agree_condition))
+```
+
+**Expressed Disagreement**
+
+```{r}
+exp2_averaged_data %>%
+  group_by(agree_condition) %>%
+  summarize(mean = mean(avg_express_disagree),
+            sd = sd(avg_express_disagree)) 
+```
+
+```{r}
+wrap.t.ind(exp2_averaged_data$avg_express_disagree, factor(exp2_averaged_data$agree_condition))
+```
+
+**Enjoy**
+
+```{r}
+exp2_averaged_data %>%
+  group_by(agree_condition) %>%
+  summarize(mean = mean(avg_enjoy),
+            sd = sd(avg_enjoy)) 
+```
+
+```{r}
+wrap.t.ind(exp2_averaged_data$avg_enjoy, factor(exp2_averaged_data$agree_condition))
+```
+
+**Hostile**
+
+```{r}
+exp2_averaged_data %>%
+  group_by(agree_condition) %>%
+  summarize(mean = mean(avg_hostile),
+            sd = sd(avg_hostile))
+```
+
+```{r}
+wrap.t.ind(exp2_averaged_data$avg_hostile, factor(exp2_averaged_data$agree_condition))
+```
+
+\newpage
+
+## Experiment 4
+
+**Time On Topic**
+
+```{r}
+exp4_averaged_data %>%
+  group_by(agree_condition, mode_condition) %>%
+  summarize(mean = mean(avg_time_fraction_on),
+            sd = sd(avg_time_fraction_on))
+```
+
+```{r}
+time_on_anova <- aov_car(avg_time_fraction_on ~ agree_condition * mode_condition + Error(session_number),
+                         data = exp4_averaged_data,  type = "III", 
+                            anova_table = list(es = "pes"), include_aov = TRUE)
+anova_apa(time_on_anova , print = FALSE) %>%
+  kable(caption = "ANOVA")
+```
+
+```{r}
+pairs(emmeans(time_on_anova, "agree_condition", by = c("mode_condition"))) %>%
+  kable()
+```
+
+```{r}
+as.data.frame(pairs(emmeans(time_on_anova, ~ agree_condition * mode_condition))) %>%
+  arrange(p.value)
+```
+
+**Total Time**
+
+
+```{r}
+exp4_averaged_data %>%
+  group_by(agree_condition, mode_condition) %>%
+  summarize(mean = mean(avg_total_time_fraction),
+            sd = sd(avg_total_time_fraction)) %>%
+  kable()
+```
+
+
+```{r}
+total_time_anova <- aov_car(avg_total_time_fraction ~ agree_condition * mode_condition + Error(session_number),
+                         data = exp4_averaged_data,  type = "III", 
+                            anova_table = list(es = "pes"), include_aov = TRUE)
+anova_apa(total_time_anova , print = FALSE) %>%
+  kable(caption = "ANOVA")
+```
+
+```{r}
+as.data.frame(pairs(emmeans(total_time_anova, ~ agree_condition * mode_condition))) %>%
+  arrange(p.value)
+```
+
+**Expressed Agreement**
+
+```{r}
+exp4_averaged_data %>%
+  group_by(agree_condition, mode_condition) %>%
+  summarize(mean = mean(avg_express_agree),
+            sd = sd(avg_express_agree)) %>%
+  kable()
+```
+
+```{r}
+express_agree_anova <- aov_car(avg_express_agree ~ agree_condition * mode_condition +
+                                 Error(session_number),
+                         data = exp4_averaged_data,  type = "III", 
+                            anova_table = list(es = "pes"), include_aov = TRUE)
+anova_apa(express_agree_anova , print = FALSE) %>%
+  kable(caption = "ANOVA")
+```
+
+```{r}
+pairs(emmeans(express_agree_anova, "mode_condition", by = c("agree_condition"))) %>%
+  kable()
+```
+
+```{r}
+as.data.frame(pairs(emmeans(express_agree_anova, ~ agree_condition * mode_condition))) %>%
+  arrange(p.value)
+```
+
+**Expressed Disagreement**
+
+```{r}
+exp4_averaged_data %>%
+  group_by(agree_condition, mode_condition) %>%
+  summarize(mean = mean(avg_express_disagree),
+            sd = sd(avg_express_disagree))
+```
+
+```{r}
+express_disagree_anova <- aov_car(avg_express_disagree ~ agree_condition * mode_condition +
+                                 Error(session_number),
+                         data = exp4_averaged_data,  type = "III", 
+                            anova_table = list(es = "pes"), include_aov = TRUE)
+anova_apa(express_disagree_anova , print = FALSE) %>%
+  kable(caption = "ANOVA")
+```
+
+```{r}
+pairs(emmeans(express_disagree_anova, "mode_condition", by = c("agree_condition"))) %>%
+  kable()
+```
+
+```{r}
+as.data.frame(pairs(emmeans(express_disagree_anova, ~ agree_condition * mode_condition))) %>%
+  arrange(p.value)
+```
+
+**Enjoy**
+
+```{r}
+exp4_averaged_data %>%
+  group_by(agree_condition, mode_condition) %>%
+  summarize(mean = mean(avg_enjoy),
+            sd = sd(avg_enjoy))
+```
+
+```{r}
+enjoy_anova <- aov_car(avg_enjoy ~ agree_condition * mode_condition +
+                                 Error(session_number),
+                         data = exp4_averaged_data,  type = "III", 
+                            anova_table = list(es = "pes"), include_aov = TRUE)
+anova_apa(enjoy_anova, print = FALSE) %>%
+  kable(caption = "ANOVA")
+```
+
+```{r}
+pairs(emmeans(enjoy_anova, "mode_condition")) %>%
+  kable()
+```
+
+```{r}
+pairs(emmeans(enjoy_anova, "agree_condition")) %>%
+  kable()
+```
+
+```{r}
+as.data.frame(pairs(emmeans(enjoy_anova, ~ agree_condition * mode_condition))) %>%
+  arrange(p.value)
+```
+
+**Hostile**
+
+```{r}
+exp4_averaged_data %>%
+  group_by(agree_condition, mode_condition) %>%
+  summarize(mean = mean(avg_hostile),
+            sd = sd(avg_hostile))
+```
+
+```{r}
+hostile_anova <- aov_car(avg_hostile ~ agree_condition * mode_condition +
+                                 Error(session_number),
+                         data = exp4_averaged_data,  type = "III", 
+                            anova_table = list(es = "pes"), include_aov = TRUE)
+anova_apa(hostile_anova, print = FALSE) %>%
+  kable(caption = "ANOVA")
+```
+
+```{r}
+as.data.frame(pairs(emmeans(hostile_anova, ~ agree_condition * mode_condition))) %>%
+  arrange(p.value)
+```
+
+\newpage
+
+# Supplemental Analyses: Agreement Between Coders & Accuracy
+
+## Experiment 2
+
+**Time On Topic**
+
+Correlation:
+
+```{r}
+#cor(henry_coding$time_fraction_on, akshaj_coding$time_fraction_on)
+cor_apa(cor.test(henry_coding$time_fraction_on, akshaj_coding$time_fraction_on))
+```
+
+Average rating difference:
+
+*Written in fractions of a minute*
+
+```{r}
+mean(henry_coding$time_fraction_on - akshaj_coding$time_fraction_on)
+```
+
+
+\newpage
+
+**Total Time Discussing**
+
+Correlation:
+
+```{r}
+cor_apa(cor.test(henry_coding$total_time_fraction, akshaj_coding$total_time_fraction))
+```
+
+*This low correlation is surely because there is very little variance - conversations were fixed at 10 min.*
+
+Average rating difference:
+
+*Written in fractions of a minute*
+
+```{r}
+mean(henry_coding$total_time_fraction - akshaj_coding$total_time_fraction)
+```
+
+\newpage
+
+**Expressed Agreement**
+
+Correlation:
+
+```{r}
+cor_apa(cor.test(henry_coding$express_agree, akshaj_coding$express_agree))
+```
+
+Average rating difference:
+
+```{r}
+mean(henry_coding$express_agree - akshaj_coding$express_agree)
+```
+
+\newpage
+
+**Expressed Disagreement**
+
+Correlation:
+
+```{r}
+cor_apa(cor.test(henry_coding$express_disagree, akshaj_coding$express_disagree))
+```
+
+Average rating difference:
+
+```{r}
+mean(henry_coding$express_disagree - akshaj_coding$express_disagree)
+```
+
+\newpage
+
+
+**Enjoy**
+
+Correlation
+
+```{r}
+cor_apa(cor.test(henry_coding$enjoy, akshaj_coding$enjoy))
+```
+
+Average rating difference:
+
+```{r}
+mean(henry_coding$enjoy - akshaj_coding$enjoy)
+```
+
+Average ratings by predicted condition:
+
+*Henry*
+
+```{r}
+henry_coding %>%
+  group_by(predicted_condition) %>%
+  summarize(mean = mean(enjoy))
+```
+
+```{r}
+wrap.t.ind(henry_coding$enjoy, factor(henry_coding$predicted_condition))
+```
+
+*Akshaj*
+
+```{r}
+akshaj_coding %>%
+  group_by(predicted_condition) %>%
+  summarize(mean = mean(enjoy))
+```
+
+```{r}
+wrap.t.ind(akshaj_coding$enjoy, factor(akshaj_coding$predicted_condition))
+```
+
+Average ratings by actual condition:
+
+*Henry*
+
+```{r}
+combined_exp2_henry %>%
+  group_by(agree_condition) %>%
+  summarize(mean = mean(enjoy))
+```
+
+```{r}
+wrap.t.ind(combined_exp2_henry$enjoy, factor(combined_exp2_henry$agree_condition))
+```
+
+*Akshaj*
+
+```{r}
+combined_exp2_akshaj %>%
+  group_by(agree_condition) %>%
+  summarize(mean = mean(enjoy))
+```
+
+```{r}
+wrap.t.ind(combined_exp2_akshaj$enjoy, factor(combined_exp2_akshaj$agree_condition))
+```
+
+\newpage
+
+**Hostile**
+
+Correlation
+
+```{r}
+cor_apa(cor.test(henry_coding$hostile, akshaj_coding$hostile))
+```
+
+Average rating difference:
+
+```{r}
+mean(henry_coding$hostile - akshaj_coding$hostile)
+```
+
+\newpage
+
+**Condition Predictions**
+
+### Henry's Guess vs. Correct Condition
+
+```{r}
+combined_exp2_henry %>%
+  group_by(correct_prediction) %>%
+  summarize(count = n())
+```
+
+
+### Akshaj's Guess vs. Correct Condition
+
+```{r}
+combined_exp2_akshaj %>%
+  group_by(correct_prediction) %>%
+  summarize(count = n())
+```
+
+
+### Comparing Henry's and Akshaj's Guesses
+
+*These are the session numbers that each of them guessed wrong, with Henry followed by Akshaj.*
+
+```{r}
+combined_exp2_henry %>%
+  filter(correct_prediction == 0) %>%
+  select(session_number)
+
+combined_exp2_akshaj %>%
+  filter(correct_prediction == 0) %>%
+  select(session_number)
+```
+
+For the most part, they guessed very similarly - there seem to be just a few that they differ on.
+
+
+
+
+\newpage
+
+## Experiment 4
+
+**Time On Topic**
+
+Correlation:
+
+```{r}
+cor_apa(cor.test(joan_coding$time_fraction_on, evalise_coding$time_fraction_on))
+```
+
+Average rating difference:
+
+*Written in fractions of a minute*
+
+```{r}
+mean(joan_coding$time_fraction_on - evalise_coding$time_fraction_on)
+```
+
+
+\newpage
+
+**Total Time Discussing**
+
+Correlation:
+
+```{r}
+cor_apa(cor.test(joan_coding$total_time_fraction, evalise_coding$total_time_fraction))
+```
+
+Average rating difference:
+
+*Written in fractions of a minute*
+
+```{r}
+mean(joan_coding$total_time_fraction - evalise_coding$total_time_fraction)
+```
+
+\newpage
+
+**Expressed Agreement**
+
+Correlation:
+
+```{r}
+cor_apa(cor.test(joan_coding$express_agree, evalise_coding$express_agree))
+```
+
+Average rating difference:
+
+```{r}
+mean(joan_coding$express_agree - evalise_coding$express_agree)
+```
+
+\newpage
+
+**Expressed Disagreement**
+
+Correlation:
+
+```{r}
+cor_apa(cor.test(joan_coding$express_disagree, evalise_coding$express_disagree))
+```
+
+Average rating difference:
+
+```{r}
+mean(joan_coding$express_disagree - evalise_coding$express_disagree)
+```
+
+\newpage
+
+
+**Enjoy**
+
+Correlation
+
+```{r}
+cor_apa(cor.test(joan_coding$enjoy, evalise_coding$enjoy))
+```
+
+Average rating difference:
+
+```{r}
+mean(joan_coding$enjoy - evalise_coding$enjoy)
+```
+
+Average ratings by predicted condition:
+
+*Joan*
+
+```{r}
+combined_exp4_joan %>%
+  group_by(mode_condition, predicted_condition) %>%
+  summarize(mean = mean(enjoy))
+```
+
+*T-test just between predicted (dis)agreement conditions); not by mode.*
+
+```{r}
+wrap.t.ind(combined_exp4_joan$enjoy, factor(combined_exp4_joan$predicted_condition))
+```
+
+*Evalise*
+
+```{r}
+combined_exp4_evalise %>%
+  group_by(mode_condition, predicted_condition) %>%
+  summarize(mean = mean(enjoy))
+```
+
+*T-test just between predicted (dis)agreement conditions); not by mode.*
+
+```{r}
+wrap.t.ind(combined_exp4_evalise$enjoy, factor(combined_exp4_evalise$predicted_condition))
+```
+
+Average ratings by actual condition:
+
+*Joan*
+
+```{r}
+combined_exp4_joan %>%
+  group_by(mode_condition, agree_condition) %>%
+  summarize(mean = mean(enjoy))
+```
+
+*T-test just between predicted (dis)agreement conditions); not by mode.*
+
+```{r}
+wrap.t.ind(combined_exp4_joan$enjoy, factor(combined_exp4_joan$agree_condition))
+```
+
+*Evalise*
+
+```{r}
+combined_exp4_evalise %>%
+  group_by(mode_condition, agree_condition) %>%
+  summarize(mean = mean(enjoy))
+```
+
+*T-test just between predicted (dis)agreement conditions); not by mode.*
+
+```{r}
+wrap.t.ind(combined_exp4_evalise$enjoy, factor(combined_exp4_evalise$agree_condition))
+```
+
+\newpage
+
+**Hostile**
+
+Correlation
+
+```{r}
+cor(joan_coding$hostile, evalise_coding$hostile)
+```
+
+*Evalise put all 0's here, so there is no standard deviation.*
+
+Average rating difference:
+
+```{r}
+mean(joan_coding$hostile - evalise_coding$hostile)
+```
+
+\newpage
+
+**Condition Predictions**
+
+### Joan's Guess vs. Correct Condition
+
+```{r}
+combined_exp4_joan %>%
+  group_by(correct_prediction) %>%
+  summarize(count = n())
+```
+
+### Evalise's Guess vs. Correct Condition
+
+```{r}
+combined_exp4_evalise %>%
+  group_by(correct_prediction) %>%
+  summarize(count = n())
+```
+
+### Comparing Joan's and Evalise's Guesses
+
+*These are the session numbers that each of them guessed wrong, with Joan followed by Evalise.*
+
+```{r}
+combined_exp4_joan %>%
+  filter(correct_prediction == 0) %>%
+  select(session_number)
+
+combined_exp4_evalise %>%
+  filter(correct_prediction == 0) %>%
+  select(session_number)
+```
+
+*They had perfect agreement, as they each got the exact same three videos wrong (and the rest correct). All three incorrect predictions were predicted as agree but were actually disagree (2 were dialogue, 1 was monologue).*
+

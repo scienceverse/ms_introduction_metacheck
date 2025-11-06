@@ -1,0 +1,89 @@
+Title: Dolphin Social Psych Science
+========================================================
+
+
+# Read in file and set up variables
+```{r} 
+
+library(lme4)
+library(languageR)
+require(boot)
+setwd("/Users/jsulliv1/Desktop/UCSDProjects/AnalyzeWrite/Dolphin")
+s = read.csv("Dolphin_Data_Social_ForR.csv",na.strings="na")
+```
+
+### Set up both participant and accuracy as binary
+```{r}
+s$Participant<-factor(s$Participant)
+s$Accuracy<-factor(s$Accuracy) #treats the data as binary
+```
+
+### Set up data to separate by experiment (1 vs. 2) and to include only trials that were correct/incorrect
+```{r}
+exp1=subset(s,(s$TestType=="E1")) #find only the trials that were Exp. 1
+exp1sub = subset(exp1, !is.na(Accuracy)) #finds only the trials that were Exp. 1 and had been coded as correct/incorrect
+exp2=subset(s,(s$TestType=="E2")) #find only the trials that were Exp. 2
+exp2sub = subset(exp2,!is.na(Accuracy)) #finds only the trials that were Exp. 2 and had been coded as correct/incorrect
+
+exp1sub$AccNum = as.numeric(exp1sub$Accuracy) - 1 
+```
+
+#Now, we compare Exp. 1 performance to chance
+
+```{r}
+e1ac = glmer(Accuracy ~ (1|Participant),data=exp1sub,family=binomial)
+summary(e1ac)
+```
+
+Check modeled accuracy rate (and ensure it's close enough to the true mean)
+```{r}
+inv.logit(fixef(e1ac))
+```
+Get real mean
+
+```{r}
+summary(exp1sub$Accuracy)
+```
+
+#Now, we compare Exp. 2 performance to chance
+
+```{r}
+exp2sub$AccNum = as.numeric(exp2sub$Accuracy) - 1
+e2ac = glmer(Accuracy ~ (1|Participant),data=exp2sub,family=binomial)
+summary(e2ac)
+```
+
+And get modeled accuracy rates
+```{r}
+inv.logit(fixef(e2ac))
+```
+
+Get real mean
+
+```{r}
+summary(exp2sub$Accuracy)
+```
+
+
+#Test for Order Effects in Exp. 1
+```{r}
+
+e1oealt = glmer(Accuracy ~ AnimalOrder + (1|Participant),data=exp1, family=binomial)
+summary(e1oealt)
+
+e1oealtminusorder = glmer(Accuracy ~ (1|Participant),data=exp1, family=binomial)
+summary(e1oealtminusorder )
+
+anova(e1oealt, e1oealtminusorder)
+```
+
+
+
+#Test for Order Effects in Exp. 2
+
+```{r}
+e2oealt = glmer(Accuracy ~ AnimalOrder + (1|Participant),data=exp2, family=binomial)
+summary(e2oealt)
+e2oealtminusorder = glmer(Accuracy ~  (1|Participant),data=exp2, family=binomial)
+anova(e2oealt,e2oealtminusorder)
+```

@@ -1,0 +1,119 @@
+---
+title: "HSdata"
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=80), tidy=TRUE) 
+```
+
+```{r calling packages, include=FALSE}
+library(readr)
+library(psych)
+library(lme4)
+library(lmerTest)
+library(rmarkdown)
+```
+
+```{r calling data, include=FALSE}
+HSdata <- read_csv("HS_Data.csv")
+HSdata_wide <- read_csv("HSdata_wide.csv")
+```
+These analyses reflect those reported in "Interleaved Retrieval Practice Promotes Science Learning" by Faria Sana and Veronica Yan.
+See https://osf.io/aqng6/ for more details. 
+
+# MAIN REGRESSION ANALYSES
+## Practice Quiz Scores
+```{r regression analyses: practice quiz, echo=FALSE}
+PracticeScores <- lmer(PracticeScore ~ Schedule + (1|ID) + (1|CourseGrade/Concept), data=HSdata)
+summary(PracticeScores)
+```
+## Final Test Scores
+```{r regression analyses: final test,echo=FALSE}
+FinalTest <- lmer(TestScore ~ Condition + (1|ID) + (1|CourseGrade/Concept), data=HSdata)
+summary(FinalTest)
+
+```
+***
+# DESCRIPTIVE STATISTICS
+## Overall
+```{r descriptives overall}
+psych::describe(HSdata_wide[7:13])
+```
+## By Classroom
+```{r descriptives by classroom, echo=FALSE}
+#Practice Quizzes#
+bp_means <- aggregate(HSdata_wide$BlockedPractice, list(HSdata_wide$Classroom), mean)
+bp_sds <- aggregate(HSdata_wide$BlockedPractice, list(HSdata_wide$Classroom), sd)
+ip_means <- aggregate(HSdata_wide$InterleavedPractice, list(HSdata_wide$Classroom), mean)
+ip_sds <- aggregate(HSdata_wide$InterleavedPractice, list(HSdata_wide$Classroom), sd)
+practice <- data.frame(bp_means, bp_sds[2], ip_means[2], ip_sds[2])
+colnames(practice) <- c('Classroom', 'Blocked Practice Mean', 'Blocked Practice SD', 
+                        'Interleaved Practice Mean', 'Interleaved Practice SD')
+
+round(practice,2)
+
+#Final Test
+cf_means <- aggregate(HSdata_wide$ControlTestScore, list(HSdata_wide$Classroom), mean)
+cf_sd <- aggregate(HSdata_wide$ControlTestScore, list(HSdata_wide$Classroom), sd)
+bf_means <- aggregate(HSdata_wide$BlockedTestScore, list(HSdata_wide$Classroom), mean)
+bf_sds <- aggregate(HSdata_wide$BlockedTestScore, list(HSdata_wide$Classroom), sd)
+if_means <- aggregate(HSdata_wide$InterleavedTestScore, list(HSdata_wide$Classroom), mean)
+if_sds <- aggregate(HSdata_wide$InterleavedTestScore, list(HSdata_wide$Classroom), sd)
+final <- data.frame(cf_means, cf_sd[2], bf_means[2], bf_sds[2], if_means[2], if_sds[2])
+colnames(final) <- c('Classroom', 'Control Final Mean', 'Control Final SD', 
+                     'Blocked Final Mean', 'Blocked Final SD', 
+                     'Interleaved Final Mean', 'Interleaved Final SD')
+
+round(final,2)
+```
+# Cohen's d Effect Sizes
+```{r effect sizes}
+BlockedPracticeMean <- mean(HSdata_wide$BlockedPractice)
+InterleavedPracticeMean <- mean(HSdata_wide$InterleavedPractice)
+BlockedPracticeSD <- sd(HSdata_wide$BlockedPractice)
+InterleavedPracticeSD <- sd(HSdata_wide$InterleavedPractice)
+ControlFinalMean <- mean(HSdata_wide$ControlTestScore)
+BlockedFinalMean <- mean(HSdata_wide$BlockedTestScore)
+InterleavedFinalMean <- mean(HSdata_wide$InterleavedTestScore)
+ControlFinalSD <- sd(HSdata_wide$ControlTestScore)
+BlockedFinalSD <- sd(HSdata_wide$BlockedTestScore)
+InterleavedFinalSD <- sd(HSdata_wide$InterleavedTestScore)
+
+Practice_d <- (BlockedPracticeMean-InterleavedPracticeMean)/
+                          ((BlockedPracticeSD + InterleavedPracticeSD)/2) 
+Final_ControlBlock_d <- (ControlFinalMean-BlockedFinalMean)/((ControlFinalSD+BlockedFinalSD)/2) 
+Final_BlockInt_d <- (InterleavedFinalMean-BlockedFinalMean)/((InterleavedFinalSD+BlockedFinalSD)/2)
+Final_ControlInt_d <- (InterleavedFinalMean-ControlFinalMean)/((InterleavedFinalSD+ControlFinalSD)/2)
+
+effectsizes <- data.frame(Practice_d, Final_ControlBlock_d, Final_BlockInt_d, Final_ControlInt_d)
+colnames(effectsizes) <- c('Quizzes: Blk-Int', 'Final: Ctrl-Blk', 'Final: Int-Blk', 'Final: Int-Ctrl')
+rownames(effectsizes) <- c('Cohens d')
+
+effectsizes
+
+```
+***
+# EXPLORATORY ANALYSES
+## Is the Interleaving Benefit on Final Test Related to the Int-Block Difference on Practice Test?
+```{r exploratory analyses 1}
+
+HSdata$zIntBlock_PracticeDiff <- as.numeric(scale(HSdata$IntBlock_PracticeDiff))
+FinalTest_PracticeMod <- lmer(TestScore ~ Condition*zIntBlock_PracticeDiff + 
+                                (1|ID) + (1|CourseGrade/Concept), data=HSdata)
+summary(FinalTest_PracticeMod)
+```
+
+## Counter-balanced Classes Only (i.e., Grade 9 Science, Grade 11 Biology)
+```{r exploratory analyses 2}
+HSdata_widepaired <- HSdata_wide[which(HSdata_wide$CourseGrade=="Biology11" | 
+                                  HSdata_wide$CourseGrade=="Science9"),]
+
+psych::describe(HSdata_widepaired[11:12])
+
+#cohen's d
+(mean(HSdata_widepaired$InterleavedTestScore)-mean(HSdata_widepaired$BlockedTestScore))/
+  mean(sd(HSdata_widepaired$InterleavedTestScore), sd(HSdata_widepaired$BlockedTestScore))
+
+```

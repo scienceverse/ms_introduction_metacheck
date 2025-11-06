@@ -1,0 +1,315 @@
+---
+title: 'Study 1, additional and control analyses'
+author: "Sonja Kunz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    code_download: true
+---
+
+Load required packages:
+```{r, message=FALSE}
+library(tidyverse)
+library(misty)
+library(rstatix)
+library(knitr)
+library(Rmisc)
+```
+Import processed data:
+```{r}
+dat <- read.csv2('Data/Study1_data_processed.csv')
+```
+
+# Sample descriptives
+
+*Note that the following demographic variables were removed from the data sets, to guarantee anonymity: Gender, age, educational background.*
+
+```{r, echo=FALSE}
+dat %>%
+  summarise(mean = mean(BMI, na.rm = TRUE),
+            sd = sd(BMI, na.rm = TRUE),
+            min = min(BMI, na.rm = TRUE),
+            max = max(BMI, na.rm = TRUE)
+            ) %>%
+  kable(format = 'markdown', digits = 2, 
+        col.names = c('Mean BMI', 'Std. Dev.(BMI)', 'Min.(BMI)', 'Max.(BMI)'),
+        caption = 'Body mass index')
+
+```
+
+The standard deviation is pretty large, indicating that there are some outliers. So we identified and excluded the BMI outliers. 
+
+```{r}
+boxplot(dat$BMI)
+
+outliers <- boxplot(dat$BMI, plot = FALSE)$out
+
+BMI_no_outliers <- dat[-which(dat$BMI %in% outliers),]
+```
+
+```{r, echo=FALSE}
+BMI_no_outliers %>%
+  summarise(mean = mean(BMI, na.rm = TRUE),
+            sd = sd(BMI, na.rm = TRUE),
+            min = min(BMI, na.rm = TRUE),
+            max = max(BMI, na.rm = TRUE)
+            ) %>%
+  kable(format = 'markdown', digits = 2, 
+        col.names = c('Mean BMI', 'Std. Dev.(BMI)', 'Min.(BMI)', 'Max.(BMI)'),
+        caption = 'Body mass index, after excluding outliers')
+
+```
+
+We additionally assessed participants' eating style and whether they had any food allergies or intolerances. We analysed these variables descriptively.
+
+```{r, include = FALSE}
+# Turn the eating style and allergy variables into factors and add labels
+dat <-
+  dat %>% 
+  mutate(nutrition = factor(nutrition,
+                           levels = c('1', '2', '3', '4', '5'),
+                           labels = c('Unrestricted', 'Pescetarian', 'Vegetarian', 'Vegan', 'Other')),
+         allergy = factor(allergy,
+                           levels = c('1', '2'),
+                           labels = c('Yes', 'No'))
+        )
+
+```
+
+```{r, echo=FALSE}
+dat %>%
+  count('nutrition') %>% 
+  mutate(prop = prop.table(freq)*100) %>% 
+  kable(format = 'markdown', digits = 2, col.names = c('Eating style', 'N', '%'))
+```
+
+```{r, echo=FALSE}
+dat %>%
+  count('allergy') %>% 
+  mutate(prop = prop.table(freq)*100) %>% 
+  kable(format = 'markdown', digits = 2, col.names = c('Food allergies', 'N', '%'))
+```
+
+The majority of participants followed an unrestricted diet (i.e., not vegetarian etc.) and did not have any food allergies.
+
+## Usage and perception of delivery apps
+
+For exploratory purposes, we asked participants how often they ordered food via delivery apps or websites, with answer options “Never”, “Rarely” , “Sometimes”, and “Often”. If they chose any answer other than “Never”, we asked them to rate the tastiness and healthiness of the food offered by the delivery apps they used in their daily life.
+
+We analysed these variables descriptively.
+
+```{r, include = FALSE}
+# Turn the app usage variable into a factor and add labels
+dat <-
+  dat %>% 
+  mutate(delivery = factor(delivery,
+                           levels = c('1', '2', '3', '4'),
+                           labels = c('Never', 'Rarely', 'Sometimes', 'Often'))
+  )
+```
+
+```{r, echo=FALSE}
+dat %>%
+  count('delivery') %>%
+  mutate(prop = prop.table(freq)*100) %>% 
+  kable(format = 'markdown', digits = 2, col.names = c('Usage frequency', 'N', '%'))
+```
+
+```{r, echo=FALSE}
+del_health_sum <- summarySE(dat, measurevar= 'delivery_health', na.rm = TRUE)
+
+kable(del_health_sum[-c(1,2)], format = 'markdown', digits = 2,
+      col.names = c('Mean health', 'Std. Dev.', 'Std. Error', '95% CI'))
+```
+
+```{r, echo=FALSE}
+del_taste_sum <- summarySE(dat, measurevar= 'delivery_taste', na.rm = TRUE)
+
+kable(del_taste_sum[-c(1,2)], format = 'markdown', digits = 2,
+        col.names = c('Mean taste', 'Std. Dev.', 'Std. Error', '95% CI'))
+```
+
+Most participants indicated to order food via delivery services at least sometimes. They rated the food ordered via their usually used services as mostly tasty, but rather unhealthy.
+
+# Control analyses
+
+In these analyses, we checked whether the results of the main analyses remain stable when controlling for the protestant ethic (PES).
+
+Also, participants saw the food reviews from two delivery apps, "Eats" and "Zanana". We randomised which of the names was for the app with many tasty and not tasty reviews, respectively. The variable `random_app` indicates how the apps were named. 
+
+To check whether protestant ethic or this randomisation affected the results, we ran the analyses again, while including protestant ethic as a covariate and randomisation of app names as a factor.
+
+```{r, include=FALSE}
+# Turn the id and group variables into factors and add labels to the groups.
+dat <-
+  dat %>% 
+  mutate(id = factor(id),
+         condition = factor(condition, 
+                            levels = c('1', '2'), 
+                            labels = c('Harmonious', 'Conflicting')),
+         random_app = factor(random_app,
+                                 levels = c('1', '2'),
+                                 labels = c('1st "Eats", 2nd "Zanana"', '1st "Zanana", 2nd "Eats"'))
+  )
+```
+
+## Descriptive statistics of covariate
+
+```{r, echo=FALSE}
+dat %>%
+  summarise(mean = mean(PES, na.rm = TRUE),
+            sd = sd(PES, na.rm = TRUE),
+            min = min(PES, na.rm = TRUE),
+            max = max(PES, na.rm = TRUE)
+            ) %>%
+  kable(format = 'markdown', digits = 2, 
+        col.names = c('Mean PES', 'Std. Dev.(PES)', 'Min.(PES)', 'Max.(PES)'))
+```
+
+## Perceived health-taste relationship within contexts
+
+### DV 1: Conditional contingency estimate
+
+```{r, include=FALSE}
+# Restructure data into long format for the mixed ANOVA, convert the context variable into a factor.
+dat_long_ce <-
+  dat %>% 
+  select(id, condition, random_app, PES, condi_est_c1, condi_est_c2) %>% 
+  pivot_longer(cols = c('condi_est_c1', 'condi_est_c2'), 
+                       names_to = 'context',
+                       values_to = 'condi_es') %>% 
+  mutate(context = rec(context, '"condi_est_c1" = 1; "condi_est_c2" = 2')) %>%
+  mutate(context =factor(context,
+                         levels = c('1', '2'),
+                         labels= c('1st context', '2nd context')))
+```
+
+#### ANCOVA
+```{r}
+aov_condi <-
+  anova_test(
+  data = dat_long_ce, dv = condi_es, wid = id,
+  between = c(condition, random_app), covariate = PES, within = context, type = 3, effect.size = 'pes')
+```
+
+```{r, echo=FALSE}
+options(dplyr.summarise.inform = FALSE) # Deactivate the warning message
+colnames(aov_condi) <- c('Effect','df/nominator', 'df/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(aov_condi) <- c('Protestant ethic', 'Base rate manipulation','Name randomisation', 'Context', 'Base rate manipulation*Name randomisation','Protestant ethic*Context', 'Base rate manipulation*Context', 'Name randomisation*Context', 'Base rate manipulation\\*Name randomisation*Context')
+
+kable(aov_condi[,-1],format = 'markdown',  digits = 2)
+```
+
+### DV 2: Relative contingency belief
+
+```{r, include=FALSE}
+# Restructure data into long format for the mixed ANOVA, convert the context variable into a factor.
+dat_long_belief <-
+  dat %>% 
+  select(id, condition, random_app, PES, belief_ht_c1_R, belief_ht_c2_R) %>% 
+  pivot_longer(cols = c('belief_ht_c1_R', 'belief_ht_c2_R'), 
+                       names_to = 'context',
+                       values_to = 'belief_ht') %>% 
+  mutate(context = rec(context, '"belief_ht_c1_R" = 1; "belief_ht_c2_R" = 2')) %>%
+  mutate(context =factor(context,
+                         levels = c('1', '2'),
+                         labels= c('1st context', '2nd context')))
+```
+
+#### ANCOVA
+```{r}
+aov_belief <-
+  anova_test(
+  data = dat_long_belief, dv = belief_ht, wid = id,
+  between = c(condition, random_app), covariate = PES, within = context, type = 3, effect.size = 'pes')
+```
+
+```{r, echo=FALSE}
+colnames(aov_belief) <- c('Effect','df/nominator', 'df/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(aov_belief) <- c('Protestant ethic', 'Base rate manipulation','Name randomisation', 'Context', 'Base rate manipulation*Name randomisation','Protestant ethic*Context', 'Base rate manipulation*Context', 'Name randomisation*Context', 'Base rate manipulation\\*Name randomisation*Context')                                              
+
+kable(aov_belief[,-1],format = 'markdown',  digits = 2)
+```
+
+##### Pairwise comparisons 
+
+Unexpectedly, the randomisation of the app names interacted with the context and base rate manipulation. To check the nature of the interaction, we conducted pairwise comparisons between the base rate manipulations at each combination of name randomisation and context.
+
+```{r, echo=FALSE}
+belief_pw <- 
+  dat_long_belief %>%
+  group_by(context, random_app) %>%
+  pairwise_t_test(belief_ht ~ condition, p.adjust.method = "bonferroni")
+
+
+kable(belief_pw[,-c(3:7)], format = 'markdown', digits = 2,
+      caption = 'Pairwise comparisons of relative contingency belief between base rate manipulations within each combination of name randomisation and context',
+        col.names = c('Name randomisation','Context', '$p$', 'Sign', '$p.adj$', 'Sign. adj.'))
+```
+
+There was no difference in the contingency belief about the second app with many not tasty foods between base rate manipulations, when this app was called "Zanana".
+
+## Perceived health-taste relationship across contexts
+
+### ANCOVA
+
+```{r, message=FALSE}
+aov_belief_ov <-
+  anova_test(
+    data = dat, dv = belief_ht_overall_R,
+    between = c(condition, random_app), covariate = PES, type = 3, effect.size = 'pes')
+
+```
+
+```{r, echo=FALSE}
+
+colnames(aov_belief_ov) <- c('Effect','df/nominator', 'df/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(aov_belief_ov) <- c('Protestant ethic', 'Base rate manipulation', 'Name randomisation', 'Base rate manipulation*Name randomisation')
+
+kable(aov_belief_ov[,-1], format = 'markdown',  digits = 2)
+```
+
+## Preference for healthy food
+
+### ANCOVA
+
+```{r, message=FALSE}
+aov_pref <-
+  anova_test(
+    data = dat, dv = preference,
+    between = c(condition, random_app), covariate = PES, type = 3, effect.size = 'pes')
+
+```
+
+```{r, echo=FALSE}
+
+colnames(aov_pref) <- c('Effect','df/nominator', 'df/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(aov_pref) <- c('Protestant ethic', 'Base rate manipulation', 'Name randomisation', 'Base rate manipulation*Name randomisation')                                              
+
+kable(aov_pref[,-1],format = 'markdown',  digits = 2)
+
+```
+
+#### Descriptive statistics
+
+```{r, echo=FALSE}
+# Check the mean, standard deviation, standard error and 95% confidence interval of the preference in the two name randomisation groups.
+random_sum <- summarySE(dat, measurevar="preference", groupvars= 'random_app')
+random_sum %>% 
+  kable(format = 'markdown', digits = 2,
+        col.names = c('Name randomisation', 'N', 'Mean preference', 'Std. Dev.', 'Std. Error', '95% CI'), 
+        caption = 'Mean preference for healthy food by name randomisation')
+```
+
+Unexpectedly, the randomisation of the app names had a small effect on the preference for healthy food.
+
+Regardless of the base rate manipulation, participants slightly preferred healthy food, when the app with many tasty foods was called "Zanana" and the app with many not tasty foods was called "Eats" than vice versa.
+
+## Summary
+
+The results remained stable when controlling for the protestant ethic and the randomisation of app names in the analyses. Protestant ethic did not affect the outcome variables in any way. 
+
+There were some unexpected influences of the app names on the contingency belief and preference for healthy foods, but this did not change the main findings.

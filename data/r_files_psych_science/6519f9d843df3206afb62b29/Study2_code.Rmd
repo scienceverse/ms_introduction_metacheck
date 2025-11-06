@@ -1,0 +1,442 @@
+---
+title: "IAT Analysis"
+author: "USERNAME"
+date: "2/18/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+```{r, include = FALSE}
+library(devtools)
+library(dplyr)
+library(ggplot2)
+library(iatgen)
+# to install iatgen use: devtools::install_github("iatgen/iatgen")
+library(lavaan)
+library(lme4)
+library(lmerTest)
+library(reghelper)
+library(sjPlot)
+library(stringr)
+library(table1)
+```
+
+```{r, include = FALSE}
+setwd("/Users/USERNAME/Downloads") 
+data <- read.csv("Gender Power-Status IAT.csv", header=T)
+data2 <- read.csv("Gender Power-Status IAT Prolific.csv", header = T)
+dat <- read.csv("Gender Power-Status IAT.csv", header=T)
+dat2 <- read.csv("Gender Power-Status IAT Prolific.csv", header = T)
+```
+
+```{r, include = FALSE}
+data <- bind_rows(data, data2)
+dat <- bind_rows(dat, dat2)
+```
+
+```{r, include = FALSE}
+data <- filter(data, Finished == 1 & Consent == 1)
+dat <- filter(dat, Finished == 1 & Consent == 1)
+```
+
+These are named within the survey based on the starting configuration of Target A (RP = starts
+right, first paired with positive; RN = starts right with negative; LP = starts left with positive;
+LN = starts left + negative). Thus, “Q6 RP6” is survey question 6, the sixth block in the RP
+permutation.
+```{r, include = FALSE}
+### Collapse  IAT data down ####
+dat$compatible.crit <- combineIATfourblocks(dat$Q4.RP4, dat$Q18.LP4, dat$Q14.RN7, dat$Q28.LN7)
+dat$incompatible.crit <- combineIATfourblocks(dat$Q7.RP7, dat$Q21.LP7, dat$Q11.RN4, dat$Q25.LN4)
+
+### Collapse  IAT practice blocks ####
+dat$compatible.prac<- combineIATfourblocks(dat$Q3.RP3, dat$Q17.LP3, dat$Q13.RN6, dat$Q27.LN6)
+dat$incompatible.prac <- combineIATfourblocks(dat$Q6.RP6, dat$Q20.LP6, dat$Q10.RN3, dat$Q24.LN3)
+```
+
+```{r, include = FALSE}
+### Clean the IAT ### 
+clean <- cleanIAT(prac1=dat$compatible.prac, 
+                  crit1=dat$compatible.crit, 
+                  prac2=dat$incompatible.prac, 
+                  crit2=dat$incompatible.crit, 
+                  
+                  timeout.drop=TRUE, 
+                  timeout.ms=10000, 
+                  
+                  fasttrial.drop=FALSE, 
+                  
+                  fastprt.drop=TRUE, 
+                  fastprt.percent=.10, 
+                  fastprt.ms=300, 
+                  
+                  error.penalty=FALSE)
+```
+
+```{r, include = FALSE}
+### NUMBER OF PARTICIPANTS WHO COMPLETED THE IAT ###
+sum(!clean$skipped)
+
+```
+
+```{r, include = FALSE}
+### TIMEOUT DROP RATE (% of TRIALS) ###
+clean$timeout.rate
+
+```
+
+```{r, include = FALSE}
+### FAST PARTICIPANT 'BUTTON MASHER' DROP COUNT AND RATE (% of SAMPLE) ###
+clean$fastprt.count
+
+clean$fastprt.rate
+```
+
+```{r, include = FALSE}
+clean$drop.participant
+```
+
+
+```{r, echo = FALSE}
+IATreliability(clean)$reliability
+IATalpha(clean)$alpha.total
+```
+
+```{r}
+# place back into dat
+dat$D <- clean$D
+
+# test for IAT effect
+mean(clean$D, na.rm=T)
+
+sd(clean$D, na.rm=T)
+
+t.test(clean$D)
+```
+
+
+```{r, include = FALSE}
+### RT DESCRIPTIVES BY BLOCK
+mean(clean$clean.means.crit1, na.rm=T)
+
+## [1] 850.9206
+
+mean(clean$clean.means.crit2, na.rm=T)
+
+## [1] 966.7808
+
+mean(clean$clean.means.prac1, na.rm=T)
+
+## [1] 956.4666
+
+mean(clean$clean.means.prac2, na.rm=T)
+
+## [1] 1124.657
+
+sd(clean$clean.means.crit1, na.rm=T)
+
+## [1] 181.0915
+
+sd(clean$clean.means.crit2, na.rm=T)
+
+## [1] 213.4565
+
+sd(clean$clean.means.prac1, na.rm=T)
+
+## [1] 259.5297
+
+sd(clean$clean.means.prac2, na.rm=T)
+
+## [1] 326.7462
+```
+
+```{r, include = FALSE}
+data <- cbind(data, clean$D)
+data$D <- data$`clean$D`
+data$gender <- as.factor(data$Q35)
+data$gender <- recode_factor(data$gender, `1` = "Men", `2` = "Women", `3` = "Other")
+
+data$power.Women <- as.numeric(data$power.Women)
+data$power.Men <- as.numeric(data$power.Men)
+data$status.Women <- as.numeric(data$status.Women)
+data$status.Men <- as.numeric(data$status.Men)
+```
+
+
+```{r}
+ggplot(data, aes(x=D))+ geom_density(color="black", fill="light blue") + theme_light()
+
+data_bin <- filter(data, gender != "Other")
+ggplot(data_bin, aes(x=D, fill = gender))+ geom_density(color="black", alpha = .25) + theme_light()
+```
+
+```{r}
+summary(lm(D ~ gender, data = data))
+summary(lm(D ~ gender, data = data_bin))
+```
+
+Societal Perceptions in Manuscript
+```{r}
+table1(~ power.Women + power.Men + status.Women + status.Men, data = data, Overall = "Total")
+```
+
+```{r}
+#comparison of power and status
+data_long <- tidyr::gather(data, key="measure", value="rating", "power.Women":"status.Men")
+data_long <- tidyr::separate(data_long, measure, into = c('measure', 'gender.measure'), sep="\\.")
+
+data_long_power <- filter(data_long, measure == "power")
+data_long_status <- filter(data_long, measure == "status")
+
+summary(lmer(rating ~ gender.measure + (1 | ResponseId), data = data_long_power))
+summary(lmer(rating ~ gender.measure + (1 | ResponseId), data = data_long_status))
+
+power_gen<- (lmer(rating ~ gender.measure + (1 | ResponseId), data = data_long_power))
+status_gen<- (lmer(rating ~ gender.measure + (1 | ResponseId), data = data_long_status))
+
+tab_model(power_gen, status_gen, show.stat = TRUE, col.order = c("est", "ci", "stat", "p"), transform = NULL)
+```
+
+Additional Analyses of Societal Perceptions
+```{r, explicit}
+summary(lm(power.Women ~ D, data = data))
+summary(lm(power.Men ~ D, data = data))
+summary(lm(status.Women ~ D, data = data))
+summary(lm(status.Men ~ D, data = data))
+
+t.test(data$power.Women, mu = 5.5, alternative = "two.sided")
+t.test(data$power.Men, mu = 5.5, alternative = "two.sided")
+t.test(data$status.Women, mu = 5.5, alternative = "two.sided")
+t.test(data$status.Men, mu = 5.5, alternative = "two.sided")
+
+summary(lm(power.Women ~ D*gender, data = data))
+summary(lm(power.Men ~ D*gender, data = data))
+summary(lm(status.Women ~ D*gender, data = data))
+summary(lm(status.Men ~ D*gender, data = data))
+```
+
+power analysis
+```{r eval=FALSE, include=FALSE}
+m1 <- (lm(D ~ gender, data = data_bin))
+# effectsize::cohens_f_squared(m1, ci = .95, data = data_bin) # 
+pwr.f2.test(u = 1, f2 = 0.24, sig.level = 0.05, power = .8) # 35 sample size
+
+cohens_d(D  ~ 1, data = data_bin, mu = 0)
+pwr.t.test(n = 184, d = 0.95, sig.level = 0.05, type = "one.sample")
+```
+
+```{r}
+data.men <- tidyr::gather(data, key = "measure", value = "rating", "power.Men", "status.Men")
+data.women <- tidyr::gather(data, key = "measure", value = "rating", "power.Women", "status.Women")
+
+summary(lmer(rating ~ measure + (1 | ResponseId), data = data.men))
+summary(lmer(rating ~ measure + (1 | ResponseId), data = data.women))
+```
+
+```{r, graphs}
+# ggplot(data = data, aes(y = status.Women, x = D, fill = gender)) + geom_smooth(method = "lm")
+
+m1 <- (lm(status.Women ~ D*gender, data = data))
+simple_slopes(m1)
+```
+
+IAT 1
+Q1 RP1: Learning Men/Women
+Q2 RP2: Learning Power/Status
+Q3 RP3: Men/Power and Women/Status*
+Q4 RP4: Men/Power and Women/Status*
+Q5 RP5: Women Men learning
+Q6 RP6: Women/Power and Men/Status*
+Q7 RP7: Women/Power and Men/Status*
+Q8 RN1: Learning Men/Women (11 - 20)
+Q9 RN2: Learning Power/Status (1 - 10)
+
+
+Learning Men/Women: Q1.RP1, Q8.RN1, Q15.LP1, Q22.LN1
+Learning Power/Status: Q2.RP2, Q9.RN2, Q16.LP2, Q23.LN2
+
+```{r, include=FALSE}
+setwd("/Users/USERNAME/Downloads") 
+datalong <- read.csv("Gender Power-Status IAT.csv", header=T)
+datalong2 <- read.csv("Gender Power-Status IAT Prolific.csv", header = T)
+
+datalong <- filter(datalong, Finished == 1 & Consent == 1)
+datalong2 <- filter(datalong2, Finished == 1 & Consent == 1)
+
+datalong <- bind_rows(datalong, datalong2)
+
+## drop extra rows?
+```
+
+```{r, include=FALSE}
+datalong <- tidyr::gather(datalong, Block, Output, Q1.RP1:Q28.LN7)
+
+# add Pairing Columns based on RP LP RN LN
+datalong$Pairing <- 0
+datalong$Pairing[datalong$Block == "Q4.RP4" | datalong$Block == "Q18.LP4" | datalong$Block == "Q14.RN7" | datalong$Block == "Q28.LN7"] <- "compatible" 
+datalong$Pairing[datalong$Block == "Q7.RP7" | datalong$Block == "Q21.LP7" | datalong$Block == "Q11.RN4" | datalong$Block == "Q25.LN4"] <- "incompatible"
+
+datalong$Section <- 0
+datalong$Section[datalong$Block == "Q4.RP4" | datalong$Block == "Q18.LP4" | datalong$Block == "Q14.RN7" | datalong$Block == "Q28.LN7"] <- "Trials" 
+datalong$Section[datalong$Block == "Q7.RP7" | datalong$Block == "Q21.LP7" | datalong$Block == "Q11.RN4" | datalong$Block == "Q25.LN4"] <- "Trials"
+datalong$Section[datalong$Block == "Q2.RP2" | datalong$Block == "Q9.RN2" | datalong$Block == "Q16.LP2" | datalong$Block == "Q23.LN2"] <- "Learning"
+datalong$Section[datalong$Block == "Q1.RP1" | datalong$Block == "Q8.RN1" | datalong$Block == "Q15.LP1" | datalong$Block == "Q22.LN1"] <- "Learning"
+datalong$Section[datalong$Block == "Q3.RP3" | datalong$Block == "Q17.LP3" | datalong$Block == "Q13.RN6" | datalong$Block == "Q27.LN6"] <- "Practice"
+datalong$Section[datalong$Block == "Q6.RP6" | datalong$Block == "Q20.LP6" | datalong$Block == "Q10.RN3" | datalong$Block == "Q24.LN3"] <- "Practice"
+
+
+# drop empty output rows? 
+# drop rows when pairing = 0?
+datalong <- tidyr::separate(datalong, Output, c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14",
+                                                "V15", "V16", "V17", "V18", "V19", "V20", "V21", "V22", "V23", "V24", "V25", "V26", "V27",
+                                                "V28", "V29", "V30", "V31", "V32", "V33", "V34", "V35", "V36", "V37", "V38", "V39", "V40"))
+
+datalong <- tidyr::gather(datalong, Trial, Output, V1:V40)
+
+datalong <- tidyr::separate(datalong, Output, c("StimuliId", "Time"),sep = "[CX]")
+
+datalong$Type <- 0
+datalong$Stimuli <- 0
+
+datalong$Type[datalong$StimuliId == "1"] <- "Status"
+datalong$Stimuli[datalong$StimuliId == "1"] <- "Admire"
+
+datalong$Type[datalong$StimuliId == "2"] <- "Status"
+datalong$Stimuli[datalong$StimuliId == "2"] <- "Dignity"
+
+datalong$Type[datalong$StimuliId == "3"] <- "Status"
+datalong$Stimuli[datalong$StimuliId == "3"] <- "Prestige"
+
+datalong$Type[datalong$StimuliId == "4"] <- "Status"
+datalong$Stimuli[datalong$StimuliId == "4"] <- "Reputation"
+
+datalong$Type[datalong$StimuliId == "5"] <- "Status"
+datalong$Stimuli[datalong$StimuliId == "5"] <- "Respect"
+
+datalong$Type[datalong$StimuliId == "6"] <- "Power"
+datalong$Stimuli[datalong$StimuliId == "6"] <- "Control"
+
+datalong$Type[datalong$StimuliId == "7"] <- "Power"
+datalong$Stimuli[datalong$StimuliId == "7"] <- "Dominance"
+
+datalong$Type[datalong$StimuliId == "8"] <- "Power"
+datalong$Stimuli[datalong$StimuliId == "8"] <- "Force"
+
+datalong$Type[datalong$StimuliId == "9"] <- "Power"
+datalong$Stimuli[datalong$StimuliId == "9"] <- "Strength"
+
+datalong$Type[datalong$StimuliId == "10"] <- "Power"
+datalong$Stimuli[datalong$StimuliId == "10"] <- "Vigor"
+
+datalong$Type[datalong$StimuliId == "11"] <- "Woman"
+datalong$Stimuli[datalong$StimuliId == "11"] <- "Woman1"
+
+datalong$Type[datalong$StimuliId == "12"] <- "Woman"
+datalong$Stimuli[datalong$StimuliId == "12"] <- "Woman2"
+
+datalong$Type[datalong$StimuliId == "13"] <- "Woman"
+datalong$Stimuli[datalong$StimuliId == "13"] <- "Woman3"
+
+datalong$Type[datalong$StimuliId == "14"] <- "Woman"
+datalong$Stimuli[datalong$StimuliId == "14"] <- "Woman4"
+
+datalong$Type[datalong$StimuliId == "15"] <- "Woman"
+datalong$Stimuli[datalong$StimuliId == "15"] <- "Woman5"
+
+datalong$Type[datalong$StimuliId == "16"] <- "Man"
+datalong$Stimuli[datalong$StimuliId == "16"] <- "Man1"
+
+datalong$Type[datalong$StimuliId == "17"] <- "Man"
+datalong$Stimuli[datalong$StimuliId == "17"] <- "Man2"
+
+datalong$Type[datalong$StimuliId == "18"] <- "Man"
+datalong$Stimuli[datalong$StimuliId == "18"] <- "Man3"
+
+datalong$Type[datalong$StimuliId == "19"] <- "Man"
+datalong$Stimuli[datalong$StimuliId == "19"] <- "Man4"
+
+datalong$Type[datalong$StimuliId == "20"] <- "Man"
+datalong$Stimuli[datalong$StimuliId == "20"] <- "Man5"
+
+# datalong$Type[datalong$StimuliId == ""] <- ""
+# datalong$Stimuli[datalong$StimuliId == ""] <- ""
+
+
+datalong$Association <- 0
+datalong$Association[datalong$Type == "Status" & datalong$Pairing == "compatible"] <- "Woman"
+datalong$Association[datalong$Type == "Status" & datalong$Pairing == "incompatible"] <- "Man"
+datalong$Association[datalong$Type == "Power" & datalong$Pairing == "compatible"] <- "Man"
+datalong$Association[datalong$Type == "Power" & datalong$Pairing == "incompatible"] <- "Woman"
+
+datalong$Association[datalong$Type == "Woman" & datalong$Pairing == "compatible"] <- "Status"
+datalong$Association[datalong$Type == "Woman" & datalong$Pairing == "incompatible"] <- "Power"
+datalong$Association[datalong$Type == "Man" & datalong$Pairing == "compatible"] <- "Power"
+datalong$Association[datalong$Type == "Man" & datalong$Pairing == "incompatible"] <- "Status"
+```
+
+```{r, include=FALSE}
+datalong$Time <- as.numeric(datalong$Time)
+datalong.num <- datalong
+```
+
+```{r, include=FALSE}
+datalong.num2 <- filter(datalong.num, Type != 0 & Pairing != 0 & Time < 10000 & Time > 300 & Section == "Trials")
+datalong.learning <- filter(datalong.num, Type != 0 & Time < 10000 & Time > 300 & Section == "Learning")
+
+# means of reaction time in learning trials
+datalong.learning %>%
+  dplyr::group_by(Type, Association) %>%
+  dplyr::summarise(AvgTime <- mean(Time))
+
+dl.words <- filter(datalong.learning, Type == "Status" | Type == "Power")
+t.test(Time ~ Type, data = dl.words) # faster at power
+
+dl.images <- filter(datalong.learning, Type == "Woman" | Type == "Man")
+t.test(Time ~ Type, data = dl.images) # no sig difference
+
+# means of reaction time in gender/PS 
+datalong.num2 %>%
+  dplyr::group_by(Type, Association) %>%
+  dplyr::summarise(AvgTime <- mean(Time), SdTime <- sd(Time))
+```
+
+Exploratory reaction time analyses in Manuscript
+```{r}
+data.status <- filter(datalong.num2, Type == "Status")
+data.power <- filter(datalong.num2, Type == "Power")
+data.Man <- filter(datalong.num2, Type == "Man")
+data.Woman <- filter(datalong.num2, Type == "Woman")
+
+
+t.test(Time ~ Association, data = data.status)
+t.test(Time ~ Association, data = data.power)
+t.test(Time ~ Association, data = data.Man)
+t.test(Time ~ Association, data = data.Woman)
+```
+
+```{r}
+data.words <- filter(datalong.num2, Type == "Status" | Type == "Power")
+t.test(Time ~ Type, data = data.words) # overall faster at power
+
+data.images <- filter(datalong.num2, Type == "Woman" | Type == "Man")
+t.test(Time ~ Type, data = data.images) # overall faster at women
+```
+
+```{r}
+data.words %>%
+  dplyr::group_by(Stimuli) %>%
+  dplyr::summarise(AvgTime <- mean(Time))
+
+data.words <- filter(data.words, Stimuli != "Force" & Stimuli != "Reputation")
+t.test(Time ~ Type, data = data.words) # overall faster at power
+
+data.images %>%
+  dplyr::group_by(Stimuli) %>%
+  dplyr::summarise(AvgTime <- mean(Time))
+```
+
+```{r}
+write.csv(datalong, "/Users/USERNAME/Downloads/IAT-reformatted.csv", row.names = FALSE)
+```

@@ -1,0 +1,298 @@
+---
+title: "PSA001: Randomisation for Data Release"
+date: "26/08/2019"
+output: html_document
+---
+
+```{r, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(ggplot2)
+#library(codebook)
+
+set.seed(8675309)
+```
+
+## Create randomised data
+
+The code below should not be run, as you will not have access to the file "data/ratings_raw.csv", but is provided for information about how we randomised the stimulus and trait labels to maintain structure in the dataset but obscure relationships among rater and stimulus variables.
+
+```{r}
+ratings_raw <- read_csv("../data/ratings_raw.csv") %>%
+  filter(!is.na(rating))
+```
+
+### Obscure rare ethnicities 
+
+Replace ethnicity responses with < 50 participants with "rare" to prevent identification. 
+
+```{r}
+eths <- ratings_raw %>%
+  mutate(ethnicity = tolower(ethnicity)) %>%
+  group_by(user_id, ethnicity) %>%
+  summarise() %>%
+  ungroup() %>%
+  count(ethnicity) %>%
+  arrange(desc(n)) %>%
+  filter(n >= 50) %>%
+  mutate(p = n / sum(n))
+
+ratings_sim <- ratings_raw %>%
+  mutate(ethnicity = tolower(ethnicity),
+         ethnicity = ifelse(ethnicity %in% eths$ethnicity, ethnicity, "rare"))
+```
+
+### Obscure age
+
+Winsorise age at 17 and 50, then jitter participant age up to 2 years to prevent identification. 
+
+```{r}
+ratings_sim <- ratings_sim %>%
+  group_by(user_id) %>%
+  mutate(age = pmin(age, 50),
+         age = pmax(17, age),
+         age = age + sample(-2:2, 1), 
+         ) %>%
+  ungroup()
+```
+
+
+### Randomisation of stimulus and trait labels
+
+```{r}
+# exchange stimuli
+stim_exchange <- data.frame(
+  stim_id = unique(ratings_raw$stim_id),
+  new_stim_id = sample(unique(ratings_raw$stim_id))
+)
+
+# exchange traits
+trait_exchange <- data.frame(
+  trait = unique(ratings_raw$trait),
+  new_trait = sample(unique(ratings_raw$trait))
+)
+
+ratings_sim <- ratings_sim %>%
+  left_join(stim_exchange, by = "stim_id") %>%
+  left_join(trait_exchange, by = "trait") %>%
+  select(-stim_id, -trait) %>%
+  rename(stim_id = new_stim_id,
+         trait = new_trait)
+```
+
+### Join Region Data
+
+```{r}
+regions <- read_csv("data/regions.csv")
+
+ratings_sim <- ratings_sim %>%
+  rename(qcountry = country) %>%
+  separate(lab, c("country", "lab")) %>%
+  left_join(regions, by = "country")
+```
+### Join Stimulus Data
+
+```{r}
+stim_info <- read_csv("data/psa_cfd_faces.csv") %>%
+  rename(stim_eth = Race, stim_sex = Gender, stim_age = Age, stim_id = Target) %>%
+  mutate(stim_eth = recode(stim_eth, "A" = "asian", "B" = "black", "L" = "latinx", "W" = "white"),
+         stim_sex = recode(stim_sex, "M" = "male", "F" = "female")
+  )
+
+ratings_sim <- ratings_sim %>%
+  left_join(stim_info, by = "stim_id")
+```
+
+### Exclusions
+
+Exclude participants with low variance (>75% identical ratings in block 1) or who did not complete all of block 1. Most exclusions are test runs.
+
+```{r}
+# make summary table of trials and stimuli completed per participant
+part <- ratings_sim %>%
+  group_by(user_id, sex, age, country, language, trait, region, lab) %>%
+  summarise(trials = n(),
+            stim_n = n_distinct(stim_id)) %>%
+  ungroup()
+
+# Participants with low-variance responses in block 1
+identical_rating_threshold <- 0.75 * 120 # use this for registered analyses
+
+inv_participants <- ratings_sim %>%
+  filter(block == 1) %>%
+  count(user_id, region, trait, rating) %>%
+  group_by(user_id, region, trait) %>%
+  filter(n == max(n)) %>% # find most common rating for each P
+  ungroup() %>%
+  filter(n >= identical_rating_threshold) # select Ps who gave the same rating to >= 75% of stimuli
+
+inv <- inv_participants %>%
+  count(region, trait) %>%
+  spread(region, n, fill = 0) %>%
+  mutate(TOTAL = rowSums(select_if(., is.numeric), na.rm = T))
+
+inv_total <-  group_by(inv) %>% 
+  summarise_if(is.numeric, sum, na.rm = T) %>%
+  mutate(trait = "TOTAL")
+
+# Remove excluded data and average ratings
+data <- ratings_sim %>%
+  group_by(user_id, trait) %>%
+  filter(
+    # did not complete 1+ ratings for each of 120 stimuli
+    dplyr::n_distinct(stim_id) == 120,      
+    !is.na(region)   # did not specify region (none expected)
+  ) %>%
+  anti_join(inv_participants, by = "user_id") %>% # exclude Ps with low variance
+  ungroup() %>%
+  select(
+    lab, country, language, region,
+    rater_id = user_id, rater_sex = sex, rater_age = age, rater_eth = ethnicity, rater_country = qcountry,
+    stim_id, stim_sex, stim_age, stim_eth,
+    block, trait, order, rt, rating
+  )
+
+write_csv(data, "data/data_ind_sim.csv")
+
+```
+
+
+## Data Description
+
+```{r, eval = TRUE}
+data <- read_csv("data/data_ind_sim.csv")
+```
+
+The file at `data/data_ind_sim.csv` contains the following variables:
+
+### Region Variables
+
+* `lab`: The lab ID
+* `country`: Lab country (3-letter ISO country code)
+* `language`: Language of the test (see [https://psa.psy.gla.ac.uk/] for all tests
+  * `r unique(data$language) %>% sort() %>% paste(collapse = ", ")`
+* `region`: World region coded from lab ID (as specified in RR)
+  * unique(data$region) %>% sort() %>% paste(collapse = ", ")
+
+### Rater Variables
+
+* `rater_id`: A unique ID for each rater
+* `rater_sex`: Rater sex
+  * question: "What sex are you?"
+  * response options:
+    * `m`: "male"
+    * `f`: "female"
+    * `na`: "these options do not apply to me"
+    * `no`: "I would rather not say"
+* `rater_age`: Rater age in years
+  * question: "How old are you?"
+  * response option: dropdown menu with integers 10 to 100
+  * **NB**: jittered  +/- up to 2 years in this simulated dataset
+* `rater_eth`: Rater ethnicity
+  * question: "Please enter your ethnicity here"
+  * response option: free text entry up to 255 characters
+  * **NB**: responses with <50 participants recoded here as "rare"
+* `rater_country`: Rater country
+  * question: "What country are you in?"
+  * response option: dropdown menu with country names in English, recorded as 2-letter ISO country code
+  * **NB**: many raters seem to have interpreted this question as their country of origin or normal residence, so `region` is coded from the `lab`, not this question.
+  
+### Stimulus Variables
+
+* `stim_id`: The face stimulus ID (from CFD)
+* `stim_age`: The face stimulus age in years
+* `stim_sex`: The face stimulus sex ("male" or "female")
+* `stim_eth`: The face stimulus ethnicity ("asian", "black", "latinx", or "white")
+
+### Observation Variables
+
+* `block`: Rating block (1 or 2)
+  * Each participant was asked to complete the same set of ratings twice
+  * Participants must have completed all ratings in block 1 for inclusion, but not block 2
+* `trait`: Which trait was rated
+  * unique(data$trait) %>% sort() %>% paste(collapse = ", ")
+* `order`: trial order within the block
+* `rt`: the reaction time for this trial in milliseconds
+  * **NB**: trials were not speeded
+* `rating`: The rating (on a 1-7 scale from 1 = "not at all" to 7 = "very")
+
+## Aggregated Data
+
+The code for processing individual into aggregated data is in the file `PSA1_sim_analyses.Rmd`. Aggregated data are available in the file `data/data_agg_sim.csv`.
+
+## Auxillary Data
+
+Secondary data about the stimuli is available from the Chicago Faces Database (https://chicagofaces.org/), which is the database we used to select the stimulus faces.  Although we are not archiving a copy of this dataset on our OSF page, the dataset is freely available here (http://chicagofaces.org/default/cfd_public/cfd203norms.zip). The descriptions below are taken from the codebook that comes with this dataset.
+
+* Target: target image - first character designates race, second character designates gender, followed by a unique identifier (matches trial_name in the experiment dataset)
+* Race: target's self-identified race 
+* Gender: target gender 
+* Age: Estimate the approximate age of this person (in years)? 
+* NumberofRaters: number of respondents upon which norming data is based 
+* Female_prop: Number of participants who indicated the female gender divided by number of people who rated the target
+* Male_prop: number of participants who indicated male gender divided by number of people who rated the target 
+* Asian_prop: number of participants who indicated Asian race divided by number of people who rated
+* Black_prop: the target number of participants who indicated Black race divided by number of people who rated the target 
+* Latino_prop: number of participants who indicated Hispanic/Latino race divided by number of people who rated the target 
+* Multi_prop: number of participants who indicated Biracial/Multiracial race divided by number of people who rated the target 
+* Other_prop: number of participants who indicated Other race divided by number of people who rated the target 
+* White_prop: number of participants who indicated White race divided by number of people who rated the target 
+* Afraid: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Fearful/Afraid (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Angry: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Angry (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Attractive: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Attractive (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Babyface: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Baby-faced (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Disgusted: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Disgusted (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Dominant: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Dominant (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Feminine: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Feminine (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Happy: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Happy (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Masculine: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Masculine (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Prototypic: Participants randomly assigned to one race-by-category group and asked to rate racial prototypicality. Instructions varied depending on rated category. Example: "In this survey, you will be shown pictures of Asian females.  These people differ in terms of how much their physical features resemble the features of Asian people.  For example, their skin color, hair, eyes, nose, cheeks, lips, and other physical features, may be more Asian (i.e., typical of Asians) or less Asian (i.e., less typical of Asians). For this study we will show you pictures of people one at a time and your job will be to rate how Asian looking each person's physical features are on a scale from 'Less Typically Asian Looking' [1] to 'Very Typically Asian Looking' [5]." 
+* Sad: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Sad (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Suitability: Research psychologists asked, "How suitable would the target pictured above be for a study requiring images of [race-by-gender category, e.g., 'Black females']?" (1 = "not at all suitable," 2 = "less suitable," 3 = "neutral", 4 = "more suitable", 5 = "highly suitable") 
+* Surprised: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Surprised (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Threatening: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Threat (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Trustworthy: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Trustworthy (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Unusual: Now, consider the person pictured above and rate him/her with respect to other people of the same race and gender.  (For example, if you indicated that the person was Asian and male, consider this person on the following traits relative to other Asian males in the United States.) - Unusual (would stand out in a crowd) (1-7 Likert, 1 = Not at all; 7 = Extremely) 
+* Luminance_median: median luminance for target's face only 
+* Nose_Width: Distance between outer edges of nostrils at widest point. 
+* Nose_Length: Distance between Forehead Bridge at level of visible upper eye edge to nose tip. For the Nose Tip, imagine a spot where the nose protrudes from the face. Optional Tip: You can make a temporary line across the eyes to get a good visual reference of where the upper eye edge is on the bridge of the nose. 
+* Lip_Thickness: Distance between uppermost and lowermost point of lips. If lips are separated, upper lip and lower lip should be measured separately. 
+* Face_Length: Distance between hairline and base of chin. Note: For some people, there may be a double chin. You may have to guesstimate.  
+* R_Eye_H: Distance between upper and lower edge of visible eye within eyelids at center of pupil.  
+* L_Eye_H: Distance between upper and lower edge of visible eye within eyelids at center of pupil.  
+* Avg_Eye_Height: Average distance between upper and lower edge of visible eye within eyelids at center of pupil for right and left eye. 
+* R_Eye_W: Distance between inner and outer corner of eye. Measurements taken at the inner eye corner to the outer eye corner. 
+* L_Eye_W: Distance between inner and outer corner of eye. Measurements taken at the inner eye corner to the outer eye corner. 
+* Avg_Eye_Width: Average distance between inner and outer corner of eye for right and left eye. 
+* Face_Width_Cheeks: Distance between outer edges of cheeks at most prominent points. 
+* Face_Width_Mouth: Distance between outer edges of cheeks at level of mid-mouth. 
+* Forehead: Distance from center of hairline to the center between the eyes. Tip: You can make a temporary box that goes between the eyes to get a good visual reference on where to start on the bridge of the nose.
+* Pupil_Top_R: Distance between pupil center to hairline.  
+* Pupil_Top_L: Distance between pupil center to hairline.  
+* Asymmetry_pupil_top: Absolute value difference between distance between pupil center to hairline for right and left. 
+* Pupil_Lip_R: Distance between pupil center to top edge of lips. 
+* Pupil_Lip_L: Distance between pupil center to top edge of lips. 
+* Asymmetry_pupil_lip: Absolute value difference between distance between pupil center to top edge of lips for right and left. 
+* BottomLip_Chin: Distance from bottom edge of lips to base of chin. 
+* Midcheek_Chin_R: Distance between midcheek and bottom of chin. 
+* Midcheek_Chin_L: Distance between midcheek and bottom of chin. 
+* Cheeks_avg: Average distance between midcheek and bottom of chin for right and left. 
+* Midbrow_Hairline_R: Distance between midbrow to hairline. This should be above the pupil of each eye in the middle of the eye brown.  
+* Midbrow_Hairline_L: Distance between midbrow to hairline. This should be above the pupil of each eye in the middle of the eye brown.  
+* Faceshape: Face width at cheeks divided by face length 
+* Heartshapeness: Face width at cheeks divided by face width at mouth 
+* Noseshape: Nose width divided by nose length 
+* LipFullness: Lip thickness divided by face length 
+* EyeShape: Eye height divided by eye width 
+* EyeSize: Eye height divided by face length 
+* UpperHeadLength: Forehead divided by face length 
+* MidfaceLength: (Average pupil to lip for right and left) divided by face length 
+* ChinLength: Bottom of lip to chin divided by face length 
+* ForeheadHeight: (Average midbrow to hairline for right and left) divided by face length
+* CheekboneHeight: (Average midcheeck to chin for right and left) divided by face length 
+* CheekboneProminence: (Face width at cheek minus face width at mouth) divided by face length 
+* FaceRoundness: Face width at mouth divided by face length 
+fWHR: Facial width to height ratio
+

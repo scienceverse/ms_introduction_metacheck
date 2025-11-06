@@ -1,0 +1,350 @@
+---
+title: "Analysis of Suffixing Preference Experiment data -- English and Kîîtharaka speakers"
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document: default
+---
+```{r include=FALSE}
+library(ggplot2)
+library(lme4)
+library(plyr)
+```
+# Experiment 1: syllables and shapes, English speakers
+
+## Description
+Stimuli are syllables or shapes. Task is 2AFC. There are 2 practice trials, and 42 test trials. Within the test trials are 25 critical trials with pre- and post-changed stimuli and the two choices. There are an additional 15 catch trials with correct answers (indicated), 3 each of:
+
+- pre + identical (identical)
+- post + identical (identical)
+- pre + different (pre)
+- post + different (post)
+- identical + different (identical)
+
+NB: post-changed is coded as 'correct' for critical trials.
+
+## Data pre-processing
+Read in the files.
+```{r}
+eng <- read.table("data_anonymized/English_anon.csv",header=TRUE, sep=",")
+```
+Pull out the practice and test trials. Re-order test trial types factor so that pre-post is first. Add a column to identify catch trials.
+```{r}
+eng_practice = subset(eng, phase=="practice")
+eng_test = subset(eng, phase=="test")
+eng_test$trial_type <- relevel(eng_test$trial_type, ref="post-pre")
+eng_test$catch <- "catch"
+eng_test[eng_test$trial_type=="post-pre",]$catch <- "critical"
+eng_test$catch <- factor(eng_test$catch, levels=c("critical","catch"))
+```
+## Strategies
+Strategies were coded as:
+- no_strategy (e.g. "Listen carefully", or "Listened to the sounds and tried to remember what was said.")
+- beginning (e.g., "Just careful listening. I favoured sounds with the original syllables at the front instead of the back.", or "Select exact match. Then select the pair that appeared first in the image.")
+- ending (no relevant responses)
+
+See how many participants reported each type of strategy in each condition:
+```{r}
+eng_strat_N = ddply(eng_test, c("condition","strategy_coded", "subjID"), summarise, accuracy = mean(accuracy))
+ddply(eng_strat_N, c("condition","strategy_coded"), summarise, N = length(accuracy))
+```
+## Plots
+### Syllables
+Create a data structure to use for plotting. Display descriptive statistics.
+```{r}
+eng_mean_syllables = ddply(subset(eng_test, condition=="syllables"), c("subjID","catch"), summarise, accuracy = mean(accuracy))
+ddply(eng_mean_syllables, c("catch"),summarise,
+                                      mean=mean(accuracy),
+                                      sd = sd(accuracy))
+```
+Plot critical trials:
+```{r, fig.width=.75, fig.height=1.15}
+ggplot(subset(eng_mean_syllables,catch=="critical"), aes(x=catch, y=accuracy, fill=catch)) + 
+      geom_dotplot(binaxis = "y", stackdir = "center", position = "dodge", 
+                   stackratio = .45, binwidth = 0.01, dotsize=4) +
+      stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width=.2, size=0.75) +
+      stat_summary(fun.y = mean, geom = "point", size=2) +
+      theme(legend.position="none") +
+      theme(axis.title.x = element_text(vjust = 0),axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(size=10),axis.text.x = element_blank(), 
+	          axis.title.y = element_text(size=10), axis.text.y= element_text(size=10)) +
+      geom_hline(aes(yintercept=.5),linetype="dashed")+    
+      ylab("Proportion post-changed choice") +
+	    xlab("Critical trials") +
+      ylim(0,1)
+ggsave("plots/syllables_critical_ENG.png", device="png", width = 1.75, height = 3)
+```
+Plot catch trials:
+```{r, fig.width=.75, fig.height=1.15}
+ggplot(subset(eng_mean_syllables,catch=="catch"), aes(x=catch, y=accuracy, fill=catch)) + 
+      geom_dotplot(binaxis = "y", stackdir = "center", position = "dodge", 
+                   stackratio = .45, binwidth = 0.01, dotsize=4) +
+      stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width=.2, size=0.75) +
+      stat_summary(fun.y = mean, geom = "point", size=2) +
+      theme(legend.position="none") +
+      theme(axis.title.x = element_text(vjust = 0),axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(size=10),axis.text.x = element_blank(), 
+	          axis.title.y = element_text(size=10), axis.text.y= element_text(size=10)) +
+      geom_hline(aes(yintercept=.5),linetype="dashed")+    
+      ylab("Proportion correct choice") +
+	    xlab("Catch trials") +
+      ylim(0,1) +
+      scale_fill_manual(values="#00BFC4")
+ggsave("plots/syllables_catch_ENG.png", device="png", width = 1.75, height = 3)
+```
+### Shapes
+Create a data structure to use for plotting. Display descriptive statistics.
+```{r}
+eng_mean_shapes = ddply(subset(eng_test, condition=="shapes"), c("subjID","catch"), summarise, accuracy = mean(accuracy))
+ddply(eng_mean_shapes, c("catch"),summarise,
+                                      mean=mean(accuracy),
+                                      sd = sd(accuracy))
+```
+Plot critical trials:
+```{r, fig.width=.75, fig.height=1.15}
+ggplot(subset(eng_mean_shapes,catch=="critical"), aes(x=catch, y=accuracy, fill=catch)) + 
+      geom_dotplot(binaxis = "y", stackdir = "center", position = "dodge", 
+                   stackratio = .45, binwidth = 0.01, dotsize=4) +
+      stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width=.2, size=0.75) +
+      stat_summary(fun.y = mean, geom = "point", size=2) +
+      theme(legend.position="none") +
+      theme(axis.title.x = element_text(vjust = 0),axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(size=10),axis.text.x = element_blank(), 
+	          axis.title.y = element_text(size=10), axis.text.y= element_text(size=10)) +
+      geom_hline(aes(yintercept=.5),linetype="dashed")+    
+      ylab("Proportion post-changed choice") +
+	    xlab("Critical trials") +
+      ylim(0,1)
+
+ggsave("plots/shapes_critical_ENG.png", device="png", width = 1.75, height = 3)
+```
+Plot catch trials:
+```{r, fig.width=.75, fig.height=1.15}
+ggplot(subset(eng_mean_shapes,catch=="catch"), aes(x=catch, y=accuracy, fill=catch)) + 
+      geom_dotplot(binaxis = "y", stackdir = "center", position = "dodge", 
+                   stackratio = .45, binwidth = 0.01, dotsize=4) +
+      stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width=.2, size=0.75) +
+      stat_summary(fun.y = mean, geom = "point", size=2) +
+      theme(legend.position="none") +
+      theme(axis.title.x = element_text(vjust = 0),axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(size=10),axis.text.x = element_blank(), 
+	          axis.title.y = element_text(size=10), axis.text.y= element_text(size=10)) +
+      geom_hline(aes(yintercept=.5),linetype="dashed")+    
+      ylab("Proportion correct choice") +
+	    xlab("Catch trials") +
+      ylim(0,1) +
+      scale_fill_manual(values="#00BFC4")
+
+ggsave("plots/shapes_catch_ENG.png", device="png", width = 1.75, height = 3)
+```
+## Stats
+### Catch trials
+Model comparison: null model (intercept) vs. model including condition as fixed-effect.
+```{r}
+eng_model_catch1 <- glmer(accuracy~1+(1|subjID)+(1|target),family="binomial",data=subset(eng_test,trial_type!="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+eng_model_catch2 <- glmer(accuracy~condition+(1|subjID)+(1|target),family="binomial",data=subset(eng_test,trial_type!="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+anova(eng_model_catch1,eng_model_catch2)
+```
+Print out the simpler model:
+```{r}
+summary(eng_model_catch1)
+```
+### Critical trials
+Model comparison: null model (intercept) vs. model including condition as fixed-effect.  (NB: models do not converge with by-item random effect term)
+```{r}
+eng_model1 <- glmer(accuracy~1+(1|subjID),family="binomial",data=subset(eng_test,trial_type=="post-pre"),control=glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e5)))
+eng_model2 <- glmer(accuracy~condition+(1|subjID),family="binomial",data=subset(eng_test,trial_type=="post-pre"), control=glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e5)))
+anova(eng_model1,eng_model2)
+```
+Print out the simpler model:
+```{r}
+summary(eng_model1)
+```
+
+# Experiment 2: syllables and shapes, Kîîtharaka (THA) speakers
+
+## Description
+Stimuli are syllables or shapes. Task is 2AFC. There are 2 practice trials, and 42 test trials. Within the test trials are 25 critical trials with pre- and post-changed stimuli and the two choices. There are an additional 15 catch trials with correct answers (indicated), 3 each of:
+
+- pre + identical (identical)
+- post + identical (identical)
+- pre + different (pre)
+- post + different (post)
+- identical + different (identical)
+
+NB: post-changed is coded as 'correct' for critical trials.
+
+## Data pre-processing
+Read in the data file.
+```{r}
+thk <- read.table("data_anonymized/Kiitharaka_anon.csv",header=TRUE, sep=",")
+```
+Pull out the practice, test, and questionnaire trials. Re-order test trial types factor so that pre-post is first. Add column to identify catch trials.
+```{r}
+thk_practice = subset(thk, phase=="practice")
+thk_test = subset(thk, phase=="test")
+thk_test$trial_type <- relevel(thk_test$trial_type, ref="post-pre")
+thk_test$catch <- "catch"
+thk_test[thk_test$trial_type=="post-pre",]$catch <- "critical"
+thk_test$catch <- factor(thk_test$catch, levels=c("critical","catch"))
+```
+## Plots
+### Syllables
+Create a data structure to use for plotting. Display descriptive statistics.
+```{r}
+thk_mean_syllables = ddply(subset(thk_test, condition=="words"), c("subjID","catch"), summarise, accuracy = mean(accuracy))
+ddply(thk_mean_syllables, c("catch"),summarise,
+                                      mean=mean(accuracy),
+                                      sd = sd(accuracy))
+```
+Plot critical trials:
+```{r, fig.width=.75, fig.height=1.15}
+ggplot(subset(thk_mean_syllables,catch=="critical"), aes(x=catch, y=accuracy, fill=catch)) + 
+      geom_dotplot(binaxis = "y", stackdir = "center", position = "dodge", 
+                   stackratio = .45, binwidth = 0.01, dotsize=4) +
+      stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width=.2, size=0.75) +
+      stat_summary(fun.y = mean, geom = "point", size=2) +
+      theme(legend.position="none") +
+      theme(axis.title.x = element_text(vjust = 0),axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(size=10),axis.text.x = element_blank(), 
+	          axis.title.y = element_text(size=10), axis.text.y= element_text(size=10)) +
+      geom_hline(aes(yintercept=.5),linetype="dashed")+    
+      ylab("Proportion post-changed choice") +
+	    xlab("Critical trials") +
+      ylim(0,1)
+ggsave("plots/syllables_critical_THK.png", device="png", width = 1.75, height = 3)
+```
+Plot catch trials:
+```{r, fig.width=.75, fig.height=1.15}
+thk_mean_syllables = ddply(subset(thk_test, condition=="words"), c("subjID","catch"), summarise, accuracy = mean(accuracy))
+
+ggplot(subset(thk_mean_syllables,catch=="catch"), aes(x=catch, y=accuracy, fill=catch)) + 
+      geom_dotplot(binaxis = "y", stackdir = "center", position = "dodge", 
+                   stackratio = .45, binwidth = 0.01, dotsize=4) +
+      stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width=.2, size=0.75) +
+      stat_summary(fun.y = mean, geom = "point", size=2) +
+      theme(legend.position="none") +
+      theme(axis.title.x = element_text(vjust = 0),axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(size=10),axis.text.x = element_blank(), 
+	          axis.title.y = element_text(size=10), axis.text.y= element_text(size=10)) +
+      geom_hline(aes(yintercept=.5),linetype="dashed")+    
+      ylab("Proportion correct choice") +
+	    xlab("Catch trials") +
+      ylim(0,1) +
+      scale_fill_manual(values="#00BFC4")
+ggsave("plots/syllables_catch_THK.png", device="png", width = 1.75, height = 3)
+```
+### Shapes
+Create a data structure to use for plotting. Display descriptive statistics.
+```{r}
+thk_mean_shapes = ddply(subset(thk_test, condition=="shapes"), c("subjID","catch"), summarise, accuracy = mean(accuracy))
+ddply(thk_mean_shapes, c("catch"),summarise,
+                                      mean=mean(accuracy),
+                                      sd = sd(accuracy))
+```
+Plot critical trials:
+```{r, fig.width=.75, fig.height=1.15}
+ggplot(subset(thk_mean_shapes,catch=="critical"), aes(x=catch, y=accuracy, fill=catch)) + 
+      geom_dotplot(binaxis = "y", stackdir = "center", position = "dodge", 
+                   stackratio = .45, binwidth = 0.01, dotsize=4) +
+      stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width=.2, size=0.75) +
+      stat_summary(fun.y = mean, geom = "point", size=2) +
+      theme(legend.position="none") +
+      theme(axis.title.x = element_text(vjust = 0),axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(size=10),axis.text.x = element_blank(), 
+	          axis.title.y = element_text(size=10), axis.text.y= element_text(size=10)) +
+      geom_hline(aes(yintercept=.5),linetype="dashed")+    
+      ylab("Proportion post-changed choice") +
+	    xlab("Critical trials") +
+      ylim(0,1)
+ggsave("plots/shapes_critical_THK.png", device="png", width = 1.75, height = 3)
+```
+Plot catch trials:
+```{r, fig.width=.75, fig.height=1.15}
+thk_mean_shapes = ddply(subset(thk_test, condition=="shapes"), c("subjID","catch"), summarise, accuracy = mean(accuracy))
+
+ggplot(subset(thk_mean_shapes,catch=="catch"), aes(x=catch, y=accuracy, fill=catch)) + 
+      geom_dotplot(binaxis = "y", stackdir = "center", position = "dodge", 
+                   stackratio = .45, binwidth = 0.01, dotsize=4) +
+      stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width=.2, size=0.75) +
+      stat_summary(fun.y = mean, geom = "point", size=2) +
+      theme(legend.position="none") +
+      theme(axis.title.x = element_text(vjust = 0),axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(size=10),axis.text.x = element_blank(), 
+	          axis.title.y = element_text(size=10), axis.text.y= element_text(size=10)) +
+      geom_hline(aes(yintercept=.5),linetype="dashed")+    
+      ylab("Proportion correct choice") +
+	    xlab("Catch trials") +
+      ylim(0,1) +
+      scale_fill_manual(values="#00BFC4")
+
+ggsave("plots/shapes_catch_THK.png", device="png", width = 1.75, height = 3)
+```
+## Stats
+### Catch trials
+Model comparison: null model (intercept) vs. model including condition as fixed-effect.
+```{r}
+thk_model_catch1 <- glmer(accuracy~1+(1|subjID)+(1|target),family="binomial",data=subset(thk_test,trial_type!="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+thk_model_catch2 <- glmer(accuracy~condition+(1|subjID)+(1|target),family="binomial",data=subset(thk_test,trial_type!="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+anova(thk_model_catch1,thk_model_catch2)
+```
+Evaluate performance relative to chance: intercept-only models for both conditions. 
+Syllables:
+```{r}
+summary(glmer(accuracy~1+(1|subjID)+(1|target),family="binomial",data=subset(thk_test,condition=="words" & trial_type!="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5))))
+```
+Shapes:
+```{r}
+summary(glmer(accuracy~1+(1|subjID)+(1|target),family="binomial",data=subset(thk_test,condition=="shapes" & trial_type!="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5))))
+```
+### Critical trials
+Model comparison: null model (intercept) vs. model including condition as fixed-effect. (NB: models do not converge with by-item random effect term)
+```{r}
+thk_model1 <- glmer(accuracy~1+(1|subjID),family="binomial",data=subset(thk_test,trial_type=="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+thk_model2 <- glmer(accuracy~condition+(1|subjID),family="binomial",data=subset(thk_test,trial_type=="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+anova(thk_model1,thk_model2)
+```
+Print the simpler model:
+```{r}
+summary(thk_model1)
+```
+Look at only the participants who were "good", i.e., over 70% correct on catch trials. 
+```{r}
+thk_test_good <- subset(thk_test,catch_accuracy>0.70)
+```
+Descriptive stats for this group:
+```{r}
+thk_mean_good = ddply(thk_test_good, c("subjID","condition","catch"), summarise, accuracy = mean(accuracy))
+ddply(thk_mean_good, c("condition","catch"),summarise,
+                                      mean=mean(accuracy),
+                                      sd = sd(accuracy))
+```
+Model comparison: null model (intercept) vs. model including condition as fixed-effect. (NB: models do not converge with by-item random effect term)
+```{r}
+thk_model3 <- glmer(accuracy~1+(1|subjID),family="binomial",data=subset(thk_test_good,trial_type=="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+thk_model4 <- glmer(accuracy~condition+(1|subjID),family="binomial",data=subset(thk_test_good,trial_type=="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+anova(thk_model1,thk_model2)
+```
+Print the simpler model:
+```{r}
+summary(thk_model3)
+```
+# Combined statistical analysis of Experiments 1 (ENG) and 2 (THK)
+Combine the two dataframes:
+```{r}
+library(dplyr)
+thk_small <- thk_test
+thk_small$language <- "Kîîtharaka"
+thk_small <- thk_small %>% select(subjID,condition,target,trial_type,accuracy,language)
+eng_small <- eng_test
+eng_small$language <- "English"
+eng_small <- eng_small %>% select(subjID,condition,target,trial_type,accuracy,language)
+thk_eng <- rbind(thk_small,eng_small)
+thk_eng$language <- factor(thk_eng$language)
+```
+Critical trials. Model comparison: null model (intercept) vs. model including language (population) as fixed-effect. (NB: models do not converge with by-item random effect term)
+```{r}
+combo_model1 <- glmer(accuracy~1+(1|subjID),family="binomial",data=subset(thk_eng,trial_type=="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+combo_model2 <- glmer(accuracy~language+(1|subjID),family="binomial",data=subset(thk_eng,trial_type=="post-pre"),control=glmerControl(optimizer = "bobyqa",optCtrl = list(maxfun=2e5)))
+anova(combo_model1,combo_model2)
+```

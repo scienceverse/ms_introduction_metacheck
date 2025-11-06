@@ -1,0 +1,406 @@
+---
+title: "Female Facial Masculinity"
+author: "BC Jones et al. (ben.jones@glasgow.ac.uk)"
+output:
+  html_document:
+    toc: yes
+    toc_depth: '4'
+  html_notebook:
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+---
+
+# Overview
+
+This supplemental information contains the R code for data analysis of **female facial masculinity** preferences reported in the manuscript (data are publicly available at https://osf.io/9b4y7/).
+
+*Hypothesis 1.*
+Do preferences track changes in measured steroid hormone levels in women not using hormonal contraceptives?
+
+Women reporting no use of hormonal contraceptives and for whom at least two test sessions with valid hormone levels are available.
+
+*Hypothesis 2.*
+Do women not using hormonal contraceptives show stronger preferences than women using the combined oral contraceptive pill?
+
+Women reporting use of the combined oral contraceptive pill or no use of hormonal contraceptives across all test sessions.
+
+*Hypothesis 3.*
+Do preferences of women using the combined oral contraceptive pill change when they are taking inactive pills?
+
+Women who were tested during a scheduled break from use of the combined oral contraceptive pill.
+
+*Hypothesis 4.*
+Do preferences change when women start or stop using the combined oral contraceptive pill?
+
+Women who switched from using no hormonal contraceptive to using the combined oral contraceptive pill (or vice versa) between blocks of test sessions.
+
+```{r, echo=FALSE, message = FALSE}
+# Load packages
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(knitr)
+library(lubridate)
+
+options(scipen=999)
+knitr::opts_chunk$set(cache=TRUE)
+
+```
+
+
+```{r load-data}
+# load data frames from Jones_hormones_data.Rmd
+data_hormones <- readRDS("data_hormones.Rda")
+data_hormones_partner <- readRDS("data_hormones_partner.Rda")
+data_between <- readRDS("data_between.Rda")
+data_between_partner <- readRDS("data_between_partner.Rda")
+data_pillbreak <- readRDS("data_pillbreak.Rda")
+data_pillbreak_partner <- readRDS("data_pillbreak_partner.Rda")
+data_pill_switchers <- readRDS("data_pill_switchers.Rda")
+data_pill_switchers_partner <- readRDS("data_pill_switchers_partner.Rda")
+```
+
+
+```{r filters}
+# filter only sexual dimorphism manipulations for female faces in the analyses below
+theManip <- "sexdim"
+theFaceSex <- "women"
+confint_method <- "Wald" # c("profile", "Wald", "boot")
+```
+
+
+```{r custom-functions}
+
+# calculate standard errors
+se <- function(x, na.rm = FALSE) {
+  if (na.rm) {
+    the.SE <- sqrt(var(x,na.rm=TRUE)/length(na.omit(x)))
+  } else {
+    the.SE <- sqrt(var(x,na.rm=FALSE)/length(x))
+  }
+  
+  return(the.SE)
+}
+
+# short summaries for lmerTest
+mySummary <- function(lmer_summary) {
+  
+  coefTable <- lmer_summary$coefficients %>% 
+    round(3) %>%
+    as.data.frame() %>% 
+    rownames_to_column()
+  
+  if (ncol(coefTable)>5) {
+    coefTable <- coefTable %>%
+      mutate(
+        sig = ifelse(.[6]<.001, "***",
+              ifelse(.[6]<.01,   "**",
+              ifelse(.[6]<.05,   "*",
+              ifelse(.[6]<.10,   "+", "")))))
+  }
+  
+  return(list(lmer_summary$ngrps, kable(coefTable)))
+}
+
+```
+
+
+
+
+# Hypothesis 1 
+
+Do preferences track changes in measured steroid hormone levels in women not using hormonal contraceptives?
+
+For tests of effects of endogenous hormones. Women reporting no use of hormonal contraceptives and for whom at least two test sessions with valid hormone levels are available (all relationship statuses).
+
+
+## Descriptive stats: data_hormones
+
+```{r}
+
+# create mean DV for all ratings by oc_id
+filter(data_hormones, face_sex==theFaceSex, manip==theManip) %>%
+  group_by(oc_id) %>%
+  summarise(
+    overall_rating.c = mean(rating.c)
+  ) %>%
+  ungroup() %>%
+  group_by() %>%
+  summarise(
+    n = n_distinct(oc_id),
+    mean_dv = mean(overall_rating.c),
+    sd_dv = sd(overall_rating.c),
+    se_dv = se(overall_rating.c)
+  )
+
+
+```
+
+## Analyses H1: Hormones
+
+### E + P + E*P: 
+
+Testing for effects of estradiol, progesterone, and their interaction on preferences
+
+```{r}
+
+model_h1_EP <- lmer(rating.c ~ estr.s * prog.s  + 
+                          (1 | oc_id) + 
+                          (0 + estr.s:prog.s || oc_id) +
+                          (1 | block:oc_id) +
+                          (0 + estr.s:prog.s || block:oc_id), 
+                     data = filter(data_hormones, 
+                                   face_sex==theFaceSex, 
+                                   manip==theManip),
+                     REML = FALSE)
+summary_h1_EP <- summary(model_h1_EP)
+mySummary(summary_h1_EP)  
+confint(model_h1_EP, method = confint_method) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(!is.na(`2.5 %`))
+```
+
+
+### E + P + EPratio: 
+
+Testing for effects of estradiol, progesterone, and their ratio on preferences
+
+```{r}
+
+model_h1_EP_ep_ratio <- lmer(rating.c ~ estr.s  + prog.s + ep_ratio.s  + 
+                          (1 | oc_id) + 
+                          (0 + estr.s + prog.s + ep_ratio.s || oc_id) +
+                          (1 | block:oc_id) +
+                          (0 + estr.s + prog.s + ep_ratio.s|| block:oc_id), 
+                     data = filter(data_hormones, 
+                                   face_sex==theFaceSex, 
+                                   manip==theManip),
+                     REML = FALSE)
+summary_h1_EP_ep_ratio <- summary(model_h1_EP_ep_ratio)
+mySummary(summary_h1_EP_ep_ratio) 
+confint(model_h1_EP_ep_ratio, method = confint_method) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(!is.na(`2.5 %`))
+```
+
+
+### T + C: 
+
+Testing for effects of testosterone and coritsol on preferences
+
+```{r}
+model_h1_TC <- lmer(rating.c ~ test.s + cort.s  + 
+                          (1 | oc_id) + 
+                          (0 + test.s + cort.s || oc_id) + 
+                          (1 | block:oc_id) +
+                          (0 + test.s + cort.s || block:oc_id), 
+                     data = filter(data_hormones, 
+                                   face_sex==theFaceSex, 
+                                   manip==theManip), 
+                     REML = FALSE)
+summary_h1_TC <- summary(model_h1_TC)
+mySummary(summary_h1_TC) 
+confint(model_h1_TC, method = confint_method) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(!is.na(`2.5 %`))
+```
+
+
+### T + C + T*C: 
+
+Testing for effects of testosterone and coritsol plus their interaction on preferences
+
+```{r}
+model_h1_TCi <- lmer(rating.c ~ test.s * cort.s + 
+                          (1 | oc_id) + 
+                          (0 + test.s:cort.s || oc_id) + 
+                          (1 | block:oc_id) +
+                          (0 + test.s:cort.s|| block:oc_id), 
+                     data = filter(data_hormones, 
+                                   face_sex==theFaceSex, 
+                                   manip==theManip), 
+                     REML = FALSE)
+summary_h1_TCi <- summary(model_h1_TCi)
+mySummary(summary_h1_TCi) 
+confint(model_h1_TCi, method = confint_method) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(!is.na(`2.5 %`))
+```
+
+
+---
+
+# Hypothesis 2
+
+Do women not using hormonal contraceptives show stronger preferences than women using the combined oral contraceptive pill?
+
+One of these women was excluded from analyses because she did not complete any male face preference tests.
+
+## Descriptive stats: data_between
+
+```{r}
+
+# create mean DV for all ratings by oc_id
+stats_overall <- filter(data_between, face_sex==theFaceSex, manip==theManip) %>%
+  group_by(oc_id) %>%
+  summarise(
+    overall_rating.c = mean(rating.c)
+  ) %>%
+  ungroup() %>%
+  group_by() %>%
+  summarise(
+    pill.e = "overall",
+    n = n_distinct(oc_id),
+    mean_dv = mean(overall_rating.c),
+    sd_dv = sd(overall_rating.c),
+    se_dv = se(overall_rating.c)
+  )
+
+# stats by pill.e
+stats_pill <- filter(data_between, face_sex==theFaceSex, manip==theManip) %>%
+  group_by(oc_id, pill.e) %>%
+  summarise(
+    overall_rating.c = mean(rating.c)
+  ) %>%
+  ungroup() %>%
+  group_by(pill.e) %>%
+  summarise(
+    n = n_distinct(oc_id),
+    mean_dv = mean(overall_rating.c),
+    sd_dv = sd(overall_rating.c),
+    se_dv = se(overall_rating.c)
+  ) %>% 
+  select(pill.e, n, mean_dv,sd_dv, se_dv)
+
+rbind(stats_overall, stats_pill)
+  
+```
+
+## Analyses H2: Pill
+
+```{r}
+
+model_h2 <- lmer(rating.c ~ pill.e  + 
+                      (1 | oc_id) +
+                      (1 | oc_id:block),
+                     data=filter(data_between, face_sex==theFaceSex, manip==theManip), 
+                     REML=FALSE
+                    )
+summary_h2 <- summary(model_h2)
+mySummary(summary_h2)  
+confint(model_h2, method = confint_method) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(!is.na(`2.5 %`)) 
+
+```
+
+
+
+---
+
+# Hypothesis 3
+
+Do preferences of women using the combined oral contraceptive pill change when they are taking inactive pills?
+
+pill_break.e coding: using active pill= 0.5, using inactive pill/being on on a pill break = -0.5
+
+
+### Descriptive stats: data_pillbreak
+
+```{r}
+
+# create mean DV for all ratings by oc_id
+filter(data_pillbreak, face_sex==theFaceSex, manip==theManip) %>%
+  group_by(oc_id) %>%
+  summarise(
+    overall_rating.c = mean(rating.c)
+  ) %>%
+  ungroup() %>%
+  group_by() %>%
+  summarise(
+    n= n_distinct(oc_id),
+    mean_dv = mean(overall_rating.c),
+    sd_dv = sd(overall_rating.c),
+    se_dv = se(overall_rating.c)
+  )
+
+
+```
+
+## Analyses H3: Pill-break
+
+```{r}
+model_h3 <- lmer(rating.c ~ pill_break.e +
+                     (1 | oc_id) + 
+                     (0 + pill_break.e || oc_id) +
+                     (1 | oc_id:block) +
+                     (0 + pill_break.e || oc_id:block),
+                 data=filter(data_pillbreak, face_sex==theFaceSex, manip==theManip), 
+                 REML=FALSE)
+summary_h3 <- summary(model_h3)
+mySummary(summary_h3)  
+confint(model_h3, method = confint_method) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(!is.na(`2.5 %`))
+
+```
+
+
+
+---
+
+# Hypothesis 4
+
+Do preferences change when women start or stop using the combined oral contraceptive pill?
+
+
+## Descriptive stats: data_pill_switchers
+
+```{r}
+
+# create mean DV for all ratings by oc_id
+filter(data_pill_switchers, face_sex==theFaceSex, manip==theManip) %>%
+  group_by(oc_id) %>%
+  summarise(
+    overall_rating.c = mean(rating.c)
+  ) %>%
+  ungroup() %>%
+  group_by() %>%
+  summarise(
+    n= n_distinct(oc_id),
+    mean_dv = mean(overall_rating.c),
+    sd_dv = sd(overall_rating.c),
+    se_dv = se(overall_rating.c)
+  )
+
+```
+
+
+## Analyses H4p: Pill-switch (+ partnership status change) 
+
+Within-subject change in pill use:  (considering possible effects of change in partnership status)
+
+```{r}
+model_h4p <- lmer(rating.c ~ pill.e + partner.e + direction.e +
+                          (1 | oc_id) +
+                          (0 + pill.e + partner.e || oc_id) +
+                          (1 | oc_id:block),
+                     data=filter(data_pill_switchers_partner, 
+                                 face_sex==theFaceSex, 
+                                 manip==theManip), 
+                     REML=FALSE)
+summary_h4p <- summary(model_h4p)
+mySummary(summary_h4p)  
+confint(model_h4p, method = confint_method) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(!is.na(`2.5 %`))
+```
+

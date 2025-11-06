@@ -1,0 +1,287 @@
+---
+title: "Post hoc analyses for the laboratory study"
+subtitle: "Homeostatic regulation of energetic arousal during acute social isolation - evidence from the lab and the field"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Load data
+
+```{r}
+rm(list=ls())
+
+library(readxl)
+library(dplyr)
+library(Hmisc)
+library(lme4)
+library(lmerTest)
+library(reghelper)
+
+#setwd("mypath")
+
+# main dataset from experimental sessions including: momentary psychological measures, salivary cortisol (sCort) and salivary alpha amylase (sAA); all measures  have one value per study measurement point (once an hour or once every two hours)
+dat <- read_excel("lab_data_main_2022-03-08.xlsx")
+
+# heart rate (HR) dataset from experimental sessions; one value per minute
+dat_hr <- read_excel("lab_data_HR_2022-03-08.xlsx")
+
+# dataset of psychological measures, sCort, and sAA collected the morning after each session; one value per morning
+dat_m  <- read_excel("lab_data_morning_2022-05-06.xlsx")
+
+```
+
+# Demographic characteristics (SM Table 1)
+
+```{r}
+dat_demo <- dat[, c("ID", "age", "Living_situation", "UCLA_Loneliness")] 
+dat_demo <- unique(dat_demo)
+
+describe(dat_demo)
+mean(dat_demo$age)
+sd(dat_demo$age)
+
+mean(dat_demo$UCLA_Loneliness)
+sd(dat_demo$UCLA_Loneliness)
+
+```
+# DV descriptive statistics (SM tables 2 and 3)
+
+## Psychological variables, sCort and sAA (SM Table 2)
+
+```{r, message=FALSE, warning=FALSE}
+DV <- c("anxiety_VAS","control_VAS","stress_VAS","avoid_VAS","MDBF_valence_mood","MDBF_calmness_mood","MDBF_energy_mood","MFI_general_fatigue","MFI_physical_fatigue","MFI_mental_fatigue","MFI_reduced_motivation","MFI_reduced_activity","hunger_VAS","loneliness_VAS","desire_food_VAS","desire_soc_VAS", "sCort", "sAA")
+
+for (i in 1: length(DV)){
+  t <- dat[, c("ID", "Condition", "hours_num", DV[i])]
+  names(t) <- c("ID","Condition", "hours_num", "x")
+  t <- t %>% 
+    group_by(Condition, hours_num) %>%
+    summarise(M = mean(x, na.rm=TRUE), SD_b = sd(x, na.rm=TRUE), N = length(!is.na(x))) %>%
+    mutate (CI_down = M - qnorm(0.975)*SD_b/sqrt(N), CI_up = M + qnorm(0.975)*SD_b/sqrt(N)) %>%
+    ungroup %>%
+    group_by(Condition) %>%
+    mutate(M_ov = mean(M, na.rm=TRUE), SD_ov = mean(SD_b, na.rm=TRUE),  
+           CI_down_ov = mean(CI_down, na.rm=TRUE), CI_up_ov = mean(CI_up, na.rm=TRUE))
+  t$var <- DV[i]
+  
+  if (i==1){
+    Mt <- t
+  }else{
+    Mt <- rbind(Mt,t)
+  }
+}
+
+# Per condition and hour
+Mt[c(1:7,12)]
+
+# Per condition
+unique(Mt[c(1,5,8:12)])
+```
+
+## Heart rate (SM Table 2)
+
+```{r, message=FALSE, warning=FALSE}
+
+# exclude data that is not valid due to technical bugs (see Methods section of the paper)
+dat_hr <- dat_hr[-which(dat_hr$HR_drop==TRUE),]
+
+t <- dat_hr[, c("ID", "Condition", "hours", "M_bpm")]
+t <- t %>% 
+  group_by(Condition, hours) %>%
+  summarise(M = mean(M_bpm, na.rm=TRUE), SD_b = sd(M_bpm, na.rm=TRUE), N = length(!is.na(M_bpm))) %>%
+  mutate (CI_down = M - qnorm(0.975)*SD_b/sqrt(N), CI_up = M + qnorm(0.975)*SD_b/sqrt(N)) %>%
+  ungroup %>%
+  group_by(Condition) %>%
+  mutate(M_ov = mean(M, na.rm=TRUE), SD_ov = mean(SD_b, na.rm=TRUE),  
+         CI_down_ov = mean(CI_down, na.rm=TRUE), CI_up_ov = mean(CI_up, na.rm=TRUE))
+
+# Per condition and hour
+t[c(1:4,6:7)]
+
+# Per condition
+unique(t[c(1,8:11)])
+```
+
+## Next morning measures (SM Table 3)
+
+```{r}
+DV <- c("anxiety_VAS","control_VAS","stress_VAS","avoid_VAS","MDBF_valence_mood","MDBF_calmness_mood","MDBF_energy_mood", "MFI_general_fatigue","MFI_physical_fatigue","MFI_mental_fatigue","MFI_reduced_motivation","MFI_reduced_activity", "hunger_VAS","loneliness_VAS","desire_food_VAS","desire_soc_VAS", "CAR","AAR","sCort_S1","sAA_S1")
+
+for (i in 1: length(DV)){
+  t <- dat_m[, c("ID", "Condition", DV[i])]
+  names(t) <- c("ID","Condition", "x")
+  t <- t %>% 
+    group_by(Condition) %>%
+    summarise(M = mean(x, na.rm=TRUE), SD_b = sd(x, na.rm=TRUE), N = length(!is.na(x))) %>%
+    mutate (CI_down = M - qnorm(0.975)*SD_b/sqrt(N), CI_up = M + qnorm(0.975)*SD_b/sqrt(N))
+  t$var <- DV[i]
+  
+  if (i==1){
+    Mt <- t
+  }else{
+    Mt <- rbind(Mt,t)
+  }
+}
+
+Mt
+```
+
+# Mediation analysis (SM7)
+
+```{r}
+# subject number of each participant
+dat$ID <- as.factor(dat$ID)
+
+# experimental condition - "Baseline" is a reference category compared to "Fasting" and "Isolation"
+dat$Condition <- as.factor(dat$Condition)
+dat$Condition <- factor(dat$Condition, levels = c("Baseline", "Isolation", "Fasting"))
+
+#################################### 
+### MEDIATION ANALYSIS
+#################################### 
+
+# select the data we want 
+
+mdat <- subset(dat,Condition!="Fasting")
+mdat <- mdat[c("ID","MFI_general_fatigue","Condition","hours_num","boredom_VAS","MDBF_energy_mood")]
+mdat <-mdat[complete.cases(mdat),]
+
+# set seed to reproduce results 
+set.seed(1111)
+
+# need to detach lmerTest to run mediation 
+# I copy and pasted the ouput with the p values for the models 
+detach("package:lmerTest",unload=T)
+
+
+```
+
+## Boredom ~ fatigue
+
+```{r}
+#################################### 
+### boredom ~ fatigue
+#################################### 
+
+fatigue.fit.mediator = lmer(boredom_VAS~ Condition + hours_num+(hours_num|ID),
+                   mdat,  REML = TRUE,control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(fatigue.fit.mediator)
+
+fatigue.fit.dv <- lmer(MFI_general_fatigue ~ Condition + boredom_VAS + hours_num+(hours_num|ID),
+               mdat, REML = TRUE,control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(fatigue.fit.dv)
+
+
+fatigue.results = mediation::mediate(fatigue.fit.mediator, fatigue.fit.dv, treat="Condition",mediator="boredom_VAS")
+summary(fatigue.results)
+```
+
+## Boredom ~ energy
+
+```{r}
+#################################### 
+### boredom ~ energy
+#################################### 
+
+energy.fit.mediator = lmer(boredom_VAS~ Condition + hours_num+(hours_num|ID),
+                            mdat,  REML = TRUE,control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(energy.fit.mediator)
+
+
+energy.fit.dv <- lmer(MDBF_energy_mood ~ Condition + boredom_VAS + hours_num+(hours_num|ID),
+                       mdat, REML = TRUE,control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(energy.fit.dv)
+ 
+
+energy.results = mediation::mediate(energy.fit.mediator, energy.fit.dv, treat="Condition",mediator="boredom_VAS")
+summary(energy.results)
+
+```
+
+# Salivary cortisol and alpha amylase results on the full sample with non-transformed data (SM Table 6)
+
+## 1. sCort - momentary values
+
+### Main effect of condition
+
+```{r}
+library(lmerTest)
+
+mod.cort_me <- lmer(sCort ~ Condition + hours_num + (hours_num|ID), data = dat, REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+# (Condition + hours_num|ID) boundary (singular) fit: see help('isSingular')
+# (Condition |ID) boundary (singular) fit: see help('isSingular')
+
+summary(mod.cort_me)
+
+# adjusted p values - Bonferroni correction
+p1<- summary(mod.cort_me)$coefficients[,"Pr(>|t|)"]
+p_adjusted <- p1*3
+round(p_adjusted,3)[2:4]
+
+
+
+```
+
+### Interaction between condition and time
+
+```{r}
+
+mod.cort_int <- lmer(sCort ~ Condition * hours_num + (hours_num |ID), data = dat, REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+# Random effect structure of more complex models that did not converge:
+#   (Condition * hours_num|ID) boundary (singular) fit: see ?isSingular
+#   (Condition + hours_num|ID) boundary (singular) fit: see ?isSingular
+#   (Condition |ID) boundary (singular) fit: see ?isSingular
+
+summary(mod.cort_int)
+
+# adjusted p values - Bonferroni correction
+p1<- summary(mod.cort_int)$coefficients[,"Pr(>|t|)"]
+p_adjusted <- p1*3
+round(p_adjusted,3)[5:6]
+
+```
+
+## 2. sAA - momentary values
+
+### Main effect of condition
+
+```{r}
+
+mod.AA_me <- lmer(sAA ~ Condition + hours_num + (Condition |ID), data = dat, REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+#   (Condition + hours_num|ID) boundary (singular) fit: see ?isSingular
+
+
+summary(mod.AA_me)
+
+# adjusted p values - Bonferroni correction
+p1<- summary(mod.AA_me)$coefficients[,"Pr(>|t|)"]
+p_adjusted <- p1*3
+round(p_adjusted,3)[2:4]
+
+```
+
+### Interaction between condition and time
+
+```{r}
+
+mod.AA_int <- lmer(sAA ~ Condition * hours_num + (Condition |ID), data = dat, REML = TRUE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+# Random effect structure of more complex models that did not converge:
+#   (Condition * hours_num|ID) boundary (singular) fit: see ?isSingular
+#   (Condition + hours_num|ID) boundary (singular) fit: see ?isSingular
+
+summary(mod.AA_int)
+
+# adjusted p values - Bonferroni correction
+p1<- summary(mod.AA_int)$coefficients[,"Pr(>|t|)"]
+p_adjusted <- p1*3
+round(p_adjusted,3)[5:6]
+
+# simple slope analysis of interaction between baseline:fasting and time
+simple_slopes(mod.AA_int, levels=list(Condition=c("Baseline", "Fasting")))
+
+```

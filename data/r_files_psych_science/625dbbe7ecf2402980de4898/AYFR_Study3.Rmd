@@ -1,0 +1,377 @@
+---
+title: "Are you for Real? - Study 3"
+author: "Erica R. Bailey"
+---
+
+```{r }
+
+# Load required packages 
+
+library(dplyr)
+library(report)
+library(psych)
+library(patchwork)
+library(ggplot2)
+library(apaTables)
+library(lme4)
+library(lmerTest)
+library(rstanarm)
+library(TripleR)
+library(bayestestR)
+
+# Reading in Data 
+
+mydata = read.csv("AYFR_Study3_import.csv")
+
+```
+
+# Clean and Create Variables  
+
+```{r }
+
+## Note: Participants in the data set are both actors (one's being rated; typically noted with '.a' at the end) and observers (one's doing the rating; typically noted with '.o' at the end)
+# In the code, "actor" variables or variables without a prefix indicate self-rated or variables answered in regards to the self; "observer" variables indicate other-rated or variables answered in regards to someone else.
+# For biases, I use observer's self-rated variables as predictors of their ratings of others. These variables begin with 'obs_' to indicate that they are self-rated by the observers. 
+
+# State authenticity 
+mydata$cn1.r = 8 - mydata$cn1
+mydata$cn2.r = 8 - mydata$cn2
+
+mydata$fas.1 = (mydata$cn1.r + mydata$cn2.r + mydata$auth)/3
+
+mydata$obs_cn1.r = 8 - mydata$obs_cn1
+mydata$obs_cn2.r = 8 - mydata$obs_cn2
+
+mydata$obs_fas.1 = (mydata$obs_cn1.r + mydata$obs_cn2.r + mydata$obs_auth)/3
+
+# Personality
+mydata$extra.actor_rated = (mydata$extra_1.a + (8-(mydata$extra_2.a)))/2
+mydata$agree.actor_rated = (mydata$agree_2.a + (8-(mydata$agree_1.a)))/2
+mydata$conc.actor_rated = (mydata$conc_1.a + (8-(mydata$conc_2.a)))/2
+mydata$neuro.actor_rated = (mydata$neuro_1.a + (8-(mydata$neuro_2.a)))/2
+mydata$open.actor_rated = (mydata$open_1.a + (8-(mydata$open_2.a)))/2
+
+mydata$extra.observer_rated = (mydata$extra_1.o + (8-(mydata$extra_2.o)))/2
+mydata$agree.observer_rated = (mydata$agree_2.o + (8-(mydata$agree_1.o)))/2
+mydata$conc.observer_rated = (mydata$conc_1.o + (8-(mydata$conc_2.o)))/2
+mydata$neuro.observer_rated = (mydata$neuro_1.o + (8-(mydata$neuro_2.o)))/2
+mydata$open.observer_rated = (mydata$open_1.o + (8-(mydata$open_2.o)))/2
+
+mydata$obs_extra = (mydata$obs_extra_1.a + (8-(mydata$obs_extra_2.a)))/2
+mydata$obs_agree = (mydata$obs_agree_2.a + (8-(mydata$obs_agree_1.a)))/2
+mydata$obs_conc = (mydata$obs_conc_1.a + (8-(mydata$obs_conc_2.a)))/2
+mydata$obs_neuro = (mydata$obs_neuro_1.a + (8-(mydata$obs_neuro_2.a)))/2
+mydata$obs_open = (mydata$obs_open_1.a + (8-(mydata$obs_open_2.a)))/2
+
+# Trait Authenticity 
+mydata$perauth_4.a.r = 8 - mydata$perauth_4.a
+
+mydata$perauth.actor_rated = (mydata$perauth_1.a + mydata$perauth_2.a + mydata$perauth_3.a + mydata$perauth_4.a.r)/4
+
+mydata$perauth_4.o.r = 8 - mydata$perauth_4.o
+
+mydata$perauth.observer_rated = (mydata$perauth_1.o + mydata$perauth_2.o + mydata$perauth_3.o + mydata$perauth_4.o.r)/4
+
+mydata$obs_perauth_4.a.r = 8 - mydata$obs_perauth_4.a
+
+mydata$obs_perauth = (mydata$obs_perauth_1.a + mydata$obs_perauth_2.a + mydata$obs_perauth_3.a + mydata$obs_perauth_4.a.r)/4
+
+# Meta-Perceptions
+
+mydata$expect_percauth = (mydata$percauth_1 + mydata$percauth_2 + mydata$percauth_3)/3
+
+## Demographics 
+
+mydata$woman[mydata$Gender == 1] = 0
+mydata$woman[mydata$Gender == 2] = 1
+
+mydata$obs_woman[mydata$obs_Gender == 1] = 0
+mydata$obs_woman[mydata$obs_Gender == 2] = 1
+
+mydata$white[mydata$race_ethnicity == 3] = 1
+mydata$white[mydata$race_ethnicity != 3] = 0
+
+mydata$obs_white[mydata$obs_race_ethnicity == 3] = 1
+mydata$obs_white[mydata$obs_race_ethnicity != 3] = 0
+
+# Authenticity Accuracy Score 
+# Signed diff between perceiver rated authenticity and target-rated authenticity 
+# Positive indicates that other-rated is higher than self-rated 
+# Negative indicates that other-rated is lower than self-rated 
+# Absolute difference also calculated 
+
+mydata$auth_diff = (mydata$perauth.observer_rated - mydata$perauth.actor_rated)
+
+```
+
+# Summarize the Data 
+
+```{r }
+
+# By Actor Variables 
+actor.summary <- mydata %>%
+           group_by(fullname) %>%
+           summarise(perauth.actor_rated = mean(perauth.actor_rated, na.rm = T),
+                     extra.a = mean(extra.actor_rated, na.rm = T),
+                     open.a = mean(open.actor_rated, na.rm = T),
+                     conc.a = mean(conc.actor_rated, na.rm = T),
+                     agree.a = mean(agree.actor_rated, na.rm = T),
+                     neuro.a = mean(neuro.actor_rated, na.rm = T),
+                     perauth.observer_rated = mean(perauth.observer_rated, na.rm = T),
+                     extra.o = mean(extra.observer_rated, na.rm = T),
+                     open.o = mean(open.observer_rated, na.rm = T),
+                     conc.o = mean(conc.observer_rated, na.rm = T),
+                     agree.o = mean(agree.observer_rated, na.rm = T),
+                     neuro.o = mean(neuro.observer_rated, na.rm = T),
+                     age = mean(Age, na.rm = T),
+                     woman = mean(woman, na.rm = T),
+                     white = mean(white, na.rm = T),
+                     fas.1 = mean(fas.1, na.rm = T),
+                     fam.o = mean(fam.o, na.rm = T),
+                     expect_percauth = mean(expect_percauth, na.rm = T))
+
+# By Observer Variables 
+
+observer.summary <- mydata %>%
+           group_by(obsfullname) %>%
+           summarise(obs_perauth = mean(obs_perauth, na.rm = T),
+                     obs_extra = mean(obs_extra, na.rm = T),
+                     obs_agree = mean(obs_agree, na.rm = T),
+                     obs_conc = mean(obs_conc, na.rm = T),
+                     obs_agree = mean(obs_agree, na.rm = T),
+                     obs_neuro = mean(obs_neuro, na.rm = T),
+                     obs_age = mean(obs_Age, na.rm = T),
+                     obs_woman = mean(obs_woman, na.rm = T),
+                     obs_white = mean(obs_white, na.rm = T),
+                     obs_fas.1 = mean(obs_fas.1, na.rm = T))
+
+# For Alphas (Items by Actor)
+
+scale.items.summary <- mydata %>%
+           group_by(fullname) %>%
+           summarise(cn1.r = mean(cn1.r, na.rm = T),
+                     cn2.r = mean(cn2.r, na.rm = T),
+                     auth = mean(auth, na.rm = T),
+                     perauth_1.a = mean(perauth_1.a,na.rm = T),
+                     perauth_2.a = mean(perauth_2.a,na.rm = T),
+                     perauth_3.a = mean(perauth_3.a,na.rm = T),
+                     perauth_4.a.r = mean(perauth_4.a.r,na.rm = T),
+                     perauth_1.o = mean(perauth_1.o,na.rm = T),
+                     perauth_2.o = mean(perauth_2.o,na.rm = T),
+                     perauth_3.o = mean(perauth_3.o,na.rm = T),
+                     perauth_4.o.r = mean(perauth_4.o.r,na.rm = T),
+                     percauth_1 = mean(percauth_1,na.rm = T),
+                     percauth_2 = mean(percauth_2,na.rm = T),
+                     percauth_3 = mean(percauth_3,na.rm = T))
+
+```
+
+# Descriptives 
+
+```{r }
+
+table(actor.summary$woman)
+
+mean(actor.summary$age,na.rm = T)
+sd(actor.summary$age,na.rm = T)
+
+```
+
+# Alphas 
+
+```{r }
+
+# Alpha of Actor-Rated Trait Auth
+
+actor.percauth = data.frame(scale.items.summary$perauth_1.a,scale.items.summary$perauth_2.a,scale.items.summary$perauth_3.a,scale.items.summary$perauth_4.a.r)
+psych::alpha(actor.percauth,check.keys = T)
+remove(actor.percauth)
+
+# Alpha of Actor-Rated State Auth
+
+auth = data.frame(scale.items.summary$cn1.r,scale.items.summary$cn2.r,scale.items.summary$auth)
+psych::alpha(auth,check.keys = T)
+remove(auth)
+
+# Alpha of Actor-Rated Expected Auth
+
+expect = data.frame(scale.items.summary$percauth_1,scale.items.summary$percauth_2,scale.items.summary$percauth_3)
+psych::alpha(expect,check.keys = T)
+remove(expect)
+
+# Alpha of Observer-Rated Auth
+
+obs.percauth = data.frame(scale.items.summary$perauth_1.o,scale.items.summary$perauth_2.o,scale.items.summary$perauth_3.o,scale.items.summary$perauth_4.o.r)
+psych::alpha(obs.percauth,check.keys = T)
+remove(obs.percauth)
+
+
+```
+
+# Cor Table
+
+```{r }
+
+table = data.frame(actor.summary$perauth.observer_rated,actor.summary$perauth.actor_rated,actor.summary$fas.1,actor.summary$expect_percauth,actor.summary$open.a,actor.summary$conc.a,actor.summary$extra.a,actor.summary$agree.a,actor.summary$neuro.a,actor.summary$fam.o,actor.summary$woman,actor.summary$age,actor.summary$white)
+
+apa.cor.table(table)
+
+# Supplementary Correlation Table - Personality Traits 
+table2 = data.frame(actor.summary$extra.a,actor.summary$extra.o,actor.summary$open.a,actor.summary$open.o,actor.summary$conc.a,actor.summary$conc.o,actor.summary$agree.a,actor.summary$agree.o,actor.summary$neuro.a,actor.summary$neuro.o)
+
+apa.cor.table(table2)
+
+```
+
+# Hypothesis Testing
+
+```{r }
+
+mydata[,c("perauth.observer_rated","perauth.actor_rated","fas.1","expect_percauth","extra.actor_rated","conc.actor_rated","agree.actor_rated","neuro.actor_rated","open.actor_rated","extra.observer_rated","conc.observer_rated","agree.observer_rated","neuro.observer_rated","open.observer_rated","fam.o")] <- apply(mydata[,c("perauth.observer_rated","perauth.actor_rated","fas.1","expect_percauth","extra.actor_rated","conc.actor_rated","agree.actor_rated","neuro.actor_rated","open.actor_rated","extra.observer_rated","conc.observer_rated","agree.observer_rated","neuro.observer_rated","open.observer_rated","fam.o")], 2, function(x) {as.numeric(as.character(scale(x, center = T, scale = T)))})
+
+mydata$obsfullname = as.factor(mydata$obsfullname)
+mydata$fullname = as.factor(mydata$fullname)
+
+## Do others know when you're authentic?
+# MLM
+
+summary(m1 <- lmer(perauth.observer_rated ~ perauth.actor_rated + (1 | obsfullname), mydata, REML = FALSE))
+confint(m1)
+
+summary(m2 <- lmer(perauth.observer_rated ~ fas.1 + (1 | obsfullname), mydata, REML = FALSE))
+confint(m2)
+
+# OLS
+
+summary(m1 <- lm(perauth.observer_rated ~ perauth.actor_rated, mydata))
+confint(m1)
+summary(m1 <- lm(perauth.observer_rated ~ fas.1, mydata))
+confint(m1)
+
+```
+
+## Bayesian 
+
+```{r }
+
+m1 = stan_glm(perauth.observer_rated ~ perauth.actor_rated, data = mydata)
+
+#Coefficients, credible invervals and ROPE from bayesian 
+
+coef(m1)
+posterior_interval(m1, prob = 0.95)  
+rope(m1, ci = .90, range = rope_range(m1))
+
+```
+
+## SRM 
+
+```{r }
+
+library("TripleR")
+
+smaller = read.csv("srm_s3.csv")
+
+## Interpreting SRM notes: 
+## Actor Variance / Effect Reliability == Perceiver/Observer; one making the rating
+## Partner Variance / Effect Reliability == Target; one receiving the rating
+## Relationship Variance == Observer+Target Variance
+## Self rating with Actor == Do people who describe themselves as authentic see others as authentic?
+## Self rating with Partner == Are people who describe themselves as authentic seen by others as authentic?
+RR1 <- RR(perauth.observer_rated~perceiver.id*target.id | group.id, data = smaller, na.rm = T)
+RR1
+
+```
+
+# Personality Accuracy 
+
+```{r }
+
+# Is a lack of accuracy unique to authenticity? 
+
+summary(m1 <- lmer(extra.observer_rated ~ extra.actor_rated + (1 | obsfullname), mydata, REML = FALSE))
+confint(m1)
+summary(m2 <- lmer(conc.observer_rated ~ conc.actor_rated + (1 | obsfullname), mydata, REML = FALSE))
+confint(m2)
+summary(m3 <- lmer(agree.observer_rated ~ agree.actor_rated + (1 | obsfullname), mydata, REML = FALSE))
+confint(m3)
+summary(m4 <- lmer(neuro.observer_rated ~ neuro.actor_rated + (1 | obsfullname), mydata, REML = FALSE))
+confint(m4)
+summary(m5 <- lmer(open.observer_rated ~ open.actor_rated + (1 | obsfullname), mydata, REML = FALSE))
+confint(m5)
+
+summary(m1 <- lm(extra.observer_rated ~ extra.actor_rated, mydata))
+confint(m1)
+summary(m1 <- lm(conc.observer_rated ~ conc.actor_rated, mydata))
+confint(m1)
+summary(m1 <- lm(agree.observer_rated ~ agree.actor_rated, mydata))
+confint(m1)
+summary(m1 <- lm(neuro.observer_rated ~ neuro.actor_rated, mydata))
+confint(m1)
+summary(m1 <- lm(open.observer_rated ~ open.actor_rated, mydata))
+confint(m1)
+
+```
+
+# Biases
+
+```{r }
+
+# Are Observers Overly Positive? 
+
+t.test(actor.summary$perauth.observer_rated,actor.summary$perauth.actor_rated) %>% report()
+
+## Does Perceiver's Own Authenticity Predict Their Ratings of Authenticity? 
+
+# Standardize Observer Variables 
+mydata[,c("obs_perauth","obs_fas.1","obs_open","obs_conc","obs_extra","obs_agree","obs_neuro")] <- apply(mydata[,c("obs_perauth","obs_fas.1","obs_open","obs_conc","obs_extra","obs_agree","obs_neuro")], 2, function(x) {as.numeric(as.character(scale(x, center = T, scale = T)))})
+
+summary(m1 <- lmer(perauth.observer_rated ~ obs_perauth + (1 | fullname), mydata, REML = FALSE))
+confint(m1)
+summary(m2 <- lmer(perauth.observer_rated ~ obs_perauth + obs_open + obs_conc + obs_extra + obs_agree + obs_neuro + fam.o + obs_woman + obs_white + obs_Age + (1 | fullname), mydata, REML = FALSE))
+confint(m2)
+
+summary(m3 <- lmer(auth_diff ~ obs_perauth + (1 | fullname), mydata, REML = FALSE))
+confint(m3)
+
+summary(m4 <- lmer(perauth.observer_rated ~ obs_fas.1 + (1 | fullname), mydata, REML = FALSE))
+confint(m4)
+
+# OLS 
+summary(m1 <- lm(perauth.observer_rated ~ obs_perauth, mydata))
+confint(m1)
+summary(m1 <- lm(perauth.observer_rated ~ obs_fas.1, mydata))
+confint(m1)
+
+summary(m1 <- lm(auth_diff ~ obs_perauth, mydata))
+confint(m1)
+
+# Who is perceived as authentic? 
+
+summary(m1 <- lmer(perauth.observer_rated ~ extra.actor_rated + conc.actor_rated + agree.actor_rated + open.actor_rated + neuro.actor_rated + woman + white + Age + (1 | obsfullname), mydata, REML = FALSE))
+confint(m1)
+
+# OLS
+summary(m1 <- lm(perauth.observer_rated ~ extra.actor_rated + conc.actor_rated + agree.actor_rated + open.actor_rated + neuro.actor_rated + woman + white + Age, mydata))
+confint(m1)
+
+```
+
+# Meta-Perceptions
+
+```{r }
+
+summary(m1 <- lm(expect_percauth ~ perauth.actor_rated, actor.summary))
+confint(m1)
+summary(m2 <- lm(expect_percauth ~ fas.1, actor.summary))
+confint(m2)
+
+summary(m3 <- lmer(perauth.observer_rated ~ expect_percauth + (1 | obsfullname), mydata, REML = FALSE))
+confint(m3)
+
+#OLS 
+
+summary(m1 <- lm(perauth.observer_rated ~ expect_percauth, mydata))
+confint(m1)
+
+```

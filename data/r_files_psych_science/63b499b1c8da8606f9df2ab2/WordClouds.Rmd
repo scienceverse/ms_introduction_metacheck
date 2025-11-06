@@ -1,0 +1,143 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r}
+
+options(scipen=999)
+
+# Install package and load library:
+install.packages("ggwordcloud")
+library(ggwordcloud)
+library(tidyverse)
+
+# Read in data:
+d <- read.csv('../data/raw/wc_tokens.csv')
+d_concrete <- read.csv('../data/raw/concreteness_ratings_knowledge_corr.csv')
+
+# Select distinct feature and concreteness ratings:
+d_concrete <- d_concrete %>%
+  select(feature, concreteness) %>%
+  distinct()
+
+# Join ratings with word correlation data set:
+d <- inner_join(d, d_concrete, on='feature')
+
+# Order data and take top 100 frequencies for cloud:
+d_sorted <- d[order(d$rel_freq, decreasing=TRUE), ]
+d_wc <- d_sorted[1:50,]
+
+d_wc <- d_wc %>%
+  mutate(rel_freq_sqrt = rel_freq**0.5,
+         above_median_src_attr = ifelse(know >= median(know), 1, 0))
+```
+
+
+```{r}
+
+# Set seed for cloud:
+set.seed(42)
+
+facet_labels <- c('1' = 'Above Median Knowledge of Source', '0' = 'Below Median Knowledge of Source')
+
+# Plot:
+ggplot(
+  d_wc,
+  aes(
+    label = feature, size = rel_freq_sqrt,
+    x = rel_freq_sqrt, color = know
+  )
+) +
+  facet_wrap(~above_median_src_attr, labeller = as_labeller(facet_labels)) +
+  geom_text_wordcloud_area(show.legend=TRUE, area_corr = TRUE) +
+  scale_x_discrete(breaks = NULL) +
+  scale_colour_gradient(low = "red", high = "blue") +
+  labs(colour='Source Attribution of Emotion', size='Relative Frequency', x='Source Attribution Knowledge Word Cloud') +
+  scale_radius(range = c(0, 11), limits = c(0, NA)) +
+  theme_minimal()
+
+# Save:
+ggsave('figures/ggwordcloud_know_50_facet.jpg')
+
+```
+
+```{r}
+# Set seed for cloud:
+set.seed(42)
+
+# Plot:
+ggplot(
+  d_wc,
+  aes(
+    label = feature, size = abs(corr_know),
+    x = rel_freq, color = rel_freq
+  )
+) +
+  geom_text_wordcloud_area(show.legend=TRUE) +
+  scale_x_discrete(breaks = NULL) +
+  facet_wrap(~is_pos_corr) +
+  scale_color_gradient() +
+  scale_size_area(max_size = 4) +
+  labs(colour='Relative Frequency', size='Strength of Correlation', x='Source Attribution Knowledge Word Cloud') +
+  theme_minimal()
+
+ggsave('figures/ggwordcloud_abs_corr.jpg')
+```
+
+```{r}
+# Set seed for cloud:
+set.seed(42)
+
+facet_labels <- c('negative'='Negative Association', 'positive'='Positive Association')
+
+d_wc_neg <- d_wc %>%
+  filter(is_pos_corr == 'negative')
+
+# Plot:
+ggplot(
+  d_wc,
+  aes(
+    label = feature, size = concreteness,
+    x = rel_freq, color = corr_know
+  )
+) +
+  geom_text_wordcloud_area(show.legend=TRUE) +
+  scale_x_discrete(breaks = NULL) +
+  facet_wrap(~is_pos_corr, labeller=as_labeller(facet_labels)) +
+  scale_size_area(max_size = 4) +
+  scale_color_gradient2(low="red", high="blue") +
+  labs(colour='Correlation With Knowledge', size='Concreteness Rating', x='Source Attribution Knowledge Correlation/Concreteness Rating Word Cloud') +
+  theme_minimal()
+
+# Save:
+ggsave('figures/ggwordcloud_concreteness_v1.jpg')
+```
+
+```{r}
+# Set seed for cloud:
+set.seed(42)
+
+# Plot:
+ggplot(
+  d_wc,
+  aes(
+    label = feature, size = rel_freq,
+    x = rel_freq, color = concreteness
+  )
+) +
+  geom_text_wordcloud_area(show.legend=TRUE) +
+  scale_x_discrete(breaks = NULL) +
+  scale_color_gradient2(low = "red", high = "blue") +
+  labs(colour='Word Concreteness', size='Relative Frequency', x='Word Concreteness Word Cloud') +
+  theme_minimal()
+
+# Save:
+ggsave('figures/ggwordcloud_concreteness.jpg')
+```
+
+
+```{r}
+cor(d$corr_know, d$concreteness)
+```
+

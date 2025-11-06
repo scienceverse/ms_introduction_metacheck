@@ -1,0 +1,431 @@
+---
+title: "Re-Analysis of Witt et al. (2010)"
+author: "Jessica K. Witt"
+date: "5/8/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Witt, Kemmerer, Linkenauger, & Culham (2010) presented evidence demonstrating a role for motor simulation in naming tools.  Specifically, participants were slower to name a tool when their hand that was closest to the tool's handle was already engaged in squeezing a ball when when the handle was oriented towards the unoccupied hand.
+
+We re-analyzed the data using a multiverse analysis and Bayesian approach.
+
+For the multiverse analysis, we manipulated outlier cut-offs, statistical test, and transformation of the dependent measure (reaction time; RT).
+
+The outcomes suggest that the data do not support nor refute a role for motor simulation in tool identification.
+
+
+```{r init}
+
+setwd("C:/Users/jkwitt/Dropbox/Naming Tools Reanalysis")
+require(reshape2)
+require(lme4)
+require(lmerTest)
+require(BayesFactor)
+require(emmeans)
+require(lsr)
+require(psych)
+options(contrasts=c("contr.sum","contr.poly"))
+
+
+```
+
+Grab the data and determine potential outliers based on accuracy
+
+```{r Get Data}
+
+
+df <- read.csv("Data 4-8.csv")
+length(unique(df$Subject))
+df <- df[which(df$Subject > 1),]
+length(unique(df$Subject))
+
+df$isSame <- ifelse(df$HandCondition == 1 & df$Orientation == -1, 1,
+                    ifelse(df$HandCondition == 1 & df$Orientation == 1, 0,
+                           ifelse(df$HandCondition == 2 & df$Orientation == -1, 0,1)))
+a <- aggregate(acc ~ Subject, df[which(df$Stim == "Tools"),], mean)
+b <- boxplot(a$acc)
+points(rep(1.1,length(a$Subject)), a$acc, col="red")
+subjOuts <- a$Subject[which(a$acc <= max(b$out))]
+df$accOut <- 0
+for (i in subjOuts) {
+  df$accOut[which(df$Subject == i)] <- 1
+}
+
+print(paste("Number of Ss whose mean accuracy score was beyond 1.5 x IQR =",length(subjOuts),"(accuracy was:"))
+sort(round(b$out*100))
+
+print(paste("Percent trials excluded in original paper =", round(length(which(df$StimPic.RT > 4000 & df$Stim == "Tools")) / length(which(df$Stim == "Tools")) * 100),"% (tools only)"))
+
+print(paste("Percent trials excluded in original paper =", round(length(which(df$StimPic.RT > 4000)) / length(which(df$StimPic.RT > -10)) * 100),"% (both stim types"))
+
+
+```
+
+Set up data frames to save the outcomes from the multiverse analysis
+
+
+```{r set up Exp 1 multiverse}
+
+# Data frame for multiverse for RM ANOVA and LMERs
+saveMulti <- data.frame(outlierCut = NA,
+                        RTtransform = NA,
+                        inclSlope = NA,
+                        testType = NA,
+                        estimate = NA,
+                        SE = NA,
+                        t = NA,
+                        p = NA,
+                        theta = NA,
+                        converg = NA,
+                        isSingular = NA,
+                        trimACC = NA,
+                        numTrials = NA)
+sa <- 0  #corresponding index
+
+# Data frame for multiverse for Bayes factors and effect sizes
+saveBF <- data.frame(outlierCut = NA,
+                        RTtransform = NA,
+                        BF = NA,
+                     trimACC = NA,
+                     d = NA,
+                     dLow = NA,
+                     dHi = NA)
+sb <- 0  #corresponding index
+
+
+```
+
+Run the multiverse for Experiment 1 re-analysis
+```{r Exp 1 multiverse}
+
+#for (ll in c(2,1)) {  #To include accuracy in multiverse (select 1)
+  for (ll in c(2)) {  #Multiverse without accuracy (select 1)
+    for (ii in c(1.5, 3, 10, 1000)) {
+  for (jj in c("none","log")) {
+      
+      dd <- df[which(df$accOut < ll & df$Stim == "Tools"),]
+      
+      #Set-up DV
+      dd$DV <- log(dd$StimPic.RT)
+      if(jj == "none") {
+        dd$DV <- dd$StimPic.RT
+      }
+
+      
+      #Find outliers
+      dd$RTout <- NA
+      for (i in unique(dd$Subject)) {
+          a <- which(dd$Subject == i)
+          b <- boxplot(dd$DV[a], plot=F, range = ii)
+          if(length(which(b$out > median(dd$DV[a]))) > 0) {
+            minUp <- min(b$out[which(b$out > median(dd$DV[a], na.rm=T))])
+            dd$RTout[which(dd$Subject == i & dd$DV >= minUp)] <- 1
+          }
+          if(length(which(b$out < median(dd$DV[a]))) > 0) {
+            minUp <- max(b$out[which(b$out < median(dd$DV[a], na.rm=T))])
+            dd$RTout[which(dd$Subject == i & dd$DV <= minUp)] <- 1
+          }
+          
+      } #end for i
+      
+      #Remove outliers
+      dd <- dd[which(is.na(dd$RTout)),]
+      
+      
+      #Run lmer
+      for (kk in c("yes","no")) {
+        
+      if(kk == "yes") {
+        p1 <- lmer(DV ~ isSame +
+                     (1 + isSame | Subject) +
+                     (1 + isSame | Pic.Trial.) +
+                     (1 | Subject:Pic.Trial.),
+                   dd[which(dd$Stim == "Tools"),], 
+                   control = lmerControl(optimizer = "bobyqa"))
+      } else {
+        p1 <- lmer(DV ~ isSame +
+                     (1 | Subject) +
+                     (1 | Pic.Trial.) +
+                     (1 | Subject:Pic.Trial.),
+                   dd[which(dd$Stim == "Tools"),], 
+                   control = lmerControl(optimizer = "bobyqa"))
+        
+      }
+      
+      #Save outcomes lmer
+      sa <- sa + 1
+      saveMulti[sa,] <- NA
+      saveMulti$outlierCut[sa] <- ii
+      saveMulti$RTtransform[sa] <- jj
+      saveMulti$inclSlope[sa] <- kk
+      saveMulti$testType[sa] <- "lmer"
+      saveMulti$estimate[sa] <- summary(p1)$coefficients[2,1]
+      saveMulti$SE[sa] <- summary(p1)$coefficients[2,2]
+      saveMulti$t[sa] <- summary(p1)$coefficients[2,4]
+      saveMulti$p[sa] <- summary(p1)$coefficients[2,5]
+      saveMulti$numTrials[sa] <- length(dd$Subject)
+      tt <- getME(p1,"theta")
+      lt <- getME(p1,"lower")
+      saveMulti$theta[sa] <- min(tt[lt==0])
+      
+      ww <- summary(p1)
+      a <- ww$optinfo$conv$lme4$code
+      saveMulti$converg[sa] <- ifelse(is.null(a),90210,a)
+      saveMulti$isSingular[sa] <- isSingular(p1)
+      
+      saveMulti$trimACC[sa] <- ll
+    } #end for kk include random slopes
+    
+        
+      
+      # ANOVA (old way)
+      mns <- aggregate(DV ~ Stim + isSame + Subject, dd[which(dd$Stim == "Tools"),], mean)
+      mns$Subject <- as.factor(mns$Subject)
+      mns$isSame <- as.factor(mns$isSame)
+      p1 <- aov(DV ~ (isSame) + 
+                  Error(Subject / (isSame)), 
+                data = mns[which(mns$Stim == "Tools"),])
+      #a <- summary(p1)
+      #a <- a$`Error: Subject:isSame`
+      b <- emmeans(p1,specs = "isSame")
+      bb <- as.data.frame(pairs(b))
+
+      #Save outcomes ANOVA
+      
+      sa <- sa + 1
+      saveMulti[sa,] <- NA
+      saveMulti$outlierCut[sa] <- ii
+      saveMulti$RTtransform[sa] <- jj
+      saveMulti$testType[sa] <- "aov"
+      saveMulti$estimate[sa] <- bb$estimate
+      saveMulti$SE[sa] <- bb$SE
+      saveMulti$t[sa] <- bb$t.ratio
+      saveMulti$p[sa] <- bb$p.value
+      saveMulti$trimACC[sa] <- ll
+
+      
+      
+      # t test bayes factor
+      mns <- aggregate(DV ~ Stim + isSame + Subject, dd[which(dd$Stim == "Tools"),], mean)
+      mns <- dcast(mns, Subject ~ isSame, value.var = "DV")
+      p1 <- extractBF(ttestBF(mns$`0`, mns$`1`, paired = T, rscale = .3))$bf
+
+      #Save outcomes ttest Bayes factor
+      sb <- sb + 1
+      saveBF[sb,] <- NA
+      saveBF$outlierCut[sb] <- ii
+      saveBF$RTtransform[sb] <- jj
+      saveBF$BF[sb] <- p1
+      saveBF$trimACC[sb] <- ll
+      a <- psych::cohen.d.ci(d = cohensD(mns$`0`, mns$`1`, method = "paired"), n1 = length(mns$`0`))
+      saveBF$d[sb] <- a[2]
+      saveBF$dLow[sb] <- a[1]
+      saveBF$dHigh[sb] <- a[3]
+      
+      
+  } #end for jj transform
+} #end for ii outlier cut-off
+} #end for ll incl acc outs
+  
+saveMulti$estimate[which(saveMulti$testType == "aov")] <- -1 * saveMulti$estimate[which(saveMulti$testType == "aov")]
+saveMulti$outlierCutF <- as.factor(saveMulti$outlierCut)
+saveMulti$RTtransform <- as.factor(saveMulti$RTtransform)
+saveMulti$inclSlopeF <- ifelse(is.na(saveMulti$inclSlope),"no",saveMulti$inclSlope)
+saveMulti$inclSlopeF <- as.factor(saveMulti$inclSlopeF)
+saveMulti$testType <- as.factor(saveMulti$testType)
+
+saveMulti$x <- (as.integer(saveMulti$testType) * 10) + 
+  as.integer(saveMulti$outlierCutF) + 
+  (as.integer(saveMulti$inclSlopeF)/10)
+saveMulti$x2 <- (as.integer(saveMulti$outlierCutF) * 10) + 
+  as.integer(saveMulti$testType) + 
+  as.integer(saveMulti$inclSlopeF)
+saveMulti$pch <- ifelse(saveMulti$testType == "aov", 15,
+                        ifelse(saveMulti$inclSlope == "yes", 0, 1))
+
+
+```
+
+
+```{r print some outcomes}
+
+
+print(paste("Proportion of significant p values =",
+            round(length(which(saveMulti$p <= .05)) / length(saveMulti$p) * 100,0),"%"))
+print(paste("Proportion of BF greater than 3 =",
+            round(length(which(saveBF$BF >= 3)) / length(saveBF$BF) * 100,0),"%"))
+print(paste("Proportion of BF less than 1/3 =",
+            round(length(which(saveBF$BF <= (1/3))) / length(saveBF$BF) * 100,0),"%"))
+
+
+countTrials <- aggregate(numTrials ~ outlierCut + RTtransform, saveMulti, mean)
+
+countTrials$propInc <- round(countTrials$numTrials / max(countTrials$numTrials) * 100)
+countTrials$propExc <- round((1 - (countTrials$numTrials / max(countTrials$numTrials))) * 100)
+countTrials
+
+```
+
+
+Create some plots.  Originally created a plot with four panels, but limits for commentaries are figures with two panels, so created that too.
+
+Note that the code to create a .tiff file has been commented out
+
+```{r Exp 1 Generate Plot of Outcomes}
+
+if(1>0) {  # do figure w four panels
+#  tiff("namingToolsFig1b.tiff", height = 800, width = 800)
+par(mfrow=c(2,2))
+par(mar=c(5,5,2,2))
+hist(saveMulti$p, breaks=20, xlim=c(0,1), xlab = "p Value", main = "", cex.lab = 1.5, cex.axis = 1.25)
+abline(v=.05,col="red")
+
+
+saveBF$BFtoShow <- ifelse(saveBF$BF < 1, 1 / saveBF$BF,saveBF$BF)
+saveBF$pch <- ifelse(saveBF$BF < 1, 
+                     ifelse(saveBF$RTtransform == "none", 1, 0), 
+                     ifelse(saveBF$RTtransform == "none", 16, 15))
+saveBF$x2 <- (as.integer(as.factor(saveBF$outlierCut)) * 10) + 
+  as.integer(as.factor(saveBF$RTtransform))
+plot(saveBF$x2, saveBF$BFtoShow, pch = saveBF$pch, bty="l", ylim=c(1,4),
+     xlab = "Outlier Criterion", ylab = "Bayes Factor", xaxt="n", cex = 3, cex.lab=1.5, cex.axis=1.25)
+axis(side = 1, at=c(11.5, 21.5, 31.5, 41.5), labels = c(1.5, 3, 10, 1000), cex.axis=1.5)
+abline(h=3, lty=3)
+legend("topright", pch=c(2, 17), legend = c("Evidence for Null", "Evidence for Alternative"), bty = "n", cex=1.5)
+
+
+a <- which(saveMulti$RTtransform == "none")
+plot(as.integer(saveMulti$x2[a]), saveMulti$estimate[a], 
+     pch = saveMulti$pch, ylim=c(-20, 75), bty="l",
+     xlab="Outlier Criterion", ylab="Estimate (ms)", xaxt="n",
+     cex = 4, cex.axis = 1.25, cex.lab = 1.5)
+axis(side = 1, at = unique(saveMulti$x2[which(saveMulti$testType == "lmer" & saveMulti$inclSlope == "no")]),
+     labels = unique(saveMulti$outlierCut[which(saveMulti$testType == "lmer" & saveMulti$inclSlope == "no")]),
+     cex.axis = 1.5)
+for (i in a) {
+  segments(as.integer(saveMulti$x2[i]), saveMulti$estimate[i] - saveMulti$SE[i],
+           as.integer(saveMulti$x2[i]), saveMulti$estimate[i] + saveMulti$SE[i])
+}
+abline(h=0, lty=3)
+legend("topleft",pch = c(15,1,0), legend = c("Anova","LMM - no random slope", "LMM - random slope"), bty="n", cex=1.5)
+
+a <- which(saveMulti$RTtransform == "log")
+plot(as.integer(saveMulti$x2[a]), saveMulti$estimate[a], 
+     pch = saveMulti$pch, bty="l", ylim = c(-.01, .04),
+     xlab="Outlier Criterion", ylab="Estimate (log(ms))", xaxt="n",
+     cex = 4, cex.axis = 1.25, cex.lab = 1.5)
+axis(side = 1, at = unique(saveMulti$x2[which(saveMulti$testType == "lmer" & saveMulti$inclSlope == "no")]),
+     labels = unique(saveMulti$outlierCut[which(saveMulti$testType == "lmer" & saveMulti$inclSlope == "no")]),
+     cex.axis = 1.5)
+for (i in a) {
+  segments(as.integer(saveMulti$x2[i]), saveMulti$estimate[i] - saveMulti$SE[i],
+           as.integer(saveMulti$x2[i]), saveMulti$estimate[i] + saveMulti$SE[i])
+}
+abline(h=0, lty=3)
+legend("topleft",pch = c(15,1,0), legend = c("Anova","LMM - no random slope", "LMM - random slope"), bty="n", cex=1.5)
+
+
+#dev.off()
+} #end if do figure
+
+#### Fig w 2 panels ####
+if(1>0) {  # do figure w 2 panels
+ # tiff("namingToolsFig1.tiff", height = 400, width = 800)
+  par(mfrow=c(1,2))
+  par(mar=c(5,5,2,2))
+
+  saveBF$BFtoShow <- ifelse(saveBF$BF < 1, 1 / saveBF$BF,saveBF$BF)
+  saveBF$pch <- ifelse(saveBF$BF < 1, 
+                       ifelse(saveBF$RTtransform == "none", 1, 0), 
+                       ifelse(saveBF$RTtransform == "none", 16, 15))
+  saveBF$x2 <- (as.integer(as.factor(saveBF$outlierCut)) * 10) + 
+    as.integer(as.factor(saveBF$RTtransform))
+  plot(saveBF$x2, saveBF$BFtoShow, pch = saveBF$pch, bty="l", ylim=c(1,4),
+       xlab = "Outlier Criterion", ylab = "Bayes Factor", 
+       xaxt="n", cex = 3, cex.lab=1.5, cex.axis=1.25, xlim=c(9,44))
+  axis(side = 1, at=c(11.5, 21.5, 31.5, 41.5), labels = c(1.5, 3, 10, 1000), cex.axis=1.5)
+  abline(h=3, lty=3)
+  legend("topright", pch=c(2, 17), legend = c("Evidence for Null", "Evidence for Alternative"), bty = "n", cex=1.5)
+  
+  
+  a <- which(saveMulti$RTtransform == "none")
+  plot(as.integer(saveMulti$x2[a]), saveMulti$estimate[a], 
+       pch = saveMulti$pch, ylim=c(-20, 85), bty="l",
+       xlab="Outlier Criterion", ylab="Estimate (ms)", xaxt="n",
+       cex = 4, cex.axis = 1.25, cex.lab = 1.5)
+  axis(side = 1, at = unique(saveMulti$x2[which(saveMulti$testType == "lmer" & saveMulti$inclSlope == "no")]),
+       labels = unique(saveMulti$outlierCut[which(saveMulti$testType == "lmer" & saveMulti$inclSlope == "no")]),
+       cex.axis = 1.5)
+  for (i in a) {
+    segments(as.integer(saveMulti$x2[i]), saveMulti$estimate[i] - saveMulti$SE[i],
+             as.integer(saveMulti$x2[i]), saveMulti$estimate[i] + saveMulti$SE[i])
+  }
+  abline(h=0, lty=3)
+  legend("topleft",pch = c(15,1,0), legend = c("Anova","LMM - no random slope", "LMM - random slope"), bty="n", cex=1.5)
+  
+
+#  dev.off()
+} #end if do figure
+
+
+```
+
+
+I could not find the raw data from Experiment 2, so limited to analyzing the means
+
+```{r Experiment 2}
+
+## Means from SPSS file
+pp <- read.csv("exp2meansFromSPSS.csv", header=T)
+pf <- melt(pp, id.vars = "subj")
+pf$isTool <- ifelse(as.integer(pf$variable) < 9, 1, 0)
+pf$orient <- ifelse(as.integer(pf$variable) < 5, 1, 
+             ifelse(as.integer(pf$variable) < 9, 2, 
+             ifelse(as.integer(pf$variable) < 13, 1, 2)))
+durs <- c(167,17,33,50)
+pf$dur <- durs[as.integer(pf$variable) %% 4 + 1]
+
+
+# Analyze it the old way - check!
+options(contrasts=c("contr.sum","contr.poly"))
+pf$subj <- as.factor(pf$subj)
+pf$durF <- as.factor(pf$dur)
+pf$orientF <- as.factor(pf$orient)
+p1 <- aov(value ~ (durF * orientF) + 
+            Error(subj / (durF * orientF)), 
+          data = pf[which(pf$isTool == 1),])
+summary(p1)
+interaction.plot(pf$dur, pf$orient, pf$value, type="b", col=c("blue","red"))
+
+
+p1 <- lmer(value ~ orient * dur + (1 + orient * dur | subj),
+           pf[which(pf$isTool == 1),],
+           control = lmerControl(optimizer = "bobyqa"))
+summary(p1)
+
+pt <- aggregate(value ~ orient + subj, pf[which(pf$isTool == 1),], mean)
+pt <- dcast(pt, subj ~ orient, value.var = "value")
+t.test(pt$`1`, pt$`2`,paired = T)
+BayesFactor::ttestBF(pt$`1`, pt$`2`,paired = T, rscale = .3)
+
+
+for (i in unique(pf$dur)) {
+  pt <- aggregate(value ~ orient + subj, 
+                  pf[which(pf$isTool == 1 & pf$dur == i),], 
+                  mean)
+  pt <- dcast(pt, subj ~ orient, value.var = "value")
+  print(i)
+#  print(t.test(pt$`1`, pt$`2`,paired = T))
+#  print(BayesFactor::ttestBF(pt$`1`, pt$`2`,paired = T, rscale = .3))
+  print(1/extractBF(BayesFactor::ttestBF(pt$`1`, pt$`2`,paired = T, rscale = .3))$bf)
+  
+}
+
+
+```
+

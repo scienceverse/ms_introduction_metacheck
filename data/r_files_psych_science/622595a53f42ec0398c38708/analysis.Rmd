@@ -1,0 +1,370 @@
+---
+title: 'BE tilt-shift: Experiment 3b (Scene Memory Task + Rotated Control)'
+author: '[Alon Hafri](https://alonhafri.com)'
+output: html_document
+---
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages and data:
+
+```{r, message=FALSE}
+
+# packages
+if (!require(ggplot2)) {install.packages("ggplot2"); require(ggplot2)}
+if (!require(plyr)) {install.packages("plyr"); require(plyr)}
+if (!require(lme4)) {install.packages("lme4"); require(lme4)}
+if (!require(reshape2)) {install.packages("reshape2"); require(reshape2)}
+if (!require(MuMIn)) {install.packages("MuMIn"); require(MuMIn)}
+
+# within-element error functions
+source('within-element_error_functions.R')
+
+# read in data
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) #set working directory to current directory (if not using RStudio, modify to the path you'd like)
+data.raw <- read.table(file.path(getwd(), '..', 'Data', 'trial_data.tsv'), header=T)
+
+# make some variables into factors
+data.raw$experimentName <- factor(data.raw$experimentName)
+data.raw$experimentVersion <- factor(data.raw$experimentVersion)
+data.raw$experimentCondition <- factor(data.raw$experimentCondition)
+data.raw$trialType <- factor(data.raw$trialType)
+data.raw$probeType <- factor(data.raw$probeType)
+
+```
+
+Summarize:
+```{r}
+
+summary(data.raw)
+
+```
+
+```{r, include=FALSE}
+
+accCutoff <- 0.75
+lowrt <- 200
+rtCutoff <- 0.10
+respCutoff <- 0.95
+
+dataraw.acc <- ddply(subset(data.raw, trialType == 'catch'),
+                     .(subjectID), summarise,
+                     meanAcc = mean(acc),
+                     exclAcc = meanAcc < accCutoff)
+dataraw.acc
+
+dataraw.rt <- ddply(subset(data.raw, trialType=='test'),
+                    .(subjectID), summarise,
+                    meanRT = mean(rt),
+                    medianRT = median(rt),
+                    propFastRT = mean(rt < lowrt),
+                    exclRT = propFastRT > rtCutoff)
+
+dataraw.resp <- ddply(subset(data.raw, trialType=='test'),
+                    .(subjectID), summarise,
+                    meanResp = mean(respondCloser),
+                    exclResp = meanResp > respCutoff | meanResp < (1-respCutoff))
+
+dataraw.excl <- cbind(dataraw.acc, dataraw.rt, dataraw.resp)
+dataraw.excl$exclude <- dataraw.excl$exclAcc | dataraw.excl$exclRT | dataraw.excl$exclResp
+
+print(summary(dataraw.excl))
+
+subset(dataraw.excl, select = c(subjectID, meanAcc, medianRT, propFastRT, meanResp, exclAcc, exclRT, exclResp, exclude))
+
+data <- subset(data.raw, 
+               trialType == 'test' & 
+               subjectID %in% dataraw.excl$subjectID[dataraw.excl$exclude == FALSE])
+
+```
+
+# Exclusions:
+* Initial data: `r length(unique(data.raw$subjectID))` participants
+* Exclusions:
+    * Low accuracy on catch trials (< `r round(100*accCutoff)`%): `r length(dataraw.excl$subjectID[dataraw.excl$exclAcc==TRUE])` participant(s)
+    * Many RTs impossibly fast (> `r round(100*rtCutoff)`% of RTs < `r lowrt` ms): `r length(dataraw.excl$subjectID[dataraw.excl$exclRT==TRUE])` participant(s)
+    * More than `r round(100*respCutoff)`% of trials with the same response: `r length(dataraw.excl$subjectID[dataraw.excl$exclResp==TRUE])` participant(s)
+* Final data: `r length(unique(data$subjectID))` participants
+```{r, include=FALSE}
+
+prop.lowrt <- mean(data$rt < lowrt)
+ntrials.lowrt <- sum(data$rt < lowrt)
+
+# exclude the remaining bad trials
+data <- subset(data, rt > lowrt)
+
+# re-factorize certain variables
+data$subjectID <- factor(data$subjectID)
+data$identity <- factor(data$identity)
+data$category <- factor(data$category)
+
+# set up contrasts and centering
+   # treatment coding
+contrasts(data$category) <- contr.treatment(levels(data$category))
+data$trialNum_c <- scale(data$trialNum, center=T, scale=F)
+
+# add a scaled response column
+data <- ddply(data, .(subjectID), transform,
+              respondCloser.z = scale(respondCloser))
+
+# final data
+data.final <- data
+
+```
+    * and exclude remaining low RT trials (`r round(100*prop.lowrt, 2)`%, or `r ntrials.lowrt` trials)
+
+# RT distribution and stats:
+* histogram across all RTs (cutoff 10 sec, for display purposes)
+* boxplot across subject median RTs
+```{r}
+
+maxRT <- 10000
+summary(data.final$rt[data.final$rt < maxRT])
+hist(data.final$rt[data.final$rt < maxRT])
+
+# by subjects
+tmp <- ddply(data.final, .(subjectID), summarise,
+      medianRT = median(rt))
+boxplot(tmp$medianRT)
+
+```
+
+# Results: 
+
+```{r, results="hide"}
+
+data.subj <- ddply(data.final, .(subjectID, category), summarise,
+                   meanRespCloser = mean(respondCloser),
+                   meanRespCloser.z = mean(respondCloser.z))
+data.item <- ddply(data.final, .(identity, category), summarise,
+                   meanRespCloser = mean(respondCloser),
+                   meanRespCloser.z = mean(respondCloser.z))
+
+# create wide-format data frames
+data.subj.wide <- reshape(data.subj, 
+                             idvar=c('subjectID'), timevar='category', direction = 'wide')
+data.subj.wide$tiltShift_BE <- data.subj.wide$meanRespCloser.ts - data.subj.wide$meanRespCloser.orig
+data.subj.wide$tiltShift_BE.z <- data.subj.wide$meanRespCloser.z.ts - data.subj.wide$meanRespCloser.z.orig
+data.subj.wide$tiltShift_vert_BE <- data.subj.wide$meanRespCloser.ts_vert - data.subj.wide$meanRespCloser.orig
+data.subj.wide$tiltShift_vert_BE.z <- data.subj.wide$meanRespCloser.z.ts_vert - data.subj.wide$meanRespCloser.z.orig
+data.subj.wide$tiltShift_horizVsVert_BE <- data.subj.wide$meanRespCloser.ts - data.subj.wide$meanRespCloser.ts_vert
+data.subj.wide$tiltShift_horizVsVert_BE.z <- data.subj.wide$meanRespCloser.z.ts - data.subj.wide$meanRespCloser.z.ts_vert
+
+data.item.wide <- reshape(data.item,
+                               idvar=c('identity'), timevar='category', direction = 'wide')
+data.item.wide$tiltShift_BE <- data.item.wide$meanRespCloser.ts - data.item.wide$meanRespCloser.orig
+data.item.wide$tiltShift_BE.z <- data.item.wide$meanRespCloser.z.ts - data.item.wide$meanRespCloser.z.orig
+data.item.wide$tiltShift_vert_BE <- data.item.wide$meanRespCloser.ts_vert - data.item.wide$meanRespCloser.orig
+data.item.wide$tiltShift_vert_BE.z <- data.item.wide$meanRespCloser.z.ts_vert - data.item.wide$meanRespCloser.z.orig
+data.item.wide$tiltShift_horizVsVert_BE <- data.item.wide$meanRespCloser.ts - data.item.wide$meanRespCloser.ts_vert
+data.item.wide$tiltShift_horizVsVert_BE.z <- data.item.wide$meanRespCloser.z.ts - data.item.wide$meanRespCloser.z.ts_vert
+
+```
+
+### condition means
+* orig: M=`r round(100*mean(data.subj.wide$meanRespCloser.orig), 2)`%
+* ts: M=`r round(100*mean(data.subj.wide$meanRespCloser.ts), 2)`%
+* ts-vert: M=`r round(100*mean(data.subj.wide$meanRespCloser.ts_vert), 2)`%
+
+## Mixed effects logistic regression:
+* accounts for simultaneous subject and item random effects
+```{r}
+# category is treatment-coded with orig as baseline
+
+lm.0 <- glmer(respondCloser ~ 1 + trialNum_c +
+                 (1 | subjectID) +
+                 (1 + category | identity),
+              data = data.final,
+              control = glmerControl(optimizer = c("Nelder_Mead", "bobyqa")),
+              family = binomial(link='logit'))
+lm.1 <- update(lm.0, . ~ . + category)
+lm.2 <- update(lm.0, . ~ . + category + trialNum_c:category)
+
+anova(lm.0, lm.1, lm.2)
+
+summary(lm.1)
+
+```
+
+## calculate Pseudo-$R^2$
+```{r}
+
+# calculate pseudo-R^2 for full model
+r2_lm.1 <- r.squaredGLMM(lm.1, lm.0)
+r2_lm.1_m <- r2_lm.1[1,1]
+r2_lm.1_c <- r2_lm.1[1,2]
+
+```
+* $R^2_{m}$ = `r round(r2_lm.1_m, 3)`
+* $R^2_{c}$ = `r round(r2_lm.1_c, 3)`
+
+
+### Now pairwise comparisons:
+
+#### ts vs. orig:
+```{r}
+
+tmp.data <- subset(data.final, category %in% c('ts', 'orig'))
+
+tmp.data$category <- factor(tmp.data$category, levels=c('orig', 'ts'))
+contrasts(tmp.data$category) <- c(-0.5, 0.5)
+
+lm.0.s <- glmer(respondCloser ~ 1 + trialNum_c + 
+                   (1 + category | subjectID) +
+                   (1 | identity),
+              data = tmp.data,
+              family = binomial(link='logit'))
+lm.1.s <- update(lm.0.s, . ~ . + category)
+
+anova(lm.0.s, lm.1.s)
+summary(lm.1.s)
+
+# coefficients
+coefs <- summary(lm.1.s)$coefficients[3,]
+
+# calculate pseudo-R^2 for full model
+r2_lm.1 <- r.squaredGLMM(lm.1.s, lm.0.s)
+r2_lm.1_m <- r2_lm.1[1,1]
+r2_lm.1_c <- r2_lm.1[1,2]
+
+```
+* beta = `r round(coefs[1], 3)`, 95% CI = `r round(coefs[1] + c(-1,1)*1.96*coefs[2], 2)`, z = `r round(coefs[3],2)`, p = `r round(coefs[4],3)`
+* odds-ratio beta = `r round(exp(coefs[1]), 3)`, 95% CI = `r round(exp(coefs[1] + c(-1,1)*1.96*coefs[2]), 2)`
+* $R^2_{m}$ = `r round(r2_lm.1_m, 3)`
+* $R^2_{c}$ = `r round(r2_lm.1_c, 3)`
+
+#### ts-vert vs. orig:
+```{r}
+tmp.data <- subset(data.final, category %in% c('orig', 'ts_vert'))
+
+tmp.data$category <- factor(tmp.data$category, levels=c('orig', 'ts_vert'))
+contrasts(tmp.data$category) <- c(-0.5, 0.5)
+
+lm.0.s <- glmer(respondCloser ~ 1 + trialNum_c + 
+                   (1 + category | subjectID) +
+                   (1 + category | identity),
+              data = tmp.data,
+              family = binomial(link='logit'))
+lm.1.s <- update(lm.0.s, . ~ . + category)
+
+anova(lm.0.s, lm.1.s)
+summary(lm.1.s)
+
+# coefficients
+coefs <- summary(lm.1.s)$coefficients[3,]
+
+# calculate pseudo-R^2 for full model
+r2_lm.1 <- r.squaredGLMM(lm.1.s, lm.0.s)
+r2_lm.1_m <- r2_lm.1[1,1]
+r2_lm.1_c <- r2_lm.1[1,2]
+
+```
+* beta = `r round(coefs[1], 3)`, 95% CI = `r round(coefs[1] + c(-1,1)*1.96*coefs[2], 2)`, z = `r round(coefs[3],2)`, p = `r round(coefs[4],3)`
+* odds-ratio beta = `r round(exp(coefs[1]), 3)`, 95% CI = `r round(exp(coefs[1] + c(-1,1)*1.96*coefs[2]), 2)`
+* $R^2_{m}$ = `r round(r2_lm.1_m, 3)`
+* $R^2_{c}$ = `r round(r2_lm.1_c, 3)`
+
+#### ts vs. ts-vert:
+```{r}
+tmp.data <- subset(data.final, category %in% c('ts', 'ts_vert'))
+
+tmp.data$category <- factor(tmp.data$category, levels=c('ts_vert', 'ts'))
+contrasts(tmp.data$category) <- c(-0.5, 0.5)
+
+lm.0.s <- glmer(respondCloser ~ 1 + trialNum_c + 
+                   (1 | subjectID) +
+                   (1 + category | identity),
+              data = tmp.data,
+              family = binomial(link='logit'))
+lm.1.s <- update(lm.0.s, . ~ . + category)
+
+anova(lm.0.s, lm.1.s)
+summary(lm.1.s)
+
+# coefficients
+coefs <- summary(lm.1.s)$coefficients[3,]
+
+# calculate pseudo-R^2 for full model
+r2_lm.1 <- r.squaredGLMM(lm.1.s, lm.0.s)
+r2_lm.1_m <- r2_lm.1[1,1]
+r2_lm.1_c <- r2_lm.1[1,2]
+
+```
+* beta = `r round(coefs[1], 3)`, 95% CI = `r round(coefs[1] + c(-1,1)*1.96*coefs[2], 2)`, z = `r round(coefs[3],2)`, p = `r round(coefs[4],3)`
+* odds-ratio beta = `r round(exp(coefs[1]), 3)`, 95% CI = `r round(exp(coefs[1] + c(-1,1)*1.96*coefs[2]), 2)`
+* $R^2_{m}$ = `r round(r2_lm.1_m, 3)`
+* $R^2_{c}$ = `r round(r2_lm.1_c, 3)`
+
+
+## Summarized across subjects:
+```{r, echo=FALSE}
+
+dc <- summarySEwithin(data.subj, measurevar="meanRespCloser", withinvars=c("category"),
+                      idvar="subjectID", na.rm=FALSE, conf.interval=.95)
+jitter <- position_jitter(width = 0.07, height = 0.01, seed=12345)
+pl <- ggplot(data = data.subj, aes(x=category, y=meanRespCloser)) +
+   geom_hline(yintercept=0.5, alpha = 0.75, size=1, linetype = 'dashed') + 
+   # individual data
+   geom_violin(aes(x=category, y=meanRespCloser, alpha=0.3, fill=category, width=0.4)) +
+   scale_fill_manual(values=c("#2F5597", "#C55A11", "#7F7F7F")) +
+   geom_line(color="gray", aes(alpha=0.4, group=subjectID),
+             position = jitter) +
+   geom_point(color="gray", fill="gray", shape=21, size=2, aes(alpha=0.4, group=subjectID), 
+              position = jitter) +
+   # now the average data
+   geom_line(data = dc, size=1, aes(x=category, y=meanRespCloser, group=1)) +
+   geom_errorbar(data = dc, size=1, aes(group = 1, x=category, y=meanRespCloser, ymin=meanRespCloser-ci, ymax=meanRespCloser+ci), width=.03) +
+   geom_point(data = dc, aes(x=category, y=meanRespCloser, fill=category, group=1), shape=21, size=8) +
+   theme_bw() +
+   theme(legend.position = "none",
+         axis.title = element_text(size = 20),
+         axis.title.x = element_blank(), 
+         axis.title.y = element_blank(), 
+         axis.text = element_text(size = 28),
+         axis.text.x = element_text(face="bold", color=c("#2F5597", "#C55A11", "#7F7F7F")),
+         strip.text = element_text(size = 18),
+         panel.background = element_rect(fill = "white"),
+         plot.background = element_rect(fill = "transparent",colour = NA), 
+         text = element_text(family="Gill Sans")) +
+   scale_x_discrete(labels = c('Far-Away\n(Original)', 'Close-Up\n(Fake-Miniaturized)', 'Control\n(Rotated)')) +
+   ylim(0-0.02,1+0.02)
+pl
+
+```
+
+## Summarized across items (images):
+```{r, echo=FALSE}
+
+dc <- summarySEwithin(data.item, measurevar="meanRespCloser", withinvars=c("category"),
+                      idvar="identity", na.rm=FALSE, conf.interval=.95)
+jitter <- position_jitter(width = 0.07, height = 0.01, seed=12345)
+pl <- ggplot(data = data.item, aes(x=category, y=meanRespCloser)) +
+   geom_hline(yintercept=0.5, alpha = 0.75, size=1, linetype = 'dashed') + 
+   # individual data
+   geom_violin(aes(x=category, y=meanRespCloser, alpha=0.3, fill=category, width=0.4)) +
+   scale_fill_manual(values=c("#2F5597", "#C55A11", "#7F7F7F")) +
+   geom_line(color="gray", aes(alpha=0.4, group=identity),
+             position = jitter) +
+   geom_point(color="gray", fill="gray", shape=21, size=2, aes(alpha=0.4, group=identity), 
+              position = jitter) +
+   # now the average data
+   geom_line(data = dc, size=1, aes(x=category, y=meanRespCloser, group=1)) +
+   geom_errorbar(data = dc, size=1, aes(group = 1, x=category, y=meanRespCloser, ymin=meanRespCloser-ci, ymax=meanRespCloser+ci), width=.03) +
+   geom_point(data = dc, aes(x=category, y=meanRespCloser, fill=category, group=1), shape=21, size=8) +
+   theme_bw() +
+   theme(legend.position = "none",
+         axis.title = element_text(size = 20),
+         axis.title.x = element_blank(), 
+         axis.title.y = element_blank(), 
+         axis.text = element_text(size = 28),
+         axis.text.x = element_text(face="bold", color=c("#2F5597", "#C55A11", "#7F7F7F")),
+         strip.text = element_text(size = 18),
+         panel.background = element_rect(fill = "white"),
+         plot.background = element_rect(fill = "transparent",colour = NA), 
+         text = element_text(family="Gill Sans")) +
+   scale_x_discrete(labels = c('Far-Away\n(Original)', 'Close-Up\n(Fake-Miniaturized)', 'Control\n(Rotated)')) +
+   ylim(0,1)
+pl
+
+```

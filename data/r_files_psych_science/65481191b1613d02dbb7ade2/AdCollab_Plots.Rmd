@@ -1,0 +1,214 @@
+---
+title: "AdCollab_Plots"
+output: html_document
+date: "2022-12-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load data & libraries.
+```{r, echo=FALSE}
+#set working directory here:
+setwd("~/Desktop")
+Sys.setlocale("LC_ALL", "C")
+library(tidyverse)
+rep <- read_csv("rep_discern_coefs_FULL.csv")
+dem <- read_csv("dem_discern_coefs_FULL.csv")
+mod <- read_csv("mod_coefs_FULL.csv")
+simple <- read_csv("simpdiscern_coefs_FULL.csv")
+
+# load libraries
+library(dplyr)
+library(lubridate)
+library(lme4)
+library(MASS)
+library(ggeffects)
+library(lmerTest)
+library(mediation)
+library(readr)
+library(tidyr)
+library(corrr)
+library(corrplot)
+library(ggplot2)
+library(nlme)
+library(afex)
+library(lmerTest)
+library(MuMIn)
+library(sjstats)
+library(psych)
+library(sandwich)
+library(lmtest)
+library(car)
+library(fixest)
+library(tm)
+library(vader)
+library(pscl)
+```
+
+
+Mod P-values.
+```{r}
+table(mod$p<.05)
+table(mod$Coef>0)
+
+table(mod$p<.01)
+table(rep$p<.01)
+
+max(rep$p)
+min(rep$Coef)
+min(rep$p)
+max(rep$Coef)
+
+max(dem$p)
+min(dem$Coef)
+min(dem$p)
+max(dem$Coef)
+```
+
+
+P plots. [note: these are not p-curves, since p-values are from highly overlapping data & analyses]
+
+Histograms.
+```{r}
+ggplot(rep, aes(x=p))+geom_histogram(fill="red", bins=20)+xlim(-0.005, 0.05)+geom_vline(aes(xintercept=0.05), color="black", linetype="dashed", size=1)+theme_classic()+ scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))+xlab("p-values (Republican Discernment)")+ylab("Count")
+```
+
+```{r}
+ggplot(dem, aes(x=p))+geom_histogram(fill="blue", bins=20)+xlim(-0.005, 0.05)+geom_vline(aes(xintercept=0.05), color="black", linetype="dashed", size=1)+theme_classic()+ scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))+xlab("p-values (Democrat Discernment)")+ylab("Count")
+```
+
+```{r}
+ggplot(mod, aes(x=p))+geom_histogram(fill="purple", bins=20)+xlim(-0.005, 1)+geom_vline(aes(xintercept=0.05), color="black", linetype="dashed", size=1)+theme_classic()+ scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))+xlab("p-values (Partisan Moderation of Discernment)")+ylab("Count")
+```
+
+Line plots.
+```{r}
+rep_p <- rep$p
+dem_p <- dem$p
+mod_p <- mod$p
+
+p_df <- as.data.frame(cbind(rep_p, dem_p, mod_p))
+
+p_df$mod_p2 <- ifelse(p_df$mod_p>=.15,.15,p_df$mod_p)
+
+p_df_long <- gather(p_df, analysis, p, rep_p:mod_p2)
+
+p_df_long <- p_df_long %>% filter(analysis != "mod_p")
+
+p_df_long$analysis <- factor(p_df_long$analysis, levels=c("rep_p", "dem_p", "mod_p2"))
+```
+
+Combined histogram.
+```{r}
+ggplot(p_df_long, aes(x=p, fill=analysis))+geom_histogram(color = "black", position = "dodge", binwidth = 0.01)+geom_vline(aes(xintercept=0.05), color="black", linetype="dashed", size=1)+theme_classic()+xlab("P-values")+ylab("Count")+scale_y_continuous(expand = c(0, 0))+scale_x_continuous(breaks=c(0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,.15), labels=c(0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,"0.15+"))+scale_fill_manual("", labels=c("Republican Discernment", "Democrat Discernment", "Moderation"), values=c("red", "blue", "gold3"))+ggtitle("Histogram of P-values")
+```
+
+Main Line Plot.
+```{r}
+ggplot(p_df_long, aes(x=p, group=analysis, color=analysis))+geom_freqpoly(size=1.5, alpha=0.7)+geom_vline(aes(xintercept=0.05), color="black", linetype="dashed", size=1)+theme_classic()+xlab("P-values")+ylab("Count")+ scale_y_continuous(expand = c(0, 0))+scale_x_continuous(limits=c(0,.15), breaks=c(0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,.15), labels=c(0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,"0.15+"))+scale_color_manual("", labels=c("Rep. Discernment", "Dem. Discernment", "Moderation"), values=c("red", "blue", "purple"))+ggtitle("P-value Distributions")
+```
+
+Line plot: only eval + importance treatments (all partisanship operationalizations).
+```{r}
+rep2 <- rep %>% filter(Treatment == "Evaluation + Importance")
+dem2 <- dem %>% filter(Treatment == "Evaluation + Importance")
+mod2 <- mod %>% filter(Treatment == "Evaluation + Importance")
+
+rep_p <- rep2$p
+dem_p <- dem2$p
+mod_p <- mod2$p
+
+p_df <- as.data.frame(cbind(rep_p, dem_p, mod_p))
+
+p_df$mod_p2 <- ifelse(p_df$mod_p>=.15,.15,p_df$mod_p)
+
+p_df_long <- gather(p_df, analysis, p, rep_p:mod_p2)
+
+p_df_long <- p_df_long %>% filter(analysis != "mod_p")
+
+p_df_long$analysis <- factor(p_df_long$analysis, levels=c("rep_p", "dem_p", "mod_p2"))
+```
+
+```{r}
+ggplot(p_df_long, aes(x=p, group=analysis, color=analysis))+geom_freqpoly(size=1.5, alpha=0.7)+geom_vline(aes(xintercept=0.05), color="black", linetype="dashed", size=1)+theme_classic()+xlab("P-values")+ylab("Count")+ scale_y_continuous(expand = c(0, 0))+scale_x_continuous(limits=c(0,.15), breaks=c(0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,.15), labels=c(0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,"0.15+"))+scale_color_manual("", labels=c("Rep. Discernment", "Dem. Discernment", "Moderation"), values=c("red", "blue", "purple"))+ggtitle("P-value Distributions")
+```
+
+Just Mod
+```{r}
+p_df_long2 <- p_df_long %>% filter(analysis=="mod_p2")
+ggplot(p_df_long2, aes(x=p, group=analysis, color=analysis))+geom_freqpoly(size=1.5, alpha=0.7)+geom_vline(aes(xintercept=0.05), color="black", linetype="dashed", size=1)+theme_classic()+xlab("P-values")+ylab("Count")+ scale_y_continuous(expand = c(0, 0))+scale_x_continuous(limits=c(0,.15), breaks=c(0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,.15), labels=c(0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,"0.15+"))+scale_color_manual("", labels=c("Moderation"), values=c("purple"))+ggtitle("P-value Distributions")
+```
+
+
+
+Coef Plots.
+```{r}
+rep$Treatment[rep$Treatment=="Evaluation + Importance"] <- "Evaluation or Importance"
+dem$Treatment[dem$Treatment=="Evaluation + Importance"] <- "Evaluation or Importance"
+mod$Treatment[mod$Treatment=="Evaluation + Importance"] <- "Evaluation or Importance"
+simple$Treatment[simple$Treatment=="Evaluation + Importance"] <- "Evaluation or Importance"
+```
+
+
+```{r}
+rep$Treatment <- factor(rep$Treatment, levels=c("Multiple Interventions", "Evaluation or Importance", "Evaluation", "No Norms or Tips", "No Tips", "No Norms", "All"))
+
+dem$Treatment <- factor(dem$Treatment, levels=c("Multiple Interventions", "Evaluation or Importance", "Evaluation", "No Norms or Tips", "No Tips", "No Norms", "All"))
+
+mod$Treatment <- factor(mod$Treatment, levels=c("Multiple Interventions", "Evaluation or Importance", "Evaluation", "No Norms or Tips", "No Tips", "No Norms", "All"))
+
+simple$Treatment <- factor(simple$Treatment, levels=c("Multiple Interventions", "Evaluation or Importance", "Evaluation", "No Norms or Tips", "No Tips", "No Norms", "All"))
+
+rep$CI <- rep$SE*qnorm(0.975)
+dem$CI <- dem$SE*qnorm(0.975)
+mod$CI <- mod$SE*qnorm(0.975)
+simple$CI <- simple$SE*qnorm(0.975)
+```
+
+Plots.
+```{r}
+ggplot(rep, aes(x=Coef, y=Treatment, color=Partisanship, group=Partisanship, shape=Exclude_NonPoliticalNewsSharers))+
+  geom_pointrange(aes(xmin=Coef-CI, xmax=Coef+CI), position=position_dodge2(width = 0.5, padding=0.5))+scale_color_manual(values=c("red", "orange", "green", "blue", "purple"))+xlim(-0.01, 0.1)+geom_vline(aes(xintercept=0), color="black", linetype="dashed", size=1)+theme_classic()+xlab("Acc Prompt on Republican Discernment")
+```
+
+```{r}
+ggplot(dem, aes(x=Coef, y=Treatment, color=Partisanship, group=Partisanship, shape=Exclude_NonPoliticalNewsSharers))+
+  geom_pointrange(aes(xmin=Coef-CI, xmax=Coef+CI), position=position_dodge2(width = 0.5, padding=0.5))+scale_color_manual(values=c("red", "orange", "green", "blue", "purple"))+xlim(-0.01, 0.1)+geom_vline(aes(xintercept=0), color="black", linetype="dashed", size=1)+theme_classic()+xlab("Acc Prompt on Democrat Discernment")
+```
+
+```{r}
+ggplot(mod, aes(x=Coef, y=Treatment, color=Partisanship, group=Partisanship, shape=Exclude_NonPoliticalNewsSharers))+
+  geom_pointrange(aes(xmin=Coef-CI, xmax=Coef+CI), position=position_dodge2(width = 0.5, padding=0.5))+scale_color_manual(values=c("red", "orange", "green", "blue", "purple"))+geom_vline(aes(xintercept=0), color="black", linetype="dashed", size=1)+theme_classic()+xlim(-0.06, 0.06)+xlab("Partisan Moderation of Acc Prompt on Discernment")
+```
+
+```{r}
+ggplot(simple, aes(x=Coef, y=Treatment, color=Partisanship, group=Partisanship, shape=Exclude_NonPoliticalNewsSharers))+
+  geom_pointrange(aes(xmin=Coef-CI, xmax=Coef+CI), position=position_dodge2(width = 0.5, padding=0.5))+scale_color_manual(values=c("red", "orange", "green", "blue", "purple"))+geom_vline(aes(xintercept=0), color="black", linetype="dashed", size=1)+theme_classic()+xlab("Partisan Moderation of Discernment (control)")
+```
+
+Scatterplot of Effects.
+```{r}
+repcoef <- rep$Coef
+demcoef <- dem$Coef
+treat <- as.character(rep$Treatment)
+
+coef_df <- as.data.frame(cbind(repcoef, demcoef, treat))
+
+coef_df$repcoef <- as.numeric(coef_df$repcoef)
+coef_df$demcoef <- as.numeric(coef_df$demcoef)
+```
+
+```{r}
+ggplot(coef_df, aes(x=repcoef, y=demcoef, group=treat, color=treat))+geom_point()+geom_abline(slope=1, intercept=0, color="black", linetype="dashed", size=1)+theme_classic()+xlim(0,0.08)+ylim(0,0.08)+xlab("Republican Discernment Coefficients")+ylab("Democrat Discernment Coefficients")+ggtitle("Republican vs Democrat Discernment Coefficients")+ labs(color = "Treatment")
+```
+
+
+
+
+
+
+
+
+

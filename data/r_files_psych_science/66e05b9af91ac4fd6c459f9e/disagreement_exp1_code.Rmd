@@ -1,0 +1,523 @@
+---
+title: "Disagreement - Expectations & Intentions Study"
+author: "Anonymized"
+date: '2023-02-09'
+output: 
+    html_document:
+      toc: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+```{r}
+# Load libraries
+library(tidyverse)
+library(here)
+library(knitr)
+library(broom)
+library(lmerTest)
+library(plotrix)
+library(gtools)
+library(emmeans)
+library(effectsize)
+library(mediation)
+library(afex)
+library(effsize)
+library(bwrappers)
+library(apa)
+afex_options(emmeans_model = "multivariate")
+```
+
+```{r}
+# Import data
+col_names <- names(read_csv(here("data", "disagreement_exp1_raw_data.csv")))
+raw_data <- read_csv(here("data", "disagreement_exp1_raw_data.csv"), 
+                     col_names = col_names, skip = 3)
+```
+
+```{r}
+# Filter out incomplete (or preview) responses, and rename some variable
+disagree_data <- raw_data %>%
+  filter(Finished == 1, Status == 0, !is.na(pol_orient)) %>%
+  mutate(condition = factor(condition),
+         topic = factor(topic),
+         composite = (enjoy + (10 - awk) + learn + (10 - hostile)) / 4,
+         pol_orient_group = fct_recode(factor(pol_orient),
+                                      "liberal" = "-3",
+                                      "liberal" = "-2",
+                                      "liberal" = "-1",
+                                      "independent" = "0",
+                                      "conservative" = "1",
+                                      "conservative" = "2",
+                                      "conservative" = "3"))
+```
+
+```{r}
+# Plotting function for prediction DVs
+plot <- function(data, dv) {
+  data %>%
+    group_by(condition) %>%
+    summarize(mean = mean(!!enquo(dv)),
+              lower = mean(!!enquo(dv)) - std.error(!!enquo(dv)),
+              upper = mean(!!enquo(dv)) + std.error(!!enquo(dv))) %>%
+    ggplot(mapping = aes(x = condition, y = mean)) +
+    geom_col(position = position_dodge(1), color = "black", fill = "rosybrown2") +
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = .4, position = position_dodge(1)) +
+    theme_classic()
+}
+
+plot_topics <- function(data, dv) {
+  data %>%
+    group_by(condition, topic) %>%
+    summarize(mean = mean(!!enquo(dv)),
+              lower = mean(!!enquo(dv)) - std.error(!!enquo(dv)),
+              upper = mean(!!enquo(dv)) + std.error(!!enquo(dv))) %>%
+    ggplot(mapping = aes(x = condition, y = mean, fill = topic)) +
+    geom_col(position = position_dodge(1), color = "black",) +
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = .4, position = position_dodge(1))  +
+    theme_classic()
+}
+
+plot_topics_paired <- function(data, dv) {
+  data %>%
+    group_by(condition, topic) %>%
+    summarize(mean = mean(!!enquo(dv)),
+              lower = mean(!!enquo(dv)) - std.error(!!enquo(dv)),
+              upper = mean(!!enquo(dv)) + std.error(!!enquo(dv))) %>%
+    ggplot(mapping = aes(x = topic, y = mean, fill = condition)) +
+    geom_col(position = position_dodge(1), color = "black",) +
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = .4, position = position_dodge(1))  +
+    theme_classic()
+}
+
+plot_orient <- function(data, dv) {
+  data %>%
+    group_by(condition, pol_orient_group) %>%
+    summarize(mean = mean(!!enquo(dv)),
+              lower = mean(!!enquo(dv)) - std.error(!!enquo(dv)),
+              upper = mean(!!enquo(dv)) + std.error(!!enquo(dv))) %>%
+    ggplot(mapping = aes(x = condition, y = mean, fill = pol_orient_group)) +
+    geom_col(position = position_dodge(1), color = "black",) +
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = .4, position = position_dodge(1))  +
+    theme_classic()
+}
+```
+
+\newpage
+
+
+# Alpha for Composite
+
+```{r}
+alpha_composite <- psych::alpha(data.frame(disagree_data$enjoy, (10 - disagree_data$awk),
+                                                disagree_data$learn, (10 - disagree_data$hostile))) %>%
+  summary() %>%
+  kable(caption = "Alpha for Composite")
+```
+
+\newpage
+
+# Manipulation Check (Similarity Question)
+
+```{r}
+plot(disagree_data, similar)
+```
+
+```{r}
+disagree_data %>%
+  group_by(condition) %>%
+  dplyr::summarize(mean = round(mean(similar),2),
+                   sd = round(sd(similar),2))
+```
+
+```{r}
+plot_topics(disagree_data, similar)
+```
+
+```{r}
+similar_anova <- aov_car(similar ~ condition * topic + Error(ResponseId), 
+                              data = disagree_data)
+anova_apa(similar_anova, print = FALSE) %>%
+  kable()
+```
+
+
+```{r}
+table <- disagree_data %>%
+  group_by(condition, topic) %>%
+  dplyr::summarize(mean = round(mean(similar),2)) 
+
+topic_order <- c("church", "BLM", "climate", "abortion", "same_sex", "family", "gun",
+                                   "restrict", "god")
+
+table[order(match(table$topic, topic_order)),]
+```
+
+## Simple Effects by Topic
+
+```{r}
+pairs(emmeans(similar_anova, "condition", by = "topic")) %>%
+  kable()
+```
+
+
+```{r}
+emmeans::eff_size(emmeans(lm(similar ~ condition * topic, data = disagree_data), 
+                          "condition", by = "topic"), 
+         sigma = stats::sigma(lm(similar ~ condition * topic, data = disagree_data)),
+                       edf = stats::df.residual(lm(similar ~ condition * topic, data = disagree_data))) %>%
+  #dplyr::select(-SE, -lower.CL, -upper.CL) %>%
+  kable(caption = "Effect Sizes", digits = 2)
+```
+
+
+\newpage
+
+# Composite
+
+```{r}
+plot(disagree_data, composite)
+```
+
+```{r}
+disagree_data %>%
+  group_by(condition) %>%
+  summarize(mean = round(mean(composite),2),
+            sd = round(sd(composite),2))
+```
+
+```{r}
+plot_topics(disagree_data, composite)
+```
+
+
+```{r}
+composite_anova <- aov_car(composite ~ condition * topic + Error(ResponseId), 
+                              data = disagree_data)
+anova_apa(composite_anova, print = FALSE) %>%
+  kable()
+```
+
+## Simple Effects by Topic
+
+```{r}
+pairs(emmeans(composite_anova, "condition", by = "topic")) %>%
+  kable()
+```
+
+
+```{r}
+emmeans::eff_size(emmeans(lm(composite ~ condition * topic, data = disagree_data), 
+                          "condition", by = "topic"), 
+         sigma = stats::sigma(lm(composite ~ condition * topic, data = disagree_data)),
+                       edf = stats::df.residual(lm(composite ~ condition * topic, data = disagree_data))) %>%
+  #dplyr::select(-SE, -lower.CL, -upper.CL) %>%
+  kable(caption = "Effect Sizes")
+```
+
+
+\newpage
+
+# Liking
+
+```{r}
+plot(disagree_data, like)
+```
+
+
+```{r}
+plot_topics(disagree_data, like)
+```
+
+```{r}
+like_anova <- aov_car(like ~ condition * topic + Error(ResponseId), 
+                              data = disagree_data)
+anova_apa(like_anova, print = FALSE) %>%
+  kable()
+```
+
+
+```{r}
+table <- disagree_data %>%
+  group_by(condition, topic) %>%
+  dplyr::summarize(mean = round(mean(like),2)) 
+
+topic_order <- c("church", "BLM", "climate", "abortion", "same_sex", "family", "gun",
+                                   "restrict", "god")
+
+table[order(match(table$topic, topic_order)),]
+```
+
+
+## Simple Effects by Topic
+
+```{r}
+pairs(emmeans(like_anova, "condition", by = "topic")) %>%
+  kable()
+```
+
+
+
+```{r}
+emmeans::eff_size(emmeans(lm(like ~ condition * topic, data = disagree_data), 
+                          "condition", by = "topic"), 
+         sigma = stats::sigma(lm(like ~ condition * topic, data = disagree_data)),
+                       edf = stats::df.residual(lm(like ~ condition * topic, data = disagree_data))) %>%
+  #dplyr::select(-SE, -lower.CL, -upper.CL) %>%
+  kable(caption = "Effect Sizes", digits = 2)
+```
+
+\newpage
+
+# Partner's Liking
+
+```{r}
+plot(disagree_data, partner_like)
+```
+
+
+```{r}
+plot_topics(disagree_data, partner_like)
+```
+
+```{r}
+partner_like_anova <- aov_car(partner_like ~ condition * topic + Error(ResponseId), 
+                              data = disagree_data)
+anova_apa(partner_like_anova, print = FALSE) %>%
+  kable()
+```
+
+```{r}
+table <- disagree_data %>%
+  group_by(condition, topic) %>%
+  dplyr::summarize(mean = round(mean(partner_like),2)) 
+
+topic_order <- c("church", "BLM", "climate", "abortion", "same_sex", "family", "gun",
+                                   "restrict", "god")
+
+table[order(match(table$topic, topic_order)),]
+```
+
+## Simple Effects by Topic
+
+```{r}
+pairs(emmeans(partner_like_anova, "condition", by = "topic")) %>%
+  kable()
+```
+
+```{r}
+emmeans::eff_size(emmeans(lm(partner_like ~ condition * topic, data = disagree_data), 
+                          "condition", by = "topic"), 
+         sigma = stats::sigma(lm(partner_like ~ condition * topic, data = disagree_data)),
+                       edf = stats::df.residual(lm(partner_like ~ condition * topic, data = disagree_data))) %>%
+  #dplyr::select(-SE, -lower.CL, -upper.CL) %>%
+  kable(caption = "Effect Sizes", digits = 2)
+```
+
+\newpage
+
+# Connectedness
+
+```{r}
+plot(disagree_data, connect)
+```
+
+
+```{r}
+plot_topics(disagree_data, connect)
+```
+
+```{r}
+connect_anova <- aov_car(connect ~ condition * topic + Error(ResponseId), 
+                              data = disagree_data)
+anova_apa(connect_anova, print = FALSE) %>%
+  kable()
+```
+
+```{r}
+table <- disagree_data %>%
+  group_by(condition, topic) %>%
+  dplyr::summarize(mean = round(mean(connect),2)) 
+
+topic_order <- c("church", "BLM", "climate", "abortion", "same_sex", "family", "gun",
+                                   "restrict", "god")
+
+table[order(match(table$topic, topic_order)),]
+```
+
+## Simple Effects by Topic
+
+```{r}
+pairs(emmeans(connect_anova, "condition", by = "topic")) %>%
+  kable()
+```
+
+```{r}
+emmeans::eff_size(emmeans(lm(connect ~ condition * topic, data = disagree_data), 
+                          "condition", by = "topic"), 
+         sigma = stats::sigma(lm(connect ~ condition * topic, data = disagree_data)),
+                       edf = stats::df.residual(lm(connect ~ condition * topic, data = disagree_data))) %>%
+  #dplyr::select(-SE, -lower.CL, -upper.CL) %>%
+  kable(caption = "Effect Sizes", digits = 2)
+```
+
+\newpage
+
+# Willingnes to Discuss
+
+```{r}
+plot(disagree_data, discuss)
+```
+
+```{r}
+disagree_data %>%
+  group_by(condition) %>%
+  dplyr::summarize(mean = round(mean(discuss),2),
+                   sd = round(sd(discuss),2))
+```
+
+```{r}
+plot_topics(disagree_data, discuss)
+```
+
+```{r}
+discuss_anova <- aov_car(discuss ~ condition * topic + Error(ResponseId), 
+                              data = disagree_data)
+anova_apa(discuss_anova, print = FALSE) %>%
+  kable()
+```
+
+There is a marginal interaction here, so I'll still include an analysis of the simple effects.
+
+
+```{r}
+table <- disagree_data %>%
+  group_by(condition, topic) %>%
+  dplyr::summarize(mean = round(mean(discuss),2)) 
+
+topic_order <- c("church", "BLM", "climate", "abortion", "same_sex", "family", "gun",
+                                   "restrict", "god")
+
+table[order(match(table$topic, topic_order)),]
+```
+
+
+## Simple Effects by Topic
+
+```{r}
+pairs(emmeans(discuss_anova, "condition", by = "topic")) %>%
+  kable()
+```
+
+
+```{r}
+emmeans::eff_size(emmeans(lm(discuss ~ condition * topic, data = disagree_data), 
+                          "condition", by = "topic"), 
+         sigma = stats::sigma(lm(discuss ~ condition * topic, data = disagree_data)),
+                       edf = stats::df.residual(lm(discuss ~ condition * topic, data = disagree_data))) %>%
+  #dplyr::select(-SE, -lower.CL, -upper.CL) %>%
+  kable(caption = "Effect Sizes", digits = 2)
+```
+
+
+
+\newpage
+
+# Mediation
+
+```{r}
+# Manip on mediator
+regXM <- lm(composite ~ condition, data = disagree_data)
+# Full model
+regXMY <- lm(discuss ~ composite + condition, data = disagree_data)
+
+mediation_results <- mediate(regXM, regXMY, treat='condition', mediator='composite',
+                            control.value = 'agree',
+                            treat.value = 'disagree',
+                             boot=TRUE, sims = 5000)
+summary(mediation_results)
+```
+
+
+\newpage
+
+# Political Orientation
+
+## Counts
+
+```{r}
+disagree_data %>%
+  group_by(pol_orient) %>%
+  dplyr::summarize(count = n(),
+                   percent = round((count/nrow(disagree_data)) * 100, digits = 2)) %>%
+  kable()
+```
+
+
+## Not reported: Analyses with Political Orientation
+
+*Three-way interaction with political orientation (liberal vs. conservative vs. independent)*
+
+```{r}
+composite_orient_anova <- aov_car(composite ~ condition * topic * pol_orient_group + Error(ResponseId), 
+                              data = disagree_data)
+anova_apa(composite_orient_anova, print = FALSE) %>%
+  kable()
+```
+
+*Two-way interaction between condition and political orientation (liberal vs. conservative vs. independent)*
+
+```{r}
+composite_orient_anova <- aov_car(composite ~ condition * pol_orient_group + Error(ResponseId), 
+                              data = disagree_data)
+anova_apa(composite_orient_anova, print = FALSE) %>%
+  kable()
+```
+
+```{r}
+plot_orient(disagree_data, composite)
+```
+
+
+\newpage
+
+# Demographics
+
+* Average age and SD age:
+```{r}
+round(mean(disagree_data$age),2)
+round(sd(disagree_data$age),2)
+```
+
+```{r}
+# Gender Breakdown
+gender_table <- disagree_data %>%
+  group_by(male) %>%
+  dplyr::summarize(proportion = n() / nrow(disagree_data))
+
+row_names <- c("Female", "Male", "Other") %>%
+ data.frame()
+
+bind_cols(row_names, gender_table) %>%
+  dplyr::select(-male) %>%
+kable(digits = 4, caption = "Gender Breakdown")
+```
+
+```{r}
+# Ethnicity Breakdown
+ethnicity_table <- disagree_data %>%
+  #dplyr::select(race_wh5_5)
+  group_by(race_5) %>%
+  dplyr::summarize(proportion = n() / nrow(disagree_data))
+
+row_names <- c("White","Other") %>%
+ data.frame()
+
+bind_cols(row_names, ethnicity_table) %>%
+  dplyr::select(-race_5) %>%
+kable(digits = 4, caption = "Race")
+```
+
+

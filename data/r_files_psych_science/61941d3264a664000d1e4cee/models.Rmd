@@ -1,0 +1,112 @@
+# Run Model
+
+## Prepare Data
+
+```{r prepare-data}
+tmp <- myd[
+  ,
+  .(
+    pitch = pitch_median_tag,
+    intensity = intensity_median_tag,
+    speechrate = speechrate_tag,
+    jitter = jitter_tag,
+    shimmer = shimmer_tag,
+    gender,
+    age_pm_z,
+    sci_pm_z,
+    sun_vs_work = sunday_vs_workday,
+    panas_pos_pm_z,
+    panas_pos_pmc_z,
+    panas_neg_pm_z,
+    panas_neg_pmc_z,
+    abf_pm_z = abf_all_pm_z,
+    abf_pmc_z = abf_all_pmc_z,
+    stressed_pm_z,
+    stressed_pmc_z,
+    workhour_pm_z = workinghours_daily_pm_z,
+    workhour_pmc_z = workinghours_daily_pmc_z,
+    code,
+    day,
+    study
+  )
+]
+
+tmp <- tmp[complete.cases(tmp)]
+```
+
+
+## Fitting Model
+
+```{r fit-model}
+fit0 <- brms::brm(
+  data = tmp,
+  family = meta$brms_family,
+  formula = brms::bf(mvbind(
+    pitch,
+    intensity,
+    speechrate,
+    jitter,
+    shimmer
+  ) ~ 0 +
+    gender +
+    age_pm_z +
+    sci_pm_z +
+    sun_vs_work +
+    panas_pos_pm_z +
+    panas_pos_pmc_z +
+    panas_neg_pm_z +
+    panas_neg_pmc_z +
+    abf_pm_z +
+    abf_pmc_z +
+    stressed_pm_z +
+    stressed_pmc_z +
+    workhour_pm_z +
+    workhour_pmc_z +
+    abf_pmc_z:stressed_pmc_z +
+    abf_pm_z:stressed_pm_z +
+    (1 | p | code)) +
+    brms::set_rescor(FALSE),
+  prior = c(
+    brms::set_prior("normal(0, 3)", class = "b", resp = "pitch"),
+    brms::set_prior("normal(150, 100)", class = "b", coef = "genderfemale", resp = "pitch"),
+    brms::set_prior("normal(150, 100)", class = "b", coef = "gendermale", resp = "pitch"),
+
+    brms::set_prior("normal(0, 3)", class = "b", resp = "intensity"),
+    brms::set_prior("normal(60, 5)", class = "b", coef = "genderfemale", resp = "intensity"),
+    brms::set_prior("normal(60, 5)", class = "b", coef = "gendermale", resp = "intensity"),
+
+    brms::set_prior("normal(0, 3)", class = "b", resp = "speechrate"),
+    brms::set_prior("normal(3, 1)", class = "b", coef = "genderfemale", resp = "speechrate"),
+    brms::set_prior("normal(3, 1)", class = "b", coef = "gendermale", resp = "speechrate"),
+
+    brms::set_prior("normal(0, 3)", class = "b", resp = "jitter"),
+    brms::set_prior("normal(2.8, 1)", class = "b", coef = "genderfemale", resp = "jitter"),
+    brms::set_prior("normal(2.8, 1)", class = "b", coef = "gendermale", resp = "jitter"),
+
+    brms::set_prior("normal(0, 3)", class = "b", resp = "shimmer"),
+    brms::set_prior("normal(10, 3)", class = "b", coef = "genderfemale", resp = "shimmer"),
+    brms::set_prior("normal(10, 3)", class = "b", coef = "gendermale", resp = "shimmer"),
+
+    brms::set_prior("student_t(10, 0, 10)", class = "sd", resp = "pitch"),
+    brms::set_prior("student_t(10, 0, 10)", class = "sd", resp = "intensity"),
+    brms::set_prior("student_t(10, 0, 10)", class = "sd", resp = "speechrate"),
+    brms::set_prior("student_t(10, 0, 10)", class = "sd", resp = "jitter"),
+    brms::set_prior("student_t(10, 0, 10)", class = "sd", resp = "shimmer"),
+
+    brms::set_prior("lkj(3)", class = "cor")
+  ),
+  # sample_prior = TRUE,
+  save_model = "./main_cache/fit0.stan",
+  file = "./main_cache/fit0",
+  refresh = if (interactive()) 200 else 0,
+  chains = meta$brms_chains,
+  iter = meta$brms_iterations,
+  seed = meta$seed
+)
+fit0 <- brms::add_criterion(fit0, "bayes_R2", file = "./main_cache/fit0")
+```
+
+```{r output-model}
+summary(fit0)
+plot(fit0)
+```

@@ -1,0 +1,646 @@
+---
+title: "YLC analyses R3"
+author: "Raffles Cowan"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warnings = FALSE)
+
+require(psych)
+require(gridExtra)
+require(tidyverse)
+require(lme4)
+require(lmerTest)
+require(ggExtra)
+require(effects)
+require(ggeffects)
+require(GGally)
+require(gridExtra)
+require(patchwork)
+require(sjPlot)
+
+# Load data ====
+ylc <- read_csv("YLC processed data R2 OSF 7.16.24.csv")
+
+```
+
+# Incremental Effects of Narrative Identity and Traits on Mental Health: A Nine-Year Longitudinal Study
+
+## Data analysis and results
+
+This markdown file reproduces the analyses reported in "Incremental
+Effects of Narrative Identity and Traits on Mental Health: A Nine-Year
+Longitudinal Study" by Majse Lind, Sebnem Ture, Dan P. McAdams, and
+Henry R. Cowan.
+
+Note that this set of analyses is on preprocessed data. Unprocessed data
+and a preprocessing script are also available on the project OSF site,
+along with README documentation: <https://osf.io/27qc9/>
+
+Inquiries regarding this project can be directed to Majse Lind at
+[mlind\@ikp.aau.dk](mailto:mlind@ikp.aau.dk){.email}
+
+# Descriptive stats
+
+## Demographics
+
+See manuscript **"Participants and procedures"** section.
+
+```{r demographics setup}
+# Confirm that all pts have at least 2 coded narrative data points
+IDs <- ylc %>% 
+  drop_na(ac_val) %>% 
+  select(ID) %>%
+  group_by(ID) %>%
+  filter(n() > 1) %>% #Drop pts with 0 or 1 coded narratives
+  distinct(ID) %>%
+  slice(1) %>%
+  ungroup() 
+
+# Filter pts with narrative data and select baseline data
+bl_data <- ylc %>% 
+  filter(ID %in% IDs$ID) %>% 
+  select(ID, year, "t1: date of birth (dd-mmm-year)", "date completed interview (dd-mmm-year)",
+         "t1: sex of respondent", "highest level of education completed", "race/ethnicity") %>%
+  filter(year==1) 
+```
+
+### Age at baseline
+
+```{r age}
+lubridate::time_length(difftime(bl_data$`date completed interview (dd-mmm-year)`, bl_data$`t1: date of birth (dd-mmm-year)`), unit = "years") %>%
+  round(1) %>%
+  describe()
+```
+
+### Self-reported sex at baseline (count and %)
+
+0 = Male 1 = Female
+
+```{r sex}
+rbind(table(bl_data$`t1: sex of respondent`), round(table(bl_data$`t1: sex of respondent`)/nrow(bl_data)*100, 1)) #Table with count and %
+```
+
+### Education at baseline (count and %)
+
+1 = High School 2 = Some college 3 = College (B.A. or B.S.) 4 = Graduate
+work (post-college) 5 = Other
+
+```{r edu}
+rbind(table(bl_data$`highest level of education completed`), round(table(bl_data$`highest level of education completed`)/nrow(bl_data)*100, 1)) #Table with count and %
+```
+
+### Race/ethnicity (count and %)
+
+1 = White/Caucasian 2 = African-American 5 = Interracial 6 = Other
+
+```{r race}
+rbind(table(bl_data$`race/ethnicity`), round(table(bl_data$`race/ethnicity`)/nrow(bl_data)*100, 1)) #Table with count and %
+```
+
+## Descriptive statistics of attrition and narratives
+
+See manuscript **"Materials \> Narrative Identity \> Yearly Life
+Challenges"** section.
+
+### Number of codable narratives per year (counts and %)
+
+```{r pts per year}
+# Select within-person data and confirm that all pts have narrative data
+yearly_data <- ylc %>% 
+  select(ID, year, bdi_pmc, swls_pmc, pwb_pmc, wb_comp, 
+         end_val_pmc, ac_val_pmc,
+         agn_val_pmc, com_val_pmc) %>% #Note we include extra variables to use for descriptive stats below
+  drop_na(ac_val_pmc) %>% 
+  group_by(ID) %>%
+  filter(n() > 1) %>% #Drop pts with 0 or 1 coded narratives
+  ungroup() 
+
+# Display participants per year
+rbind(table(yearly_data$year), round(table(yearly_data$year)/length(unique(yearly_data$ID))*100, 1))
+```
+
+### Number of codable narratives per participant
+
+```{r narratives per pt}
+table(yearly_data$ID, yearly_data$year) %>% 
+  rowSums() %>% 
+  describe()
+```
+
+### Word counts
+
+```{r word counts}
+ylc %>%
+  drop_na(ac_val) %>% 
+  select(WC) %>% 
+  unlist() %>%
+  describe()
+```
+
+## Describe time-invariant data at baseline
+
+See manuscript **Table 2**.
+
+```{r time invariant data}
+mean_data <- ylc %>% 
+  filter(ID %in% IDs$ID) %>%
+  select(ID, year, bdi_pmean_uc, swls_pmean_uc, pwb_pmean_uc, wb_comp_pmean_uc, 
+         extra, neur, open, consc, agree, 
+         end_val_pmean_uc, ac_val_pmean_uc) %>% #Note descriptive stats report uncentered data ("_uc")
+  group_by(ID) %>%
+  filter(year==1) %>% # Obtain baseline observation for each pt
+  ungroup()
+describe(select(mean_data, -ID, -year)) 
+```
+
+Here we examine correlations for time-invariant data at baseline.
+
+Correlations:
+
+```{r time invariant cors r}
+cors1 <- corr.test(select(mean_data, -ID, -year), adjust = "fdr")
+round(cors1$r, 2)
+```
+
+Correlation p-values (Note FDR-corrected p appears above the diagonal)
+
+```{r time invariant cors p}
+round(cors1$p, 3)
+```
+
+## Describe time-variant data
+
+See manuscript **Table 2**.
+
+```{r time variant data}
+describe(select(yearly_data, -ID, -year)) 
+```
+
+Here we examine within-person correlations for time-variant data.
+
+Correlations:
+
+```{r time variant cors r}
+cors2 <- corr.test(select(yearly_data, -ID, -year), adjust = "fdr")
+round(cors2$r, 2)
+```
+
+Correlation p-values (Note FDR-corrected p appears above the diagonal)
+
+```{r time variant cors p}
+round(cors2$p, 3)
+```
+
+# Growth curve models (multilevel models in {lme4})
+
+First, we define a function to run a sequence of growth curve models for each predictor and outcome.
+
+```{r mlm function}
+ylc_models <- function(outcome, predictor, data){
+  # Confirm that only pts with narrative data are included
+  data <- data  %>% 
+    select(ID, year_cent5, extra_z, neur_z, open_z, consc_z, agree_z, outcome, 
+           paste0(predictor, "_pmean"), paste0(predictor, "_pmc"),
+           end_val_pmean, end_val_pmc) %>%
+    drop_na() %>% 
+    group_by(ID) %>%
+    filter(n() > 1) %>%
+    ungroup()
+    
+  # Build list of models
+  output <- list()
+  
+  # Simple growth curve model
+  output$gc <- lmer(as.formula(paste0(outcome, "~ year_cent5 + (1 + year_cent5 | ID)")), data, 
+                    control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+  
+  # Narrative identity model with interactions with time
+  output$ni_int <- lmer(as.formula(paste0(outcome, "~ year_cent5 * ", paste0(predictor, "_pmean"), " + ", paste0(predictor, "_pmc"),  "+ end_val_pmean * year_cent5 + end_val_pmc + (1 + year_cent5 | ID)")), data, 
+                        control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+  
+  # Traits model with interactions with time
+  output$tr_int <- lmer(as.formula(paste0(outcome, "~ year_cent5 * extra_z + year_cent5 * neur_z + year_cent5 * open_z + year_cent5 * consc_z + year_cent5 * agree_z + (1 + year_cent5 | ID)")), data, 
+                        control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+  
+  # Full model with narrative identity and traits, with interactions with time
+  output$all_int <- lmer(as.formula(paste0(outcome, "~ year_cent5 + end_val_pmc + ", paste0(predictor, "_pmc")," + extra_z + neur_z + open_z + consc_z + agree_z + end_val_pmean + ", paste0(predictor, "_pmean")," + year_cent5 * extra_z + year_cent5 * neur_z + year_cent5 * open_z + year_cent5 * consc_z + year_cent5 * agree_z + year_cent5 * end_val_pmean + year_cent5 * ", paste0(predictor, "_pmean"), " + (1 + year_cent5 | ID)")), data, 
+                         control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+  # Return list of models
+  return(output)
+}
+```
+
+## Combined agency/communion models
+
+These are the main models reported in **Tables 3 and 4**.
+
+First we create all models using the function we defined above.
+
+```{r ac models}
+bdi_ac_mods <- ylc_models("bdi_sz", "ac_val", ylc)
+wb_ac_mods <- ylc_models("wb_comp", "ac_val", ylc)
+```
+
+Then we compare model fit. The models are nested: models 2 and 3 are
+nested within model 4; and model 1 is nested within models 2 and 3. To
+test differences in fit for nested models, this gives us two model
+sequences: 
+- Model 1 \> Model 2 \> Model 4 
+- Model 1 \> Model 3 \> Model 4
+
+We will test each of these model sequences for depression first. These
+models are reported in **Table 3**, with tests of improvements in model fit
+shown in the χ2 comparisons column.
+
+```{r ac dep model comps}
+bdi_ac_mods[setdiff(names(bdi_ac_mods), "ni_int")] %>% #Drop model "ni_int" from model sequence
+  with(do.call(anova, lapply(names(.), as.name))) #Compare models 
+
+bdi_ac_mods[setdiff(names(bdi_ac_mods), "tr_int")] %>% #Drop model "tr_int" from model sequence
+  with(do.call(anova, lapply(names(.), as.name))) #Compare models
+```
+
+Now we will test each of these model sequences for well-being. These
+models are reported in **Table 3**, with tests of improvements in model fit shown in the χ2 comparisons column.
+
+```{r ac wb model comps}
+wb_ac_mods[setdiff(names(wb_ac_mods), "ni_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+wb_ac_mods[setdiff(names(wb_ac_mods), "tr_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+```
+
+Next, we will examine Model 4, the full NI + traits model. This output
+appears in **Table 4**. Note: cent5 = "centered on Year 5"; "pmean" =
+person-mean, aka. between-person; "pmc" = person-mean-centered, aka.
+within-person
+
+First we will examine the depression model.
+
+```{r ac dep model}
+tab_model(bdi_ac_mods$all_int, show.intercept = F, collapse.ci = F)
+```
+
+Next we will examine the well-being model.
+
+```{r ac wb model}
+tab_model(wb_ac_mods$all_int, show.intercept = F, collapse.ci = F)
+```
+
+## Models with agency only
+
+Because agency and communion are often examined separately in the
+narrative identity literature, we also provide models with effects for
+agency and communion tested independently. First, the following models
+present the same output as above, for agency only.
+
+First we run all the models:
+
+```{r agn models}
+bdi_agn_mods <- ylc_models("bdi_sz", "agn_val0", ylc)
+wb_agn_mods <- ylc_models("wb_comp", "agn_val0", ylc)
+```
+
+Then we compare model fit. These comparisons parallel the comparisons
+for agency/communion above, and are reported in Supplement **Table S1.1**.
+
+Model fit comparisons for depression:
+
+```{r agn dep model comps}
+bdi_agn_mods[setdiff(names(bdi_agn_mods), "ni_int")] %>% #Drop model "ni_int" from comparison
+  with(do.call(anova, lapply(names(.), as.name))) #Compare models using anova() function
+bdi_agn_mods[setdiff(names(bdi_agn_mods), "tr_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+```
+
+Model fit comparisons for well-being:
+
+```{r agn wb model comps}
+wb_agn_mods[setdiff(names(wb_agn_mods), "ni_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+wb_agn_mods[setdiff(names(wb_agn_mods), "tr_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+```
+
+Next, we examine Model 4 for agency. These results are presented in
+Supplement **Table S1.2**.
+
+Depression model:
+
+```{r agn dep model}
+tab_model(bdi_agn_mods$all_int, show.intercept = F, collapse.ci = F)
+```
+
+Well-being model:
+
+```{r agn wb model}
+tab_model(wb_agn_mods$all_int, show.intercept = F, collapse.ci = F)
+```
+
+## Models with communion only
+
+Second, the following models present the same output as above, for
+communion only.
+
+First we run all the models:
+
+```{r com models}
+bdi_com_mods <- ylc_models("bdi_sz", "com_val0", ylc)
+wb_com_mods <- ylc_models("wb_comp", "com_val0", ylc)
+```
+
+Then we compare model fit. These comparisons parallel the comparisons
+for communion/communion above, and are reported in Supplement **Table S2.1**.
+
+Model fit comparisons for depression:
+
+```{r com dep model comps}
+bdi_com_mods[setdiff(names(bdi_com_mods), "ni_int")] %>% #Drop model "ni_int" from comparison
+  with(do.call(anova, lapply(names(.), as.name))) #Compare models using anova() function
+bdi_com_mods[setdiff(names(bdi_com_mods), "tr_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+```
+
+Model fit comparisons for well-being:
+
+```{r com wb model comps}
+wb_com_mods[setdiff(names(wb_com_mods), "ni_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+wb_com_mods[setdiff(names(wb_com_mods), "tr_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+```
+
+Next, we examine Model 4 for communion. These results are presented in
+Supplement **Table S2.2**.
+
+Depression model:
+
+```{r com dep model}
+tab_model(bdi_com_mods$all_int, show.intercept = F, collapse.ci = F)
+```
+
+Well-being model:
+
+```{r com wb model}
+tab_model(wb_com_mods$all_int, show.intercept = F, collapse.ci = F)
+```
+
+## Models excluding ending valence
+
+Finally, models were also calculated without ending valence. First, the model function was modified to drop ending valence from all models.
+
+```{r mlm function no ev}
+ylc_models_no_ev <- function(outcome, predictor, data){
+  # Confirm that only pts with narrative data are included
+  data <- data  %>% 
+    select(ID, year_cent5, extra_z, neur_z, open_z, consc_z, agree_z, outcome, 
+           paste0(predictor, "_pmean"), paste0(predictor, "_pmc")) %>%
+    drop_na() %>% 
+    group_by(ID) %>%
+    filter(n() > 1) %>%
+    ungroup()
+    
+  # Build list of models
+  output <- list()
+  
+  # Simple growth curve model
+  output$gc <- lmer(as.formula(paste0(outcome, "~ year_cent5 + (1 + year_cent5 | ID)")), data, 
+                    control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+  
+  # Narrative identity model with interactions with time
+  output$ni_int <- lmer(as.formula(paste0(outcome, "~ year_cent5 * ", paste0(predictor, "_pmean"), " + ", paste0(predictor, "_pmc"),  "+ (1 + year_cent5 | ID)")), data, 
+                        control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+  
+  # Traits model with interactions with time
+  output$tr_int <- lmer(as.formula(paste0(outcome, "~ year_cent5 * extra_z + year_cent5 * neur_z + year_cent5 * open_z + year_cent5 * consc_z + year_cent5 * agree_z + (1 + year_cent5 | ID)")), data, 
+                        control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+  
+  # Full model with narrative identity and traits, with interactions with time
+  output$all_int <- lmer(as.formula(paste0(outcome, "~ year_cent5 + ", paste0(predictor, "_pmc")," + extra_z + neur_z + open_z + consc_z + agree_z + ", paste0(predictor, "_pmean")," + year_cent5 * extra_z + year_cent5 * neur_z + year_cent5 * open_z + year_cent5 * consc_z + year_cent5 * agree_z + year_cent5 * ", paste0(predictor, "_pmean"), " + (1 + year_cent5 | ID)")), data, 
+                         control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+  # Return list of models
+  return(output)
+}
+```
+
+Then we create all models using this modified function.
+
+```{r ac models no ev}
+bdi_ac_mods_no_ev <- ylc_models_no_ev("bdi_sz", "ac_val", ylc)
+wb_ac_mods_no_ev <- ylc_models_no_ev("wb_comp", "ac_val", ylc)
+```
+
+Then we compare model fit. Model fit is shown in Supplement **Table S3.1**. First we compare depression models:
+
+```{r ac dep model comps no ev}
+bdi_ac_mods_no_ev[setdiff(names(bdi_ac_mods_no_ev), "ni_int")] %>% #Drop model "ni_int" from model sequence
+  with(do.call(anova, lapply(names(.), as.name))) #Compare models 
+
+bdi_ac_mods_no_ev[setdiff(names(bdi_ac_mods_no_ev), "tr_int")] %>% #Drop model "tr_int" from model sequence
+  with(do.call(anova, lapply(names(.), as.name))) #Compare models
+```
+
+Then we test each of the well-being models. Supplement **Table S3.1** reports these results.
+
+```{r ac wb model comps no ev}
+wb_ac_mods_no_ev[setdiff(names(wb_ac_mods_no_ev), "ni_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+wb_ac_mods_no_ev[setdiff(names(wb_ac_mods_no_ev), "tr_int")] %>%
+  with(do.call(anova, lapply(names(.), as.name)))
+```
+
+Finally, we examine Model 4, the full NI + traits model. This output
+appears in Supplement **Table S3.2**. Note: cent5 = "centered on Year 5"; "pmean" =
+person-mean, aka. between-person; "pmc" = person-mean-centered, aka.
+within-person
+
+First we will examine the depression model.
+
+```{r ac dep model no ev}
+tab_model(bdi_ac_mods_no_ev$all_int, show.intercept = F, collapse.ci = F)
+```
+
+Next we will examine the well-being model.
+
+```{r ac wb model no ev}
+tab_model(wb_ac_mods_no_ev$all_int, show.intercept = F, collapse.ci = F)
+```
+
+
+# Plot findings
+
+## Fig 1. Change over time with individual pts and group trends
+
+```{r fig 1}
+
+# Recalculate models outside model function for easier plotting
+bdi_plot_gc <- lmer(bdi_sz ~ year_cent5 + (1 + year_cent5 | ID), ylc, 
+                    control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+wb_plot_gc <- lmer(wb_comp ~ year_cent5 + (1 + year_cent5 | ID), ylc, 
+                   control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 99999)))
+
+# Extract BDI fit line to superimpose on spaghetti plot
+bdi_gc_plot_data <- Effect("year_cent5",
+                           mod=bdi_plot_gc) %>%
+  as.data.frame() %>%
+  mutate(fit = (((fit*0.264) + .508) ^2) - .01) # Backtransform and unstandardize BDI
+
+# Extract WB fit line to superimpose on spaghetti plot
+wb_gc_plot_data <- Effect("year_cent5",
+                          mod=wb_plot_gc) %>%
+  as.data.frame()
+
+# BDI plot
+dep_sp_tr <- ggplot(ylc, aes(x = year_cent5+5, y = bdi, color = ID, group = ID)) +
+  geom_line(alpha = .3) +
+  labs(title="A. Depression", 
+       y = "BDI Mean", 
+       x = "Year in Study") +
+  theme_light() +
+  scale_x_continuous(breaks = c(1,3,5,7,9)) +
+  theme(text=element_text(size=10), aspect.ratio=1.2, panel.grid = element_blank(),
+        legend.position = "none") +
+  geom_segment(x = 1, xend = 9, 
+               y = bdi_gc_plot_data$fit[[1]], yend = bdi_gc_plot_data$fit[[5]], 
+               linewidth=1.2, color = "black") 
+
+# WB plot
+wb_sp_tr <- ggplot(ylc, aes(x = year_cent5+5, y = wb_comp, color = ID, group = ID)) +
+  geom_line(alpha = .3) +
+  labs(title="B. Well-Being", 
+       y = "Well-Being Composite", 
+       x = "Year in Study") +
+  theme_light() +
+  scale_x_continuous(breaks = c(1,3,5,7,9)) +
+  theme(text=element_text(size=10), aspect.ratio=1.2, panel.grid = element_blank(),
+        legend.position = "none") +
+  geom_segment(x = 1, xend = 9, 
+               y = wb_gc_plot_data$fit[[1]], yend = wb_gc_plot_data$fit[[5]], 
+               linewidth=1.2, color = "black") 
+
+# Display plots
+grid.arrange(dep_sp_tr, wb_sp_tr, nrow = 1)
+```
+
+## Fig 2. Interaction plots
+
+```{r fig 2}
+
+# Plot +/-1 SD for each variable:
+ylc %>% 
+  select(ac_val_pmean, agn_val0_pmean, com_val0_pmean) %>% 
+  describe()
+# A/C -0.41, 0.41
+# Agn -0.36, 0.36
+# Com -0.31, 0.31
+
+a <- ggpredict(bdi_ac_mods$all_int, c("year_cent5", "ac_val_pmean[-0.41, 0.41]")) %>% 
+  plot(alpha = 0.2, show_data = F, colors = "system", limits = c(-.55, .45)) + 
+  scale_x_continuous(labels=function(x) x+5) +
+  theme_bw() + 
+  theme(panel.grid = element_blank()) +
+  labs(title = "A. Depression",
+       subtitle = "As a Function of \nMotivational Fulfillment",
+       y = "Depression",
+       x = "Year",
+       color = "Motivational Fulfillment \n(Between-Person)") +
+  theme_bw() + 
+  scale_colour_brewer(palette = "Set1",
+                      labels = c("-1 SD", "+1 SD"),
+                      guide = guide_legend(reverse = F)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(panel.grid = element_blank())
+
+b <- ggpredict(wb_ac_mods$all_int, c("year_cent5", "ac_val_pmean[-0.36, 0.36]")) %>% 
+  plot(alpha = 0.2, show_data = F, limits = c(-.40, .60)) + 
+  scale_x_continuous(labels=function(x) x+5) +
+  theme_bw() + 
+  theme(panel.grid = element_blank()) +
+  labs(title = "B. Well-Being",
+       subtitle = "As a Function of \nMotivational Fulfillment",
+       y = "Well-Being Composite",
+       x = "Year",
+       color = "Motivational Fulfillment \n(Between-Person)") +
+  theme_bw() + 
+  scale_colour_brewer(palette = "Set1",
+                      labels = c("-1 SD", "+1 SD"),
+                      guide = guide_legend(reverse = T)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(panel.grid = element_blank())
+
+c <- ggpredict(bdi_agn_mods$all_int, c("year_cent5", "agn_val0_pmean[-0.31, 0.31]")) %>% 
+  plot(alpha = 0.2, show_data = F, colors = "system", limits = c(-.55, .45)) + 
+  scale_x_continuous(labels=function(x) x+5) +
+  theme_bw() + 
+  theme(panel.grid = element_blank()) +
+  labs(title = "C. Depression",
+       subtitle = "As a Function of \nAgency Fulfillment",
+       y = "Depression",
+       x = "Year",
+       color = "Agency Fulfillment        \n(Between-Person)") +
+  theme_bw() + 
+  scale_colour_brewer(palette = "Set1",
+                      labels = c("-1 SD", "+1 SD"),
+                      guide = guide_legend(reverse = F)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(panel.grid = element_blank())
+
+d <- ggpredict(wb_agn_mods$all_int, c("year_cent5", "agn_val0_pmean[-0.41, 0.41]")) %>% 
+  plot(alpha = 0.2, show_data = F, limits = c(-.40, .60)) + 
+  scale_x_continuous(labels=function(x) x+5) +
+  theme_bw() + 
+  theme(panel.grid = element_blank()) +
+  labs(title = "D. Well-Being",
+       subtitle = "As a Function of \nAgency Fulfillment",
+       y = "Well-Being Composite",
+       x = "Year",
+       color = "Agency Fulfillment        \n(Between-Person)") +
+  theme_bw() + 
+  scale_colour_brewer(palette = "Set1",
+                      labels = c("-1 SD", "+1 SD"),
+                      guide = guide_legend(reverse = T)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(panel.grid = element_blank())
+
+e <- ggpredict(bdi_com_mods$all_int, c("year_cent5", "com_val0_pmean[-0.36, 0.36]")) %>% 
+  plot(alpha = 0.2, show_data = F, colors = "system", limits = c(-.55, .45)) + 
+  scale_x_continuous(labels=function(x) x+5) +
+  theme_bw() + 
+  theme(panel.grid = element_blank()) +
+  labs(title = "E. Depression",
+       subtitle = "As a Function of \nCommunion Fulfillment",
+       y = "Depression",
+       x = "Year",
+       color = "Communion Fulfillment\n(Between-Person)") +
+  theme_bw() + 
+  scale_colour_brewer(palette = "Set1",
+                      labels = c("-1 SD", "+1 SD"),
+                      guide = guide_legend(reverse = F)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(panel.grid = element_blank())
+
+f <- ggpredict(wb_com_mods$all_int, c("year_cent5", "com_val0_pmean[-0.31, 0.31]")) %>% 
+  plot(alpha = 0.2, show_data = F, limits = c(-.40, .60)) + 
+  scale_x_continuous(labels=function(x) x+5) +
+  theme_bw() + 
+  theme(panel.grid = element_blank()) +
+  labs(title = "F. Well-Being",
+       subtitle = "As a Function of \nCommunion Fulfillment",
+       y = "Well-Being Composite",
+       x = "Year",
+       color = "Communion Fulfillment\n(Between-Person)") +
+  theme_bw() + 
+  scale_colour_brewer(palette = "Set1",
+                      labels = c("-1 SD", "+1 SD"),
+                      guide = guide_legend(reverse = T)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(panel.grid = element_blank())
+
+grid.arrange(a,b,c,d,e,f, nrow = 3)
+```

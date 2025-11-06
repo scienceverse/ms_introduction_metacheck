@@ -1,0 +1,683 @@
+---
+title: "LTB Online Teacher Study Analysis"
+author: "Elizabeth Weitz"
+output:
+  html_document: 
+    toc: TRUE
+    toc_float: TRUE
+    number_sections: TRUE
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(tidyverse)
+library(psych)
+library(kableExtra)
+library(lme4)
+library(lmerTest)
+library(sjPlot)
+library(effectsize)
+library(rstatix)
+
+sessionInfo()
+
+d <- read_csv("~/Box Sync/Lifting the Bar Materials & Data/LTB Data/LTB Online Teacher Study/Publishing_Data_Teacher_Study.csv")
+
+str(d$prior_jd)
+table(d$prior_jd)
+
+d <-
+  d %>% 
+  mutate(prior_jd = as.factor(prior_jd),
+         condition = as.factor(condition),
+         cond_letterref = relevel(condition, "letter"),
+         future_worry_positive_coded = future_worry_for_student_c3,
+         future_worry_for_student_c3 = 8 - future_worry_for_student_c3)
+```
+
+
+```{r}
+contrasts(d$condition)
+```
+
+# Specified Student in the Letter
+
+## Commitment to Student
+*Std. Alpha: 0.904; Scale 1-7 “Not at all” to “Extremely”*  
+
+* How responsible would you feel for (name) as (he/she) returns to school?   
+
+* How motivated would you feel to help (student) as (he/she) returns to school? 
+
+* How committed would you feel to helping (student) succeed in returning to school?  
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$commitment_to_student_c3, d$condition, digits = 3, mat = T)))
+
+commitment <- lm(commitment_to_student_c3 ~ condition + school_race_white, data = d)
+commitment
+cohens_d(commitment_to_student_c3 ~ cond_letterref, data = d)
+
+AIC(commitment)
+AIC(lmer(commitment_to_student_c3 ~ condition + (1|random_student_id) + school_race_white, data = d))
+
+```
+
+## Anticipated Emotions
+*Std. Alpha: 0.838; Scale 1-7, “Not at all” to “Extremely”*  
+*Positive Items Std. Alpha: 0.889*  
+*Negative Items Std. Alpha: 0.833*  
+
+To what extent would you have each of the following feelings about (student) entering your class? 
+
+* glad
+
+* excited
+
+* hopeful
+
+* enthusiastic
+
+* prepared
+
+* apprehensive
+
+* afraid
+
+* frustrated
+
+* angry
+
+* annoyed
+
+* overwhelmed
+
+* challenged
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$anticipated_emotions_c12, d$condition, digits = 3, mat = T)))
+
+full_emotions <- lm(anticipated_emotions_c12 ~ condition + school_race_white, data = d)
+full_emotions
+cohens_d(anticipated_emotions_c12 ~ cond_letterref, data = d)
+
+AIC(full_emotions)
+AIC(lmer(anticipated_emotions_c12 ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+### Positive Item Composite
+```{r}
+kable_styling(kable(describeBy(d$anticipated_emotions_c5_positive, d$condition, digits = 3, mat = T)))
+
+positive_emotions <- lm(anticipated_emotions_c5_positive ~ condition + school_race_white, data = d)
+positive_emotions
+cohens_d(anticipated_emotions_c5_positive ~ cond_letterref, data = d)
+
+AIC(positive_emotions)
+AIC(lmer(anticipated_emotions_c5_positive ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+### Negative Item Composite
+```{r}
+kable_styling(kable(describeBy(d$anticipated_emotions_c7_negative, d$condition, digits = 3, mat = T)))
+
+negative_emotions <- lm(anticipated_emotions_c7_negative ~ condition + school_race_white, data = d)
+negative_emotions
+cohens_d(anticipated_emotions_c7_negative ~ condition, data = d)
+
+AIC(negative_emotions)
+AIC(lmer(anticipated_emotions_c7_negative ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+## Success in Class
+*Std. Alpha: 0.783; Scale 1-6: “Not at all likely” to “Extremely likely”*   
+*Positive Items Pearson Correlation: 0.638 (only 2 items)*   
+*Negative Items Std. Alpha: 0.872*  
+
+Think ahead to what (student) might do or what (he/she) might experience in the future in class.
+
+* Distract other students in class? 
+
+* Be a positive influence on other students in class? 
+
+* Interfere with your teaching? 
+
+* Be motivated to work hard in class? 
+
+* Influence other students in a negative way? 
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$success_in_class_c5, d$condition, digits = 3, mat = T)))
+
+full_success <- lm(success_in_class_c5 ~ condition + school_race_white, data = d)
+full_success
+cohens_d(success_in_class_c5 ~ cond_letterref, data = d)
+
+AIC(full_success)
+AIC(lmer(success_in_class_c5 ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+### Positive Item Composite
+```{r}
+kable_styling(kable(describeBy(d$success_in_class_c2_positive, d$condition, digits = 3, mat = T)))
+
+positive_success <- lm(success_in_class_c2_positive ~ condition + school_race_white, data = d)
+positive_success
+cohens_d(success_in_class_c2_positive ~ cond_letterref, data = d)
+
+AIC(positive_success)
+AIC(lmer(success_in_class_c2_positive ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+### Negative Item Composite
+```{r}
+kable_styling(kable(describeBy(d$success_in_class_c3_negative, d$condition, digits = 3, mat = T)))
+
+negative_success <- lm(success_in_class_c3_negative ~ condition + school_race_white, data = d)
+negative_success
+cohens_d(success_in_class_c3_negative ~ condition, data = d)
+
+AIC(negative_success)
+AIC(lmer(success_in_class_c3_negative ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+
+## Success in School
+*Std. Alpha = 0.803; Scale 1-6: “Not at all likely” to “Extremely likely”*  
+*Positive Items Pearson Correlation: 0.746*  
+*Negative Items Std. Alpha: 0.868*  
+
+How likely is (student) to...
+
+* Be successful upon returning to school? 
+
+* Develop positive relationships with other teachers in school? 
+
+* Be a danger to others in school? 
+
+* Have significant disciplinary problems in school in the future? 
+
+* Be suspended in the future? 
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$success_in_school_c5, d$condition, digits = 3, mat = T)))
+
+successinschool_full <- lm(success_in_school_c5 ~ condition + school_race_white, data = d)
+successinschool_full
+cohens_d(success_in_school_c5 ~ cond_letterref, data = d)
+
+AIC(successinschool_full)
+AIC(lmer(success_in_school_c5 ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+### Positive Item Composite
+```{r}
+kable_styling(kable(describeBy(d$success_in_school_c2_positive, d$condition, digits = 3, mat = T)))
+
+successinschool_positive <- lm(success_in_school_c2_positive ~ condition + school_race_white, data = d)
+successinschool_positive
+cohens_d(success_in_school_c2_positive ~ cond_letterref, data = d)
+
+AIC(successinschool_positive)
+AIC(lmer(success_in_school_c2_positive ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+### Negative Item Composite
+```{r}
+kable_styling(kable(describeBy(d$success_in_school_c3_negative, d$condition, digits = 3, mat = T)))
+
+successinschool_negative <- lm(success_in_school_c3_negative ~ condition + school_race_white, data = d)
+successinschool_negative
+cohens_d(success_in_school_c3_negative ~ condition, data = d)
+
+AIC(successinschool_negative)
+AIC(lmer(success_in_school_c3_negative ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+## Social Success
+*Std. Alpha = 0.790; Scale 1-6, “Not at all likely” to “Extremely likely”*  
+*Single positive measure*  
+*Negative Items Std. Alpha: 0.894*  
+
+Now think ahead to the future. How likely is (student) to....
+
+* Be reincarcerated in the future? 
+
+* Contribute positively to society? 
+
+* Commit another crime? 
+
+* Be violent in the future? 
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$social_success_c4, d$condition, digits = 3, mat = T)))
+
+socialsuccess_full <- lm(social_success_c4 ~ condition + school_race_white, data = d)
+socialsuccess_full
+cohens_d(social_success_c4 ~ cond_letterref, data = d)
+
+AIC(socialsuccess_full)
+AIC(lmer(social_success_c4 ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+### Single Positive Item 
+```{r}
+kable_styling(kable(describeBy(d$social_success_c1_positive, d$condition, digits = 3, mat = T)))
+
+socialsuccess_positive <- lm(social_success_c1_positive ~ condition + school_race_white, data = d)
+socialsuccess_positive
+cohens_d(social_success_c1_positive ~ cond_letterref, data = d)
+
+AIC(socialsuccess_positive)
+AIC(lmer(social_success_c1_positive ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+### Negative Item Composite
+```{r}
+kable_styling(kable(describeBy(d$social_success_c3_negative, d$condition, digits = 3, mat = T)))
+
+socialsuccess_negative <- lm(social_success_c3_negative ~ condition + school_race_white, data = d)
+socialsuccess_negative
+cohens_d(social_success_c3_negative ~ condition, data = d)
+
+AIC(socialsuccess_negative)
+AIC(lmer(social_success_c3_negative ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+## Feelings for the student
+*Std. Alpha: 0.860; Scale 1-6: “None” to “A great deal”*  
+*All positive*  
+How might you feel about (student)?
+
+* How much love would you feel for (student)?
+
+* How much hope would you feel for (student)?
+
+* How much respect would you feel for (student)?
+
+* How much trust would you feel for (student)?
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$feel_for_student_c4, d$condition, digits = 3, mat = T)))
+
+feelings <- lm(feel_for_student_c4 ~ condition + school_race_white, data = d)
+feelings
+cohens_d(feel_for_student_c4 ~ cond_letterref, data = d)
+
+AIC(feelings)
+AIC(lmer(feel_for_student_c4 ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+### Love
+```{r}
+kable_styling(kable(describeBy(d$love, d$condition, digits = 3, mat = T)))
+
+love_model <- lm(love ~ condition + school_race_white, data = d)
+love_model
+```
+
+### Hope
+```{r}
+kable_styling(kable(describeBy(d$hope, d$condition, digits = 3, mat = T)))
+
+hope_model <- lm(hope ~ condition + school_race_white, data = d)
+hope_model
+```
+
+### Respect
+```{r}
+kable_styling(kable(describeBy(d$respect, d$condition, digits = 3, mat = T)))
+
+respect_model <- lm(respect ~ condition + school_race_white, data = d)
+respect_model
+```
+
+### Trust
+```{r}
+kable_styling(kable(describeBy(d$trust, d$condition, digits = 3, mat = T)))
+
+trust_model <- lm(trust ~ condition + school_race_white, data = d)
+trust_model
+```
+
+## Opportunity to realize goals as an educator
+*Corr: 0.794; Scale 1-6: “Not at all” to “A great deal”*
+
+* (student) presents an opportunity for me to do something meaningful as an educator. 
+
+* (student) presents an opportunity for me to reach my goals as an educator.    
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$meaning_as_an_educator_c2, d$condition, digits = 3, mat = T)))
+
+educator_full <- lm(meaning_as_an_educator_c2 ~ condition + school_race_white, data = d)
+educator_full
+cohens_d(meaning_as_an_educator_c2 ~ cond_letterref, data = d)
+
+AIC(educator_full)
+AIC(lmer(meaning_as_an_educator_c2 ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+## Future Worry for Student
+*Std. Alpha: 0.876; Scale 1-7: “Not at all” to “Extremely”*
+
+* How worried would you be that (student) will be a problem student? 
+
+* How worried would you be that (student)'s behavior could get worse over time?
+
+* How worried would you be that you might have to refer (student) to law enforcement in the future?    
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$future_worry_for_student_c3, d$condition, digits = 3, mat = T)))
+
+future_worry <-
+  lm(future_worry_for_student_c3 ~ condition + school_race_white, data = d)
+future_worry
+cohens_d(future_worry_for_student_c3 ~ cond_letterref, data = d)
+
+AIC(future_worry)
+AIC(lmer(future_worry_for_student_c3 ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+## Age
+How old do you think (student) is?
+```{r}
+kable_styling(kable(describeBy(d$dv_age, d$condition, digits = 3, mat = T)))
+
+age <-
+  lm(dv_age ~ condition + school_race_white, data = d)
+age
+cohens_d(dv_age ~ cond_letterref, data = d)
+
+AIC(age)
+AIC(lmer(dv_age ~ condition + (1|random_student_id) + school_race_white, data = d))
+```
+
+## MANOVA on primary outcomes
+```{r}
+primary_manova <- 
+  manova(cbind(scale(commitment_to_student_c3), scale(anticipated_emotions_c12), 
+               scale(success_in_class_c5),
+               scale(success_in_school_c5), scale(social_success_c4), scale(feel_for_student_c4),
+              scale(future_worry_positive_coded))
+         ~ condition 
+         + school_race_white, data = d)
+
+summary(primary_manova)
+```
+
+# Students in General
+
+## Success in Class
+*Std. Alpha: 0.817; Scale 1-6: “Not at all likely” – “Extremely likely”*  
+*Positive items r 0.661*  
+*Negative items alpha: 0.915*  
+
+How likely is the typical student returning to school from juvenile detention to...
+
+* Distract other students in class? 
+
+* Be a positive influence on other students in class? 
+
+* Interfere with teaching? 
+
+* Be motivated to work hard in class? 
+
+* Influence other students in a negative way? 
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$general_student_success_in_class_c5, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_student_success_in_class_c5 ~ condition + school_race_white, data = d))
+cohens_d(general_student_success_in_class_c5 ~ cond_letterref, data = d)
+
+```
+
+### Positive Item Composite
+```{r}
+kable_styling(kable(describeBy(d$general_student_success_in_class_c2_positive, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_student_success_in_class_c2_positive ~ condition + school_race_white, data = d))
+cohens_d(general_student_success_in_class_c2_positive ~ cond_letterref, data = d)
+
+```
+
+### Negative Item Composite
+```{r}
+kable_styling(kable(describeBy(d$general_student_success_in_class_c3_negative, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_student_success_in_class_c3_negative ~ condition + school_race_white, data = d))
+cohens_d(general_student_success_in_class_c3_negative ~ condition, data = d)
+
+```
+
+## Success in School
+*Std. Alpha: 0.777; Scale 1-6: “Not at all likely” – “Extremely likely”*  
+*Positive items cor: 0.719*  
+*Negative items alpha: 0.856*
+
+How likely is the typical student returning to school from juvenile detention to...
+
+* Be successful upon returning to school? 
+
+* Develop positive relationships with teachers in school? 
+
+* Be a danger to others in school? 
+
+* Have significant disciplinary problems in school in the future? 
+
+* Be suspended in the future? 
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$general_success_in_school_c5, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_success_in_school_c5 ~ condition + school_race_white, data = d))
+cohens_d(general_success_in_school_c5 ~ cond_letterref, data = d)
+
+```
+
+### Positive Item Composite
+```{r}
+kable_styling(kable(describeBy(d$general_success_in_school_c2_positive, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_success_in_school_c2_positive ~ condition + school_race_white, data = d))
+cohens_d(general_success_in_school_c2_positive ~ cond_letterref, data = d)
+
+```
+
+### Negative Item Composite
+```{r}
+kable_styling(kable(describeBy(d$general_success_in_school_c3_negative, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_success_in_school_c3_negative ~ condition + school_race_white, data = d))
+cohens_d(general_success_in_school_c3_negative ~ condition, data = d)
+
+```
+
+## Social Success
+*Std. Alpha: 0.804; Scale 1-6: “Not at all likely” – “Extremely likely”*  
+*Single positive item*  
+*Negative items alpha: 0.900*  
+
+How likely is the typical student returning to school from juvenile detention to…
+
+* Be reincarcerated in the future? 
+
+* Contribute positively to society? 
+
+* Commit another crime? 
+
+* Be violent in the future?
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$general_student_social_success_c4, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_student_social_success_c4 ~ condition + school_race_white, data = d))
+cohens_d(general_student_social_success_c4 ~ cond_letterref, data = d)
+
+```
+
+### Single Positive Item
+```{r}
+kable_styling(kable(describeBy(d$general_student_social_success_c1_positive, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_student_social_success_c1_positive ~ condition + school_race_white, data = d))
+cohens_d(general_student_social_success_c1_positive ~ cond_letterref, data = d)
+
+```
+
+### Negative Item Composite
+```{r}
+kable_styling(kable(describeBy(d$general_student_social_success_c3_negative, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_student_social_success_c3_negative ~ condition + school_race_white, data = d))
+cohens_d(general_student_social_success_c3_negative ~ condition, data = d)
+
+```
+
+# Adults in General
+## Adult Future Outcomes
+*Std. Alpha: 0.886; Scale 1-6: “Not at all likely” – “Extremely likely”*  
+*Positive items alpha: 0.902*  
+*Negative items alpha: 0.904*  
+
+How likely is the typical adult with experience in prison to...
+
+* Be successful upon returning to society? 
+
+* Influence others in a negative way? 
+
+* Be a positive influence on others? 
+
+* Be a danger to others? 
+
+* Be motivated to work hard? 
+
+* Develop positive relationships with other adults? 
+
+* Be reincarcerated in the future? 
+
+* Commit another crime? 
+
+* Contribute positively to society? 
+
+* Be violent in the future? 
+
+### Full Composite
+```{r}
+kable_styling(kable(describeBy(d$general_adult_future_outcomes_c10, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_adult_future_outcomes_c10 ~ condition + school_race_white, data = d))
+cohens_d(general_adult_future_outcomes_c10 ~ cond_letterref, data = d)
+
+```
+
+### Positive Item Composite
+```{r}
+kable_styling(kable(describeBy(d$general_adult_future_outcomes_c5_positive, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_adult_future_outcomes_c5_positive ~ condition + school_race_white, data = d))
+cohens_d(general_adult_future_outcomes_c5_positive ~ cond_letterref, data = d)
+
+```
+
+### Negative Item Composite
+```{r}
+kable_styling(kable(describeBy(d$general_adult_future_outcomes_c5_negative, d$condition, digits = 3, mat = T)))
+
+summary(lm(general_adult_future_outcomes_c5_negative ~ condition + school_race_white, data = d))
+cohens_d(general_adult_future_outcomes_c5_negative ~ condition, data = d)
+
+```
+
+# Mixed Model Interactions 
+## Data processing
+```{r include=FALSE}
+library(ggpubr)
+
+d <- 
+  d %>% 
+  mutate(
+    overall_success = rowMeans(
+      select(., success_in_class_c5, success_in_school_c5, social_success_c4), na.rm = T),
+    general_overall_success = rowMeans(
+      select(., general_student_success_in_class_c5, general_success_in_school_c5, general_student_social_success_c4),
+      na.rm = T))
+
+# convert data into long format
+dl <- 
+  d %>% 
+  select(condition, overall_success, general_overall_success, random_student_id, school_race_white, participant_id) %>% 
+  rename(target_student = overall_success,
+         students_in_general = general_overall_success) %>% 
+  gather(key = "target", value = "rating", target_student, students_in_general) %>% 
+  convert_as_factor(target)
+
+dl <-
+  dl %>% 
+  mutate(cond_letterref = relevel(condition, ref = "letter"),
+         target_studentref = relevel(target, ref = "target_student"))
+levels(dl$condition)
+levels(dl$cond_letterref)
+levels(dl$target_studentref)
+levels(dl$target)
+```
+
+Each chunk has:  
+* summary statistics  
+* box plot  
+* linear model, DV: target student  
+* linear model, DV: students in general  
+* linear model interaction  
+
+Between = condition  
+Within = target  
+
+Interpretation: https://stats.stackexchange.com/questions/33709/interpreting-the-regression-output-from-a-mixed-model-when-interactions-between
+
+## Analysis
+cohen's d and CI for these interactions were calculated using Part 2: Comparison of Groups with Different Sample Sizes, via http://www.psychometrica.de/effect_size.html
+```{r}
+# Check summary stats
+dl %>%
+  group_by(condition, target) %>%
+  get_summary_stats(rating, type = "mean_sd")
+
+bxp <- ggboxplot(
+  dl, x = "target", y = "rating",
+  color = "condition", palette = "jco", title = "Overall Success"
+  )
+bxp
+
+#### Interactions ####
+# Control and Students in General as 0-level
+int <- lmer(rating ~ condition*target + (1|participant_id) + school_race_white, data = dl)
+summary(int)
+
+# Letter as 0-level
+summary(lmer(rating ~ cond_letterref*target+ (1|participant_id) + school_race_white, data = dl))
+
+# Target Student as 0 level
+model3 <- lmer(rating ~ condition*target_studentref + (1|participant_id) + school_race_white, data = dl)
+summary(model3)
+
+# Both Letter and Target Student as 0 level
+
+model4 <- lmer(rating ~ cond_letterref*target_studentref 
+               + (1|participant_id) + school_race_white, data = dl)
+summary(model4)
+```

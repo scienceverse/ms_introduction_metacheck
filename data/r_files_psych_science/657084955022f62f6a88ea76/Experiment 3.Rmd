@@ -1,0 +1,279 @@
+---
+title: "ITO - Experiment 3"
+output: html_document
+---
+
+# Setup
+```{r setup, include=FALSE}
+rm(list=ls()) # empty the workspace
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r load libraries, message = F, warning = F, echo=FALSE}
+library(tidyverse)
+library(lubridate)
+library(MASS)
+library(lme4)
+library(lmerTest)
+library(buildmer)
+library(DT)
+library(tidyboot)
+library(broom)
+library(stringr)
+library(ggplot2)
+library(sjPlot)# regression table
+
+# logistic mixed-effects regression
+library(reshape2)
+library(compiler)
+library(parallel)
+library(boot)
+library(lattice)
+
+select <- dplyr::select
+```
+
+```{r record package version}
+used_packages <-loadedNamespaces()
+used_package_versions <- tibble(package = used_packages)%>%
+  rowwise()%>%
+  mutate(version=packageVersion(package))
+
+#write_csv(used_package_versions, "./01.R package versions/Experiment 3 - package version.csv")
+```
+# Import and tidy up data
+```{r import raw data}
+# prolific batch 1 + 2 + 3 (n=167)
+batch1 <- read_csv("./data/exp-3/00.exp3-raw-batch1.csv")%>%mutate(batch=1)
+batch1_attnchecks <- read_csv("./data/exp-3/01.exp3-attnchecks-batch1.csv")%>%mutate(batch=1)
+
+# bind all
+data <- rbind(batch1)
+attn_checks <- rbind(batch1_attnchecks)
+```
+
+```{r apply inclusion criteria}
+# set up trial names, create and select relevant columns
+L_data <- data%>%
+  mutate(data_type="within subjects",
+         manipulation_type = case_when(str_detect(trial_condition, "1 agent,")==TRUE ~ "baseline",
+                                       str_detect(trial_condition, "attention_checks")==TRUE ~ "attention_checks",
+                                 TRUE ~ "main"),
+         A_intentionality=case_when(str_detect(trial_condition, "intentional")==TRUE ~ "intentional drop",
+                                       str_detect(trial_condition, "no drop")==TRUE ~ "no drop-off",
+                                       TRUE ~ "accidental drop"),
+         B_intentionality=case_when(str_detect(trial_condition, "pickup")==TRUE ~ "intend to own",
+                                         str_detect(trial_condition, "walkaway")==TRUE ~ "no intent to own",
+                                       TRUE ~ "Not Applicable"),
+         B_knowledge=case_when(str_detect(trial_condition, "aware")==TRUE ~ "knowledgeable",
+                                    str_detect(trial_condition, "ignorant")==TRUE ~ "ignorant",
+                                    TRUE ~ "Not Applicable"),
+         blue_agent_first=case_when(str_detect(agent_order, "A_2,A_1")==TRUE ~ FALSE,
+                                       TRUE ~ TRUE))%>%
+  select(unique_id,data_type,batch,trial_condition,manipulation_type,A_intentionality,B_intentionality,B_knowledge,
+         blue_agent_first, A1_value, A2_value, stmt_1_response, stmt_2_response,
+         stmt_3_response, stmt_4_response, stmt_why_response, object_cost_response,id)
+
+# extract object cost judgments
+L_data_object_cost <-L_data%>%
+  filter(manipulation_type=="attention_checks")%>%
+  select(unique_id, object_cost_response)
+
+# add object cost judgments to ownership judgment data
+L_data_long <- L_data%>%
+  filter(manipulation_type!="attention_checks")%>%
+  rename(A=A1_value, B = A2_value)%>%
+  gather(agent, value, A,B)%>%
+  select(-object_cost_response)%>%
+  left_join(L_data_object_cost)%>%
+  rename(object_cost = object_cost_response)
+
+L_data_long$object_cost <- as.numeric(L_data_long$object_cost)
+L_data_long$value <- as.numeric(L_data_long$value)
+L_data_long$agent <- factor(L_data_long$agent, levels=c("A", "B"))
+
+baseline_data<- L_data_long%>%
+  filter(manipulation_type=="baseline" & agent=="B")%>% 
+  select(-stmt_why_response, -stmt_1_response,-stmt_2_response,-stmt_3_response,-stmt_4_response)%>%
+  spread(agent,value)%>%
+  spread(trial_condition,B)
+
+baseline_wide <- baseline_data%>%
+  group_by(unique_id)%>%
+  summarise_all(function(x){x[!is.na(x)]})%>%
+  filter(A_intentionality=="accidental drop")
+
+strict_baseline_filter_id <- baseline_wide%>%
+  filter(`1 agent,accidental`==0 & `1 agent,intentional`==0 & `1 agent,no drop`==0)
+
+strict_baseline_filtered_data_long <- L_data_long%>%
+  filter(unique_id %in% strict_baseline_filter_id$unique_id)
+
+# report inclusion rate
+nrow(strict_baseline_filter_id)/nrow(attn_checks) # 77.8%
+nrow(attn_checks) - nrow(strict_baseline_filter_id) # 37 participants excluded
+```
+
+# Report demographics information
+```{r demographics dataframe}
+# extract relevant columns
+subj_demographics <- attn_checks%>%
+  filter(unique_id %in% strict_baseline_filter_id$unique_id)%>%
+  rename(zipcode_response=zipcpde_response)%>%
+  select(unique_id, growup_response, country_response,age_response, 
+         race_response, gender_response,education_response, income_response, zipcode_response)%>%
+  mutate(age_response = as.numeric(age_response))
+```
+
+```{r SI - demographics info}
+# nationality
+subj_demographics%>%
+  group_by(growup_response)%>%
+  summarise(n())
+
+# country spent most time in
+subj_demographics%>%
+  group_by(country_response)%>%
+  summarise(freq= n()/nrow(subj_demographics))%>%
+  arrange(-freq)
+
+# race
+subj_demographics%>%
+  group_by(race_response)%>%
+  summarise(freq = n()/nrow(subj_demographics))%>%
+  arrange(-freq)
+
+# educational level
+subj_demographics%>%
+  group_by(education_response)%>%
+  summarise(freq = n()/nrow(subj_demographics))%>%
+  arrange(-freq)
+
+# gender
+subj_demographics%>%
+  group_by(gender_response)%>%
+  summarise(freq = n()/nrow(subj_demographics))%>%
+  arrange(-freq)
+
+# income
+subj_demographics%>%
+  group_by(income_response)%>%
+  summarise(freq = round(n()/nrow(subj_demographics),3))%>%
+  arrange(-freq)
+
+# zipcode
+subj_demographics%>%
+  group_by(zipcode_response)%>%
+  summarise(freq = round(n()/nrow(subj_demographics),3))%>%
+  arrange(-freq)%>%view()
+```
+
+```{r age info}
+subj_demographics%>%
+  summarise(mean(age_response),
+            min(age_response),
+            max(age_response),
+            sd(age_response))
+```
+
+# Structure the data for further analyses
+```{r prepare dataframe}
+strict_baseline_filtered_data_long$B_intentionality <- factor(strict_baseline_filtered_data_long$B_intentionality,levels = c("Not Applicable", "no intent to own", "intend to own"))
+strict_baseline_filtered_data_long$A_intentionality <- factor(strict_baseline_filtered_data_long$A_intentionality,levels = c("no drop-off","accidental drop","intentional drop"))
+strict_baseline_filtered_data_long$B_knowledge <- factor(strict_baseline_filtered_data_long$B_knowledge,levels = c("Not Applicable", "knowledgeable","ignorant"))
+
+Main_conditions<-strict_baseline_filtered_data_long%>%
+  filter(manipulation_type=="main")%>%
+  select(-stmt_why_response, -stmt_1_response,-stmt_2_response,-stmt_3_response,-stmt_4_response)%>%
+  spread(agent,value)
+
+Baseline_conditions<-strict_baseline_filtered_data_long%>%
+  filter(manipulation_type=="baseline")%>%
+  select(-stmt_why_response, -stmt_1_response,-stmt_2_response,-stmt_3_response,-stmt_4_response)%>%
+  spread(agent,value)
+
+# write data for quantifying ownership with Exp 4 data (for the written responses)
+#write.csv(Main_conditions, "./data/exp-3/02.exp3-main-conditions.csv")
+#write.csv(Baseline_conditions, "./data/exp-3/03.exp3-baseline-conditions.csv")
+```
+
+```{r get the dataframe ready}
+consequences_data_wide <- strict_baseline_filtered_data_long%>%
+  filter(manipulation_type=="main")%>%
+  filter(agent=="B")%>%
+  rename(use=stmt_1_response, dispose=stmt_2_response, alter=stmt_3_response, lend=stmt_4_response)%>%
+  select(unique_id, trial_condition, trial_condition,manipulation_type, A_intentionality, B_knowledge, 
+         use, dispose, alter, lend, stmt_why_response, agent, value)%>%
+  distinct()%>%
+  mutate(trial_condition_no = factor(trial_condition))
+
+consequences_data_long <- consequences_data_wide%>%
+  select(-stmt_why_response)%>%
+  gather(statement_type, statement_response, use, dispose, alter, lend)%>%
+  mutate(statement_type = factor(statement_type, levels = c("use", "lend", "alter", "dispose")),
+         response_numeric = case_when(statement_response == "Yes" ~ 1, 
+                                      TRUE ~ 0),
+         statement_response = factor(statement_response, levels=c("No","Yes")))
+```
+
+# Ownership consequences analyses
+## H1: 
+```{r logistic mixed-effects regression: permissibility judgment and B's ownership}
+model_consequence_1 <- glmer(response_numeric ~ value + (1+value|statement_type)+(1+value|unique_id), data=consequences_data_long,family=binomial, control = glmerControl(optimizer = "bobyqa"))
+
+summary(model_consequence_1)
+
+# probability
+# https://sebastiansauer.github.io/convert_logit2prob/
+exp(model_consequence_1@beta[2])/(exp(model_consequence_1@beta[2])+1) # 0.5467824
+
+# odd ratio
+# https://stackoverflow.com/questions/41384075/r-calculate-and-interpret-odds-ratio-in-logistic-regression#:~:text=The%20coefficient%20returned%20by%20a,1%2Bexp(logit))%20. 
+exp(model_consequence_1@beta[2]) # 1.206446
+```
+
+```{r logistic mixed-effects regression prediction action permissibility with (SI) Table. 22}
+tab_model(model_consequence_1, 
+          show.ci = F, show.stat = T, show.est = T,
+          p.style = "numeric_stars",
+          string.stat = "t value", 
+          dv.labels = c("Ownership rating"))
+```
+
+# Visualization
+```{r Figure 4a: median split second agent ownership & permissibility judgments by action}
+# median split across conditions
+agentB_median_split_data <- consequences_data_long%>%
+  mutate(median_split_B = case_when(value<median(value) ~ "less",
+                                    TRUE ~ "more"),
+         median_split_B = factor(median_split_B, levels=c("less","more")))
+
+agentB_permissibility_byAction <- agentB_median_split_data%>%
+  group_by(statement_type,median_split_B) %>%
+  tidyboot_mean(column = response_numeric)
+
+agentB_permissibility_byAction%>%
+  mutate(median_split_B =factor(median_split_B, levels=c("less","more")))%>%
+  ggplot(aes(x=statement_type, y = empirical_stat,fill=median_split_B)) +
+  geom_bar(stat="identity",position=position_dodge(.9),color="black", linewidth=.8, width=.8) +
+  geom_errorbar (aes(ymin=ci_lower, ymax=ci_upper), linewidth=.7,width=.3,position=position_dodge(.9))+
+  scale_fill_manual(values=c("#FFA40060","#FFA400"))+
+  geom_hline(yintercept=.5, linetype="dashed", color="darkgrey")+
+  ylim(c(0,1))+
+  theme_classic()+
+  facet_grid(~median_split_B)+
+  theme(legend.position = "none", 
+        axis.line = element_line(colour = 'black', linewidth = .8),
+        axis.ticks = element_line(colour = 'black', linewidth = .8))+
+  xlab("Action type")+ylab("Frequency chose 'Yes'")
+# saved as 5x5 pdf in landscape
+```
+
+# Exporting why responses
+```{r}
+why_responses <- consequences_data_wide%>%
+  select(unique_id, A_intentionality, B_knowledge, value, stmt_why_response)%>%
+  rename(yellow_ownership = value)
+
+#write_csv(why_responses, "./data/exp-3and4/08.exp3-all-written-responses.csv")
+```

@@ -1,0 +1,301 @@
+---
+title: " Shaver, J., Sibley, C. G., Osborne, D., Bulbulia, J. (2017). News exposure predicts anti-Muslim prejudice. PLoS ONE, 12, e0174606."
+date: "30 April 2016"
+output: html_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Analysis
+
+Softaware:
+R version: 3.2.4 (2016-03-10)
+MCMCglmm: V 2.22.1
+
+Platform: x86_64-apple-darwin13.4.0 (64-bit)
+Running under: OS X 10.11.4 (El Capitan)
+
+```{r}
+library("MCMCglmm")
+
+
+system.time(
+  data.news <- as.data.frame(read.csv("location_on_your_drive\data.news.csv",
+                                     header=TRUE,
+                                     sep=",")
+
+
+
+     
+
+
+##############################################################################
+####  Multiple Imputation models   ####
+##############################################################################
+
+## Eliminate columns that will not be imputed
+library(dplyr)
+js.amelia <-data.news%>%
+   select(-c(Id,
+             Census.Religion.L3.T5,
+             Census.Religion.L2.T5,
+             Census.Religion.L1.T5,
+             Territorial.Authority.2013.T5,
+             Regional.Council.2013.T5,
+             T5.ETH.Warm.Arabs,
+             T5.ETH.Warm.Muslims,
+             T5.ETH.Warm.Asians,
+             T5.ETH.Anger.Arabs,
+             T5.ETH.Anger.Muslims,
+             T5.ETH.Anger.Asians,
+             Hours.News.T5))
+
+   
+
+library(Amelia)
+
+js.am.news<-amelia(js.amelia,
+              m = 5,
+              noms = c("Urban.T5",
+                       "Euro.AnyTimePoint", 
+                       "Partner.T5",
+                       "Gender.T5",
+                       "Employed.T5",
+                       "Parent.T5",
+                       "Born.NZ.T5",
+                       "Believe.Spirit.T5",
+                       "Believe.God.T5",
+                       "EthL2.Maori.T5",
+                       "EthL2.Other.T5",
+                       "Rel.EthPartL2.Asian.T5",
+                       "Rel.EthPartL2.Euro.T5",
+                       "EthL3.Samoan.T5",
+                       "T5.GENDER.IDENTITY"),
+              ords = c("NZREG.T5"),
+              idvars=c("Id",
+              "Gender",
+              "Regional.Council.2013.T5",
+              "Territorial.Authority.2013.T5",
+              "Census.Religion.L3.T5",
+              "Census.Religion.L2.T5",
+              "Census.Religion.L1.T5",
+              "T5.ETH.Warm.Arabs",
+              "T5.ETH.Warm.Immigrants",
+              "T5.ETH.Warm.Muslims",
+              "T5.ETH.Anger.Arabs",
+              "T5.ETH.Anger.Immigrants",
+              "T5.ETH.Anger.Muslims"),
+              sqrts = c("Hours.Work.T5",
+              "Hours.Children.T5",
+              "Hours.Charity.T5",
+              "Hours.News.T5",
+              "Hours.MaoriFRD.T5",
+              "Hours.PacificFRD.T5", 
+              "Hours.AsiansFRD.T5", 
+              "Hours.Commute.T5",
+              "Hours.NZEuroOTH.T5",
+              "Hours.MaoriOTH.T5",
+              "Hours.PacificOTH.T5", 
+              "Hours.AsiansOTH.T5",
+              "Hours.NZEuroFRD.T5"),
+              logs =c("CharityDonate.T5",
+              "Household.INC.T5",
+              "Religion.Church.T5"))
+
+
+# Check missing data
+missmap(js.am.news)
+
+
+# Center and Scale varaibles
+js.am.news.sc <- transform.amelia(js.am.news,
+                              T5.RWA.S = scale(T5.RWA),
+                              T5.SDO.S = scale(T5.SDO),
+                              Age.T5.C = scale(Age.T5, center=TRUE, scale =FALSE),
+                              Pol.Orient.T5.S = scale(Pol.Orient.T5,center=TRUE, scale =TRUE),
+                              NZDep_2013.T05.S = scale(NZDep_2013.T05),
+                              RELID.T5.S = scale(RELID.T5,center=TRUE, scale =TRUE),
+                              Hours.News.T5.S = scale(Hours.News.T5, center=TRUE, scale =TRUE),
+                              Territorial.Authority.2013.T5 = factor(Territorial.Authority.2013.T5),
+                              Hours.News.T5.SQRT = sqrt(Hours.News.T5),
+                              Hours.News.T5.LOG = log(Hours.News.T5+1),
+                              Census.Religion.L3.T5 = factor(Census.Religion.L3.T5),
+                              NZREG.T5 = as.numeric(NZREG.T5),
+                              Hours.News.T5.S=scale(Hours.News.T5))
+
+js.am.news.sc <- transform.amelia(js.am.news.sc,
+                              NZREG.T5.S = scale(NZREG.T5))
+
+
+
+## Bayesian models
+library(MCMCglmm)
+
+# Same parameter expanded prior
+
+prior.1= list(R = list(V = diag(3)*.002, nu=3.01),
+                 G=list(G1=list(V=diag(3)*.02,nu=4, alpha.mu = rep(0,3), alpha.V = diag(3)*100),
+                        G2=list(V=diag(3)*.02,nu=4, alpha.mu = rep(0,3), alpha.V = diag(3)*100)))
+
+
+
+
+m <- 5  
+news.wrm.m.mcmc.out <- NULL
+for(i in 1:m) {
+news.w.mcmc.out[[i]] <-MCMCglmm(cbind(T5.ETH.Warm.Arabs,T5.ETH.Warm.Asians,T5.ETH.Warm.Muslims) ~
+                                   trait-1 +
+                                   trait:Hours.News.T5.S *
+                                   trait:Pol.Orient.T5.S +
+                                   trait:RELID.T5.S +  
+                                   trait:Age.T5.C + 
+                                   trait:NZREG.T5.S  + 
+                                   trait:Employed.T5 +
+                                   trait:Euro.AnyTimePoint +
+                                   trait:Gender.T5 + 
+                                   trait:NZDep_2013.T05.S +
+                                   trait:Parent.T5 +
+                                   trait:Partner.T5 + 
+                                   trait:Urban.T5,
+                                 random= ~us(trait):Census.Religion.L3.T5 + us(trait):Territorial.Authority.2013.T5,
+                                 rcov = ~us(trait):units, #
+                                 family= c("gaussian", "gaussian","gaussian"),
+                                 prior =prior.1,
+                                 verbose=TRUE, 
+                                 nitt=103000,
+                                 pr=TRUE,
+                                 pl=TRUE,
+                                 data=js.am.news.sc$imputations[[i]])
+}
+
+
+
+
+m <- 5  
+news.ang.m.mcmc.out <- NULL
+for(i in 1:m) {
+news.ang.m.mcmc.out[[i]] <-MCMCglmm(cbind(T5.ETH.Anger.Arabs,T5.ETH.Anger.Asians,T5.ETH.Anger.Muslims) ~
+                                   trait-1 +
+                                   trait:Hours.News.T5.S *
+                                   trait:Pol.Orient.T5.S +
+                                   trait:RELID.T5.S +  
+                                   trait:Age.T5.C + 
+                                   trait:NZREG.T5.S  + 
+                                   trait:Employed.T5 +
+                                   trait:Euro.AnyTimePoint +
+                                   trait:Gender.T5 + 
+                                   trait:NZDep_2013.T05.S +
+                                   trait:Parent.T5 +
+                                   trait:Partner.T5 + 
+                                   trait:Urban.T5,
+                                 random= ~us(trait):Census.Religion.L3.T5 + us(trait):Territorial.Authority.2013.T5,
+                                 rcov = ~us(trait):units, #
+                                 family= c("gaussian", "gaussian","gaussian"),
+                                 prior =prior.1,
+                                 verbose=TRUE, 
+                                 nitt=103000,
+                                 pr=TRUE,
+                                 pl=TRUE,
+                                 data=js.am.news.sc$imputations[[i]])
+}
+
+
+
+# Obtain summary results
+
+# Anger
+anger.combo.SOL<-mcmc.list(news.ang.m.mcmc.out[[1]]$Sol[,1:42], news.ang.m.mcmc.out[[2]]$Sol[,1:42],news.ang.m.mcmc.out[[3]]$Sol[,1:42],news.ang.m.mcmc.out[[4]]$Sol[,1:42],
+news.ang.m.mcmc.out[[5]]$Sol[,1:42])
+
+anger.combo.VCV<-mcmc.list(news.ang.m.mcmc.out[[1]]$VCV, news.ang.m.mcmc.out[[2]]$VCV,news.ang.m.mcmc.out[[3]]$VCV,news.ang.m.mcmc.out[[4]]$VCV,news.ang.m.mcmc.out[[5]]$VCV)
+#saveRDS(anger.combo.VCV,"anger.combo.VCV")
+summary(anger.combo.VCV)
+
+news.wrm.m.mcmc.out<-readRDS("news.wrm.m.mcmc.out")
+
+# Warmth
+warm.combo.SOL<-mcmc.list(news.wrm.m.mcmc.out[[1]]$Sol,news.wrm.m.mcmc.out[[2]]$Sol, news.wrm.m.mcmc.out[[3]]$Sol,news.wrm.m.mcmc.out[[4]]$Sol,news.wrm.m.mcmc.out[[5]]$Sol)
+
+warm.combo.VCV<- mcmc.list(news.wrm.m.mcmc.out[[1]]$VCV,news.wrm.m.mcmc.out[[2]]$VCV, news.wrm.m.mcmc.out[[3]]$VCV,news.wrm.m.mcmc.out[[4]]$VCV,news.wrm.m.mcmc.out[[5]]$VCV)
+
+
+               
+##############################################################################
+####  Pairwise deleted set models  ####
+##############################################################################
+
+
+#Prior (parameter explanded priors)
+prior.1= list(R = list(V = diag(3)*.002, nu=3.01),
+                 G=list(G1=list(V=diag(3)*.02,nu=4, alpha.mu = rep(0,3), alpha.V = diag(3)*100),
+                        G2=list(V=diag(3)*.02,nu=4, alpha.mu = rep(0,3), alpha.V = diag(3)*100)))
+
+
+
+# Model for hostility
+mod.1 <-MCMCglmm(cbind(T5.ETH.Anger.Arabs,T5.ETH.Anger.Asians,T5.ETH.Anger.Muslims) ~
+                                   trait-1 +
+                                   trait:Hours.News.T5.S *
+                                   trait:Pol.Orient.T5.S +
+                                   trait:RELID.T5.S +  
+                                   trait:Age.T5.C + 
+                                   trait:NZREG.T5.S  + 
+                                   trait:Employed.T5 +
+                                   trait:Euro.AnyTimePoint +
+                                   trait:Gender.T5 + 
+                                   trait:NZDep_2013.T05.S +
+                                   trait:Parent.T5 +
+                                   trait:Partner.T5 + 
+                                   trait:Urban.T5,
+                                 random= ~us(trait):Census.Religion.L3.T5 +
+                   us(trait):Territorial.Authority.2013.T5,
+                                 rcov = ~us(trait):units, #
+                                 family= c("gaussian", "gaussian","gaussian"),
+                                 prior =prior.1,
+                                 verbose=TRUE, 
+                                 nitt=103000,
+                                 pr=TRUE,
+                                 pl=TRUE,
+                                 data=data.news)
+
+summary(mod.1)
+
+# Model for acceptance
+mod.2 <-MCMCglmm(cbind(T5.ETH.Warm.Arabs,T5.ETH.Warm.Asians,T5.ETH.Warm.Muslims) ~
+                                   trait-1 +
+                                   trait:Hours.News.T5.S *
+                                   trait:Pol.Orient.T5.S +
+                                   trait:RELID.T5.S +  
+                                   trait:Age.T5.C + 
+                                   trait:NZREG.T5.S  + 
+                                   trait:Employed.T5 +
+                                   trait:Euro.AnyTimePoint +
+                                   trait:Gender.T5 + 
+                                   trait:NZDep_2013.T05.S +
+                                   trait:Parent.T5 +
+                                   trait:Partner.T5 + 
+                                   trait:Urban.T5,
+                                 random= ~us(trait):Census.Religion.L3.T5 +
+                   us(trait):Territorial.Authority.2013.T5,
+                                 rcov = ~us(trait):units, #
+                                 family= c("gaussian", "gaussian","gaussian"),
+                                 prior =prior.1,
+                                 verbose=TRUE, 
+                                 nitt=103000,
+                                 pr=TRUE,
+                                 pl=TRUE,
+                                 data=data.news)
+summary(mod.2)
+
+
+
+
+
+
+```
+
+
+

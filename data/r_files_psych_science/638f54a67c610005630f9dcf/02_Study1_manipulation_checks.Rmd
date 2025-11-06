@@ -1,0 +1,156 @@
+---
+title: 'Study 1, manipulation checks'
+author: "Sonja Kunz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    code_download: true
+---
+Load required packages:
+```{r, message=FALSE}
+library(tidyverse)
+library(misty)
+library(ggplot2)
+library(jtools)
+library(rstatix)
+library(sjPlot)
+library(knitr)
+library(Rmisc)
+```
+Import processed data:
+```{r}
+dat <- read.csv2("Data/Study1_data_processed.csv")
+```
+
+```{r, include=FALSE}
+# Turn the id and group variables into factors and add labels to the groups.
+dat <-
+  dat %>% 
+  mutate(id = factor(id),
+         condition = factor(condition, 
+                            levels = c('1', '2'), 
+                            labels = c('Harmonious', 'Conflicting')),
+         random_app = factor(random_app,
+                                 levels = c('1', '2'),
+                                 labels = c('1st "Eats", 2nd "Zanana"', '1st "Zanana", 2nd "Eats"'))
+  )
+```
+# Base rate estimates
+
+We tested whether participants correctly recognised the high and low base rates of healthy and tasty food in the different contexts and base rate manipulations. We conducted a mixed ANOVA with the estimated number of foods as outcome, using context (first vs. second), estimate type (tasty vs. healthy foods) as within-subject factors, and base rate manipulation (harmonious vs. conflicting) as between-subjects factor. Of special interest was the 3-way interaction between base rate manipulation, context and estimate type.
+
+```{r, include=FALSE}
+# Restructure health and taste base rate estimates from wide into long format for repeated measures ANOVA, convert the context and rating type variables into factors. 
+
+dat_base <-
+  dat %>% 
+  select(id, condition, starts_with('base')) %>% 
+  pivot_longer(cols = -c(id, condition),
+               names_to = 'trial',
+               values_to = 'estimate') %>% 
+  mutate(context = case_when(grepl('c1', trial) ~ 1,
+                             grepl('c2', trial) ~ 2),
+         estimate_type = case_when(grepl('base_tasty', trial) ~ 1,
+                                  grepl('base_healthy', trial) ~ 2)
+         ) %>%
+  mutate(context = factor(context,
+                          levels = c('1', '2'),
+                          labels= c('1st Context', '2nd Context')),
+         estimate_type = factor(estimate_type,
+                               levels = c('1', '2'),
+                               labels= c('Tasty Food', 'Healthy Food'))
+        )
+         
+
+```
+## Descriptive statistics
+
+```{r, echo=FALSE}
+# Check the mean, standard deviation, standard error and 95% confidence interval of the base rate estimates for each base rate manipulation, context and rating type
+base_sum <- summarySE(dat_base, measurevar='estimate', groupvars=c('condition', 'context', 'estimate_type'))
+base_sum %>% 
+  kable(format = 'markdown', digits = 2,
+        col.names = c('Base rates', 'Context', 'Estimate type','N', 'Mean estimate', 'Std. Dev.', 'Std. Error', '95% CI'), 
+        caption = 'Mean base rate estimates by base rate manipulation, context and estimate type')
+
+```
+
+## ANOVA
+
+``` {r}
+aov_base <-
+  anova_test(
+    data = dat_base, 
+    dv = estimate,
+    wid = id,
+    within = c(context, estimate_type),
+    between = condition, type = 3, effect.size = 'pes')
+```
+
+``` {r, include=FALSE}
+colnames(aov_base) <- c('Effect','df/nominator', 'df/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(aov_base) <- c('Base rate manipulation', 'Context', 'Estimate type', 'Base rate manipulation*Context', 'Base rate manipulation*Estimate type', 'Context*Estimate type', 'Base rate manipulation\\*Context\\*Estimate type')
+
+```
+``` {r, echo=FALSE}
+kable(aov_base[, -1], format = 'markdown', digits = 2)
+```
+
+## Follow-up: 3-way interaction
+
+There was a large effect of the 3-way interaction, indicating that the base rate estimates depend on the base rate manipulation, the context, as well as whether participants estimated the base rates of tasty or healthy food. 
+To follow up, we calculated pairwise comparisons, using Bonferroni corrections, of the base rate estimates between the two contexts at all combinations of base rate manipulation and estimate type.
+
+```{r, echo=FALSE}
+base_pw <- 
+  dat_base %>%
+  group_by(condition, estimate_type) %>%
+  pairwise_t_test(estimate ~ context, p.adjust.method = "bonferroni")
+
+kable(base_pw[,-c(3:7)], format = 'markdown', digits = 2,
+        caption = 'Pairwise comparisons of estimates of tasty and healthy foods between contexts within each base rate manipulation and estimate type',
+        col.names = c('Base rate manipulation', 'Estimate', '$p$', 'Sign', '$p.adj$', 'Sign. adj.'))
+```
+
+## Plot the results
+
+``` {r, echo=FALSE}
+base_sum %>% 
+  ggplot(aes(x = context, y = estimate, group = estimate_type)) +
+  stat_summary(geom = 'line', 
+               aes(color = estimate_type, 
+                   linetype = estimate_type), 
+               fun = identity,
+               size = 1) +
+  stat_summary(geom = 'point',
+               aes(color = estimate_type, 
+                   shape = estimate_type),
+               size = 3,
+               fun = identity) +
+  geom_errorbar(aes(ymin=estimate-ci, ymax=estimate+ci),
+                width=.2,                   
+                position=position_dodge(.2))+
+  facet_wrap(facets = 'condition')+
+  coord_cartesian(ylim = c(10, 80)) +
+  theme_apa() +
+  labs(x = 'Context', 
+       y = 'Mean Estimate',
+       title = 'Health Base Rate Estimates') +
+  theme(legend.position = 'top', plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_text(face = 'bold', size = 18),
+        axis.title.x = element_text(face = 'bold', size = 18),
+        legend.text = element_text(size = 18),
+        text = element_text(size = 16)) +
+  scale_color_discrete(name = 'Estimate Type', labels = c('Tasty Food', 'Healthy Food')) +
+  scale_shape_discrete(name = 'Estimate Type', labels = c('Tasty Food', 'Healthy Food')) +
+  scale_linetype_discrete(name = 'Estimate Type', labels = c('Tasty Food', 'Healthy Food'))
+
+```
+
+# Summary of results
+
+The analyses show that participants viewing harmonious base rates estimated more tasty and healthy foods in the first compared with the second context. Conversely, participants viewing conflicting base rates estimated more tasty and less healthy foods in the first compared with the second context. 
+That means, participants correctly identified the different health and taste base rates in the respective contexts and base rate manipulations.

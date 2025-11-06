@@ -1,0 +1,298 @@
+---
+title: "Happiness and Health"
+output: 
+  html_document:
+    md_extensions: -markdown_in_html_blocks+hard_line_breaks
+    theme: paper
+    toc: yes
+    toc_depth: 5
+---
+
+```{r options, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = "", highlight = FALSE, tidy=TRUE, results="asis", warning = FALSE,fig.path = "images/")
+
+options(digits=2)
+```
+
+```{r load_packages, include = FALSE}
+library("broman")
+library("haven")
+library("MASS")
+library("mda")
+library("mgcv")
+library("plotmo")
+library("earth")
+library("ggplot2")
+library("gvlma")
+library("rgl")
+library("visreg")
+library(plyr)
+library(psych)
+library("dplyr")
+library("car")
+library("knitr")
+library("kableExtra")
+library("DescTools")
+library("grid")
+library("gridExtra")
+library("lattice")
+library("sjPlot")
+library(standardize)
+library(nlme)
+library(lme4)
+library(DHARMa)
+library(tidyverse)
+library(gridGraphics)
+library("ggplotify")
+library(lmerTest)
+```
+
+```{r, include=FALSE}
+d <- read.csv("weekly-datalong-wMain.csv")
+
+
+d<-d[!is.na(d$SickF),] #create a dd with no missing SickF values
+
+# d$SickFt<-d$SickF
+# d$SickFt[d$SickFt > 5] <- 5
+
+# d$Condition[d$Condition==0]<--1
+# d$Condition[d$Condition==1]<-1
+
+#d$Condition<- factor(d$Condition,
+                     #levels = c(0,1),
+                     #labels = c("Control", "Treatment")
+                     #)
+# d$`Sick Days`<-dd$SickF
+# d$`Sick Cat.`<-dd$sickcat
+```
+
+```{r models Sick, include=FALSE}
+
+#Transformed: diagonal
+mod_cat.io <-glmer(SickFt ~ 1+(1| ID), 
+                   d, na.action = na.omit, 
+                   glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                   family = 'poisson') #intercept only
+mod_cat.time <-glmer(SickFt  ~ time+(time|| ID), 
+                     d, na.action = na.omit, 
+                     glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                     family = 'poisson') #time only
+mod_cat.time2 <-glmer(SickFt ~ poly(time,2)+(time|| ID), 
+                     d, na.action = na.omit, 
+                     glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                     family = 'poisson') #time only
+mod_cat.add <- glmer(SickFt ~ time+Condition+(time|| ID), 
+                     d, na.action = na.omit, 
+                     glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                     family = 'poisson') #additive model
+mod_cat <-glmer(SickFt ~ time * Condition + (time|| ID), 
+                d, na.action = na.omit, 
+                glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                family = 'poisson') #conditional with no random intercept-slope cov (diagonal random effects covariance structure)
+mod_cat.c <-glmer(SickFt ~ time * Condition + age.A1 + SWLS.A1 + PA.A1 + NA.A1 + MLQP.A1 + (time|| ID), 
+                  d, na.action = na.omit, 
+                  glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                               family = 'poisson') ##conditional with no random intercept-slope cov and controls
+
+
+#Transformed: unconstrained covariance between the random intercept and slope 
+mod_cat.io.un <-glmer(SickFt ~ 1+(1| ID), 
+                   d, na.action = na.omit, 
+                   glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                   family = 'poisson') #intercept only
+mod_cat.time.un <-glmer(SickFt  ~ time+(time| ID), 
+                     d, na.action = na.omit, 
+                     glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                     family = 'poisson') #time only
+mod_cat.time2.un <-glmer(SickFt ~ poly(time,2)+(time| ID), 
+                     d, na.action = na.omit, 
+                     glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                     family = 'poisson') #time only
+mod_cat.add.un <- glmer(SickFt ~ time+Condition+(time| ID), 
+                     d, na.action = na.omit, 
+                     glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                     family = 'poisson') #additive model
+mod_cat.un <-glmer(SickFt ~ time * Condition + (time| ID), 
+                  d, na.action = na.omit, 
+                  glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                  family = 'poisson') #conditional
+
+
+
+#raw untransformed data
+mod_raw.io <-glmer(SickF ~ 1+(1| ID), 
+                   d, na.action = na.omit, 
+                   glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                   family = 'poisson') #intercept only
+mod_raw.time <-glmer(SickF ~ time+(time|| ID), 
+                     d, na.action = na.omit, 
+                     glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                     family = 'poisson') #time only
+mod_raw.time2 <-glmer(SickF ~ poly(time,2)+(time|| ID), 
+                     d, na.action = na.omit, 
+                     glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                     family = 'poisson') #time only
+mod_raw.add <- glmer(SickFt ~ time+Condition+(time|| ID), 
+                     d, na.action = na.omit, 
+                     glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                     family = 'poisson') #additive model
+u.mod_raw <-glmer(SickF ~ time * Condition + (time| ID), 
+                  d, na.action = na.omit, 
+                  glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                  family = 'poisson') 
+mod_raw <-glmer(SickF ~ time * Condition + (time|| ID), 
+                d, na.action = na.omit, 
+                glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                family = 'poisson')
+mod_raw.c <-glmer(SickF ~ time * Condition + age.A1 + SWLS.A1 + PA.A1 + NA.A1 + MLQP.A1 + (time|| ID), 
+                  d, na.action = na.omit, 
+                  glmerControl(optimizer="bobyqa", optCtrl = list(maxfun =100000)),
+                  family = 'poisson') ##conditional with no random intercept-slope cov and controls
+
+
+
+```
+
+#Number of Days of Feeling Sick: Conditional Growth Models
+
+##Variable Distributions and Transformations
+
+```{r, include=FALSE}
+poissonraw <- fitdistr(d$SickF, "Poisson")
+poissoncat <- fitdistr(d$SickFt, "Poisson")
+```
+
+```{r}
+par(mfrow=c(1,2))
+y<-c("Sick Days")
+qqp(d$SickF, "norm", ylab= paste("Sick Days"))
+qqp(d$SickF, "pois", lambda=poissonraw$estimate, ylab= paste("Sick Days"))
+poissonraw$estimate
+```
+
+####Figure S1a. Comparison of Best Fitting Theoretical Distribution (Normal, Neg. Binomial, or Poisson) Through QQ Plots on Sick Days (Raw).
+
+```{r}
+par(mfrow=c(1,2))
+qqp(d$SickFt, "norm", ylab= paste("Sick Days Cat."))
+qqp(d$SickFt, "pois",  lambda=poissoncat$estimate, ylab= paste("Sick Days Transformed"))
+poissoncat$estimate
+```
+
+####Figure S1b. Comparison of Best Fitting Theoretical Distributions (Normal, Neg. Binomial, or Poisson) Through QQ Plots on Sick Days (Transformed).
+
+##Growth Model Specifications
+
+###Table S1a. Growth Models for Number of Sick Days (Transformed): Diagonal Covariance Matrix
+
+
+```{r, warning=FALSE, error=FALSE, message=FALSE}
+tab_model(mod_cat.io, mod_cat.time, mod_cat.add, mod_cat,
+          show.aic = T, show.dev = T, show.obs=T, show.std = "std2",collapse.ci = T,
+          digits.p=3, digits=2, ci.hyphen="-", wrap.labels = 100,
+          show.p=T,
+          pred.labels=c("Intercept", "Time", "Treatment", "Time X Treatment"), 
+          dv.labels=c( "IO-GM", "U-GM: Unconditional", "U-GM: Additive", "C-GM: Conditional")
+       )
+```
+
+Note. IRR=Incidence Rate Ratio=Exp(B), representing the rate of incidence of sick days. Treatment IRR represents the instantaneous effect of Treatment during the last week of the intervention (0 = Control; 1 = Treatment. Time: 0 = Week 10 (last week); -9 = Week 1). PA = Positive Affect; NA = Negative Affect; SwL= Satisfaction with Life.
+
+`
+
+###Table S1b. Growth Models for Number of Sick Days (Transformed): Unconstrained Covariance Matrix
+
+```{r, warning=FALSE, error=FALSE, message=FALSE}
+tab_model(mod_cat.io.un, mod_cat.time.un, mod_cat.add.un, mod_cat.un,
+          show.aic = T, show.dev = T, show.obs=T, show.std = "std2",
+          digits.p=3, digits=2, ci.hyphen="-", wrap.labels = 100, collapse.ci = T,
+          show.p=T,
+          pred.labels=c("Intercept", "Time", "Treatment", "Time X Treatment"), 
+          dv.labels=c( "IO-GM", "U-GM: Unconditional", "U-GM: Additive", "C-GM: Conditional")
+       )
+```
+
+Note. IRR=Incidence Rate Ratio=Exp(B), representing the rate of incidence of sick days. Treatment IRR represents the instantaneous effect of Treatment during the last week of the intervention (0 = Control; 1 = Treatment. Time: 0 = Week 10 (last week); -9 = Week 1). PA = Positive Affect; NA = Negative Affect; SwL= Satisfaction with Life.
+
+`
+
+###Table S1c. Growth Models for Number of Sick Days (Raw Data)
+
+```{r, warning=FALSE, error=FALSE, message=FALSE}
+tab_model(mod_raw.io, mod_raw.time, mod_raw.add, mod_raw,
+           show.aic = T, show.dev = T, show.obs=T, show.std = "std2", collapse.ci = T,
+          ci.hyphen="-", linebreak = F, 
+          digits.p=3, digits=2,
+           show.p=T,
+       pred.labels=c("Intercept", "Time", "Treatment", "Time X Treatment"), 
+          dv.labels=c( "IO-GM", "U-GM: Unconditional", "U-GM: Additive", "C-GM: Conditional")
+       )
+```
+
+Note. IRR=Incidence Rate Ratio=Exp(B), representing the rate of incidence of sick days. Treatment IRR represents the instantaneous effect of Treatment during the last week of the intervention (0 = Control; 1 = Treatment. Time: 0 = Week 10 (last week); -9 = Week 1). PA = Positive Affect; NA = Negative Affect; SwL= Satisfaction with Life.
+
+##Growth Model Diagnostics
+
+###Sick Days (Raw)
+
+```{r}
+simulationOutput <- simulateResiduals(mod_raw, n = 10000) #simulation
+    plotSimulatedResiduals(simulationOutput)
+```
+
+####Figure S2a. Similation-based (10000 samples) Scaled Residuals: Sick Days (Raw)
+
+Note. The QQ-plot on the left shows the residuals against the predicted value as an indicator of deviations from the expected distribution. The Kolmogorov-Smirnov (KS) test indicates the overall uniformity of residuals. The quantile regression plot on the right provides 0.25, 0.5 and 0.75 quantile lines across the plots. Red lines that are straighter, more horizontal, and close to y-values of 0.25, 0.5, and 0.75 indicate better satisfaction of the assumption of residual distribution. 
+
+###Sick Days (Transformed)
+
+```{r}
+simulationOutput <- simulateResiduals(mod_cat, n = 10000) #simulation
+    plotSimulatedResiduals(simulationOutput)
+   
+```
+
+####Figure S2b. Similation-based (10000 samples) Scaled Residuals: Sick Days (Transformed). 
+
+Note. The QQ-plot on the left shows the residuals against the predicted value as an indicator of deviations from the expected distribution. The Kolmogorov-Smirnov (KS) test indicates the overall uniformity of residuals (p < .05 indicates rejection of the assumption of uniformity). The quantile regression plot on the right provides 0.25, 0.5 and 0.75 quantile lines across the plots. Red lines that are straighter, more horizontal, and close to y-values of 0.25, 0.5, and 0.75 indicate better satisfaction of the assumption of residual distribution.
+
+
+<!-- # References -->
+<!-- ```{r create_r-references} -->
+<!-- r_refs(file = "r-references.bib") -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- simulationOutput <- simulateResiduals(u.mod_cat, n = 250) #simulation -->
+<!--     plotSimulatedResiduals(simulationOutput) -->
+<!-- ``` -->
+
+<!-- ####Figure S2c. Model Diagnostics: Sick Days (Transformed) with unstructured covariance matrix (compared to diagonal cov. matrices presented above). -->
+
+
+<!-- ###Figure S3a.  -->
+
+<!-- ```{r} -->
+<!-- simulationOutput <- simulateResiduals(mod_raw, n = 250)   -->
+
+<!--       testUniformity(simulationOutput) -->
+<!--         testOverdispersion(simulationOutput) -->
+<!--           testZeroInflation(simulationOutput) -->
+<!--               testTemporalAutocorrelation(simulationOutput, time = d$time) -->
+
+<!-- ``` -->
+
+<!-- ###Table S2b. Diagnostic tests for Sick Days (Transformed) -->
+
+<!-- ```{r} -->
+<!-- simulationOutput <- simulateResiduals(mod_cat, n = 250)   -->
+
+<!--       testUniformity(simulationOutput) -->
+<!--         testOverdispersion(simulationOutput) -->
+<!--           testZeroInflation(simulationOutput) -->
+<!--               testTemporalAutocorrelation(simulationOutput, time = d$time) -->
+
+<!-- ``` -->
+

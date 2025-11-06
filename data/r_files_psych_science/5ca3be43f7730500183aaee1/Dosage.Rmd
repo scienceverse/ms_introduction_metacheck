@@ -1,0 +1,713 @@
+---
+title: "Specks of Dirt and Tons of Pain: Dosage Distinguishes Impurity from Harm"
+author: "Joshua Rottman & Liane Young"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## R code for running all analyses
+
+```{r Setup}
+  
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if(length(new.pkg)) install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)}
+
+packages <- c("lme4", "lmerTest", "reshape2", "Rmisc", "magrittr", "psych", "lsr",
+              "tidyverse", "ggthemes", "viridis", "grid", "simr", "emmeans")
+
+ipak(packages)
+
+custom.theme <- theme_tufte() + theme(panel.background = element_blank(), 
+                legend.key = element_blank(), legend.background = element_blank(),
+                legend.position = "right", legend.title = element_text(color = "black",
+                face = "bold", size = 14, family = "Helvetica", hjust = .5), 
+                legend.text = element_text(color = "black", face = "bold", size = 12,
+                family = "Helvetica"), strip.background = element_blank(), 
+                strip.text = element_text(color = "black", face = "bold", size = 12, 
+                family = "Helvetica"), panel.grid = element_blank(), axis.text =
+                element_text(color = "black", face = "bold", size = 12, 
+                family = "Helvetica"), axis.line = element_line(color = "black"),
+                axis.title = element_text(color = "black", face = "bold", size = 14, 
+                family = "Helvetica"), axis.text.x = element_text(vjust = .6))
+
+theme_set(custom.theme)
+
+posn.d <- position_dodge(0.95)
+
+emm_options(opt.digits = FALSE)
+
+setwd("~/Desktop/Research/Dosage")
+
+Dosage.All <- read.csv('DosageData.csv', header = TRUE)
+
+Dosage.All$Study <- factor(Dosage.All$Study, levels = c(0, 1, 2, 3), 
+                    labels = c("Pilot Study", "Study 1", "Study 2", "Study 3"), 
+                    ordered = is.ordered(FALSE))
+Dosage.All$Gender <- factor(Dosage.All$Gender, levels = c(1, 2, 3), 
+                     labels = c("Male", "Female", "Other"), ordered = is.ordered(FALSE))
+Dosage.All$Race <- factor(Dosage.All$Race, levels = c(1, 2, 3, 4, 5, 6), 
+                   labels = c("White", "Asian", "African American", "Hispanic or Latino",
+                              "Native American", "Other"), ordered = is.ordered(FALSE))
+Dosage.All$English <- factor(Dosage.All$English, levels = c(1, 2), 
+                      labels = c("Fluent in English", "Not Fluent in English"), 
+                      ordered = is.ordered(FALSE))
+Dosage.All$Edu <- factor(Dosage.All$Edu, levels = c(1, 2, 3, 4, 5, 6), 
+                  labels = c("Some high school", "High school diploma or equivalent", 
+                             "Some college", "College degree", "Some graduate school",
+                             "Graduate degree"), ordered = is.ordered(TRUE))
+Dosage.All$Nat <- factor(Dosage.All$Nat, levels = c(31, 114, 140, 185, 186, 192),
+                  labels = c("Canada", "Mexico", "Poland", "United Kingdom", 
+                             "United States", "Vietnam"), ordered = is.ordered(FALSE))
+
+as_tibble(Dosage.All)
+glimpse(Dosage.All)
+
+```
+
+### Exclusions and Participant Characteristics
+```{r Exclusions and Participant Characteristics}
+
+Dosage.All$Exclude <- ifelse((Dosage.All$Planet_X_1 < 50), 1,
+                             ifelse((Dosage.All$Charity_X_1 > 50), 2, 0))
+
+which(duplicated(Dosage.All$WorkerID))
+
+Dosage.All[c(108, 111, 116, 127, 138, 164, 193, 232, 261, 262, 268, 284, 314, 315, 320,
+             326, 336, 337, 338, 350, 356, 363, 364, 370, 373, 379, 392, 393, 400, 402,
+             407, 443), 453] = 3
+
+Dosage.All$Exclude <- factor(Dosage.All$Exclude, levels = c(0, 1, 2, 3), 
+                      labels = c("Don't Exclude", "Missed Planet Attention Check", 
+                                 "Missed Charity Attention Check", "Duplicate Worker ID"),
+                      ordered = is.ordered(TRUE))
+
+Dosage.All %>% 
+  group_by(Study, Exclude, add = TRUE) %>% 
+  dplyr::summarize(excluded = n())
+
+Dosage <- filter(Dosage.All, Exclude == "Don't Exclude")
+
+Dosage %>% 
+  group_by(Study) %>% 
+  dplyr::summarize(mean.age = mean(Age), sd.age = sd(Age))
+
+Dosage %>% 
+  group_by(Study, Gender) %>% 
+  dplyr::summarize(gender = n())
+
+Dosage %>% 
+  group_by(Study, Race) %>% 
+  dplyr::summarize(race = n())
+
+```
+
+### Tidying Data
+```{r Tidying}
+
+Dosage.Long <- select(Dosage, ID, Study, Asbestos_L_1:Whispers_H_3) %>%
+  gather(Asbestos_L_1:Whispers_H_3, key = "Item", value = "Rating", na.rm = T) %>% 
+  separate(col = Item, into = c("Item", "Dose", "Question"), sep = "_") %>% 
+  arrange(ID)
+
+Dosage.Long$Dose <- factor(Dosage.Long$Dose, levels = c("L", "H"), 
+                           labels = c("Low", "High"), ordered = is.ordered(TRUE))
+
+Dosage.Long$Question <- factor(Dosage.Long$Question, 
+                               levels = c("1", "2", "3", "4", "5", "6", 
+                                          "7", "8", "9", "10"),
+                               labels = c("Wrong", "Harmful", "Impure", "Angry",
+                                          "Disgusted", "RejectFromComm", 
+                                          "RejectOnCoop", "KindOfPerson", 
+                                          "ActSimilarly", "MoralIntegrity"))
+
+Dosage.Long$Domain <- ifelse(Dosage.Long$Item == "Asbestos" | Dosage.Long$Item == "Bruise"
+                         | Dosage.Long$Item == "Bully" | Dosage.Long$Item == "Deer"
+                         | Dosage.Long$Item == "Punch" | Dosage.Long$Item == "Rock"
+                         | Dosage.Long$Item == "Starve" | Dosage.Long$Item == "Uncons" 
+                         | Dosage.Long$Item == "Blood" | Dosage.Long$Item == "Choke" 
+                         | Dosage.Long$Item == "HazChem" | Dosage.Long$Item == "HotSauce"
+                         | Dosage.Long$Item == "Mercury" | Dosage.Long$Item == "PetFish"
+                         | Dosage.Long$Item == "PoisonLadybug" 
+                         | Dosage.Long$Item == "Thumbtack", 0, 
+                      ifelse(Dosage.Long$Item == "Goatsex" | Dosage.Long$Item == "Heroin"
+                         | Dosage.Long$Item == "Mast" | Dosage.Long$Item == "Incest"
+                         | Dosage.Long$Item == "Cannibal" | Dosage.Long$Item == "Corpse"
+                         | Dosage.Long$Item == "Sacred" | Dosage.Long$Item == "Graff" 
+                         | Dosage.Long$Item == "Ashes" | Dosage.Long$Item == "CowBlood" 
+                         | Dosage.Long$Item == "EatCorpse" 
+                         | Dosage.Long$Item == "EatLadybug" 
+                         | Dosage.Long$Item == "Genitals" | Dosage.Long$Item == "Genome" 
+                         | Dosage.Long$Item == "Urine" | Dosage.Long$Item == "Whispers",
+                         1, 99))
+
+Dosage.Long$Domain <- factor(Dosage.Long$Domain, levels = c("0", "1"), 
+                             labels = c("Harm", "Purity"))
+
+Dosage.Long$DoseType <- ifelse(Dosage.Long$Item == "Asbestos" 
+                        | Dosage.Long$Item == "Bully" | Dosage.Long$Item == "Starve" 
+                        | Dosage.Long$Item == "Uncons" | Dosage.Long$Item == "Goatsex" 
+                        | Dosage.Long$Item == "Heroin" | Dosage.Long$Item == "Incest" 
+                        | Dosage.Long$Item == "Mast", 0,
+                        ifelse(Dosage.Long$Item == "Bruise" | Dosage.Long$Item == "Deer"
+                        | Dosage.Long$Item == "Punch" | Dosage.Long$Item == "Rock" 
+                        | Dosage.Long$Item == "Cannibal" | Dosage.Long$Item == "Corpse" 
+                        | Dosage.Long$Item == "Graff" | Dosage.Long$Item == "Sacred",
+                        1, 99))
+
+Dosage.Long$DoseType <- factor(Dosage.Long$DoseType, levels = c("0", "1"), 
+                               labels = c("Frequency", "Magnitude"))
+
+Dosage.Long$ID <- factor(Dosage.Long$ID)
+Dosage.Long$Item <- factor(Dosage.Long$Item)
+
+Dosage.Tidy <- spread(Dosage.Long, "Question", "Rating")
+
+Dosage.Pilot <- filter(Dosage, Study == "Pilot Study")
+Dosage.S1 <- filter(Dosage, Study == "Study 1")
+Dosage.S2 <- filter(Dosage, Study == "Study 2")
+Dosage.S3 <- filter(Dosage, Study == "Study 3")
+
+Dosage.Long.Pilot <- filter(Dosage.Long, Study == "Pilot Study")
+Dosage.Long.S1 <- filter(Dosage.Long, Study == "Study 1")
+Dosage.Long.S2 <- filter(Dosage.Long, Study == "Study 2")
+Dosage.Long.S3 <- filter(Dosage.Long, Study == "Study 3")
+
+Dosage.Tidy.Pilot <- filter(Dosage.Tidy, Study == "Pilot Study")
+Dosage.Tidy.S1 <- filter(Dosage.Tidy, Study == "Study 1")
+Dosage.Tidy.S2 <- filter(Dosage.Tidy, Study == "Study 2")
+Dosage.Tidy.S3 <- filter(Dosage.Tidy, Study == "Study 3")
+
+```
+
+
+##Descriptive Statistics
+```{r Descriptives}
+
+                                   
+Dosage %<>% mutate(Harm.Pilot.S1.S2 = rowMeans(select(., c(Asbestos_L_1, Bruise_L_1, 
+                                    Bully_L_1, Deer_L_1, Punch_L_1, Rock_L_1, Starve_L_1,
+                                    Uncons_L_1, Asbestos_H_1, Bruise_H_1, Bully_H_1,
+                                    Deer_H_1, Punch_H_1, Rock_H_1, Starve_H_1,
+                                    Uncons_H_1)), na.rm = TRUE))
+
+Dosage %<>% mutate(Purity.Pilot.S1.S2 = rowMeans(select(., c(Cannibal_L_1, Corpse_L_1,
+                                      Goatsex_L_1, Graff_L_1, Heroin_L_1, Incest_L_1,
+                                      Mast_L_1, Sacred_L_1, Cannibal_H_1, Corpse_H_1,
+                                      Goatsex_H_1, Graff_H_1, Heroin_H_1, Incest_H_1,
+                                      Mast_H_1, Sacred_H_1)), na.rm = TRUE))
+
+Dosage %<>% mutate(Anger.Harm.Pilot = rowMeans(select(., c(Asbestos_L_4, Bruise_L_4, 
+                                    Bully_L_4, Deer_L_4, Punch_L_4, Rock_L_4, Starve_L_4,
+                                    Uncons_L_4, Asbestos_H_4, Bruise_H_4, Bully_H_4,
+                                    Deer_H_4, Punch_H_4, Rock_H_4, Starve_H_4,
+                                    Uncons_H_4)), na.rm = TRUE))
+
+Dosage %<>% mutate(Anger.Purity.Pilot = rowMeans(select(., c(Cannibal_L_4, Corpse_L_4,
+                                      Goatsex_L_4, Graff_L_4, Heroin_L_4, Incest_L_4,
+                                      Mast_L_4, Sacred_L_4, Cannibal_H_4, Corpse_H_4,
+                                      Goatsex_H_4, Graff_H_4, Heroin_H_4, Incest_H_4,
+                                      Mast_H_4, Sacred_H_4)), na.rm = TRUE))
+
+Dosage %<>% mutate(Disgust.Harm.Pilot = rowMeans(select(., c(Asbestos_L_5, Bruise_L_5, 
+                                    Bully_L_5, Deer_L_5, Punch_L_5, Rock_L_5, Starve_L_5,
+                                    Uncons_L_5, Asbestos_H_5, Bruise_H_5, Bully_H_5,
+                                    Deer_H_5, Punch_H_5, Rock_H_5, Starve_H_5,
+                                    Uncons_H_5)), na.rm = TRUE))
+
+Dosage %<>% mutate(Disgust.Purity.Pilot = rowMeans(select(., c(Cannibal_L_5, Corpse_L_5,
+                                      Goatsex_L_5, Graff_L_5, Heroin_L_5, Incest_L_5,
+                                      Mast_L_5, Sacred_L_5, Cannibal_H_5, Corpse_H_5,
+                                      Goatsex_H_5, Graff_H_5, Heroin_H_5, Incest_H_5,
+                                      Mast_H_5, Sacred_H_5)), na.rm = TRUE))
+
+Dosage %<>% mutate(Emo.Harm.Pilot = rowMeans(select(., c(Asbestos_L_4, Bruise_L_4, 
+                                    Bully_L_4, Deer_L_4, Punch_L_4, Rock_L_4, Starve_L_4,
+                                    Uncons_L_4, Asbestos_H_4, Bruise_H_4, Bully_H_4,
+                                    Deer_H_4, Punch_H_4, Rock_H_4, Starve_H_4,
+                                    Uncons_H_4, Asbestos_L_5, Bruise_L_5, Bully_L_5, 
+                                    Deer_L_5, Punch_L_5, Rock_L_5, Starve_L_5,
+                                    Uncons_L_5, Asbestos_H_5, Bruise_H_5, Bully_H_5,
+                                    Deer_H_5, Punch_H_5, Rock_H_5, Starve_H_5,
+                                    Uncons_H_5)), na.rm = TRUE))
+
+Dosage %<>% mutate(Emo.Purity.Pilot = rowMeans(select(., c(Cannibal_L_4, Corpse_L_4,
+                                      Goatsex_L_4, Graff_L_4, Heroin_L_4, Incest_L_4,
+                                      Mast_L_4, Sacred_L_4, Cannibal_H_4, Corpse_H_4,
+                                      Goatsex_H_4, Graff_H_4, Heroin_H_4, Incest_H_4,
+                                      Mast_H_4, Sacred_H_4, Cannibal_L_5, Corpse_L_5,
+                                      Goatsex_L_5, Graff_L_5, Heroin_L_5, Incest_L_5,
+                                      Mast_L_5, Sacred_L_5, Cannibal_H_5, Corpse_H_5,
+                                      Goatsex_H_5, Graff_H_5, Heroin_H_5, Incest_H_5,
+                                      Mast_H_5, Sacred_H_5)), na.rm = TRUE))
+
+
+Dosage %<>% mutate(Low.Harm.Pilot.S1.S2 = rowMeans(select(., c(Asbestos_L_1, Bruise_L_1, 
+                                    Bully_L_1, Deer_L_1, Punch_L_1, Rock_L_1, Starve_L_1,
+                                    Uncons_L_1)), na.rm = TRUE))
+
+Dosage %<>% mutate(High.Harm.Pilot.S1.S2 = rowMeans(select(., c(Asbestos_H_1, Bruise_H_1,
+                                     Bully_H_1, Deer_H_1, Punch_H_1, Rock_H_1, Starve_H_1,
+                                     Uncons_H_1)), na.rm = TRUE))
+
+Dosage %<>% mutate(Low.Purity.Pilot.S1.S2 = rowMeans(select(., c(Cannibal_L_1, Corpse_L_1,
+                                      Goatsex_L_1, Graff_L_1, Heroin_L_1, Incest_L_1, 
+                                      Mast_L_1, Sacred_L_1)), na.rm = TRUE))
+
+Dosage %<>% mutate(High.Purity.Pilot.S1.S2 = rowMeans(select(., c(Cannibal_H_1, Corpse_H_1,
+                                       Goatsex_H_1, Graff_H_1, Heroin_H_1, Incest_H_1, 
+                                       Mast_H_1, Sacred_H_1)), na.rm = TRUE))
+
+Dosage %<>% mutate(Harm.Diff.Pilot.S1.S2 = High.Harm.Pilot.S1.S2-Low.Harm.Pilot.S1.S2) 
+
+Dosage %<>% mutate(Purity.Diff.Pilot.S1.S2 = High.Purity.Pilot.S1.S2-Low.Purity.Pilot.S1.S2)
+
+Dosage %<>% mutate(HiLo.Diff.Pilot.S1.S2 = Harm.Diff.Pilot.S1.S2-Purity.Diff.Pilot.S1.S2) 
+
+Dosage %>% 
+  filter(Study != "Study 3") %>% 
+  group_by(Study) %>% 
+  summarize(mean.Harm = mean(Harm.Pilot.S1.S2), sd.Harm = sd(Harm.Pilot.S1.S2), 
+            mean.Purity = mean(Purity.Pilot.S1.S2), sd.Purity = sd(Purity.Pilot.S1.S2),
+            mean.AngerH = mean(Anger.Harm.Pilot), sd.AngerH = sd(Anger.Harm.Pilot),
+            mean.AngerP = mean(Anger.Purity.Pilot), sd.AngerP = sd(Anger.Purity.Pilot),
+            mean.DisgH = mean(Disgust.Harm.Pilot), sd.DisgH = sd(Disgust.Harm.Pilot),
+            mean.DisgP = mean(Disgust.Purity.Pilot), sd.DisgP = sd(Disgust.Purity.Pilot),
+            mean.EmoH = mean(Emo.Harm.Pilot), sd.EmoH = sd(Emo.Harm.Pilot),
+            mean.EmoP = mean(Emo.Purity.Pilot), sd.EmoP = sd(Emo.Purity.Pilot),
+            mean.LH = mean(Low.Harm.Pilot.S1.S2), sd.LH = sd(Low.Harm.Pilot.S1.S2), 
+            mean.HH = mean(High.Harm.Pilot.S1.S2), sd.HH = sd(High.Harm.Pilot.S1.S2), 
+            mean.LP = mean(Low.Purity.Pilot.S1.S2), sd.LP = sd(Low.Purity.Pilot.S1.S2), 
+            mean.HP = mean(High.Purity.Pilot.S1.S2), sd.HP = sd(High.Purity.Pilot.S1.S2), 
+            mean.HD = mean(Harm.Diff.Pilot.S1.S2), sd.HD = sd(Harm.Diff.Pilot.S1.S2), 
+            mean.PD = mean(Purity.Diff.Pilot.S1.S2), sd.PD = sd(Purity.Diff.Pilot.S1.S2), 
+            mean.HLD = mean(HiLo.Diff.Pilot.S1.S2), sd.HLD = sd(HiLo.Diff.Pilot.S1.S2))
+
+Dosage.Pilot <- filter(Dosage, Study == "Pilot Study")
+
+t.test(Dosage.Pilot$Harm.Pilot.S1.S2, Dosage.Pilot$Purity.Pilot.S1.S2, paired = TRUE)
+cohensD(Dosage.Pilot$Harm.Pilot.S1.S2, Dosage.Pilot$Purity.Pilot.S1.S2, method = "paired")
+
+t.test(Dosage.Pilot$High.Harm.Pilot.S1.S2, Dosage.Pilot$High.Purity.Pilot.S1.S2, paired = TRUE)
+cohensD(Dosage.Pilot$High.Harm.Pilot.S1.S2, Dosage.Pilot$High.Purity.Pilot.S1.S2, method = "paired")
+
+t.test(Dosage.Pilot$Low.Harm.Pilot.S1.S2, Dosage.Pilot$Low.Purity.Pilot.S1.S2, paired = TRUE)
+cohensD(Dosage.Pilot$Low.Harm.Pilot.S1.S2, Dosage.Pilot$Low.Purity.Pilot.S1.S2, method = "paired")
+
+t.test(Dosage.Pilot$Anger.Harm.Pilot, Dosage.Pilot$Anger.Purity.Pilot, paired = TRUE)
+cohensD(Dosage.Pilot$Anger.Harm.Pilot, Dosage.Pilot$Anger.Purity.Pilot, method = "paired")
+
+
+t.test(Dosage.Pilot$Disgust.Purity.Pilot, Dosage.Pilot$Disgust.Harm.Pilot, paired = TRUE)
+cohensD(Dosage.Pilot$Disgust.Purity.Pilot, Dosage.Pilot$Disgust.Harm.Pilot, method = "paired")
+
+
+t.test(Dosage.Pilot$Emo.Harm.Pilot, Dosage.Pilot$Emo.Purity.Pilot, paired = TRUE)
+cohensD(Dosage.Pilot$Emo.Harm.Pilot, Dosage.Pilot$Emo.Purity.Pilot, method = "paired")
+
+
+
+Dosage.S2 %<>% mutate(Harm.RateHarm.S2 = rowMeans(select(., c(Asbestos_L_2, Bruise_L_2, 
+                                    Bully_L_2, Deer_L_2, Punch_L_2, Rock_L_2, Starve_L_2,
+                                    Uncons_L_2, Asbestos_H_2, Bruise_H_2, Bully_H_2,
+                                    Deer_H_2, Punch_H_2, Rock_H_2, Starve_H_2, 
+                                    Uncons_H_2)), na.rm = TRUE))
+
+Dosage.S2 %<>% mutate(Purity.RateHarm.S2 = rowMeans(select(., c(Cannibal_L_2, Corpse_L_2,
+                                      Goatsex_L_2, Graff_L_2, Heroin_L_2, Incest_L_2,
+                                      Mast_L_2, Sacred_L_2, Cannibal_H_2, Corpse_H_2,
+                                      Goatsex_H_2, Graff_H_2, Heroin_H_2, Incest_H_2,
+                                      Mast_H_2, Sacred_H_2)), na.rm = TRUE))
+                                   
+Dosage.S2 %<>% mutate(Harm.RatePurity.S2 = rowMeans(select(., c(Asbestos_L_3, Bruise_L_3, 
+                                    Bully_L_3, Deer_L_3, Punch_L_3, Rock_L_3, Starve_L_3,
+                                    Uncons_L_3, Asbestos_H_3, Bruise_H_3, Bully_H_3,
+                                    Deer_H_3, Punch_H_3, Rock_H_3, Starve_H_3,
+                                    Uncons_H_3)), na.rm = TRUE))
+
+Dosage.S2 %<>% mutate(Purity.RatePurity.S2 = rowMeans(select(., c(Cannibal_L_3, Corpse_L_3,
+                                      Goatsex_L_3, Graff_L_3, Heroin_L_3, Incest_L_3, 
+                                      Mast_L_3, Sacred_L_3, Cannibal_H_3, Corpse_H_3,
+                                      Goatsex_H_3, Graff_H_3, Heroin_H_3, Incest_H_3, 
+                                      Mast_H_3, Sacred_H_3)), na.rm = TRUE))
+
+Dosage.S2 %>% 
+  summarize(mean.HrH = mean(Harm.RateHarm.S2), sd.HrH = sd(Harm.RateHarm.S2), 
+            mean.PrH = mean(Purity.RateHarm.S2), sd.PrH = sd(Purity.RateHarm.S2), 
+            mean.HrP = mean(Harm.RatePurity.S2), sd.HrP = sd(Harm.RatePurity.S2), 
+            mean.PrP = mean(Purity.RatePurity.S2), sd.PrP = sd(Purity.RatePurity.S2))
+
+t.test(Dosage.S2$Harm.RateHarm.S2, Dosage.S2$Purity.RateHarm.S2, paired = TRUE)
+cohensD(Dosage.S2$Harm.RateHarm.S2, Dosage.S2$Purity.RateHarm.S2, method = "paired")
+
+t.test(Dosage.S2$Purity.RatePurity.S2, Dosage.S2$Harm.RatePurity.S2, paired = TRUE)
+cohensD(Dosage.S2$Purity.RatePurity.S2, Dosage.S2$Harm.RatePurity.S2, method = "paired")
+
+## Means for Study 3
+
+Dosage.S3 %<>% mutate(Low.Harm.S3 = rowMeans(select(., c(Blood_L_1, Choke_L_1, 
+                                  HazChem_L_1, HotSauce_L_1, Mercury_L_1, PetFish_L_1, 
+                                  PoisonLadybug_L_1, Thumbtack_L_1)), na.rm = TRUE))
+
+Dosage.S3 %<>% mutate(High.Harm.S3 = rowMeans(select(., c(Blood_H_1, Choke_H_1, 
+                                  HazChem_H_1, HotSauce_H_1, Mercury_H_1, PetFish_H_1, 
+                                  PoisonLadybug_H_1, Thumbtack_H_1)), na.rm = TRUE))
+
+Dosage.S3 %<>% mutate(Low.Purity.S3 = rowMeans(select(., c(Ashes_L_1, CowBlood_L_1, 
+                                  EatCorpse_L_1, EatLadybug_L_1, Genitals_L_1, Genome_L_1,
+                                  Urine_L_1, Whispers_L_1)), na.rm = TRUE))
+
+Dosage.S3 %<>% mutate(High.Purity.S3 = rowMeans(select(., c(Ashes_H_1, CowBlood_H_1, 
+                                  EatCorpse_H_1, EatLadybug_H_1, Genitals_H_1, Genome_H_1,
+                                  Urine_H_1, Whispers_H_1)), na.rm = TRUE))
+
+Dosage.S3 %<>% mutate(Harm.Diff.S3 = High.Harm.S3-Low.Harm.S3) 
+
+Dosage.S3 %<>% mutate(Purity.Diff.S3 = High.Purity.S3-Low.Purity.S3)
+
+Dosage.S3 %<>% mutate(HiLo.Diff.S3 = Harm.Diff.S3-Purity.Diff.S3) 
+
+Dosage.S3 %>% 
+  summarize(mean.LH = mean(Low.Harm.S3), sd.LH = sd(Low.Harm.S3), 
+            mean.HH = mean(High.Harm.S3), sd.HH = sd(High.Harm.S3), 
+            mean.LP = mean(Low.Purity.S3), sd.LP = sd(Low.Purity.S3), 
+            mean.HP = mean(High.Purity.S3), sd.HP = sd(High.Purity.S3), 
+            mean.HD = mean(Harm.Diff.S3), sd.HD = sd(Harm.Diff.S3), 
+            mean.PD = mean(Purity.Diff.S3), sd.PD = sd(Purity.Diff.S3), 
+            mean.HiLoDiff = mean(HiLo.Diff.S3), sd.HLdiff = sd(HiLo.Diff.S3))
+
+Dosage.S3 %<>% mutate(Harm.RateHarm.S3 = rowMeans(select(., c(Blood_L_2, Choke_L_2, 
+                                      HazChem_L_2, HotSauce_L_2, Mercury_L_2, PetFish_L_2,
+                                      PoisonLadybug_L_2, Thumbtack_L_2, Blood_H_2, 
+                                      Choke_H_2, HazChem_H_2, HotSauce_H_2, Mercury_H_2, 
+                                      PetFish_H_2, PoisonLadybug_H_2, Thumbtack_H_2)), 
+                                      na.rm = TRUE))
+
+Dosage.S3 %<>% mutate(Purity.RateHarm.S3 = rowMeans(select(., c(Ashes_L_2, CowBlood_L_2, 
+                                        EatCorpse_L_2, EatLadybug_L_2, Genitals_L_2, 
+                                        Genome_L_2, Whispers_L_2, Urine_L_2, Ashes_H_2, 
+                                        CowBlood_H_2, EatCorpse_H_2, EatLadybug_H_2, 
+                                        Genitals_H_2, Genome_H_2, Whispers_H_2, 
+                                        Urine_H_2)), na.rm = TRUE))
+
+Dosage.S3 %<>% mutate(Harm.RatePurity.S3 = rowMeans(select(., c(Blood_L_3, Choke_L_3, 
+                                        HazChem_L_3, HotSauce_L_3, Mercury_L_3,
+                                        PetFish_L_3, PoisonLadybug_L_3, Thumbtack_L_3, 
+                                        Blood_H_3, Choke_H_3, HazChem_H_3, HotSauce_H_3,
+                                        Mercury_H_3, PetFish_H_3, PoisonLadybug_H_3,
+                                        Thumbtack_H_3)), na.rm = TRUE))
+
+Dosage.S3 %<>% mutate(Purity.RatePurity.S3 = rowMeans(select(., c(Ashes_L_3, CowBlood_L_3, 
+                                        EatCorpse_L_3, EatLadybug_L_3, Genitals_L_3, 
+                                        Genome_L_3, Whispers_L_3, Urine_L_3, Ashes_H_3, 
+                                        CowBlood_H_3, EatCorpse_H_3, EatLadybug_H_3, 
+                                        Genitals_H_3, Genome_H_3, Whispers_H_3, 
+                                        Urine_H_3)), na.rm = TRUE))
+
+Dosage.S3 %>% 
+  summarize(mean.HrH = mean(Harm.RateHarm.S3), sd.HrH = sd(Harm.RateHarm.S3), 
+            mean.PrH = mean(Purity.RateHarm.S3), sd.PrH = sd(Purity.RateHarm.S3), 
+            mean.HrP = mean(Harm.RatePurity.S3), sd.HrP = sd(Harm.RatePurity.S3), 
+            mean.PrP = mean(Purity.RatePurity.S3), sd.PrP = sd(Purity.RatePurity.S3))
+
+t.test(Dosage.S3$Harm.RateHarm.S3, Dosage.S3$Purity.RateHarm.S3, paired = TRUE)
+cohensD(Dosage.S3$Harm.RateHarm.S3, Dosage.S3$Purity.RateHarm.S3, method = "paired")
+
+t.test(Dosage.S3$Purity.RatePurity.S3, Dosage.S3$Harm.RatePurity.S3, paired = TRUE)
+cohensD(Dosage.S3$Purity.RatePurity.S3, Dosage.S3$Harm.RatePurity.S3, method = "paired")
+
+```
+
+```{r}
+
+Dosage.Tidy.S2.L <- filter(Dosage.Tidy, Study == "Study 2", Dose == "Low")
+  
+Dosage.Tidy.S2.H <- filter(Dosage.Tidy, Study == "Study 2", Dose == "High")
+
+Dosage.S2.Itemwise.Low <- aggregate(cbind(Wrong, Harmful, Impure) ~ Item, 
+                                    FUN = "mean", data = Dosage.Tidy.S2.L)
+
+Dosage.S2.Itemwise.High <- aggregate(cbind(Wrong, Harmful, Impure) ~ Item, 
+                                     FUN = "mean", data = Dosage.Tidy.S2.H)
+
+Dosage.S2.Itemwise <- bind_cols(Dosage.S2.Itemwise.Low, Dosage.S2.Itemwise.High)
+
+Dosage.S2.Itemwise %<>% 
+    rowwise() %>% 
+    mutate(AvgHarmful = mean(c(Harmful, Harmful1)), 
+           AvgImpure = mean(c(Impure, Impure1)), 
+           DosageEffect = Wrong1-Wrong)
+
+cor.test(Dosage.S2.Itemwise$AvgHarmful, Dosage.S2.Itemwise$DosageEffect)
+cor.test(Dosage.S2.Itemwise$AvgImpure, Dosage.S2.Itemwise$DosageEffect)
+cor.test(Dosage.S2.Itemwise$AvgHarmful, Dosage.S2.Itemwise$AvgImpure)
+
+S2.r.to.z <- paired.r(-.213019, -.689353, n = 16)
+print(S2.r.to.z, digits = 4)
+
+```
+
+```{r}
+
+Dosage.Tidy.S3.L <- filter(Dosage.Tidy, Study == "Study 3", Dose == "Low")
+  
+Dosage.Tidy.S3.H <- filter(Dosage.Tidy, Study == "Study 3", Dose == "High")
+
+Dosage.S3.Itemwise.Low <- aggregate(cbind(Wrong, Harmful, Impure) ~ Item, 
+                                    FUN = "mean", data = Dosage.Tidy.S3.L)
+
+Dosage.S3.Itemwise.High <- aggregate(cbind(Wrong, Harmful, Impure) ~ Item, 
+                                     FUN = "mean", data = Dosage.Tidy.S3.H)
+
+Dosage.S3.Itemwise <- bind_cols(Dosage.S3.Itemwise.Low, Dosage.S3.Itemwise.High)
+
+Dosage.S3.Itemwise %<>% 
+    rowwise() %>% 
+    mutate(AvgHarmful = mean(c(Harmful, Harmful1)), 
+           AvgImpure = mean(c(Impure, Impure1)), 
+           DosageEffect = Wrong1-Wrong)
+
+cor.test(Dosage.S3.Itemwise$AvgHarmful, Dosage.S3.Itemwise$DosageEffect)
+cor.test(Dosage.S3.Itemwise$AvgImpure, Dosage.S3.Itemwise$DosageEffect)
+cor.test(Dosage.S3.Itemwise$AvgHarmful, Dosage.S3.Itemwise$AvgImpure)
+
+S3.r.to.z <- paired.r(.075495, -.120999, n = 16)
+print(S3.r.to.z, digits = 4)
+
+```
+
+
+# Pilot Study
+
+```{r Graph for Pilot Study}
+
+Dosage.Long.Pilot$Question <- revalue(x = Dosage.Long.Pilot$Question, 
+          c("Wrong" = "Perceived Wrongness", "Harmful" = "Perceived Harmfulness",
+            "Impure" = "Perceived Impurity", "Angry" = "Elicits Anger", 
+            "Disgusted" = "Elicits Disgust", "RejectFromComm"  = "Reject from Community",
+            "RejectOnCoop" = "Reject from Cooperation", 
+            "KindOfPerson" = "Dispositional Basis",
+            "ActSimilarly" = "Similarity across Situations", 
+            "MoralIntegrity" = "Perceived Moral Integrity"))
+
+Pilot.graph <- ggplot(Dosage.Long.Pilot, aes(x = Domain, y = Rating, fill = Dose))
+Pilot.graph + 
+  geom_violin(stat = "ydensity", position = posn.d) +
+  facet_wrap( ~ Question, ncol = 2) +
+  stat_summary(fun.data = mean_cl_normal, fun.args = list(conf.int=.95), 
+               geom = "errorbar", width = 0.1, size = .75, position = posn.d) +
+  scale_y_continuous(limits = c(0,100), breaks = c(0, 25, 50, 75, 100)) +
+  labs(x = "Domain", y = "Rating", fill = "Dosage") +
+  scale_colour_viridis_d(alpha = .75, begin = .85, end = .45,
+  direction = 1, option = "viridis", aesthetics = "fill")
+          
+```
+
+###Mixed Effects Models
+
+```{r Pilot Study: Mixed Effects Models}
+
+summary(Pilot.Wrong.MLM <- lmer(Wrong ~ Domain*Dose + (1 | ID) + (1 | Item), 
+                                data = Dosage.Tidy.Pilot))
+
+summary(Pilot.Harmful.MLM <- lmer(Harmful ~ Domain*Dose + (1 | ID) + (1 | Item), 
+                                  data = Dosage.Tidy.Pilot))
+
+summary(Pilot.Impure.MLM <- lmer(Impure ~ Domain*Dose + (1 | ID) + (1 | Item), 
+                                 data = Dosage.Tidy.Pilot))
+
+summary(Pilot.Angry.MLM <- lmer(Angry ~ Domain*Dose + (1 | ID) + (1 | Item), 
+                                data = Dosage.Tidy.Pilot))
+
+summary(Pilot.Disgusted.MLM <- lmer(Disgusted ~ Domain*Dose + (1 | ID) + (1 | Item), 
+                                    data = Dosage.Tidy.Pilot))
+
+summary(Pilot.RejectFromComm.MLM <- lmer(RejectFromComm ~ Domain*Dose + (1 | ID) 
+                                         + (1 | Item), data = Dosage.Tidy.Pilot))
+
+summary(Pilot.RejectOnCoop.MLM <- lmer(RejectOnCoop ~ Domain*Dose + (1 | ID) 
+                                       + (1 | Item), data = Dosage.Tidy.Pilot))
+
+summary(Pilot.KindOfPerson.MLM <- lmer(KindOfPerson ~ Domain*Dose + (1 | ID) 
+                                       + (1 | Item), data = Dosage.Tidy.Pilot))
+
+summary(Pilot.ActSimilarly.MLM <- lmer(ActSimilarly ~ Domain*Dose + (1 | ID) 
+                                       + (1 | Item), data = Dosage.Tidy.Pilot))
+
+summary(Pilot.MoralIntegrity.MLM <- lmer(MoralIntegrity ~ Domain*Dose + (1 | ID) 
+                                         + (1 | Item), data = Dosage.Tidy.Pilot))
+```
+
+
+## Study 1
+
+```{r Graph for Study 1}
+
+S1.graph <- ggplot(Dosage.Long.S1, aes(x = Domain, y = Rating, fill = Dose))
+S1.graph + 
+  geom_violin(stat = "ydensity", position = posn.d) +
+  stat_summary(fun.data = mean_cl_normal, fun.args = list(conf.int=.95), 
+               geom = "errorbar", width = 0.1, size = .75, position = posn.d) +
+  scale_y_continuous(limits = c(0,100), breaks = c(0, 25, 50, 75, 100)) +
+  labs(x = "Domain", y = "Rating", fill = "Dosage") +
+  scale_colour_viridis_d(alpha = .75, begin = .85, end = .45,
+  direction = 1, option = "viridis", aesthetics = "fill")
+```
+
+###Mixed Effects Models
+
+```{r Study 1: Mixed Effects Models}
+
+S1.Wrong.WithDoseType <- lmer(Wrong ~ Domain*Dose*DoseType + (1 | ID) +
+                                      (1 | Item), data = Dosage.Tidy.S1)
+summary(S1.Wrong.WithDoseType)
+
+S1.Wrong <- lmer(Wrong ~ Domain*Dose + (1 | ID) + (1 | Item), data = Dosage.Tidy.S1)
+summary(S1.Wrong)
+
+emm.S1 = emmeans(S1.Wrong, ~ Domain*Dose)
+pairs(emm.S1, simple = "each")
+
+#S1.Wrong.Harm.d <- est. diff. between means / sqrt(varID+varItem+varResidual)
+13.999/sqrt(242.6+180.7+585.7)
+
+#S1.Wrong.Purity.d <- est. diff. between means / sqrt(varID+varItem+varResidual)
+4.400/sqrt(242.6+180.7+585.7)
+
+.139/.441
+
+S1.Wrong.NoInteractionTerm <- lmer(Wrong ~ Domain + Dose + (1 | ID) + (1 | Item), 
+                                           data = Dosage.Tidy.S1)
+summary(S1.Wrong.NoInteractionTerm)
+
+# Upon a reviewer's request, we attempted to fit a maximal model 
+# (with random slopes), as follows.  However, we we chose not to 
+# include this model with random slopes as the final model in our paper
+# because all of our fixed effects are categorical variables, and a trusted
+# statistical consultant indicated to us that it is generally inappropriate 
+# to model slopes for categorical variables (just as it is analogously
+# generally unadvisable to run correlations with categorical variables, even
+# though it is technically possible when they only have two levels). 
+# In addition, fitting a maximal model resulted in overparameterization.
+
+S1.Wrong.maximalmodel <- lmer(Wrong ~ Domain*Dose + (1 + Domain*Dose | ID) + 
+                                      (1 + Dose | Item), data = Dosage.Tidy.S1)
+
+isSingular(S1.Wrong.maximalmodel)
+
+# Because this maximal model produced a singular fit, we iteratively reduced 
+# the model until we found a model that was no longer singular.  All of the
+# reduced models listed below produced a singular fit:
+# lmer(Wrong ~ Domain*Dose + (1 + Domain + Domain:Dose | ID) + (1 + Dose | Item))
+# lmer(Wrong ~ Domain*Dose + (1 + Dose + Domain:Dose | ID) + (1 + Dose | Item))
+# lmer(Wrong ~ Domain*Dose + (1 + Domain:Dose | ID) + (1 + Dose | Item))
+# lmer(Wrong ~ Domain*Dose + (1 + Domain*Dose | ID) + (1 | Item))
+# lmer(Wrong ~ Domain*Dose + (0 + Domain*Dose | ID) + (1 + Dose | Item))
+# lmer(Wrong ~ Domain*Dose + (1 + Domain*Dose | ID) + (0 + Dose | Item))
+
+S1.Wrong.reducedmodel <- lmer(Wrong ~ Domain*Dose + (1 + Domain + Dose | ID) +
+                                      (0 + Dose | Item), data = Dosage.Tidy.S1)
+
+isSingular(S1.Wrong.reducedmodel)
+
+anova(S1.Wrong.maximalmodel, S1.Wrong.reducedmodel)
+
+summary(S1.Wrong.reducedmodel)
+
+```
+
+# Study 2
+
+```{r Study 2 graphs}
+
+S2.graph <- ggplot(Dosage.Long.S2, aes(x = Domain, y = Rating, fill = Dose))
+S2.graph + 
+  geom_violin(stat = "ydensity", position = posn.d) +
+  stat_summary(fun.data = mean_cl_normal, fun.args = list(conf.int=.95), 
+               geom = "errorbar", width = 0.1, size = .75, position = posn.d) +
+  scale_y_continuous(limits = c(0,100), breaks = c(0, 25, 50, 75, 100)) +
+  labs(x = "Domain", y = "Rating", fill = "Dosage") +
+  scale_colour_viridis_d(alpha = .75, begin = .85, end = .45,
+  direction = 1, option = "viridis", aesthetics = "fill")
+```
+
+### Mixed Effects Models
+
+```{r Study 2: Mixed Effects Models}
+
+S2.Wrong.WithDoseType <- lmer(Wrong ~ Domain*Dose*DoseType + (1 | ID) +
+                                      (1 | Item), data = Dosage.Tidy.S2)
+summary(S2.Wrong.WithDoseType)
+
+
+S2.Wrong <- lmer(Wrong ~ Domain*Dose + (1 | ID) + (1 | Item), data = Dosage.Tidy.S2)
+summary(S2.Wrong)
+
+emm.S2 = emmeans(S2.Wrong, ~ Domain*Dose)
+pairs(emm.S2, simple = "each")
+
+#S2.Wrong.Harm.d <- est. diff. between means / sqrt(varID+varItem+varResidual)
+11.991/sqrt(351.9+121.5+591.1)
+
+#S2.Wrong.Purity.d <- est. diff. between means / sqrt(varID+varItem+varResidual)
+2.877/sqrt(351.9+121.5+591.1)
+
+.088/.368
+
+S2.Wrong.NoInteractionTerm <- lmer(Wrong ~ Domain + Dose + (1 | ID) + (1 | Item), 
+                                           data = Dosage.Tidy.S2)
+summary(S2.Wrong.NoInteractionTerm)
+
+```
+
+### Power analysis to determine sample size for Study 3
+
+```{r Power Analysis to determine sample size for Study 3}
+
+powerSim(S1.Wrong, nsim = 1000, test = fcompare ( ~ Domain + Dose))
+
+powerCurve(S1.Wrong, test = fcompare( ~ Domain + Dose), along = "ID")
+
+```
+
+#Study 3
+
+```{r Graph for Study 3}
+
+S3.graph <- ggplot(Dosage.Long.S3, aes(x = Domain, y = Rating, fill = Dose))
+S3.graph + 
+  geom_violin(stat = "ydensity", position = posn.d) +
+  stat_summary(fun.data = mean_cl_normal, fun.args = list(conf.int=.95), 
+               geom = "errorbar", width = 0.1, size = .75, position = posn.d) +
+  scale_y_continuous(limits = c(0,100), breaks = c(0, 25, 50, 75, 100)) +
+  labs(x = "Domain", y = "Rating", fill = "Dosage") +
+  scale_colour_viridis_d(alpha = .75, begin = .85, end = .45,
+  direction = 1, option = "viridis", aesthetics = "fill")
+```
+
+### Mixed Effects Models
+
+```{r Study 3: Mixed Effects Models}
+
+S3.Wrong <- lmer(Wrong ~ Domain*Dose + (1 | ID) + (1 | Item), data = Dosage.Tidy.S3)
+
+summary(S3.Wrong)
+
+emm.S3 = emmeans(S3.Wrong, ~ Domain*Dose)
+pairs(emm.S3, simple = "each")
+
+#S3.Wrong.Harm.d <- est. diff. between means / sqrt(varID+varItem+varResidual)
+9.518/sqrt(274.7+303.3+681.9)
+
+#S3.Wrong.Purity.d <- est. diff. between means / sqrt(varID+varItem+varResidual)
+4.299/sqrt(274.7+303.3+681.9)
+
+.121/.268
+
+S3.Wrong.NoInteractionTerm <- lmer(Wrong ~ Domain + Dose + (1 | ID) + 
+                                     (1 | Item), data = Dosage.Tidy.S3)
+summary(S3.Wrong.NoInteractionTerm)
+
+```
+

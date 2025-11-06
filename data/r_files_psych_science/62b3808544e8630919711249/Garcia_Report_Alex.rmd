@@ -1,0 +1,76 @@
+---
+title: Garcia & Rimé, 2019
+output: pdf_document
+---
+
+```{r include = FALSE}
+
+# This document was written with R version 4.2.0, RMarkdown version 2.12
+# The OSF Page for the original paper: https://osf.io/npqgz/
+
+# Libraries
+library(ggplot2) # Version 3.3.5
+
+# Download data from OSF page
+# Will download files to the same directory as this rmarkdown file
+# To change the directory or file name, modify the second argument
+download.file("https://osf.io/g8wjn/download", "AttackRefsDF.RData")
+download.file("https://osf.io/8jqx6/download", "TweetPairsDF.RData")
+download.file("https://osf.io/6yngt/download", "TweetsDF.RData")
+
+# Load Data
+# Assumes data was downloaded to same directory as this rmarkdown file
+# To change the directory or file name, modify the second argument
+load("TweetsDF.RData")
+load("TweetPairsDF.RData")
+load("AttackRefsDF.RData")
+```
+
+Garcia & Rime (2019) is a paper which uses twitter data to measure changes in emotional expressions in Paris following the November 2015 Terrorist Attacks. They do this to test the hypothesis that a significant and traumatic event will lead to increases in certain emotional expressions as a way to facilitate solidarity within a group.
+The OSF page for this paper provides only the data; no code is available. Furthermore, only the cleaned twitter data — counts of certain types of words — is available, not the raw tweets. This is most likely due to privacy concerns with regards to sharing twitter data from individuals who have not consented. This does, however, severely limit the computational reproducibility of the paper.
+
+## Twitter Dataset
+
+```{r include = FALSE}
+# Calculate number of tweets
+n_tweets <- nrow(TweetsDF) # 17,899,591
+
+# Number of twitter accounts
+n_tweetsDF     <- length(unique(TweetsDF$userid))     # 61,677
+n_TweetPairsDF <- length(unique(TweetPairsDF$userid)) # 53,004
+n_AttackRefsDF <- length(unique(AttackRefsDF$userid)) # 53,303
+
+# Create tweet frequency dataframe
+tweetFreq        <- data.frame(table(TweetsDF$date))
+names(tweetFreq) <- c("date", "freq")
+tweetFreq$date   <- as.Date(tweetFreq$date)
+
+# Calculate mean of daily tweets before attack
+meanTweets <- mean(tweetFreq$freq[tweetFreq$date <= "2015-11-13"])
+```
+
+The raw data - tweets from half a million twitter users - was gathered using twitter's search API for relevant hashtags. It is not explained if this was done using a specific programming language or manually, and so this part cannot be replicated.
+
+Garcia & Rime say that they filtered the number of unique users accounts to 62,114, with 17,889,591 tweets between the dates of April 1st 2015 and June 30th 2016. The number of accounts cannot be replicated because none of the three datasets contain this number of accounts. The closest value is `r n_tweetsDF` unique users in the TweetsDF data; there are `r n_TweetPairsDF` users in the TweetPairsDF data and `r n_AttackRefsDF` in the AttackRefsDF data. I can, however, replicate the number of tweets as this is the length of the TweetsDF dataframe and also the date range.
+
+Figure 1 contains three elements: the location in France of the twitter users; the number of tweets from the start date to the end data; and two word clouds representing pre and post terrorist attack data. The first and third elements cannot be replicated because the necessary data - tweet locations and raw tweet content - is not provided. The second element can be partially replicated, as I can recreate the black and dashed-grey lines. The mean number of daily tweets before the attack, the grey line, is not specified, however, so I am not sure if my value, `r meanTweets`, is correct. 
+
+```{r echo = FALSE}
+# Create plot
+ggplot(tweetFreq) +
+  aes(date, freq) +
+  geom_line() +
+  scale_y_continuous(labels = c("20K", "40K", "60K", "80K", "100K")) +
+  ggtitle("Tweet Frequency over time") +
+  xlab("Date") +
+  ylab("Number of Tweets") +
+  geom_hline(yintercept = meanTweets)
+```
+
+## Text Analysis
+
+The raw tweets were analysed for their lexcial content, which was then used to count the number of different terms present in each tweet. How this was done practically is not specified and so cannot be replicated
+
+## Statistical Models
+
+Because the code is not provided, I cannot replicate the analysis. I could attempt to replicate the analysis using the model specification provided in the supplemental document, but I do not feel that I have enough technical knowledge to do so within a reasonable time frame.

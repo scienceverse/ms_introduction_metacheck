@@ -1,0 +1,475 @@
+---
+title: 'Moral Persuasion: Pilot Studies'
+author: "[authors blind]"
+output:
+  html_document:
+    code_folding: hide
+    theme: sandstone
+    toc: yes
+    css: RMDfiles/rmd_css.css
+csl: RMDfiles/apa.csl
+bibliography: RMDfiles/references.bib
+link-citations: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, echo = F, warning=F, include=F}
+
+# Set Working Directory (Depends on Where the Files Are)
+setwd()
+
+# Load packages
+if (!require("dplyr")) install.packages("dplyr") #For easier data manipulation
+if (!require("tidyr")) install.packages("tidyr") #For easier data manipulation
+if (!require("ggplot2")) install.packages("ggplot2") #For graphing
+if (!require("stringr")) install.packages("stringr") #For string manipulation
+if (!require("readr")) install.packages("readr") #For reading in data as tibble
+if (!require("psych")) install.packages("psych") #For computing descriptive statistics
+if (!require("broom")) install.packages("broom") #For collapsing multiple analyses into one results table
+if (!require("scales")) install.packages("scales") #For adjusting y-axis on plots
+if (!require("extrafont")) install.packages("extrafont") #For custom fonts in graphs
+if (!require("ggridges")) install.packages("ggridges") #For ridge graphs
+if (!require("kableExtra")) install.packages("kableExtra") #For formatting tables
+library(papaja) #Additional formatting (not on CRAN; must be installed independently)
+select <- dplyr::select #Ensuring that the default for "select" is from dplyr
+
+# Set up plot theme
+apatheme <- theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_line())
+```
+
+<br>
+
+## Pilot Study #1: Recycling Messages
+
+```{r, include=F}
+## Load Data
+pilot1 <- read_csv("data/MoralPersuasion_Pilot1.csv") %>%
+  mutate(d_gender = factor(d_gender, levels = c(1,2,3,4),
+                          labels = c("Male", "Female", "Non-binary", "Other")),
+         condition.F = factor(condR, labels = c("Practical Message", "Moral Message")))
+
+```
+
+We recruited `r nrow(pilot1)` participants on Mechanical Turk (*mean age* = `r round(mean(pilot1$d_age), 2)`, *SD* = `r round(sd(pilot1$d_age), 2)`) to assess the persuasive messages used in Study 1A. First, participants reported their attitudes toward marijuana legalization on three semantic differential scales. Then participants were randomly assigned to read either the moral or practical arguments against marijuana legalization. After reading the message, participants rated the message on a variety of scales.
+
+<br>
+
+### Measures
+
+*All ratings provided on 7-point scales anchored at "not at all" and "very much", unless otherwise noted.*
+
+* **Moral:** To what extent did the essay make arguments related to moral concerns? 
+* **Practical:** To was extent did the essay make arguments related to practical concerns? 
+* **Strong:** How strong was this argument that opposed recycling (1 = not strong at all; 7 = extremely strong) 
+* **Emotional:** To what extent did the message make an argument that was highly emotional? 
+* **Rational:** To what extent did the message make an argument that was highly rational? 
+
+<br>
+
+### Results
+
+```{r, echo = F}
+pilot.1.t.moral <- apa_print(t.test(pilot1$moral ~ pilot1$condition.F, var.equal = T))
+pilot.1.t.prac <- apa_print(t.test(pilot1$practical ~ pilot1$condition.F, var.equal = T))
+pilot.1.t.moral.mess <- filter(pilot1, condition.F == "Moral Message") %$% 
+  t.test(moral, practical, var.equal = T, paired = T) %>% apa_print()
+pilot.1.t.prac.mess <- filter(pilot1, condition.F == "Practical Message") %$% 
+  t.test(moral, practical, var.equal = T, paired = T) %>% apa_print()
+```
+
+See below for a plot of message ratings by condition (error bars are standard errors) and a table of independent t-tests for each measured rating. Notably, the moral and practical messages differed in perceived moral content, `r pilot.1.t.moral$statistic`, and they also differed in perceived practical content, `r pilot.1.t.prac$statistic`.
+
+Also, within-subjects t-tests show that participants who read the moral message thought it was more moral than practical, `r pilot.1.t.moral.mess$statistic`. Similarly, participants who read the practical message thought it was more practical than moral, `r pilot.1.t.prac.mess$statistic`.
+
+
+```{r, fig.align='center', fig.asp = .5, out.width="80%", warning=F}
+select(pilot1, condition.F, Moral = moral, Practical = practical, Strong = strong,
+       Emotional = emo, Rational = rational) %>% 
+  psych::describeBy(group = "condition.F", mat = T) %>%
+  mutate(item = str_sub(rownames(.), 1, str_length(rownames(.))-1)) %>%
+  filter(vars != 1) %>%
+  mutate(item = factor(item, levels = c("Moral", "Practical", "Strong", 
+                                        "Emotional", "Rational"))) %>% 
+  ggplot(aes(x = item, y = mean, fill = group1)) +
+  geom_bar(stat = "identity", position = position_dodge(width = .9), color = "black") +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
+                size = .5, width = .1, position = position_dodge(.9)) +
+  apatheme +
+  labs(x = "Rating", y = "Mean", fill = "") +
+  scale_fill_manual(values=c("#D3D3D3", "black")) +
+  theme(text = element_text(family = "Times New Roman", size = 14),
+        legend.position = "top",
+        axis.text.x = element_text(size = 11)) +
+  scale_y_continuous(limits=c(1,7),oob = rescale_none)
+```
+
+<br>
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE, results='asis'}
+pilot1 %>% select(condition.F, strong, moral, practical, emo, rational) %>%
+  gather(rating, value, -condition.F) %>%
+  mutate(rating = factor(rating, levels = c("moral", "practical", "strong", "emo", "rational"),
+                         labels = c("Moral", "Practical", "Strong", "Emotional", "Rational"))) %>%
+  group_by(rating) %>%
+  do(test = t.test (.$value ~ .$condition.F, var.equal = T)) %>%
+  broom::tidy(test) %>%
+  select(rating, `Practical Message` = estimate1, `Moral Message` = estimate2, 
+         t = statistic, df = parameter, p.value) %>%
+  as.data.frame() %>%
+  mutate(p.value = as.character(ifelse(p.value < .001, "< .001", round(p.value, 3)))) %>%
+  mutate_if(is.numeric, round, 2) %>%
+  kable(align=rep('c', 6)) %>%
+  kable_styling(bootstrap_options = c("hover", "condensed", "responsive"), 
+                full_width = F, position = "center") %>%
+  column_spec(1:6, width = "5em") 
+```
+
+<br>
+
+## Pilot Study #2: Recycling Messages
+
+```{r, include=F}
+## Load Data
+pilot2 <- read_csv("data/MoralPersuasion_Pilot2.csv") %>%
+  mutate(d_gender = factor(d_gender, levels = c(1,2,3,4),
+                          labels = c("Male", "Female", "Non-binary", "Other")),
+         condition.F = factor(condR, labels = c("Practical Message", "Moral Message")))
+
+```
+
+We recruited `r nrow(pilot2)` participants on Mechanical Turk (*mean age* = `r round(mean(pilot2$d_age), 2)`, *SD* = `r round(sd(pilot2$d_age), 2)`) to assess the persuasive messages used in Study 1B. First, participants reported their attitudes toward marijuana legalization on three semantic differential scales. Then participants were randomly assigned to read either the moral or practical arguments against marijuana legalization. After reading the message, participants rated the message on a variety of scales.
+
+<br>
+
+### Measures
+
+*All ratings provided on 7-point scales anchored at "not at all" and "very much", unless otherwise noted.*
+
+* **Moral:** To what extent did the essay make arguments related to moral concerns? 
+* **Practical:** To was extent did the essay make arguments related to practical concerns? 
+* **Strong:** How strong was this argument that opposed recycling (1 = not strong at all; 7 = extremely strong) 
+* **Emotional:** To what extent did the message make an argument that was highly emotional? 
+* **Rational:** To what extent did the message make an argument that was highly rational? 
+
+<br>
+
+### Results
+
+```{r, echo = F}
+pilot.2.t.moral <- apa_print(t.test(pilot2$moral ~ pilot2$condition.F, var.equal = T))
+pilot.2.t.prac <- apa_print(t.test(pilot2$practical ~ pilot2$condition.F, var.equal = T))
+pilot.2.t.moral.mess <- filter(pilot2, condition.F == "Moral Message") %$% 
+  t.test(moral, practical, var.equal = T, paired = T) %>% apa_print()
+pilot.2.t.prac.mess <- filter(pilot2, condition.F == "Practical Message") %$% 
+  t.test(moral, practical, var.equal = T, paired = T) %>% apa_print()
+```
+
+See below for a plot of message ratings by condition (error bars are standard errors) and a table of independent t-tests for each measured rating. Notably, the moral and practical messages differed in perceived moral content, `r pilot.2.t.moral$statistic`, and they also differed in perceived practical content, `r pilot.2.t.prac$statistic`.
+
+Also, within-subjects t-tests show that participants who read the moral message thought it was more moral than practical, `r pilot.2.t.moral.mess$statistic`. Similarly, participants who read the practical message thought it was more practical than moral, `r pilot.2.t.prac.mess$statistic`.
+
+
+```{r, fig.align='center', fig.asp = .5, out.width="80%", warning=F}
+select(pilot2, condition.F, Moral = moral, Practical = practical, Strong = strong,
+       Emotional = emo, Rational = rational) %>% 
+  psych::describeBy(group = "condition.F", mat = T) %>%
+  mutate(item = str_sub(rownames(.), 1, str_length(rownames(.))-1)) %>%
+  filter(vars != 1) %>%
+  mutate(item = factor(item, levels = c("Moral", "Practical", "Strong", 
+                                        "Emotional", "Rational"))) %>% 
+  ggplot(aes(x = item, y = mean, fill = group1)) +
+  geom_bar(stat = "identity", position = position_dodge(width = .9), color = "black") +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
+                size = .5, width = .1, position = position_dodge(.9)) +
+  apatheme +
+  labs(x = "Rating", y = "Mean", fill = "") +
+  scale_fill_manual(values=c("#D3D3D3", "black")) +
+  theme(text = element_text(family = "Times New Roman", size = 14),
+        legend.position = "top",
+        axis.text.x = element_text(size = 11)) +
+  scale_y_continuous(limits=c(1,7),oob = rescale_none)
+```
+
+<br>
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE, results='asis'}
+pilot2 %>% select(condition.F, strong, moral, practical, emo, rational) %>%
+  gather(rating, value, -condition.F) %>%
+  mutate(rating = factor(rating, levels = c("moral", "practical", "strong", "emo", "rational"),
+                         labels = c("Moral", "Practical", "Strong", "Emotional", "Rational"))) %>%
+  group_by(rating) %>%
+  do(test = t.test (.$value ~ .$condition.F, var.equal = T)) %>%
+  broom::tidy(test) %>%
+  select(rating, `Practical Message` = estimate1, `Moral Message` = estimate2, 
+         t = statistic, df = parameter, p.value) %>%
+  as.data.frame() %>%
+  mutate(p.value = as.character(ifelse(p.value < .001, "< .001", round(p.value, 3)))) %>%
+  mutate_if(is.numeric, round, 2) %>%
+  kable(align=rep('c', 6)) %>%
+  kable_styling(bootstrap_options = c("hover", "condensed", "responsive"), 
+                full_width = F, position = "center") %>%
+  column_spec(1:6, width = "5em") 
+```
+
+<br>
+
+## Pilot Study #3: Topic Selection
+
+```{r, include=F}
+## Load Data
+pilot3 <- read_csv("data/MoralPersuasion_pilot3.csv")
+pilot3.demo <- select(pilot3, ID, age, gender, gender_4_TEXT) %>% unique()
+```
+
+We recruited `r length(unique(pilot3$ID))` participants on Mechanical Turk (*mean age* = `r round(mean(pilot3.demo$age), 2)`, *SD* = `r round(sd(pilot3.demo$age), 2)`) to rate a series of topics. 
+
+<br>
+
+### Topics
+
+We collected a variety of topics used in previous research on morality and persuasion (plus a novel topic). 
+
+* **Recycling** [@kidwellGettingLiberalsConservatives2013; @luttrellMakingItMoral2016]
+* **Using torture when interrogating suspected terrorists** [@aramovichOpposingTortureMoral2012; @leidnerEffectsMoralPragmatic2018]
+* **Legalizing voluntary euthanasia** [@hornseyEffectsNormsThose2007, Study 2]
+* **Universal health care** [@feinbergGulfBridgeWhen2015, Study 3]
+* **Increasing the United States military budget** [@feinbergGulfBridgeWhen2015, Study 4]
+* **Same-sex marriage** [@feinbergGulfBridgeWhen2015, Study 5; @hornseyBeingLoudProud2003; @mucciaroniAreDebatesMorality2011]
+* **Making English the official U.S. language** [@feinbergGulfBridgeWhen2015, Study 6]
+* **Donald Trump** [@voelkelMorallyReframedArguments2017, Study 1]
+* **Abortion** [@skitkaMoralConvictionAnother2005]
+* **Death penalty** [@skitkaMoralConvictionAnother2005]
+* **Legalizing marijuana** [@ferraioloMoralityFramingDrug2014; @skitkaMoralConvictionAnother2005]
+* **Genetically modified foods** [@scottEvidenceAbsoluteMoral2016]
+* **Eating meat** [@palomo-velezUnsustainableUnhealthyDisgusting2018; @rozinMoralizationBecomingVegetarian1997]  
+* **Gambling** [@euchnerMoralityPolicyNormal2013; @ferraioloStateGamblingPolicy2013] 
+* **Making legal immigration into the U.S. easier** 
+
+<br> 
+
+### Measures
+
+Respondents were randomly assigned a subset of five topics. For each one, they responded to the following questions, drawing from measures in Study 1.
+
+* **att:** Please rate [topic] from "negative" to "positive". (-4 to +4) 
+* **moral:** To what extent is your attitude about this topic based in your core moral beliefs and principles? (1 = Not at all; 5 = Extremely) 
+
+Participants responded to these three questions as a group for each topic before moving onto the next topic.
+
+<br>
+
+### Results
+
+We were primarily interested in seeing the means and distributions of people's attitudes and degree of moral attitude bases. Below is a table of summary statistics for each topic (arranged from most to least "moral"), a ridge plot showing the distributions of attitudes for each topic (arranged from most negative to most positive on average), and a ridge plot showing the distributions of perceived moral bases for each topic (arranged from most to least "moral").
+
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE, results='asis'}
+pilot3 %>% group_by(topic) %>%
+  summarize(n = n(),
+            `Mean Attitude` = round(mean(att), 2),
+            `SD Attitude` = round(sd(att), 2),
+            `Mean Moral Basis` = round(mean(moral), 2),
+            `SD Moral Basis` = round(sd(moral), 2)) %>%
+  dplyr::rename(Topic = topic) %>%
+  arrange(-`Mean Moral Basis`) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("hover", "condensed", "responsive"), 
+                full_width = F, position = "center") %>%
+  column_spec(1, width = "15em") %>%
+  column_spec(3:6, width = "7em")
+```
+
+<br>
+
+**Distributions of Attitudes**
+
+(In ascending order of average attitude.)
+
+```{r, echo=T, warning=F, message=F, fig.align='center'}
+pilot3 %>% group_by(topic) %>% mutate(M.att = mean(att)) %>% ungroup() %>%
+  ggplot(aes(x = att, y = reorder(topic, -M.att))) + 
+  geom_density_ridges() + 
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_line(),
+        text = element_text(family = "Times New Roman", size = 12)) +
+  labs(x = "Overall Attitude", y = "")
+```
+
+<br>
+
+**Distributions of Perceived Moral Bases**
+
+(In descending order of average degree of moral basis.)
+
+```{r, echo=T, warning=F, message=F, fig.align='center'}
+pilot3 %>% group_by(topic) %>% mutate(M.moral = mean(moral)) %>% ungroup() %>%
+  ggplot(aes(x = moral, y = reorder(topic, M.moral))) + 
+  geom_density_ridges() + 
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_line(),
+        text = element_text(family = "Times New Roman", size = 12)) +
+  labs(x = "Perceived Moral Attitude Basis", y = "")
+```
+
+<br>
+
+**Negative Attitudes**
+
+An advantage of "marijuana legalization" is that MTurkers tended to be favorable.
+
+```{r}
+pilot3 %>% group_by(topic) %>% summarize(Neg = sum(att < 0)/n(), Neutral = sum(att == 0)/n(), Pos = sum(att > 0)/n()) %>%
+  mutate_if(is.numeric, round, 2) %>% arrange(-Pos)
+```
+
+<br>
+
+## Pilot Study #4: Marijuana Legalization Messages
+
+```{r, include=F}
+## Load Data
+pilot4 <- read_csv("data/MoralPersuasion_pilot4.csv")
+```
+
+We recruited `r nrow(pilot4)` participants on Mechanical Turk (*mean age* = `r round(mean(pilot4$d_age), 2)`, *SD* = `r round(sd(pilot4$d_age), 2)`) to assess the persuasive messages used in Study 2. First, participants reported their attitudes toward marijuana legalization on three semantic differential scales. Then participants were randomly assigned to read either the moral or practical arguments against marijuana legalization. After reading the message, participants rated the message on a variety of scales.
+
+### Measures
+
+#### Attitudes
+
+*In this online survey, you will answer questions about your reactions to several short messages about various topics. We are trying to gain a better understanding of how people form good quality versus bad quality arguments. *
+
+*Please rate <strong>Legalizing Marijuana</strong> on the following scales:*
+
+* (-4) Bad - (+4) Good 
+* (-4) Dislike - (+4) Like 
+* (-4) Negative - (+4) Positive 
+
+<br>
+
+#### Message Ratings
+
+*All ratings provided on 7-point scales anchored at "not at all" and "very much", unless otherwise noted.*
+
+* **Moral:** To what extent did the essay make arguments related to moral concerns? 
+* **Practical:** To was extent did the essay make arguments related to practical concerns? 
+* **Strong:** How strong were the arguments you read? (1 = not strong at all; 7 = extremely strong) 
+* **Emotional:** To what extent did the message make an argument that was highly emotional? 
+* **Rational:** To what extent did the message make an argument that was highly rational? 
+* **Relevant:** How personally relevant did you find this message to be? (1 = not personally relevant at all; 7 = very personally relevant) 
+* **WellWritten:** How well-written did you find this message to be? 
+* **Central:** To what extent do you think this message used arguments that you think are centrally relevant to the issue of marijuana legalization?
+
+<br>
+
+### Results
+
+```{r}
+att.alpha.3 <- select(pilot4, Att_1, Att_2, Att_3) %>% 
+  psych::alpha() %>% with(total) %>% with(std.alpha) %>% round(3)
+pilot4 <- mutate(pilot4, att = (Att_1 + Att_2 + Att_3) / 3,
+                 below.midpoint = ifelse(att < 0, 1, 0))
+pilot4.pos <- filter(pilot4, below.midpoint == 0)
+```
+
+**Attitudes.** Responses to the attitudes item showed good reliability (alpha = `r att.alpha.3`), so they were averaged to form a composite index. Participants tended to endorse positive attitudes toward marijuana legalization (see histogram below). In total, only *n* = `r sum(pilot4$below.midpoint)` reported attitudes below the midpoint of the scale (meeting our exclusion criteria in the main study), so we dropped these observations from analysis in order to focus more directly on the conditions that would be present in the full study.
+
+```{r fig.align='center', warning = F, fig.asp = .35, out.width="100%"}
+ggplot(pilot4, aes(x = att)) +
+  geom_histogram(fill = "black", bins = 16) + 
+  geom_rug(sides = "b", aes(y = 0), position = position_jitter(width = .05), alpha = .2) +
+  apatheme +
+  xlim(c(-4,4)) +
+  theme(text = element_text(family = "Times New Roman", size = 10)) +
+  labs(x = "Attitudes Toward Legalizing Marijuana")
+```
+
+<br>
+
+```{r, echo = F}
+pilot.4.t.moral <- apa_print(t.test(pilot4.pos$mor ~ pilot4.pos$condition.F, var.equal = T))
+pilot.4.t.prac <- apa_print(t.test(pilot4.pos$prac ~ pilot4.pos$condition.F, var.equal = T))
+
+pilot.4.t.moral.mess <- filter(pilot4.pos, condition == 1) %$% 
+  t.test(mor, prac, var.equal = T, paired = T) %>% apa_print()
+pilot.4.t.prac.mess <- filter(pilot4.pos, condition == 2) %$% 
+  t.test(mor, prac, var.equal = T, paired = T) %>% apa_print()
+```
+
+**Message Ratings.** See below for a plot of message ratings by condition (error bars are standard errors) and a table of independent t-tests for each measured rating. Notably, the moral and practical messages differed in perceived moral content, `r pilot.4.t.moral$statistic`, and they also differed in perceived practical content, `r pilot.4.t.prac$statistic`.
+
+Also, within-subjects t-tests show that participants who read the moral message thought it was more moral than practical, `r pilot.4.t.moral.mess$statistic`. Similarly, participants who read the practical message thought it was more practical than moral, `r pilot.4.t.prac.mess$statistic`.
+
+
+```{r, fig.align='center', fig.asp = .5, out.width="80%", warning=F}
+select(pilot4.pos, condition.F, strong, mor, prac, emo, cog, rel, writ, cent) %>% 
+  dplyr::rename(Moral = mor, Practical = prac, Strong = strong, Emotional = emo, Rational = cog,
+                Relevant = rel, WellWritten = writ, Central = cent) %>%
+  psych::describeBy(group = "condition.F", mat = T) %>%
+  mutate(item = str_sub(rownames(.), 1, str_length(rownames(.))-1)) %>%
+  filter(vars != 1) %>%
+  mutate(item = factor(item, levels = c("Moral", "Practical", "Strong", 
+                                        "Emotional", "Rational", "Relevant", 
+                                        "WellWritten", "Central"))) %>% 
+  ggplot(aes(x = item, y = mean, fill = group1)) +
+  geom_bar(stat = "identity", position = position_dodge(width = .9), color = "black") +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
+                size = .5, width = .1, position = position_dodge(.9)) +
+  apatheme +
+  labs(x = "Rating", y = "Mean", fill = "") +
+  scale_fill_manual(values=c("#D3D3D3", "black")) +
+  theme(text = element_text(family = "Times New Roman", size = 14),
+        legend.position = "top",
+        axis.text.x = element_text(size = 11)) +
+  scale_y_continuous(limits=c(1,7),oob = rescale_none)
+```
+
+<br>
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE, results='asis'}
+pilot4.pos %>% select(condition.F, strong, mor, prac, emo, cog, rel, writ, cent) %>%
+  gather(rating, value, -condition.F) %>%
+  mutate(rating = factor(rating, levels = c("mor", "prac", "strong", "emo", "cog", 
+                                            "rel", "writ", "cent"),
+                         labels = c("Moral", "Practical", "Strong", "Emotional", "Rational",
+                                    "Relevant", "WellWritten", "Central"))) %>%
+  group_by(rating) %>%
+  do(test = t.test (.$value ~ .$condition.F, var.equal = T)) %>%
+  broom::tidy(test) %>%
+  select(rating, `Practical Message` = estimate1, `Moral Message` = estimate2, 
+         t = statistic, df = parameter, p.value) %>%
+  as.data.frame() %>%
+  mutate(p.value = as.character(ifelse(p.value < .001, "< .001", round(p.value, 3)))) %>%
+  mutate_if(is.numeric, round, 2) %>%
+  kable(align=rep('c', 6)) %>%
+  kable_styling(bootstrap_options = c("hover", "condensed", "responsive"), 
+                full_width = F, position = "center") %>%
+  column_spec(1:6, width = "5em") 
+```
+
+<br>
+
+## Software Used
+
+```{r}
+r_refs(file = "moral_matching_references.bib", append = T)
+my_citations <- cite_r(file = "moral_matching_references.bib")
+```
+
+`r my_citations`
+
+<br>
+
+## References
+

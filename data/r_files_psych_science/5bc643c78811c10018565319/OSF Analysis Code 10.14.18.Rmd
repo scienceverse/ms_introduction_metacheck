@@ -1,0 +1,859 @@
+---
+title: "Study 1 Replication (Qualtrics)"
+output:
+  tufte::tufte_handout: default
+date: "Last revised October 16, 2018"
+---
+
+#**Overview**
+
+This document presents the data analysis for Study 1, and replicates this analysis both using the full sample with no exclusions (pg 12), and excluding anyone who expressed an initially neutral attitude about UBI (pg 18).
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment=NA, warning=FALSE, message=FALSE, echo=FALSE)
+library(dplyr)
+library(psych)
+library(knitr)
+library(tidyr)
+library(broom)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+#library(qdap)
+library(Rmisc)
+library(lsr)
+```
+
+
+#Data Cleaning
+
+We begin with the full dataset of 1180 people who completed the survey, then remove everyone who failed the attention check, or who were excluded based on an independent coder's judgement of whether they (1) generated an argument and (2) the argument was for the appropriate side
+
+```{r}
+d_full <- read.csv("Study 1 data preexclusions.csv")
+d_full$condition <- factor(d_full$condition, levels = c("argument", "opposition argument"), labels = c("Control", "Perspective Taking"))
+
+d <- d_full %>%
+  filter(attcheck == 1) %>%
+  filter(exclude != "Y") 
+```
+
+Consistent with our preregistration plan, we excluded 182 (15.4%) who failed the attention check, completed the survey multiple times, or did not follow instructions, leaving a sample of 998 participants (79.7% female, Mage = 44.05).
+
+#Descriptive Statistics
+
+##Participant gender
+
+1 indicates female, 2 indicates male, 3 indicates other
+
+```{r}
+table(d$dem.gender)
+```
+
+##Participant Age
+
+Mean and CI age:
+```{r}
+CI(d$dem.age, ci=0.95)
+```
+
+\newpage
+
+#Initial Attitude
+
+We begin by comparing the initial distribution of attitudes by condition, to confirm random assignment.
+```{r}
+d_PT <- filter(d, condition == "Perspective Taking")
+d_control <- filter(d, condition == "Control")
+t.test(d_PT$Q1.att_1, d_control$Q1.att_1)
+```
+
+Cohen's D:
+```{r}
+cohensD(d_PT$Q1.att_1, d_control$Q1.att_1)
+```
+
+Control:
+```{r}
+CI(d_control$Q1.att_1)
+```
+
+Perspective Taking:
+```{r}
+CI(d_PT$Q1.att_1)
+```
+
+Initial attitudes did not differ between the control (M = 54.02, 95% CI [50.96, 57.07]) and perspective-taking (M = 53.77, 95% CI [50.68, 56.85]) conditions, t(996) = -0.11, p = .91.
+
+#Midpoint
+
+How many people indicated the midpoint?
+```{r}
+d_50 <- filter(d, Q1.att_1 == 50)
+nrow(d_50)
+
+d_noneutral <- filter(d, Q1.att_1 != 50)
+```
+
+Participants who indicated a neutral attitude (exactly the midpoint; N = 84) were randomly assigned to a side. All significant relationships reported remain significant when these participants are excluded (see pg 18).
+
+\newpage
+
+#Receptiveness
+
+Receptiveness is measured by 4 items, specifically:
+
+- How receptive do you feel toward the specific argument that you wrote about?
+
+- How open-minded do you feel toward the specific argument that you wrote about? 
+
+- How receptive do you feel toward the perspective (in favor of /against UBI) in general?
+
+- How open-minded do you feel toward the perspective (in favor of/against UBI) in general?
+
+##Creating an index for receptiveness
+
+We begin by computing the alpha for receptiveness:
+
+```{r}
+receptiveness <- dplyr::select(d, Q3.receparg, Q4.openarg, Q5.recepgen, Q6.opengen)
+alphaRecep <- psych::alpha(receptiveness)
+kable(alphaRecep$total)
+```
+
+Because our alpha is acceptable (alpha = 0.85), we then combine the 4 receptiveness items into a single index.
+```{r}
+d$receptiveness <- (d$Q3.receparg + d$Q4.openarg + d$Q5.recepgen + d$Q6.opengen)/4
+```
+
+
+\newpage
+
+#Effect of condition on receptiveness
+
+To explore the effect of condition on receptiveness, we employ an unpaired samples t-test, assuming approximately equal variances 
+
+```{r, fig.margin=TRUE}
+perspective <- filter(d, condition == "Perspective Taking")
+control <- filter(d, condition == "Control")
+t.test(perspective$receptiveness, control$receptiveness, paired=FALSE, var.equal=TRUE)
+```
+
+Cohen's D:
+```{r}
+cohensD(perspective$receptiveness, control$receptiveness)
+```
+
+Control:
+```{r}
+CI(control$receptiveness, ci = 0.95)
+```
+Perspective Taking:
+```{r}
+CI(perspective$receptiveness, ci = 0.95)
+```
+
+Participants reported less receptiveness to the counterattitudinal view in the perspective-taking (M = 3.78, 95% CI [3.65, 3.91]) relative to control (M = 4.10, 95% CI [3.98, 4.22]) condition, t(996)=-3.59, p < .001. 
+
+#Graph
+
+```{r}
+se_plus <- function(x) mean(x) + sqrt(var(x)/length(x))
+se_minus <- function(x) mean(x) - sqrt(var(x)/length(x))
+
+limits <- aes(ymax = se_u, ymin= se_l)
+dodge <- position_dodge(width=0.9)
+
+summary <- d %>% 
+  dplyr::group_by(condition) %>% 
+  dplyr::summarise("Receptiveness" = mean(receptiveness, na.rm=TRUE), "se_u"=se_plus(receptiveness), "se_l"=se_minus(receptiveness)) 
+
+p1 <- ggplot(data=summary, aes(x=condition, y=Receptiveness, fill=condition)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  geom_errorbar(limits, position=dodge, width=0.25) + 
+  labs(x="Condition", y="Receptiveness") +
+  guides(fill=FALSE) +
+  theme_hc() + 
+  theme(text=element_text(family="Calibri", size=14)) +
+  scale_fill_manual(values = c("#ffad99", "#05C68A", "#17699E"))
+
+# Colors (SPSP theme)
+# peach: #ffad99
+# green: #05C68A
+# blue: #17699E
+
+#p1
+#ggsave("Study_1_Receptiveness.png", scale=1, width=100, height=100, units="mm", dpi=1000)
+```
+
+\newpage
+
+#Attitude Change
+
+We calculate attitude change toward the counterattitudinal position for all participants, such that positive numbers always indicate movement in the counterattitudinal direction, while negative numbers indicate movement in the proattitudinal direction.
+
+```{r}
+d$att.change <- ifelse(d$side == "against", d$Q1.att_1 - d$Q2.attT2_1, NA)
+
+d$att.change <- ifelse(d$side == "in favor of", d$Q2.attT2_1 - d$Q1.att_1, d$att.change)
+```
+
+#Effect of Condition on Attitude Change
+
+```{r, fig.margin=TRUE}
+perspective <- filter(d, condition == "Perspective Taking")
+control <- filter(d, condition == "Control")
+t.test(perspective$att.change,
+       control$att.change,
+       paired=FALSE, var.equal=TRUE)
+```
+
+Cohen's D:
+```{r}
+cohensD(perspective$att.change, control$att.change)
+```
+
+Control:
+```{r}
+CI(control$att.change, ci=0.95)
+```
+Perspective Taking:
+```{r}
+CI(perspective$att.change, ci=0.95)
+```
+
+Participants showed less change toward the counterattitudinal view in the perspective-taking (M = 5.06, SD = 14.10) relative to control (M = 8.29, SD = 18.12) condition, t(996)=-3.15, p = .002. 
+
+\newpage
+
+#Graph
+
+```{r}
+se_plus <- function(x) mean(x) + sqrt(var(x)/length(x))
+se_minus <- function(x) mean(x) - sqrt(var(x)/length(x))
+
+limits <- aes(ymax = se_u, ymin= se_l)
+dodge <- position_dodge(width=0.9)
+
+summary <- d %>% 
+  dplyr::group_by(condition) %>% 
+  dplyr::summarise("Attitude_Change" = mean(att.change, na.rm=TRUE), "se_u"=se_plus(att.change), "se_l"=se_minus(att.change)) 
+
+p1 <- ggplot(data=summary, aes(x=condition, y=Attitude_Change, fill=condition)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  geom_errorbar(limits, position=dodge, width=0.25) + 
+  labs(x="Condition", y="Attitude Change") +
+  guides(fill=FALSE) +
+  theme_hc() + 
+  theme(text=element_text(family="Calibri", size=14)) +
+  scale_fill_manual(values = c("#ffad99", "#05C68A", "#17699E"))
+
+# Colors (SPSP theme)
+# peach: #ffad99
+# green: #05C68A
+# blue: #17699E
+#p1
+#ggsave("Study_1_AttChange.png", scale=1, width=100, height=100, units="mm", dpi=1000)
+###GRAPH2######
+```
+
+
+\newpage
+
+#Comparing attitude change to 0 for each condition
+
+##For control:
+
+```{r}
+d_control <- filter(d, condition == "Control")
+d_PT <- filter(d, condition == "Perspective Taking")
+
+t.test(d_control$att.change)
+```
+
+##For Perspective Taking:
+```{r}
+t.test(d_PT$att.change)
+```
+
+Attitude change was greater than zero in both conditions (ps < .001), 
+
+\newpage
+
+#Value/Moral Congruence
+
+Value/Moral Congruence is measured by 3 items, specifically:
+
+- To what extent is this argument congruent with your own values?
+
+- To what extent does this argument fit with your worldview?
+
+- To what extent does this argument reflect your own personal morals?
+
+## Creating an index for value congruence
+
+We begin by computing the alpha for value congruence
+
+```{r, echo=FALSE}
+valuecongruence <- dplyr::select(d, Q7.congruent, Q8.fitworldview, Q9.morals)
+alphaCongruence <- psych::alpha(valuecongruence)
+kable(alphaCongruence$total)
+```
+
+Because alpha is satisfactory (alpha = 0.92), we create a single index for value congruence. I've also recoded it so that higher means more congruent. 
+
+```{r}
+d$congruence <- 8 - (d$Q7.congruent + d$Q8.fitworldview + d$Q9.morals)/3
+```
+
+\newpage
+
+##Effect of condition on value congruence
+
+To explore the effect of condition on receptiveness, we employ anunpaired samples t-test, assuming approximately equal variances
+
+
+```{r, fig.margin=TRUE}
+perspective <- filter(d, condition == "Perspective Taking")
+control <- filter(d, condition == "Control")
+t.test(perspective$congruence,
+       control$congruence,
+       paired=FALSE, var.equal=TRUE)
+```
+
+Cohen's D:
+```{r}
+cohensD(perspective$congruence, control$congruence)
+```
+
+Perspective:
+```{r}
+CI(perspective$congruence, ci=.95)
+```
+Control:
+```{r}
+CI(control$congruence, ci = .95)
+```
+
+Participants reported less value-congruent arguments in the perspective-taking (M = 3.64, SD = 1.80) relative to control (M = 4.23, SD = 1.80) condition, t(996)=-5.17, p < .001. 
+
+
+\newpage
+
+# Mediation 1: Condition -> Congruence -> Receptiveness
+
+In this mediation model, we test the account where value congruence mediates the effect of condition on receptiveness, using the R package *mediation*
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+library(mediation)
+d$recep_s <- scale(d$receptiveness)
+d$att.change_s <- scale(d$att.change)
+d$congruence_s <- as.numeric(scale(d$congruence))
+
+modelm <- lm(congruence_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(recep_s ~ condition + congruence_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(recep_s ~ congruence_s, data = d)
+kable(tidy(modely1))
+
+med_model2 <- mediation::mediate(modelm, modely, treat="condition",
+                                sims=500,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model2)
+```
+
+Condition affected value-congruence (beta = -.32, t(996) = -5.17, p < .001) and value-congruence predicted receptiveness (beta = .43, t(996) = 15.01, p < .001). As hypothesized, the indirect effect of condition on receptiveness was significant (ab = -.14, 95% CI = -.19 to -.08). 
+
+
+# Mediation 2: Condition -> Congruence -> Attitude Change
+
+In this mediation model, we test the account where value congruence mediates the effect of condition on attitude change, using the R package *mediation*
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+d$recep_s <- scale(d$receptiveness)
+d$att.change_s <- scale(d$att.change)
+d$congruence_s <- as.numeric(scale(d$congruence))
+
+modelm <- lm(congruence_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(att.change_s ~ condition + congruence_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(att.change_s ~ congruence_s, data=d)
+kable(tidy(modely1))
+
+med_model1 <- mediation::mediate(modelm, modely,
+                                treat="condition",
+                                sims = 5000,
+                                boot=TRUE,
+                   mediator="congruence_s",
+                   control.value = "Control",
+                   treat.value="Perspective Taking")
+
+summary(med_model1)
+```
+
+Condition affected value-congruence (beta = -.32, t(996) = -5.17, p < .001) and value-congruence predicted attitude change (beta = .18, t(996)=5.70, p < .001). As hypothesized, the indirect effect of condition on attitude change through value-congruence was significant attitude change: ab = -.05, 95% CI = -.09 to -.03). 
+
+
+\newpage
+
+
+# Alternative Mediation Models
+
+# Mediation 1A: Condition -> Receptiveness -> Congruence
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+library(mediation)
+d$recep_s <- as.numeric(scale(d$receptiveness))
+d$att.change_s <- as.numeric(scale(d$att.change))
+d$congruence_s <- as.numeric(scale(d$congruence))
+
+modelm <- lm(recep_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(congruence_s ~ condition + recep_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(congruence_s ~ recep_s, data = d)
+kable(tidy(modely1))
+
+med_model2 <- mediation::mediate(modelm, modely, treat="condition",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="recep_s")
+
+summary(med_model2)
+```
+
+
+
+# Mediation 1B: Condition -> Receptiveness -> Attitude Change
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+modelm <- lm(recep_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(att.change_s ~ condition + recep_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(att.change_s ~ recep_s, data = d)
+kable(tidy(modely1))
+
+med_model2 <- mediation::mediate(modelm, modely, treat="condition",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="recep_s")
+
+summary(med_model2)
+```
+
+
+
+
+# Mediation 2A: Condition -> Attitude Change -> Congruence
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+modelm <- lm(att.change_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(congruence_s ~ condition + att.change_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(congruence_s ~ att.change_s, data = d)
+kable(tidy(modely1))
+
+med_model2 <- mediation::mediate(modelm, modely, treat="condition",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="att.change_s")
+
+summary(med_model2)
+```
+
+
+# Mediation 2B: Condition -> Attitude Change -> Receptiveness
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+modelm <- lm(att.change_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(recep_s ~ condition + att.change_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(recep_s ~ att.change_s, data = d)
+kable(tidy(modely1))
+
+med_model2 <- mediation::mediate(modelm, modely, treat="condition",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="att.change_s")
+
+summary(med_model2)
+```
+
+
+
+
+\newpage
+
+#**Analysis on full sample**
+
+This section replicates the above findings with the full sample.
+
+```{r}
+d <- d_full
+```
+
+#Receptiveness
+
+##Computing alpha and index creation
+```{r}
+receptiveness <- dplyr::select(d, Q3.receparg, Q4.openarg, Q5.recepgen, Q6.opengen)
+alphaRecep <- psych::alpha(receptiveness)
+kable(alphaRecep$total)
+
+d$receptiveness <- (d$Q3.receparg + d$Q4.openarg + d$Q5.recepgen + d$Q6.opengen)/4
+```
+
+##Effect of condition on receptiveness
+```{r}
+perspective <- filter(d, condition == "Perspective Taking")
+control <- filter(d, condition == "Control")
+t.test(perspective$receptiveness, control$receptiveness, paired=FALSE, var.equal=TRUE)
+```
+
+Cohen's D:
+```{r}
+cohensD(perspective$receptiveness, control$receptiveness)
+```
+
+Perspective Taking CI:
+```{r}
+CI(perspective$receptiveness)
+```
+
+Control CI:
+```{r}
+CI(control$receptiveness)
+```
+
+Participants reported less receptiveness to the counterattitudinal view in the perspective-taking (M = 3.80, SD = 1.45) relative to control (M = 4.09, SD = 1.40) condition, t(1178)=-3.53, p < .001. 
+
+
+\newpage
+
+#Attitude Change
+
+```{r}
+d$att.change <- ifelse(d$side == "against", d$Q1.att_1 - d$Q2.attT2_1, NA)
+d$att.change <- ifelse(d$side == "in favor of", d$Q2.attT2_1 - d$Q1.att_1, d$att.change)
+```
+
+##Effect of Condition on Attitude Change
+```{r}
+perspective <- filter(d, condition == "Perspective Taking")
+control <- filter(d, condition == "Control")
+
+t.test(perspective$att.change,
+       control$att.change,
+       paired=FALSE, var.equal=TRUE)
+```
+
+Cohen's D:
+```{r}
+cohensD(perspective$att.change, control$att.change)
+```
+
+Perspective-Taking CI:
+```{r}
+CI(perspective$att.change, ci=0.95)
+```
+
+Control CI:
+```{r}
+CI(perspective$att.change, ci=0.95)
+```
+
+Participants showed less change toward the counterattitudinalview in the perspective-taking (M = 5.13, SD = 14.57) relative to control (M = 8.12, SD =18.41) condition, t(1178)=-3.09, p = .002.
+
+\newpage
+
+#Value/Moral Congruence
+
+```{r, echo=FALSE}
+valuecongruence <- dplyr::select(d, Q7.congruent, Q8.fitworldview, Q9.morals)
+alphaCongruence <- psych::alpha(valuecongruence)
+kable(alphaCongruence$total)
+
+d$congruence <- 8 - (d$Q7.congruent + d$Q8.fitworldview + d$Q9.morals)/3
+```
+
+##Effect of condition on value/moral congruence
+
+```{r, echo=FALSE}
+perspective <- filter(d, condition == "Perspective Taking")
+control <- filter(d, condition == "Control")
+
+t.test(perspective$congruence,
+       control$congruence,
+       paired=FALSE, var.equal=TRUE)
+```
+
+Cohen's D:
+```{r}
+cohensD(perspective$congruence, control$congruence)
+```
+
+Perspective-Taking CI:
+```{r}
+CI(perspective$congruence, ci=0.95)
+```
+
+Control CI:
+```{r}
+CI(perspective$congruence, ci=0.95)
+```
+
+Participants reported less value-congruent arguments in the perspective-taking (M = 3.75, SD = 1.82) relative to control (M = 4.28, SD = 1.77) condition, t(1178)=-5.14, p < .001.
+
+\newpage
+
+
+## Mediation 1: Condition -> Congruence -> Receptiveness
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+d$recep_s <- scale(d$receptiveness)
+d$att.change_s <- scale(d$att.change)
+d$congruence_s <- as.numeric(scale(d$congruence))
+
+modelm <- lm(congruence_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(recep_s ~ condition + congruence_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(recep_s ~ congruence_s, data=d)
+kable(tidy(modely1))
+
+med_model2 <- mediation::mediate(modelm, modely, treat="condition",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model2)
+```
+
+Condition affected value-congruence (beta = -.30, t(1178) = -5.14, p < .001) and value-congruence predicted receptiveness (beta = .36, t(1178) = 13.22, p < .001). As hypothesized, the indirect effect of condition on receptiveness was significant (ab = -.10, 95% CI = -.15 to -.06). 
+
+
+
+## Mediation 2: Condition -> Congruence -> Attitude Change
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+d$recep_s <- scale(d$receptiveness)
+d$att.change_s <- scale(d$att.change)
+d$congruence_s <- as.numeric(scale(d$congruence))
+
+modelm <- lm(congruence_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(att.change_s ~ condition + congruence_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(att.change_s ~ congruence_s, data=d)
+kable(tidy(modely1))
+
+med_model1 <- mediation::mediate(modelm, modely,
+                                treat="condition",
+                                sims = 5000,
+                                boot=TRUE,
+                   mediator="congruence_s",
+                   control.value = "Control",
+                   treat.value="Perspective Taking")
+
+summary(med_model1)
+```
+
+Condition affected value-congruence (beta = -.30, t(1178) = -5.14, p < .001) and value-congruence predicted attitude change (beta = .13, t(1178) = 4.43, p < .001). As hypothesized, the indirect effect of condition on attitude change was significant (ab = -.03, 95% CI = -.06 to -.01). 
+
+\newpage
+
+#**Excluding participants at the midpoint**
+
+The remainder of the document replicates the above analyses when we exclude participants at the midpoint of the original attitudes scale. 
+
+```{r}
+d <- d_noneutral
+```
+
+#Receptiveness
+
+##Computing alpha and index creation
+```{r}
+receptiveness <- dplyr::select(d, Q3.receparg, Q4.openarg, Q5.recepgen, Q6.opengen)
+alphaRecep <- psych::alpha(receptiveness)
+kable(alphaRecep$total)
+
+d$receptiveness <- (d$Q3.receparg + d$Q4.openarg + d$Q5.recepgen + d$Q6.opengen)/4
+```
+
+##Effect of condition on receptiveness
+
+```{r}
+perspective <- filter(d, condition == "Perspective Taking")
+control <- filter(d, condition == "Control")
+t.test(perspective$receptiveness, control$receptiveness, paired=FALSE, var.equal=TRUE)
+```
+
+Cohen's d:
+```{r}
+cohensD(perspective$receptiveness, control$receptiveness)
+```
+
+Perspective-Taking CI:
+```{r}
+CI(perspective$receptiveness, ci=0.95)
+```
+
+Control CI:
+```{r}
+CI(control$receptiveness, ci=0.95)
+```
+
+Participants reported less receptiveness to the counterattitudinal view in the perspective-taking (M = 3.72, SD = 1.47) relative to control (M = 4.02, SD = 1.38) condition, t(912)=-3.26, p < .001. 
+
+\newpage
+
+#Effect of condition on Attitude Change
+
+```{r}
+d$att.change <- ifelse(d$side == "against", d$Q1.att_1 - d$Q2.attT2_1, NA)
+d$att.change <- ifelse(d$side == "in favor of", d$Q2.attT2_1 - d$Q1.att_1, d$att.change)
+```
+
+```{r}
+perspective <- filter(d, condition == "Perspective Taking")
+control <- filter(d, condition == "Control")
+
+t.test(perspective$att.change,
+       control$att.change,
+       paired=FALSE, var.equal=TRUE)
+```
+
+Cohen's d:
+```{r}
+cohensD(perspective$att.change, control$att.change)
+```
+
+Perspective-Taking CI:
+```{r}
+CI(perspective$att.change, ci=0.95)
+```
+
+Control CI:
+```{r}
+CI(control$att.change, ci=0.95)
+```
+
+Participants showed less change toward the counterattitudinal view in the perspective-taking (M = 5.03, SD = 13.87) relative to control (M = 8.61, SD = 17.84) condition, t(912)=-3.38, p < .001. 
+
+\newpage
+
+#Value/Moral Congruence
+
+```{r, echo=FALSE}
+valuecongruence <- dplyr::select(d, Q7.congruent, Q8.fitworldview, Q9.morals)
+alphaCongruence <- psych::alpha(valuecongruence)
+kable(alphaCongruence$total)
+
+d$congruence <- 8 - (d$Q7.congruent + d$Q8.fitworldview + d$Q9.morals)/3
+```
+
+##Effect of condition on value/moral congruence
+
+```{r, echo=FALSE}
+perspective <- filter(d, condition == "Perspective Taking")
+control <- filter(d, condition == "Control")
+
+t.test(perspective$congruence,
+       control$congruence,
+       paired=FALSE, var.equal=TRUE)
+```
+
+Cohen's d:
+```{r}
+cohensD(perspective$congruence, control$congruence)
+```
+
+Perspective-Taking CI:
+```{r}
+CI(perspective$congruence, ci=0.95)
+```
+
+Control CI:
+```{r}
+CI(control$congruence, ci=0.95)
+```
+
+Participants reported less value-congruent arguments in the perspective-taking (M = 3.60, SD = 1.83) relative to control (M = 4.20, SD = 1.80) condition, t(912)=-4.99, p < .001. 
+
+
+\newpage
+
+## Mediation 1: Condition -> Congruence -> Attitude Change
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+d$recep_s <- scale(d$receptiveness)
+d$att.change_s <- scale(d$att.change)
+d$congruence_s <- as.numeric(scale(d$congruence))
+
+modelm <- lm(congruence_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(att.change_s ~ condition + congruence_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(att.change_s ~ congruence_s, data=d)
+kable(tidy(modely1))
+
+med_model1 <- mediation::mediate(modelm, modely,
+                                treat="condition",
+                                sims = 5000,
+                                boot=TRUE,
+                   mediator="congruence_s",
+                   control.value = "Control",
+                   treat.value="Perspective Taking")
+
+summary(med_model1)
+```
+
+Condition affected value-congruence (beta = -.33, t(912) = -4.99, p < .001) and value-congruence predicted receptiveness (beta = .19, t(912) = 5.81, p < .001). As hypothesized, the indirect effect of condition on receptiveness was significant (ab = -.06, 95% CI = -.09 to -.03). 
+
+## Mediation 2: Condition -> Congruence -> Receptiveness
+
+```{r, message=FALSE, comment=NA, warning=FALSE, cache=TRUE}
+modelm <- lm(congruence_s ~ condition, data=d)
+kable(tidy(modelm))
+
+modely <- lm(recep_s ~ condition + congruence_s, data=d)
+kable(tidy(modely))
+
+modely1 <- lm(recep_s ~ congruence_s, data=d)
+kable(tidy(modely1))
+
+med_model2 <- mediation::mediate(modelm, modely, treat="condition",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model2)
+```
+
+Condition affected value-congruence (beta = -.33, t(912) = -4.99, p < .001) and value-congruence predicted receptiveness (beta = .44, t(912) = 14.78, p < .001). As hypothesized, the indirect effect of condition on receptiveness was significant (ab = -.14, 95% CI = -.20 to -.08). 

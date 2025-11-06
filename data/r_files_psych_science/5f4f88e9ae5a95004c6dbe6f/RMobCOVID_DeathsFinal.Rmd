@@ -1,0 +1,1275 @@
+---
+title: 'Relational Mobility & COVID-19: Deaths Analysis'
+date: "9/1/2020"
+output:
+  word_document: default
+  pdf_document: default
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r, echo=F, warning=F, message=F}
+#load packages
+library(emmeans)
+library(lme4)
+library(lmerTest)
+library(plyr)
+library(dplyr)
+library(knitr)
+library(forcats)
+library(scales)
+library(cowplot)
+library(ggplot2)
+library(ggrepel)
+library(tinytex)
+library(gtools)
+library(MuMIn)
+
+#add in other vars - read in from other spreadsheet
+#setwd()
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/')
+
+countrydata <-  read.csv('RelMob& Coronavirus.csv')
+##Fix NAs
+countrydata[countrydata=="#NULL!"] <- NA
+countrydata[countrydata=="#DIV/0!"] <- NA
+countrydata[countrydata=="#N/A"] <- NA
+countrydata[countrydata=="N/A"] <- NA
+countrydata[countrydata==""] <- NA
+
+##############################
+#DEATHS
+##############################
+#read in file
+#setwd()
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/PsychScience_Revision2/')
+
+deaths <- read.csv('time_series_covid_19_deaths.csv')
+
+#sum for each country (for countries with multiple datapoints) - this creates a wide dataframe
+deathsbycountry <- data.frame(matrix(ncol=ncol(deaths)-4, nrow=0))
+countrylist <- unique(deaths$Country.Region)
+for (i in countrylist){
+  bycountry <- subset(deaths, deaths$Country.Region==i)
+  if (nrow(bycountry) > 1){
+    newrow_dta <- bycountry[1,1:4]
+    newrow_days <- colSums(bycountry[5:ncol(bycountry)])
+    newrow <- c(newrow_dta, newrow_days)
+  } else {
+    newrow <- bycountry
+  }
+  deathsbycountry <- rbind(deathsbycountry, newrow)
+}
+#get rid of column for province/state
+deathsbycountry <- deathsbycountry[2:ncol(deathsbycountry)]
+
+#fix Taiwan name (contains asterisk)
+deathsbycountry$Country.Region <- as.character(deathsbycountry$Country.Region)
+
+#set baseline -- for each country, day 1 = first day of 1 confirmed death, to a max of 30 days
+deaths_baseline <- data.frame(matrix(ncol = 30, nrow = length(countrylist)))
+deaths_baseline <- cbind(deathsbycountry[,1:3], deaths_baseline)
+
+newrows <- data.frame(matrix(ncol = 30, nrow = 0))
+
+for (i in 1:length(countrylist)){
+  row <- deathsbycountry[i,4:ncol(deathsbycountry)]
+  nonzero <- row[row>=1]
+  len <- length(nonzero)
+  if (len >= 30) { #this is for countries with more than 30 timepoints - we want just the first 30 points
+    newrow <- nonzero[1:30]
+  } else if (len >= 15) { #this picks only the countries with at least 15 non-zero days 
+    newrow <- c(nonzero, rep(NA, 30-len))
+  } else {
+    newrow <- rep(NA, 30)
+  }
+  newrows <- rbind(newrows, newrow)
+}
+
+deaths_baseline[,4:33] <- newrows
+
+#get rid of countries that have no values (excluded countries based on our criteria)
+deaths_baseline <- subset(deaths_baseline, !is.na(deaths_baseline$X1))
+
+#take out Countries without COVID-19 Data or Relational Mobility Scores
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Diamond Princess")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Afghanistan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Albania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Algeria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Andorra")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Angola")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Antigua and Barbuda")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Argentina")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Austria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Armenia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Azerbaijan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bahamas")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bahrain")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bangladesh")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Barbados")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bosnia and Herzegovina")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Belarus")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Benin")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bolivia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Belgium")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bulgaria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Brunei")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Burkina Faso")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cabo Verde")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cameroon")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Central African Republic")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Comoros")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Chad")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "China")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Congo (Brazzaville)")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Congo (Kinshasa)")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Costa Rica")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cote d'Ivoire")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Croatia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cuba")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cyprus")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Czechia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Denmark")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Djibouti")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Dominican Republic")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Ecuador")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "El Salvador")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Equatorial Guinea")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Eswatini")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Ethiopia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Finland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Gabon")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Gambia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Georgia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Guinea-Bissau")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Ghana")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Greece")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Guatemala")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Guinea")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Guyana")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Haiti")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Honduras")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Iceland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "India")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Indonesia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Iran")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Iraq")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Ireland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Italy")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Jamaica")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kazakhstan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kenya")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kuwait")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kyrgyzstan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Latvia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Liberia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Liechtenstein")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Lithuania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Luxembourg")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Madagascar")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Mozambique")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Malta")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Maldives")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Mauritania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Moldova")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Monaco")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Montenegro")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Nepal")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Niger")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Nicaragua")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Nigeria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "North Macedonia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Oman")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Pakistan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Norway")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Panama")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Paraguay")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Peru")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Qatar")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Romania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Russia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Rwanda")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "San Marino")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Saudi Arabia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Senegal")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Serbia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sierra Leone")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sao Tome and Principe")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Slovenia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Slovakia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Somalia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "South Africa")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sri Lanka")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sudan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Switzerland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sudan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Suriname")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Switzerland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "South Sudan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Tanzania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Thailand")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Togo")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "United Arab Emirates")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Uruguay")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Uzbekistan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Western Sahara")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Zambia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Zimbabwe")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Syria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Belize")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Mali")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kosovo")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Burma")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "MS Zaandam")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Botswana")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Burundi")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Malawi")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Yemen")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Tajikistan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "United States")
+
+#join dataframes to country data
+deaths_baseline <- plyr::rename(deaths_baseline, replace = c("Country.Region" = "country"))
+deaths_baseline <- left_join(deaths_baseline, countrydata, by = "country")
+
+#create table of countries included & their Rel Mob Score to print
+CountriesIncluded.RelMob <- deaths_baseline[c(1,34)]
+
+#reshape to long format - 1 day per row
+deaths_baseline_long <- reshape(data = deaths_baseline, varying = list(4:33),
+                               direction = "long")
+
+deaths_baseline_long <- plyr::rename(deaths_baseline_long, replace = c("X1" = "deaths"))
+deaths_baseline_long <- plyr::rename(deaths_baseline_long, replace = c("time" = "day"))
+
+#prep for models
+#natural log of deaths (to account for exponential growth)
+deaths_baseline_long$lndeaths <- log(deaths_baseline_long$deaths)
+#center day (so we can look at main effects - at the mean day)
+deaths_baseline_long$c_day <- as.vector(scale(deaths_baseline_long$day, center = T, scale = F))
+#rescale predictors
+deaths_baseline_long$RelationalMobility <- as.numeric(as.character(deaths_baseline_long$Relational.Mobility))
+deaths_baseline_long$c_RelationalMobility <- scale(deaths_baseline_long$RelationalMobility, scale = FALSE)
+deaths_baseline_long$Urban <- as.numeric(as.character(deaths_baseline_long$PercUrban))
+deaths_baseline_long$z_urban <- scale(deaths_baseline_long$Urban, scale = TRUE)
+deaths_baseline_long$tourism <- as.numeric(as.character(deaths_baseline_long$Tourism))
+deaths_baseline_long$indiv <- as.numeric(as.character(deaths_baseline_long$individualism))
+deaths_baseline_long$TL <- as.numeric(as.character(deaths_baseline_long$TL))
+deaths_baseline_long$Govt_Efficiency <- as.numeric(as.character(deaths_baseline_long$Gov_Efficiency))
+deaths_baseline_long$popdensity <- as.numeric(deaths_baseline_long$Pop_Density2020_UN)
+deaths_baseline_long$medianage <- as.numeric(deaths_baseline_long$MedianAge_2020_UN)
+deaths_baseline_long$gdp <- as.numeric(deaths_baseline_long$GDP_2018)
+deaths_baseline_long$gdppercap <- deaths_baseline_long$gdp/1000
+deaths_baseline_long$pop_thous <- as.numeric(deaths_baseline_long$Population_2020_UN)
+deaths_baseline_long$pop_mill <- deaths_baseline_long$pop_thous/1000
+deaths_baseline_long$migration <- as.numeric(deaths_baseline_long$Migration)
+deaths_baseline_long$lnpop_mill <- log(deaths_baseline_long$pop_mill)
+deaths_baseline_long$z_lnpop_mill <- scale(deaths_baseline_long$lnpop_mill, scale = TRUE)
+deaths_baseline_long$z_popdensity <- scale(deaths_baseline_long$popdensity, scale = TRUE)
+deaths_baseline_long$z_medianage <- scale(deaths_baseline_long$medianage, scale = TRUE)
+deaths_baseline_long$z_gdppercap <- scale(deaths_baseline_long$gdppercap, scale = TRUE)
+deaths_baseline_long$z_pop_mill <- scale(deaths_baseline_long$pop_mill, scale = TRUE)
+deaths_baseline_long$z_migration <- scale(deaths_baseline_long$migration, scale = TRUE)
+deaths_baseline_long$z_tourism <- scale(deaths_baseline_long$tourism, scale = TRUE)
+deaths_baseline_long$z_indiv <- scale(deaths_baseline_long$indiv, scale = TRUE)
+deaths_baseline_long$z_TL <- scale(deaths_baseline_long$TL, scale = TRUE)
+deaths_baseline_long$z_Govt_Efficiency <- scale(deaths_baseline_long$Govt_Efficiency, scale = TRUE)
+
+#BCG
+deaths_baseline_long$BCGstatus[deaths_baseline_long$BCG..After.2000.=="Only for certain groups"] <- 0
+deaths_baseline_long$BCGstatus[deaths_baseline_long$BCG..After.2000.=="In the Past"] <- 0
+deaths_baseline_long$BCGstatus[deaths_baseline_long$BCG..After.2000.=="BCG for all"] <- 1
+
+```
+***
+##Stepwise deaths Model
+***
+```{r, echo=F, warning=F, message=F}
+
+##Effect size for day only model
+deaths_basemod <- lmer(lndeaths ~ c_day +(c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_basemod, c("theta"))
+#try again
+deaths_fullbasemod <- update(deaths_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod)
+r.squaredGLMM(deaths_fullbasemod)
+
+##Effect size for RM model
+deaths_basemod <- lmer(lndeaths ~ c_day*c_RelationalMobility +(c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_basemod, c("theta"))
+#try again
+deaths_fullbasemod <- update(deaths_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod)
+r.squaredGLMM(deaths_fullbasemod)
+
+
+deaths_basemod <- lmer(lndeaths ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_basemod, c("theta"))
+#try again
+deaths_fullbasemod <- update(deaths_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod)
+r.squaredGLMM(deaths_fullbasemod)
+
+#make regression table
+death_coefs <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p[death_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Day x Relational Mobility", "Day x Population")
+death_cols <- cbind(preds, death_coefs, death_t,death_df, death_p)
+
+mod1 <- data.frame(death_cols)
+
+deaths_mod2 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     (c_day|Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_mod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_fullbasemod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod2)
+r.squaredGLMM(deaths_fullbasemod2)
+
+#make regression table
+death_coefs2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p2[death_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban")
+
+death_cols2 <- cbind(preds, death_coefs2, death_t2,death_df2, death_p2)
+
+mod2 <- data.frame(death_cols2)
+
+deaths_mod3 <- lmer(lndeaths ~ c_day * c_RelationalMobility  + z_lnpop_mill + c_day:z_lnpop_mill + (c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod3, c("theta"))
+#try again
+deaths_fullbasemod3 <- update(deaths_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod3)
+r.squaredGLMM(deaths_fullbasemod3)
+
+#make regression table
+death_coefs3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p3[death_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility",  "Population", "Day x Relational Mobility","Day x Population")
+death_cols3 <- cbind(preds, death_coefs3, death_t3,death_df3, death_p3)
+
+
+mod3 <- data.frame(death_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+##Graphs
+***
+```{r, warning=F, echo=F, message=F}
+#graphs
+LABEL <- c("Low Relational Mobility","High Relational Mobility" )
+deaths_baseline_long$RelMob_lvl <- quantcut(deaths_baseline_long$Relational.Mobility, q=2, labels= LABEL ) 
+
+GraphA <- ggplot(data = deaths_baseline_long, aes(x = day, y = deaths, color = RelMob_lvl)) +
+  geom_point(alpha=0.2) +
+  stat_smooth(aes(color = RelMob_lvl), method = "loess") +
+   theme_classic() +
+scale_color_manual(values=c("steelblue1", "tomato")) +
+  theme(legend.position="none", axis.line = element_line(size = 0.75), axis.ticks = element_line(size = 0.75),
+        axis.text = element_text(size = 12), axis.title = element_text(size = 12)) +
+  labs(x="Day of outbreak", y="Number of deaths", color="Relational Mobility") +
+  xlim(1,30)
+
+
+GraphB <- ggplot(data = deaths_baseline_long, aes(x = day, y = deaths, color = RelMob_lvl)) +
+  geom_point(alpha=0.2) +
+  stat_smooth(aes(color = RelMob_lvl), method = "lm") +
+  theme_classic() +
+  scale_color_manual(values=c("steelblue1", "tomato")) +
+  scale_y_continuous(trans = 'log10',
+                     breaks = trans_breaks('log10', function(x) 10^x),
+                     labels = trans_format('log10', math_format(10^.x))) +
+  theme(legend.position="none",axis.line = element_line(size = 0.75), axis.ticks = element_line(size = 0.75),
+        axis.text = element_text(size = 12), axis.title = element_text(size = 12)) +
+  labs(x="Day of outbreak", y="Number of deaths", color="Relational Mobility"
+       ) +
+  xlim(1,30)
+
+
+#combine graphs and save
+graphs <- plot_grid(
+  GraphA + theme(legend.position="none"),
+  GraphB + theme(legend.position="none"),
+  align = 'vh',
+  hjust = -1,
+  nrow = 1
+)
+
+legend <- get_legend(
+  # create some space to the left of the legend
+  GraphA + theme(legend.box.margin = margin(0, 0, 0, 12))
+)
+
+# add the legend to the row we made earlier. Give it one-third of 
+# the width of one plot (via rel_widths).
+finalgraph <- plot_grid(graphs, legend, rel_widths = c(3, .7))
+finalgraph
+#ggsave('', finalgraph, width = 12, height = 4)
+```
+****
+##Slopes
+```{r, echo=F, message=F, warning=F}
+#compute slope (lndeaths ~ day) for each country
+#this is raw slope (no covariates)
+deaths_rawslopebycountry <- data.frame(matrix(ncol=2, nrow=0), stringsAsFactors=FALSE)
+countrylist <- unique(deaths_baseline_long$country)
+for (i in countrylist){
+  countryi <- subset(deaths_baseline_long, deaths_baseline_long$country==i)
+  countryi <- subset(countryi, !is.na(countryi$deaths))
+  if (nrow(countrydata) > 1) {
+    country <- i
+    mod <- lm(lndeaths ~ day, data = countryi)
+    slope <- as.numeric(summary(mod)$coefficients[2,1])
+    newrow <- data.frame(country, slope)
+    newrow$country <- as.character(newrow$country)
+    deaths_rawslopebycountry <- rbind(deaths_rawslopebycountry, newrow)
+  } else {
+  }
+}
+
+#this is adjusted slope (with covariates included)
+deaths_adjslopebycountry <- data.frame(matrix(ncol=2, nrow=0), stringsAsFactors=FALSE)
+countrylist <- unique(deaths_baseline_long$country)
+for (i in countrylist){
+  countryi <- subset(deaths_baseline_long, deaths_baseline_long$country==i)
+  countryi <- subset(countryi, !is.na(countryi$deaths))
+  if (nrow(countryi) > 1 & !is.na(countryi$pop_mill)) {
+    country <- i
+    mod <- lm(lndeaths ~ c_day + z_lnpop_mill + c_day:z_lnpop_mill, data = countryi)
+    slope <- as.numeric(summary(mod)$coefficients[2,1])
+    newrow <- data.frame(country, slope)
+    newrow$country <- as.character(newrow$country)
+    deaths_adjslopebycountry <- rbind(deaths_adjslopebycountry, newrow)
+  } else {
+  }
+}
+
+#combine these two and label them
+deaths_slopes <- left_join(deaths_rawslopebycountry, deaths_adjslopebycountry, by = "country")
+colnames(deaths_slopes) <- c("country", "rawslope", "adjslope")
+
+#combine this with the country data
+deaths_withslopes <- left_join(deaths_slopes, countrydata, by = "country")
+
+#graph it with region color-coded and save
+GraphA <- ggplot(data = deaths_withslopes, aes(x = Relational.Mobility, y = adjslope)) +
+  theme_classic() +
+  stat_smooth(method="lm", size=1, color="black") +
+  ylim(0,.4) +
+  xlim(-.5, .5) +
+  geom_point(position = "jitter",size=2) +
+  geom_text_repel(aes(label = country)) +
+  theme(legend.position = "none", axis.line = element_line(size = 0.75), axis.ticks = element_line(size = 0.75),
+        axis.text = element_text(size = 12), axis.title = element_text(size = 12)) +
+  labs(x="Relational Mobility", y="Rate of exponential growth of deaths (adjusted)")
+
+GraphA
+#ggsave('', GraphA, width = 9, height = 6)
+```
+
+***
+## Individualism
+***
+```{r, echo=F, warning=F, message=F}
+deaths_basemod <- lmer(lndeaths ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill + z_indiv + c_day:z_indiv +(c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_basemod, c("theta"))
+#try again
+deaths_fullbasemod <- update(deaths_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod)
+r.squaredGLMM(deaths_fullbasemod)
+
+#make regression table
+death_coefs <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p[death_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Individualism","Day x Relational Mobility", "Day x Population", "Day x Individualism")
+death_cols <- cbind(preds, death_coefs, death_t,death_df, death_p)
+
+mod1 <- data.frame(death_cols)
+
+deaths_mod2 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                  + z_indiv + c_day:z_indiv  +(c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_fullbasemod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod2)
+r.squaredGLMM(deaths_fullbasemod2)
+
+#make regression table
+death_coefs2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p2[death_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Individualism","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x Individualism")
+
+death_cols2 <- cbind(preds, death_coefs2, death_t2,death_df2, death_p2)
+
+mod2 <- data.frame(death_cols2)
+
+deaths_mod3 <- lmer(lndeaths ~ c_day * c_RelationalMobility +  z_lnpop_mill + c_day:z_lnpop_mill+ z_migration + c_day:z_migration +z_indiv + c_day:z_indiv + (c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod3, c("theta"))
+#try again
+deaths_fullbasemod3 <- update(deaths_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod3)
+r.squaredGLMM(deaths_fullbasemod3)
+
+#make regression table
+death_coefs3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p3[death_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Population","Migration","Individualism", "Day x Relational Mobility", "Day x Population","Day x Migration","Day x Individualism")
+death_cols3 <- cbind(preds, death_coefs3, death_t3,death_df3, death_p3)
+
+mod3 <- data.frame(death_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","Individualism","Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x Individualism","Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+## Government Efficiency
+***
+```{r, echo=F, warning=F, message=F}
+deaths_basemod <- lmer(lndeaths ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill + z_Govt_Efficiency + c_day:z_Govt_Efficiency +(c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_basemod, c("theta"))
+#try again
+deaths_fullbasemod <- update(deaths_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod)
+r.squaredGLMM(deaths_fullbasemod)
+
+#make regression table
+death_coefs <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p[death_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Government Efficiency","Day x Relational Mobility", "Day x Population", "Day x Government Efficiency")
+death_cols <- cbind(preds, death_coefs, death_t,death_df, death_p)
+
+mod1 <- data.frame(death_cols)
+
+deaths_mod2 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                  z_Govt_Efficiency + c_day:z_Govt_Efficiency +(c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_mod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_fullbasemod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+
+summary(deaths_fullbasemod2)
+r.squaredGLMM(deaths_fullbasemod2)
+
+#make regression table
+death_coefs2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p2[death_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Government Efficiency","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x Government Efficiency")
+
+death_cols2 <- cbind(preds, death_coefs2, death_t2,death_df2, death_p2)
+
+mod2 <- data.frame(death_cols2)
+
+deaths_mod3 <- lmer(lndeaths ~ c_day * c_RelationalMobility +  z_lnpop_mill + c_day:z_lnpop_mill+z_Govt_Efficiency + c_day:z_Govt_Efficiency + (c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod3, c("theta"))
+#try again
+deaths_fullbasemod3 <- update(deaths_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod3)
+r.squaredGLMM(deaths_fullbasemod3)
+
+#make regression table
+death_coefs3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p3[death_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Population","Government Efficiency","Day x Relational Mobility", "Day x Population","Day x Government Efficiency")
+death_cols3 <- cbind(preds, death_coefs3, death_t3,death_df3, death_p3)
+
+mod3 <- data.frame(death_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","Government Efficiency","Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x Government Efficiency","Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+## Tightness
+***
+```{r, echo=F, warning=F, message=F}
+deaths_basemod <- lmer(lndeaths ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill + z_TL + c_day:z_TL +(c_day|Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_basemod, c("theta"))
+#try again
+deaths_fullbasemod <- update(deaths_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod)
+r.squaredGLMM(deaths_fullbasemod)
+
+#make regression table
+death_coefs <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p[death_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Tightness-Looseness","Day x Relational Mobility", "Day x Population", "Day x Tightness-Looseness")
+death_cols <- cbind(preds, death_coefs, death_t,death_df, death_p)
+
+mod1 <- data.frame(death_cols)
+
+deaths_mod2 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                  z_TL + c_day:z_TL +(c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_fullbasemod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod2)
+r.squaredGLMM(deaths_fullbasemod2)
+
+#make regression table
+death_coefs2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p2[death_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Tightness-Looseness","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x Tightness-Looseness")
+
+death_cols2 <- cbind(preds, death_coefs2, death_t2,death_df2, death_p2)
+
+mod2 <- data.frame(death_cols2)
+
+deaths_mod3 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_TL + c_day:z_TL+ z_popdensity+ c_day:z_popdensity+z_migration+ c_day:z_migration + (c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod3, c("theta"))
+#try again
+deaths_fullbasemod3 <- update(deaths_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod3)
+r.squaredGLMM(deaths_fullbasemod3)
+
+#make regression table
+death_coefs3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p3[death_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Tightness-Looseness","Population Density","Migration", "Day x Relational Mobility", "Day x Tightness-Looseness","Day x Population Density","Day x Migration")
+death_cols3 <- cbind(preds, death_coefs3, death_t3,death_df3 , death_p3)
+
+
+mod3 <- data.frame(death_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","Tightness-Looseness","Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x Tightness-Looseness","Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+##BCG Models
+***
+```{r, echo=F, warning=F, message=F}
+deaths_basemod <- lmer(lndeaths ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill+ BCGstatus + c_day:BCGstatus +(c_day||Region/country), data=deaths_baseline_long)
+
+ss <- getME(deaths_basemod, c("theta"))
+#try again
+deaths_fullbasemod <- update(deaths_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod)
+r.squaredGLMM(deaths_fullbasemod)
+
+#make regression table
+death_coefs <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p[death_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","BCG Current vs. Not Current", "Day x Relational Mobility", "Day x Population","Day x BCG Current vs. Not Current")
+death_cols <- cbind(preds, death_coefs, death_t,death_df, death_p)
+
+
+mod1 <- data.frame(death_cols)
+
+deaths_mod2 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     BCGstatus + c_day:BCGstatus+
+                     (c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_mod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_mod2)
+r.squaredGLMM(deaths_mod2)
+
+#make regression table
+death_coefs2 <- formatC(round(as.numeric(summary(deaths_mod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t2 <- formatC(round(as.numeric(summary(deaths_mod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df2 <- formatC(round(as.numeric(summary(deaths_mod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p2 <- formatC(round(as.numeric(summary(deaths_mod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p2[death_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Median Age","GDP","Population Density","Migration","Population","Tourism","Percent Urban","BCG Current vs. Not Current", "Day x Relational Mobility","Day x Median Age","Day x GDP","Day x Population Density","Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x BCG Current vs. Not Current")
+
+death_cols2 <- cbind(preds, death_coefs2, death_t2,death_df2, death_p2)
+
+mod2 <- data.frame(death_cols2)
+
+deaths_mod3 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_migration + c_day:z_migration + z_lnpop_mill + c_day:z_lnpop_mill + BCGstatus + c_day:BCGstatus+ (c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod3, c("theta"))
+#try again
+deaths_fullbasemod3 <- update(deaths_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod3)
+r.squaredGLMM(deaths_fullbasemod3)
+
+#make regression table
+death_coefs3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p3[death_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Migration", "Population","BCG Current vs. Not Current","Day x Relational Mobility", "Day x Migration","Day x Population","Day x BCG Current vs. Not Current")
+
+death_cols3 <- cbind(preds, death_coefs3, death_t3,death_df3, death_p3)
+
+
+mod3 <- data.frame(death_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","BCG Current vs. Not Current","Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x BCG Current vs. Not Current", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+#Time window is 15 days instead of 30
+***
+```{r, echo=F, warning=F, message=F}
+deaths_baseline_long_15day <- subset(deaths_baseline_long, deaths_baseline_long$day<=15)
+deaths_baseline_long_15day$c_day <- as.vector(scale(deaths_baseline_long_15day$day, center = T, scale = F))
+
+deaths_basemod <- lmer(lndeaths ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=deaths_baseline_long_15day)
+ss <- getME(deaths_basemod, c("theta"))
+#try again
+deaths_fullbasemod <- update(deaths_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod)
+r.squaredGLMM(deaths_fullbasemod)
+
+#make regression table
+death_coefs <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p[death_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Day x Relational Mobility", "Day x Population")
+death_cols <- cbind(preds, death_coefs, death_t,death_df, death_p)
+
+mod1 <- data.frame(death_cols)
+
+deaths_mod2 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     (c_day||Region/country), data=deaths_baseline_long_15day)
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_fullbasemod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod2)
+r.squaredGLMM(deaths_fullbasemod2)
+
+#make regression table
+death_coefs2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p2[death_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban")
+
+death_cols2 <- cbind(preds, death_coefs2, death_t2,death_df2, death_p2)
+
+
+mod2 <- data.frame(death_cols2)
+
+deaths_fullbasemod3 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_popdensity + 
+                              c_day:z_popdensity+ (c_day||Region/country), data=deaths_baseline_long_15day)
+ss <- getME(deaths_fullbasemod3, c("theta"))
+#try again
+deaths_fullbasemod3 <- update(deaths_fullbasemod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod3)
+r.squaredGLMM(deaths_fullbasemod3)
+
+#make regression table
+death_coefs3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p3[death_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population Density","Day x Relational Mobility", "Day x Population Density")
+death_cols3 <- cbind(preds, death_coefs3, death_t3,death_df3, death_p3)
+
+mod3 <- data.frame(death_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+
+***
+#Time window is 60 days instead of 30
+***
+```{r, echo=F, warning=F, message=F}
+
+#add in other vars - read in from other spreadsheet
+#setwd()
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/')
+
+countrydata <-  read.csv('RelMob& Coronavirus.csv')
+##Fix NAs
+countrydata[countrydata=="#NULL!"] <- NA
+countrydata[countrydata=="#DIV/0!"] <- NA
+countrydata[countrydata=="#N/A"] <- NA
+countrydata[countrydata=="N/A"] <- NA
+countrydata[countrydata==""] <- NA
+
+##############################
+#DEATHS
+##############################
+#read in file
+#setwd()
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/PsychScience_Revision2/')
+
+deaths <- read.csv('time_series_covid_19_deaths.csv')
+
+#sum for each country (for countries with multiple datapoints) - this creates a wide dataframe
+deathsbycountry <- data.frame(matrix(ncol=ncol(deaths)-4, nrow=0))
+countrylist <- unique(deaths$Country.Region)
+for (i in countrylist){
+  bycountry <- subset(deaths, deaths$Country.Region==i)
+  if (nrow(bycountry) > 1){
+    newrow_dta <- bycountry[1,1:4]
+    newrow_days <- colSums(bycountry[5:ncol(bycountry)])
+    newrow <- c(newrow_dta, newrow_days)
+  } else {
+    newrow <- bycountry
+  }
+  deathsbycountry <- rbind(deathsbycountry, newrow)
+}
+#get rid of column for province/state
+deathsbycountry <- deathsbycountry[2:ncol(deathsbycountry)]
+
+#fix Taiwan name (contains asterisk)
+deathsbycountry$Country.Region <- as.character(deathsbycountry$Country.Region)
+
+#set baseline -- for each country, day 1 = first day of 1 confirmed death, to a max of 30 days
+deaths_baseline <- data.frame(matrix(ncol = 60, nrow = length(countrylist)))
+deaths_baseline <- cbind(deathsbycountry[,1:3], deaths_baseline)
+
+newrows <- data.frame(matrix(ncol = 60, nrow = 0))
+
+for (i in 1:length(countrylist)){
+  row <- deathsbycountry[i,4:ncol(deathsbycountry)]
+  nonzero <- row[row>=1]
+  len <- length(nonzero)
+  if (len >= 60) { #this is for countries with more than 30 timepoints - we want just the first 30 points
+    newrow <- nonzero[1:60]
+  } else if (len >= 15) { #this picks only the countries with at least 15 non-zero days 
+    newrow <- c(nonzero, rep(NA, 60-len))
+  } else {
+    newrow <- rep(NA, 60)
+  }
+  newrows <- rbind(newrows, newrow)
+}
+
+deaths_baseline[,4:63] <- newrows
+
+#get rid of countries that have no values (excluded countries based on our criteria)
+deaths_baseline <- subset(deaths_baseline, !is.na(deaths_baseline$X1))
+
+#take out Countries without COVID-19 Data or Relational Mobility Scores
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Diamond Princess")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Afghanistan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Albania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Algeria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Andorra")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Angola")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Antigua and Barbuda")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Argentina")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Austria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Armenia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Azerbaijan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bahamas")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bahrain")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bangladesh")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Barbados")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bosnia and Herzegovina")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Belarus")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Benin")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bolivia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Belgium")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Bulgaria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Brunei")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Burkina Faso")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cabo Verde")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cameroon")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Chad")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "China")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Congo (Brazzaville)")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Congo (Kinshasa)")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Costa Rica")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cote d'Ivoire")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Croatia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cuba")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Cyprus")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Czechia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Denmark")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Djibouti")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Dominican Republic")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Ecuador")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "El Salvador")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Equatorial Guinea")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Eswatini")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Ethiopia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Finland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Gabon")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Gambia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Georgia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Guinea-Bissau")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Ghana")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Greece")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Guatemala")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Guinea")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Guyana")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Haiti")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Honduras")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Iceland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "India")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Indonesia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Iran")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Iraq")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Ireland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Italy")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Jamaica")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kazakhstan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kenya")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kuwait")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kyrgyzstan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Latvia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Liberia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Liechtenstein")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Lithuania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Luxembourg")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Malta")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Maldives")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Mauritania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Moldova")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Monaco")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Montenegro")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Niger")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Nicaragua")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Nigeria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "North Macedonia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Oman")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Pakistan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Norway")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Panama")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Paraguay")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Peru")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Qatar")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Romania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Russia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "San Marino")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Saudi Arabia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Senegal")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Serbia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sierra Leone")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sao Tome and Principe")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Slovenia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Slovakia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Somalia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "South Africa")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sri Lanka")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sudan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Switzerland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Sudan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Suriname")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Switzerland")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Tanzania")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Thailand")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Togo")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "United Arab Emirates")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Uruguay")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Uzbekistan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Zambia")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Zimbabwe")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Syria")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Belize")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Mali")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Kosovo")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Burma")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "MS Zaandam")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Botswana")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Burundi")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Malawi")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Yemen")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "Tajikistan")
+deaths_baseline <- subset(deaths_baseline, deaths_baseline$Country.Region!= "United States")
+
+#join dataframes to country data
+deaths_baseline <- plyr::rename(deaths_baseline, replace = c("Country.Region" = "country"))
+deaths_baseline <- left_join(deaths_baseline, countrydata, by = "country")
+
+#create table of countries included & their Rel Mob Score to print
+CountriesIncluded.RelMob <- deaths_baseline[c(1,34)]
+
+#reshape to long format - 1 day per row
+deaths_baseline_long <- reshape(data = deaths_baseline, varying = list(4:63),
+                               direction = "long")
+
+deaths_baseline_long <- plyr::rename(deaths_baseline_long, replace = c("X1" = "deaths"))
+deaths_baseline_long <- plyr::rename(deaths_baseline_long, replace = c("time" = "day"))
+
+#prep for models
+#natural log of deaths (to account for exponential growth)
+deaths_baseline_long$lndeaths <- log(deaths_baseline_long$deaths)
+#center day (so we can look at main effects - at the mean day)
+deaths_baseline_long$c_day <- as.vector(scale(deaths_baseline_long$day, center = T, scale = F))
+#rescale predictors
+deaths_baseline_long$RelationalMobility <- as.numeric(as.character(deaths_baseline_long$Relational.Mobility))
+deaths_baseline_long$c_RelationalMobility <- scale(deaths_baseline_long$RelationalMobility, scale = FALSE)
+deaths_baseline_long$Urban <- as.numeric(as.character(deaths_baseline_long$PercUrban))
+deaths_baseline_long$z_urban <- scale(deaths_baseline_long$Urban, scale = TRUE)
+deaths_baseline_long$tourism <- as.numeric(as.character(deaths_baseline_long$Tourism))
+deaths_baseline_long$indiv <- as.numeric(as.character(deaths_baseline_long$individualism))
+deaths_baseline_long$TL <- as.numeric(as.character(deaths_baseline_long$TL))
+deaths_baseline_long$Govt_Efficiency <- as.numeric(as.character(deaths_baseline_long$Gov_Efficiency))
+deaths_baseline_long$popdensity <- as.numeric(deaths_baseline_long$Pop_Density2020_UN)
+deaths_baseline_long$medianage <- as.numeric(deaths_baseline_long$MedianAge_2020_UN)
+deaths_baseline_long$gdp <- as.numeric(deaths_baseline_long$GDP_2018)
+deaths_baseline_long$gdppercap <- deaths_baseline_long$gdp/1000
+deaths_baseline_long$pop_thous <- as.numeric(deaths_baseline_long$Population_2020_UN)
+deaths_baseline_long$pop_mill <- deaths_baseline_long$pop_thous/1000
+deaths_baseline_long$migration <- as.numeric(deaths_baseline_long$Migration)
+deaths_baseline_long$lnpop_mill <- log(deaths_baseline_long$pop_mill)
+deaths_baseline_long$z_lnpop_mill <- scale(deaths_baseline_long$lnpop_mill, scale = TRUE)
+deaths_baseline_long$z_popdensity <- scale(deaths_baseline_long$popdensity, scale = TRUE)
+deaths_baseline_long$z_medianage <- scale(deaths_baseline_long$medianage, scale = TRUE)
+deaths_baseline_long$z_gdppercap <- scale(deaths_baseline_long$gdppercap, scale = TRUE)
+deaths_baseline_long$z_pop_mill <- scale(deaths_baseline_long$pop_mill, scale = TRUE)
+deaths_baseline_long$z_migration <- scale(deaths_baseline_long$migration, scale = TRUE)
+deaths_baseline_long$z_tourism <- scale(deaths_baseline_long$tourism, scale = TRUE)
+deaths_baseline_long$z_indiv <- scale(deaths_baseline_long$indiv, scale = TRUE)
+deaths_baseline_long$z_TL <- scale(deaths_baseline_long$TL, scale = TRUE)
+deaths_baseline_long$z_Govt_Efficiency <- scale(deaths_baseline_long$Govt_Efficiency, scale = TRUE)
+
+#BCG
+deaths_baseline_long$BCGstatus[deaths_baseline_long$BCG..After.2000.=="Only for certain groups"] <- 0
+deaths_baseline_long$BCGstatus[deaths_baseline_long$BCG..After.2000.=="In the Past"] <- 0
+deaths_baseline_long$BCGstatus[deaths_baseline_long$BCG..After.2000.=="BCG for all"] <- 1
+
+```
+***
+##Stepwise deaths Model:60 days
+***
+```{r, echo=F, warning=F, message=F}
+##BaseModel
+deaths_basemod <- lmer(lndeaths ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_basemod, c("theta"))
+#try again
+deaths_fullbasemod <- update(deaths_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod)
+r.squaredGLMM(deaths_fullbasemod)
+
+#make regression table
+death_coefs <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p <- formatC(round(as.numeric(summary(deaths_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p[death_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Day x Relational Mobility", "Day x Population")
+death_cols <- cbind(preds, death_coefs, death_t,death_df, death_p)
+
+mod1 <- data.frame(death_cols)
+
+deaths_mod2 <- lmer(lndeaths ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     (c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_mod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+ss <- getME(deaths_mod2, c("theta"))
+#try again
+deaths_fullbasemod2 <- update(deaths_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod2)
+r.squaredGLMM(deaths_fullbasemod2)
+
+#make regression table
+death_coefs2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p2 <- formatC(round(as.numeric(summary(deaths_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p2[death_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban")
+
+death_cols2 <- cbind(preds, death_coefs2, death_t2,death_df2, death_p2)
+
+mod2 <- data.frame(death_cols2)
+
+deaths_mod3 <- lmer(lndeaths ~ c_day * c_RelationalMobility  + z_lnpop_mill + c_day:z_lnpop_mill + z_migration + c_day:z_migration+z_tourism+ c_day:z_tourism+ (c_day||Region/country), data=deaths_baseline_long)
+ss <- getME(deaths_mod3, c("theta"))
+#try again
+deaths_fullbasemod3 <- update(deaths_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(deaths_fullbasemod3)
+r.squaredGLMM(deaths_fullbasemod3)
+
+#make regression table
+death_coefs3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+death_t3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+death_df3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+death_p3 <- formatC(round(as.numeric(summary(deaths_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+death_p3[death_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Population", "Migration","Tourism","Day x Relational Mobility","Day x Population", "Day x Migration","Day x Tourism")
+
+death_cols3 <- cbind(preds, death_coefs3, death_t3,death_df3, death_p3)
+
+
+mod3 <- data.frame(death_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```

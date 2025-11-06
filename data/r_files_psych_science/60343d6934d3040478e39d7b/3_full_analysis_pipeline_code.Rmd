@@ -1,0 +1,3323 @@
+---
+title: 'Niche diversity predicts personality structure across 115 nations'
+author: "Analysis Code and Supplement"
+date: ""
+output:
+  html_document:
+   toc: true
+   number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = T, message = F, warning = F)
+```
+
+
+
+# Analysis Code
+
+
+## Load packages
+
+```{r packages}
+library(knitr) # for markdown stuff
+library(countrycode) # to change country names easily
+library(ade4) # to do pca with missing data
+library(MplusAutomation) # to make preparing/manipulating mplus data/results easier
+library(grid) # for customization of combined plots
+library(maps) # for making maps
+library(patchwork) # for combining plots
+library(weights) # for removing leading zeros
+library(gtsummary) # for prettier regrression tables
+library(tidyverse) # for everything else
+library(DT) # for searchable html tables
+library(kableExtra) # other pretty tables
+
+```
+
+## IPIP-FFM cleaning and prep
+
+```{r ipip_ffm}
+
+# read in data from https://openpsychometrics.org/_rawdata/
+ipip_ffm_raw <- read.delim("data/IPIP-FFM-data-8Nov2018/data-final.csv", stringsAsFactors = F)
+
+ipip_ffm <-
+  ipip_ffm_raw %>%
+  filter(IPC == 1) # remove responses with duplicate IP address
+
+og_n <- nrow(ipip_ffm_raw) # 1015341
+ip_n <- nrow(ipip_ffm) # 696845
+og_n - ip_n # 318496
+
+ipip_include_countries <-
+  ipip_ffm %>%
+  mutate(country = forcats::fct_explicit_na(country)) %>%
+  filter(country != "NONE") %>% # exclude responses from ps who had no country data available
+  group_by(country) %>%
+  summarise(n = n()) %>%
+  filter(n >= 90)
+
+ipip <- ipip_ffm %>% filter(country %in% ipip_include_countries$country)
+
+
+ipip[, 1:50] <- data.frame(lapply(ipip[, 1:50], as.numeric))
+
+# calculate acquiescence bias before recoding items using two opposite-valenced pairs from each factor
+ipip$acquiescence_score <-
+  rowMeans(ipip[, c(
+    "EXT8",  # I don't like to draw attention to myself.
+    "EXT9",  # I don't mind being the center of attention.
+    "EST4",  # I often feel blue.
+    "EST10", # I seldom feel blue.
+    "AGR2",  # I am not really interested in others.
+    "AGR7",  # I am interested in people.
+    "CSN7",  # I like order.
+    "CSN2",  # I leave my belongings around.
+    "OPN6",  # I do not have a good imagination.
+    "OPN3"   # I have a vivid imagination.
+  )])
+
+ipip_reverse_key <- read.csv("data/ipip_reversekey.csv", stringsAsFactors = F)
+
+ipip_reverse_items <- c(ipip_reverse_key %>% 
+                          filter(reverse == "yes") %>% 
+                          select(item))$item
+
+# reverse code necessary items
+ipip[, ipip_reverse_items] <- 6 - ipip[, ipip_reverse_items]
+
+
+
+# save cleaned data for faster loading
+write.csv(ipip, "data/ipip_cleaned_data.csv")
+
+
+(final_N <- nrow(ipip)) # n after exluding subjects from countries w/ fewer than 90 subjects
+```
+
+## Prepare Mplus data for alignment analysis
+
+```{r mplus}
+
+# read in cleaned data
+ipip <- read.csv("data/ipip_cleaned_data.csv", stringsAsFactors = F)
+
+# list of included countries and Ns
+# country_include <-
+#   ipip %>%
+#   group_by(country) %>% 
+#   summarise(n = n()) 
+
+ipip_mplus <- 
+  ipip %>% 
+  mutate(c_id = countrycode(country, origin = "iso2c", destination = "iso3n")) %>% 
+  select(c_id, EXT1:OPN10) 
+
+
+# prepare for mplus and save
+# MplusAutomation::prepareMplusData(ipip_mplus, "mplus/Alignment/mplus_ipip_alignment.dat")
+
+# get numeric country IDs for use in mplus 
+# cat(unique(ipip_mplus$c_id))
+
+
+```
+
+
+## Mplus alignment analysis
+
+Run mplus input file named `Alignment.inp` in the folder called 'Alignment' and then come back. 
+
+**(This analysis takes several days)**
+
+
+## Import alignment results
+
+Import alignment results and extract covariance and variance parameter estimates for meta-regression in Mplus.
+
+```{r import_alignment, eval=T}
+
+
+# import results file from alignment analysis
+results <- readModels(target = "mplus/Alignment/Alignment_refrenceUSA.out", 
+                      filefilter = ".*knownclass")
+
+# convert to somthing more useable
+full_results <- 
+  data.frame(results$parameters) %>% # make a data frame with just needed parameters
+  # remove annoying constant prefix from names
+  rename_all(.funs = funs(sub("unstandardized[.]", # part of name to remove
+                              "", .))) # replace with nothing
+
+# save alignment results dataframe for easier sharing and faster import than the raw txt file
+write.csv(full_results, "data/full_alignment_results_USAref.csv", row.names = F) 
+
+```
+
+
+```{r re_import}
+
+full_results <- read.csv("data/full_alignment_results_USAref.csv", stringsAsFactors = F) %>% 
+  mutate_at(c('est', 'se', 'est_se', 'pval'), as.numeric)
+
+
+```
+
+## Country data tidying and Niche Diveristy PCA
+
+```{r import_country_data, message=F}
+
+UN_country_data <- read.csv("data/country_data/UN_country_data.csv")
+Harvard_data <- read.delim("data/country_data/Harvard_rankings.tab")
+english_proficiency_data <- read.csv("data/country_data/englishofficial_EPI_data.csv")
+homicide_data <- read.csv("data/country_data/UNODC_homicide_rates.csv")
+maleMortality_data <- read.csv("data/country_data/male_mortality.csv")
+femaleMortality_data <- read.csv("data/country_data/female_mortality.csv")
+
+
+index_year <- "X2015"
+
+country_indices <- 
+  UN_country_data %>% 
+  filter(indicator_id %in% c(137506, # HDI
+                             45106 # Urbanization
+  )) %>% 
+  select(indicator_name, iso3, index_year) %>% 
+  spread(indicator_name, index_year) %>% 
+  mutate(iso2 = countrycode(iso3, origin = "iso3c", 
+                            destination = "iso2c"),
+         iso3n = countrycode(iso3, origin = "iso3c", 
+                             destination = "iso3n"),
+         country = countrycode(iso3, origin = "iso3c", 
+                               destination = "country.name"),
+         continent = countrycode(iso3, origin = "iso3c", 
+                                 destination = "continent")) %>% 
+  select(country, iso2, iso3, iso3n, continent, 
+         hdi = "Human Development Index (HDI)",
+         urban_pop = "Urban population (%)") %>% 
+  full_join(Harvard_data %>% 
+              filter(year == 2015) %>% 
+              select(iso3 = code, eci = hs_eci)) %>% 
+  # homicide rate data from UNODC:
+  # https://dataunodc.un.org/crime/intentional-homicide-victims
+  full_join(homicide_data %>% 
+  select(Region, Subregion, 
+         country = UNODC.Name, 
+         homicide_rate = X2015_ormostrecent) %>% 
+      mutate(iso3 = countrycode(country, origin = "country.name", 
+                                destination = "iso3c"),
+             iso2 = countrycode(country, origin = "country.name", 
+                            destination = "iso2c"),
+         iso3n = countrycode(country, origin = "country.name", 
+                             destination = "iso3n"),
+         continent = countrycode(country, origin = "country.name", 
+                                 destination = "continent"),
+         country = countrycode(iso3, origin = "iso3c", 
+                               destination = "country.name"),
+         homicide_rate = as.numeric(as.character(homicide_rate))) %>% 
+    # condense the estimates for UK into one estimate (there were four separate estimates)
+    group_by(Region, Subregion, country, iso3, iso2, iso3n, continent) %>% 
+    summarise(homicide_rate = mean(homicide_rate)) %>% ungroup()) %>% 
+  full_join(maleMortality_data %>% 
+              select(Country.Code, male_mortality = X2015_ormostrecent) %>% 
+              full_join(femaleMortality_data %>% 
+                          select(Country.Code, female_mortality = X2015_ormostrecent)) %>% 
+              mutate(mortality = rowMeans(select(., male_mortality, female_mortality), 
+                                          na.rm = T)) %>% 
+              select(iso3 = Country.Code, mortality) %>% 
+              mutate(iso2 = countrycode(iso3, origin = "iso3c", 
+                                        destination = "iso2c"),
+                     iso3n = countrycode(iso3, origin = "iso3c", 
+                                         destination = "iso3n"),
+                     country = countrycode(iso3, origin = "iso3c", 
+                                           destination = "country.name"),
+                     continent = countrycode(iso3, origin = "iso3c", 
+                                             destination = "continent"))
+  ) %>% 
+  # join english proficiency data from: 
+  # https://www.ef.edu/epi/downloads/
+  full_join(
+    english_proficiency_data %>% 
+      select(country, iso3, EPI = EPI_mostrecent, english_official) %>% 
+      mutate(iso2 = countrycode(country, origin = "country.name", 
+                            destination = "iso2c"),
+         iso3n = countrycode(country, origin = "country.name", 
+                             destination = "iso3n"),
+         continent = countrycode(country, origin = "country.name", 
+                                 destination = "continent")) 
+  ) 
+
+
+```
+
+```{r country_data_prepare}
+
+country_df <- 
+  ipip %>% 
+  group_by(iso2 = country) %>% 
+  summarise(N = n(),
+            acquiescence = mean(acquiescence_score, na.rm = T)) %>% 
+  mutate(acquiescence = scale(acquiescence, center = T, scale = T),
+         iso3n = countrycode(iso2, origin = "iso2c", destination = "iso3n"),
+         iso3 = countrycode(iso2, origin = "iso2c", destination = "iso3c"),
+         country = countrycode(iso2, origin = "iso2c", destination = "country.name"),
+         continent = countrycode(iso2, origin = "iso2c", destination = "continent")) %>% 
+  full_join(country_indices) %>% 
+  # add indices for places with personality data but no country-level 
+  # hdi from https://www.unescap.org/sites/default/files/wp-09-02.tiff
+  # urban population from https://www.worldometers.info/world-population/
+  # Guam (316) - considered a US territory 
+  mutate(hdi = ifelse(iso3n == 316, .901, hdi),
+         urban_pop = ifelse(iso3n == 316, 94.5, urban_pop) # from 2015
+         ) %>% 
+  # Macao (446) - 'automonamous region' off coast of southern china
+  mutate(hdi = ifelse(iso3n == 446, .933, hdi),
+         urban_pop = ifelse(iso3n == 446, 99.8, urban_pop) # from 2015
+         ) %>% 
+  # Puerto Rico (630) - 'unincorporated' US territory
+  mutate(hdi = ifelse(iso3n == 630, .905, hdi),
+         urban_pop = ifelse(iso3n == 630, 97.4, urban_pop) # from 2010
+         ) %>% 
+  # Taiwan (158) - 'state in east asia'
+    mutate(hdi = ifelse(iso3n == 158, .931, hdi),
+           urban_pop = ifelse(iso3n == 158, 76.7, urban_pop)) # from 2015
+      
+# run pca on the three relevant variables
+pca_miss <- nipals(df = scale(country_df %>% select(hdi, urban_pop, eci)), nf = 3) 
+niche_diversity_scores <- pca_miss$li[,1] # scores on first composite = "socioecological complexity"
+
+
+# variance explained by first composite
+# first eigenvalue / sum(all eigenvalues) = variance explained by first component
+pca_varexplained <- pca_miss$eig[1] / sum(pca_miss$eig)
+pca_varexplained
+
+pca_miss$co # loadings
+
+# save scores to country data
+country_df$niche_diversity <- niche_diversity_scores # niche_diversity  = niche diversity
+
+# get china mortality to impute for Taiwan
+china_mortality <- country_df %>% filter(country == "China") %>% pull(mortality)
+
+# get highest EPI to impute for nations with english as official language but no EPI data
+max_epi <-
+english_proficiency_data %>% 
+  filter(!is.na(EPI_mostrecent), english_official == 1) %>% 
+  pull(EPI_mostrecent) %>% max
+
+# get mean EPI for to impute for nations where english isn't an official language and no EPI data
+mean_epi <-
+english_proficiency_data %>% 
+  filter(!is.na(EPI_mostrecent), english_official == 0) %>% 
+  pull(EPI_mostrecent) %>% mean
+
+country_data <- 
+  country_df %>% 
+  filter(!is.na(N)) %>% # remove countries where we dont have personality data from 
+  # impute best guesses for the countries that don't have EPI data for any year
+  mutate(mortality = ifelse(country == "Taiwan", china_mortality, mortality), 
+         EPI = ifelse(is.na(EPI) & english_official == 1, 
+                      max_epi, EPI), # if english is an official language
+         EPI = ifelse(is.na(EPI) & english_official == 0, mean_epi, EPI)) %>%  # if not 
+  # psych::describe() # to examine normality (looks like homicide rates are skewed and kurtotic)
+  # log transform non-normal variables 
+  mutate(homicide_rate = log(homicide_rate),
+         logN = log(N)) 
+
+```
+
+## Merge country and alignmnet factor means
+
+```{r merge_alignment_country_data}
+
+means <- 
+  full_results %>% 
+  filter(paramHeader == "Means") %>% 
+  select(param, est, Group) %>% 
+  mutate(param = paste(param, "mean", sep = "_"),
+         est = as.numeric(est)) %>% 
+  spread(key = param, est)
+
+```
+
+### Supplemental table with variables organized by country
+
+```{r makecountrytable, echo=F}
+
+tabledata <- country_data %>% 
+	select(`Nation` = country, 
+				 # `ISO2` = iso2, 
+				 `Sample Size` = N, 
+				 `Niche Diversity Score` = niche_diversity, 
+				 `HDI` = hdi, `% Urban`= urban_pop, `Sectoral Diversity` = eci, 
+				 `Homicide Rate` = homicide_rate, `Mortality` = mortality,
+				 `Acquiescence` = acquiescence, `English Proficiency` = EPI) %>% 
+	mutate_if(., is.numeric, round, 3) %>% 
+	column_to_rownames("Nation") 
+
+datatable(tabledata, options = list(pageLength = 5), rownames = T,
+					caption = 'Searchable table showing relevant variables for each nation.')
+
+```
+
+
+### Correlations among country-level covariates
+
+```{r r country_data_corrs}
+
+# intercorrelations between country-level variables
+corr_variables <-
+  country_data %>% 
+    rename(Group = iso3n) %>% 
+    full_join(means) %>% 
+  select("Niche Diversity" = niche_diversity, 
+         "Sectoral Diversity" = eci,
+         "Urbanization" = urban_pop,
+         "HDI" = hdi,
+         "Sample Size" = logN, 
+         "Acquiescence" = acquiescence, 
+         "English Proficiency" = EPI,
+         "Homicide Rate" = homicide_rate, 
+         "Mortality Rate" = mortality,
+         "Agreeableness" = A_mean,
+         "Conscientiousness" = C_mean,
+         "Extraversion" = E_mean,
+         "Emotional Stability" = ES_mean,
+         "Openness" = O_mean) %>% 
+  psych::corr.test(adjust = "holm")
+
+corr_variables
+
+variable_corrs <- corr_variables$r
+
+# pdf('figs/paper/corr_matrix.pdf')
+corrplot::corrplot.mixed(variable_corrs, lower = "number", upper = "ellipse", 
+                         # p.mat=variable_ps, insig = "label_sig", 
+                         # sig.level = .05,
+                         # pch = c("*", "**", "***"),
+                         # pch.cex = .7, pch.col = "white",
+                         diag = "n", tl.pos = "lt", tl.cex = .8,
+                         tl.col = "black", tl.srt = 45,
+                         number.cex = .7, number.digits = 2,
+                         lower.col=viridis::cividis(100, direction = -1), 
+                         upper.col=viridis::cividis(100, direction = -1))
+# dev.off()
+
+```
+
+## Prepare metaregression data for Mplus
+
+```{r metareg_mplus_prepare}
+
+variances <- 
+  full_results %>% # take dataset with all results 
+  filter(paramHeader == "Variances") %>%  # keep only variance estimates 
+  select(param, est, se, Group) %>% 
+  mutate(iso2 = countrycode(Group, # mplus group (numeric country ID)
+                            origin = "iso3n", # convert from number code
+                            destination = "iso2c"), # to 2-character code
+         est = as.numeric(est), # convert est column to numeric 
+         se = as.numeric(se)) %>% 
+  # join with country level data
+  right_join(country_data, by = "iso2") %>% # country ID to join by 
+  full_join(means) 
+
+metareg_variance_mplusdata <- 
+  variances %>% 
+  # remove group that was fixed in alignment analyses
+  filter(Group != 840) %>%  # (s.e. of 0 causes divide by zero error)
+  select(variance = est, se, niche_diversity, iso3n = Group, continent, 
+         N, logN, acquiescence, hdi, urban_pop, eci, 
+         homicide_rate, mortality, EPI,
+         contains("mean")) %>% 
+  mutate(iso3n = as.numeric(iso3n),
+         acquiescence = as.numeric(acquiescence),
+         # Dummy codes for continent 
+         Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         num_continent = as.numeric(factor(continent))-1) %>% 
+  select(-continent) 
+
+
+
+# save dataframe for use in mplus metareg analysis
+prepareMplusData(metareg_variance_mplusdata, 
+                 "mplus/MetaRegression/metareg_variance_mplusdata.dat")
+
+
+english_metareg_variance_mplusdata <- 
+  variances %>% 
+  # remove group that was fixed in alignment analyses
+  filter(Group != 840) %>%  # (s.e. of 0 causes divide by zero error)
+  filter(english_official == 1) %>% 
+  select(variance = est, se, niche_diversity, iso3n = Group, continent, 
+         N, logN, acquiescence, hdi, urban_pop, eci, 
+         homicide_rate, mortality, EPI,
+         contains("mean")) %>% 
+  mutate(iso3n = as.numeric(iso3n),
+         acquiescence = as.numeric(acquiescence),
+         # Dummy codes for continent
+         Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         num_continent = as.numeric(factor(continent))-1) %>% 
+  select(-continent) 
+
+# save dataframe for use in mplus metareg analysis
+prepareMplusData(english_metareg_variance_mplusdata, 
+                 "mplus/MetaRegression/ENGLISH_metareg_variance_mplusdata.dat")
+
+denominators <- # to standardize the covariances and get correlations later if needed
+  full_results %>% 
+  filter(paramHeader == "Variances") %>% # keep only variance estimates
+  mutate(sd = sqrt(as.numeric(est))) %>% # sqrt of the variance = sd
+  select(param, Group, sd) %>% # keep only vars that are needed
+  spread(param, sd) %>% # to convert to wide format 
+  # calculate denominator for standardizing the covariances into correlations
+  # r = cov(x,y) / SD(x)*SD(y)
+  mutate(O_C = O*C, # change namaes to match future correlation pair names
+         O_E = O*E,
+         O_A = O*A,
+         O_ES = O*ES,
+         C_E = C*E,
+         C_A = C*A,
+         C_ES = C*ES,
+         E_A = E*A,
+         E_ES = E*ES,
+         A_ES = A*ES) %>% 
+    select(Group, O_C:A_ES) %>% 
+    gather(pair, denominator, -Group)
+  
+covariances <- 
+  full_results %>% 
+  # keep only the correlation parameter estimates
+  filter(grepl('.WITH', paramHeader)) %>% 
+  # combine columns to show what the pairwise correlation is
+  unite(pair, paramHeader:param, sep = ".") %>% 
+  mutate(pair = gsub(".WITH.", "_", pair), # replace mplus terms with snake_case for corrs
+         iso2 = countrycode(Group, # mplus group (numeric country ID)
+                             origin = "iso3n", # convert from number code
+                            destination = "iso2c"), # to 2-character code
+         est = as.numeric(est)) %>% # convert est column to numeric
+  rename(covariance = est) %>% 
+  mutate(se = se) %>% 
+  # merge with denominator data
+  full_join(denominators) %>% 
+  #calculate correlations from covariances and denominators
+  mutate(correlation = covariance / denominator) %>% 
+  # combine with country-level data (e.g., socioecological complexity)
+  right_join(country_data, by = "iso2") %>% # country ID to join by 
+  full_join(means)
+
+# prepare this df for the meta-regression in mplus
+metareg_covariance_mplusdata <- 
+  covariances %>% 
+  select(covariance, correlation, se, niche_diversity, iso3n = Group, continent, 
+         # control variables
+         N, logN, acquiescence, hdi, urban_pop, eci,
+         homicide_rate, mortality, EPI,
+         contains("mean")) %>% # mean IPIP factor scores for each country
+  mutate(iso3n = as.numeric(iso3n), 
+         acquiescence = as.numeric(acquiescence),
+         abscov = abs(covariance), abscor = abs(correlation),
+         # Dummy codes for contients
+         Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         num_continent = as.numeric(factor(continent))-1) %>% 
+  select(-continent)
+
+# save data for use in metareg
+prepareMplusData(metareg_covariance_mplusdata, 
+                 "mplus/MetaRegression/metareg_covariance_mplusdata.dat")
+
+# prepare this df for the meta-regression by scaling standard errors 
+scaled_metareg_covariance_mplusdata <- 
+  covariances %>% 
+  mutate(se = se / denominator) %>% # scale se by variance to make sure it doesnt change results
+  select(covariance, correlation, se, niche_diversity, iso3n = Group, continent, 
+         # control variables
+         N, logN, acquiescence, hdi, urban_pop, eci, 
+         homicide_rate, mortality, EPI,
+         contains("mean")) %>% # mean IPIP factor scores for each country
+  mutate(iso3n = as.numeric(iso3n), 
+         acquiescence = as.numeric(acquiescence),
+         abscov = abs(covariance), abscor = abs(correlation),
+         # Dummy codes for continents
+         Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         num_continent = as.numeric(factor(continent))-1) %>% 
+  select(-continent)
+
+# save data for use in metareg
+prepareMplusData(scaled_metareg_covariance_mplusdata, 
+                 "mplus/MetaRegression/SCALED_se_metareg_covariance_mplusdata.dat")
+
+# prepare this df for the meta-regression in mplus
+english_metareg_covariance_mplusdata <- 
+  covariances %>% 
+  filter(english_official == 1) %>% 
+  select(covariance, correlation, se, niche_diversity, iso3n = Group, continent, 
+         # control variables
+         N, logN, acquiescence, hdi, urban_pop, eci, 
+         homicide_rate, mortality, EPI,
+         contains("mean")) %>% # mean IPIP factor scores for each country
+  mutate(iso3n = as.numeric(iso3n), 
+         acquiescence = as.numeric(acquiescence),
+         abscov = abs(covariance), abscor = abs(correlation),
+         # Dummy codes for continents
+         Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         num_continent = as.numeric(factor(continent))-1) %>% 
+  select(-continent)
+
+# save data for use in metareg
+prepareMplusData(english_metareg_covariance_mplusdata, 
+                 "mplus/MetaRegression/ENGLISH_metareg_covariance_mplusdata.dat")
+
+
+# For sensitivity analysis:
+# check if absolute values,
+# which may violate assumptions of sampling variability,
+# alters results. 
+# Need to see which pairwise covariances are on average negative 
+# and scale them by multiplying those by -1. 
+# But if the average covariance for a pair is positive, 
+# then should leave the negative estimates as negative.
+
+# find the pairs that are negative mean covariance
+negative_covariances <-
+covariances %>% group_by(pair) %>% 
+  summarise(covariance = mean(covariance), 
+            correlation = mean(correlation)) %>% 
+  filter(covariance < 0) %>% 
+  pull(pair)
+
+# multiply those by -1 but leave the ones that are on average positive alone
+reverse_scaled_covariances <-
+  covariances %>%  
+  mutate(covariance = ifelse(pair %in% negative_covariances, -1*covariance, covariance),
+         correlation = ifelse(pair %in% negative_covariances, -1*correlation, correlation))
+
+# merge with the other country data and prepare for mplus
+negative_scaling_metareg_covariance_mplusdata <- 
+  reverse_scaled_covariances %>% 
+  select(covariance, correlation, se, niche_diversity, iso3n = Group, continent, 
+         # control variables
+         N, logN, acquiescence, hdi, urban_pop, eci, 
+         homicide_rate, mortality, EPI,
+         contains("mean")) %>% # mean IPIP factor scores for each country
+  mutate(iso3n = as.numeric(iso3n), 
+         acquiescence = as.numeric(acquiescence),
+         # Dummy codes for continents
+         Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         num_continent = as.numeric(factor(continent))-1) %>% 
+  select(-continent)
+
+# save data for use in metareg
+prepareMplusData(negative_scaling_metareg_covariance_mplusdata, 
+                 "mplus/MetaRegression/negative_scaling_metareg_covariance_mplusdata.dat")
+
+
+
+# covariances %>% filter(pair == "O_ES") %>% select(covariance, se, N) %>% cor
+```
+
+
+## Main analyses
+
+Run all the Mplus metaregression analyses using MplusAutomation: 
+
+```{r run_metareg_mplus, message=F}
+runModels(target = paste(getwd(),"mplus/MetaRegression/", sep = "/"), # need full file path
+          replaceOutfile="always") #alternative: 'modifiedDate'
+```
+
+### Covariance and Variance Results
+
+#### Baseline results (no controls)
+
+```{r plot_results}
+
+# plot covariance relationship with predicted values and confidence intervals
+
+full_cov_output <- readModels(target = "mplus/MetaRegression/metareg_alignmentCovariances_base.out")
+
+R2 <- full_cov_output$parameters$r2[[2]]
+b <- full_cov_output$parameters$stdyx.standardized[2, 3]
+pval <- full_cov_output$parameters$stdyx.standardized[2, 6]
+lwr95 <- full_cov_output$parameters$ci.stdyx.standardized[2, 4]
+upr95 <- full_cov_output$parameters$ci.stdyx.standardized[2, 8]
+
+eq <- substitute(italic(β)~"="~ b*","~~italic(p)~pval* ","~~italic(R)^2~"="~r2* ","~~plain("95% CI")~"["*lwr95*","~ upr95*"]",
+         list(b = rd(b, digits = 2),
+              pval = ifelse(pval < .001, "< .001", paste0("=", rd(pval, digits = 3))),
+             r2 = rd(R2, digits=2), lwr95 = rd(lwr95, digits = 2), upr95 = rd(upr95, digits = 2)))
+
+
+plot_covariance <-
+  full_cov_output$parameters$unstandardized %>% 
+  data.frame() %>% 
+  filter(paramHeader == "New.Additional.Parameters") %>% 
+  mutate(uci = est + 1.96*se, # upper confidience interval 
+         lci = est - 1.96*se, # upper confidience interval
+         niche_diversity = ifelse(param == "SC_LOW", -2.5, 
+                     ifelse(param == "SC_HIGH", 3.1, 
+                            0)),
+         equation = as.character(as.expression(eq))) %>% 
+  ggplot(aes(x = niche_diversity, y = est)) + 
+  geom_point(data = covariances %>%
+               group_by(iso3, country, continent) %>%
+               summarise(cov = mean(abs(covariance)),
+                         se = mean(se),
+                         niche_diversity = mean(niche_diversity)) %>%
+               na.omit %>%
+               ungroup(),
+             aes(x = niche_diversity, y = cov, group = country,
+                 size = log(1 / (se^2)), # size of bubble relative to weight
+                 fill = continent),
+             alpha = .8, shape = 21, color = "white") +
+  geom_ribbon(aes(ymin = lci, ymax = uci), alpha = .1) +
+  geom_line() +
+  viridis::scale_fill_viridis(discrete = T, direction = -1,
+                              begin = 0, end = .9,  option = "A") +
+  geom_label(data = function(x) { filter(x, param == "SC_AVE")} , 
+             aes(x = 1.3, y = .95, label = equation), parse = T, 
+             #nudge_x = -1.5, nudge_y = -.2
+             ) + 
+  ylab("\n Inter-Factor \n Covariance \n") +
+  ylim(0, 1) +
+  xlab("\n Niche Diversity Index") +
+  xlim(-2.5, 3.1) +
+  scale_x_continuous(breaks=c(-2, 0, 2)) +
+  # scale_size_continuous(range = c(2, 4), guide = 'none') +
+  scale_size(guide = 'none') +
+  jtools::theme_apa(legend.pos = "bottom")
+
+
+plot_covariance
+
+# plot variance relationship
+
+full_variance_output <- 
+  readModels(target = "mplus/MetaRegression/metareg_alignmentVariances_base.out")
+
+R2 <- full_variance_output$parameters$r2[[2]]
+b <- full_variance_output$parameters$stdyx.standardized[2, 3]
+pval <- full_variance_output$parameters$stdyx.standardized[2, 6]
+lwr95 <- full_variance_output$parameters$ci.stdyx.standardized[2, 4]
+upr95 <- full_variance_output$parameters$ci.stdyx.standardized[2, 8]
+
+eq <- substitute(italic(β)~"="~ b*","~~italic(p)~pval* ","~~italic(R)^2~"="~r2* ","~~plain("95% CI")~"["*lwr95*","~ upr95*"]",
+         list(b = rd(b, digits = 2),
+              pval = ifelse(pval < .001, "< .001", paste0("=", rd(pval, digits = 3))),
+             r2 = rd(R2, digits=2), lwr95 = rd(lwr95, digits = 2), upr95 = rd(upr95, digits = 2)))
+
+plot_variance <-
+  full_variance_output$parameters$unstandardized %>% 
+  data.frame() %>% 
+  filter(paramHeader == "New.Additional.Parameters") %>% 
+  mutate(uci = est + 1.96*se, # upper confidience interval 
+         lci = est - 1.96*se, # upper confidience interval
+         niche_diversity = ifelse(param == "SC_LOW", -2.5, 
+                     ifelse(param == "SC_HIGH", 3.1, 
+                            0)),
+         equation = as.character(as.expression(eq))) %>% 
+  ggplot(aes(x = niche_diversity, y = est)) + 
+  geom_point(data = variances %>% rename(variance = est) %>%
+               group_by(iso3, country, continent) %>%
+               summarise(variance = mean(variance),
+                         se = mean(se),
+                         niche_diversity = mean(niche_diversity)) %>% na.omit %>% ungroup(),
+             aes(x = niche_diversity, y = variance, group = country, 
+                 size = 1 / (se^2), # size of bubble relative to weight
+                 fill = continent),
+             alpha = .8, shape = 21, color = "white") +
+  geom_ribbon(aes(ymin = lci, ymax = uci), alpha = .1) +
+  geom_line(linetype = "dashed") +
+  viridis::scale_fill_viridis(discrete = T, direction = -1,
+                              begin = 0, end = .9,  option = "A") +
+  geom_label(data = function(x) { filter(x, param == "SC_AVE")} ,
+             aes(x = 1.3, y = .95*2, label = equation), parse = T) +
+  ylab("\n Intra-Factor \n Variance \n") +
+  ylim(0, 2) + 
+  xlim(-2.5, 3.1) +
+  scale_x_continuous(breaks=c(-2, 0, 2)) +
+  xlab("\n Niche Diversity Index") +
+  scale_size(guide = 'none') +
+  jtools::theme_apa(legend.pos = "bottom") +
+  theme(legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-5,-10,-5,-5),
+        legend.justification = "left")
+
+plot_variance
+
+
+```
+
+#### Results with country-level controls
+
+```{r results_with_controls}
+
+variance_controls_output <- 
+  readModels(target = "mplus/MetaRegression/metareg_alignmentVariances_allcontrols.out")
+
+variance_controls_output <- 
+  data.frame(variance_controls_output$parameters$stdyx.standardized)
+variance_controls_output$outcome <- "Intra-Factor Variance"
+
+
+covariance_controls_output <- 
+  readModels(target = "mplus/MetaRegression/metareg_alignmentCovariances_allcontrols.out")
+
+covariance_controls_output <-
+  data.frame(covariance_controls_output$parameters$stdyx.standardized)
+covariance_controls_output$outcome <- "Inter-Factor Covariance"
+
+all_controls_data <- 
+  rbind(covariance_controls_output, variance_controls_output) %>% 
+  filter(grepl(".ON", paramHeader)) %>% 
+  mutate(label = recode(param, 
+                        "SC" = "Niche Diversity Index",
+                        "A_MEAN" = "Agreeableness",
+                        "C_MEAN" = "Conscientiousness",
+                        "E_MEAN" = "Extraversion",
+                        "ES_MEAN" = "Emotional Stability",
+                        "O_MEAN" = "Openness",
+                        "LOGN" = "Sample Size",
+                        "ACQUIESCEN" = "Acquiescence",
+                        "HOMICIDE_R" = "Homicide Rate",
+                        "MORTALITY" = "Mortality Rate",
+                        "EPI" = "English Proficiency",
+                        "ASIA" = "Asia",
+                        "AFRICA" = "Africa",
+                        "OCEANIA" = "Oceania",
+                        "AMERICAS" = "Americas"),
+    group = recode(param, 
+                    "SC" = "",
+                        "A_MEAN" = "Nation-Level Controls",
+                        "C_MEAN" = "Nation-Level Controls",
+                        "E_MEAN" = "Nation-Level Controls",
+                        "ES_MEAN" = "Nation-Level Controls",
+                        "O_MEAN" = "Nation-Level Controls",
+                        "LOGN" = "Nation-Level Controls",
+                        "ACQUIESCEN" = "Nation-Level Controls",
+                        "HOMICIDE_R" = "Nation-Level Controls",
+                        "MORTALITY" = "Nation-Level Controls",
+                        "EPI" = "Nation-Level Controls",
+                        "ASIA" = " ",
+                        "AFRICA" = " ",
+                        "OCEANIA" = " ",
+                        "AMERICAS" = " "),
+    param_order = recode(param, 
+                        "ACQUIESCEN" = 2,
+                        "LOGN" = 1,
+                        "A_MEAN" = 3,
+                        "C_MEAN" = 4,
+                        "E_MEAN" = 5,
+                        "ES_MEAN" = 6,
+                        "O_MEAN" = 7,
+                        "EPI" = 9,
+                        "HOMICIDE_R" = 10,
+                        "MORTALITY" = 11,
+                        .missing = NULL),
+    group_order = factor(group, levels = c('','Nation-Level Controls'," ")),
+    facet_order = factor(outcome, levels = c('Inter-Factor Covariance',
+                                             'Intra-Factor Variance')),
+    sig = ifelse(pval < .0001, "p < .001", 
+                      ifelse(between(pval, .0001, .001), "p < .001",
+                                     ifelse(between(pval, .001, .01), "p < .01",
+                                                    ifelse(between(pval, .01, .05), 
+                                                           "p < .05", "p > .05"
+                                                                   )))))
+metaregression_controls_plot <- 
+  all_controls_data %>% 
+  ggplot(aes(x = est, y = reorder(label, -param_order))) +
+  geom_vline(aes(xintercept = 0), color = "gray", linetype = "dashed") +
+  geom_errorbarh(aes(xmin = est - 1.96*se, xmax = est + 1.96*se), height = .4) +
+  geom_point(size = 2) +
+  scale_colour_grey(start = 0, end = .85) +
+  ylab("") + xlab("\n Standardized Effect Estimate") +
+  jtools::theme_apa(legend.pos = "bottom", remove.y.gridlines = F, facet.title.size = 10) +
+  facet_grid(group_order~facet_order, scales = "free_y", space = "free") 
+
+metaregression_controls_plot
+
+
+
+
+
+
+
+```
+
+### Effective Dimensionality Results
+
+Function to estimate effective dimensionality and correct for small sample bias from: Del Giudice, M. (2020). Effective dimensionality: A tutorial. Multivariate Behavioral Research.
+
+Code for function available at: https://figshare.com/articles/R_function_for_effective_dimensionality_ED_estimation_v_1_/11954661
+
+```{r estimateED_function, include=F}
+#
+# estimate.ED
+#
+# Marco Del Giudice (2020). Version 1. Contact: marcodg@unm.edu
+#
+# A simple R function to compute estimates of effective dimensionality (ED), either from raw data or from a correlation/covariance matrix. The function returns four estimators, both uncorrected and corrected for small-sample bias if enough information is available. Disattenuated estimates can also be computed if desired, by supplying a vector of reliability coefficients. For more information see Del Giudice (2020).
+#
+# ED estimators: The n1 index is suitable as a general-purpose estimator of ED (Cangelosi & Goriely 2007, Roy & Vetterli 2007, Gnedenko & Yelnik 2016); n2 is more conservative and can be used as a lower bound estimate of dimensionality (Fraedrich et al. 1995, Bretherton et al. 1999, Pirkl et al. 2012). The estimators nC (Cheverud 2001, Wagner et al. 2008) and nInf (Kirkpatrick et al. 2009) are not recommended, and are only reported for comparison with the published literature. Whereas nC typically overestimates ED, nInf is extremely conservative and insensitive to changes in the correlation structure.  
+#
+# Small-sample correction: if raw data are supplied, the function uses the nlshrink package (Ramprasad 2016) to perform nonlinear shrinkage of the eigenvalues (Ledoit & Wolf 2012, 2015). If only the correlation or covariance matrix is supplied, the function applies the correction method by Mestre (2008). If the corrected ED is lower than the uncorrected ED (which may happen when the uncorrected ED is very close to the number of variables), the uncorrected value is returned in place of the corrected one. IMPORTANT: implementing Mestre's method is tricky; sometimes, the uniroot.all function may fail to find the correct mu values. When applying the small-sample correction to a correlation/covariance matrix, please check the results for unexpected or implausible values.
+#
+# Disattenuation: to correct for measurement error, disattenuated estimates of ED can be obtained by supplying a vector of reliability coefficients (e.g., Cronbach’s α, McDonald's omega-t or omega-h). For details see Del Giudice (2020). 
+#
+# Note: If the matrix supplied by the user is indefinite (or becomes indefinite after disattenuation), Higham's (2002) method is automatically applied to replace it with the nearest positive definite matrix (Matrix package by Bates & Maechler, 2019). A warning message is displayed in the output summary.
+#
+#
+# References:
+# Bates, D., & Maechler, M. (2019). Matrix v. 1.2-17. URL: https://CRAN.R-project.org/package=Matrix 
+# Bretherton, C. S., Widmann, M., Dymnikov, V. P., Wallace, J. M., & Bladé, I. (1999). The effective number of spatial degrees of freedom of a time-varying field. Journal of Climate, 12, 1990-2009.
+# Cangelosi, R., & Goriely, A. (2007). Component retention in principal component analysis with application to cDNA microarray data. Biology Direct, 2, 2.
+# Cheverud, J. M. (2001). A simple correction for multiple comparisons in interval mapping genome scans. Heredity, 87, 52-58.
+# Del Giudice, M. (2020). Effective dimensionality: A tutorial. Multivariate Behavioral Research. https://doi.org/10.1080/00273171.2020.1743631
+# Fraedrich, K., Ziehmann, C., & Sielmann, F. (1995). Estimates of spatial degrees of freedom. Journal of Climate, 8, 361-369.
+# Gnedenko, B., & Yelnik, I. (2016). Minimum entropy as a measure of effective dimensionality. SSRN, doi: 10.2139/ssrn.2767549.
+# Higham, N. J. (2002). Computing the nearest correlation matrix—a problem from finance. IMA journal of Numerical Analysis, 22, 329-343.
+# Kirkpatrick, M. (2009). Patterns of quantitative genetic variation in multiple dimensions. Genetica, 136, 271-284.
+# Ledoit, O., & Wolf, M. (2012). Nonlinear shrinkage estimation of large-dimensional covariance matrices. Annals of Statistics, 40, 1024-1060.
+# Ledoit, O., & Wolf, M. (2015). Spectrum estimation: A unified framework for covariance matrix estimation and PCA in large dimensions. Journal of Multivariate Analysis, 139, 360-384.
+# Pirkl, R. J., Remley, K. A., & Patané, C. S. L. (2012). Reverberation chamber measurement correlation. IEEE Transactions on Electromagnetic Compatibility, 54, 533-545.
+# Ramprasad, P. (2016). nlshrink v. 1.0.1. URL: https://CRAN.R-project.org/package=nlshrink
+# Roy, O., & Vetterli, M. (2007). The effective rank: A measure of effective dimensionality. In M. Domański, R. Stasiński, & M. Bartkowiak (Eds.), 15th European Signal Processing Conference (pp. 606-610). Poznań, Poland: PTETiS.
+
+
+
+# function estimate.ED (x, sample.size = NULL, rel.values = NULL, cov.mat = FALSE, small.sample.c = FALSE, round.digits = 2, print.summary = TRUE)
+#
+# Arguments
+#
+# x					data frame or correlation/covariance matrix
+# sample.size		sample size (optional: required for small-sample bias correction from a correlation/covariance matrix)
+# rel.values		vector of reliability coefficients (optional: only for disattenuation)
+# cov.mat			if TRUE, ED estimators are computed from the covariance matrix; if FALSE (default), from the correlation matrix
+# small.sample.c	if TRUE (default), the function returns estimators corrected for small-sample bias
+# round.digits		rounding digits for the output (default is 2)
+# print.summary		if TRUE (default), the function prints a summary of the analysis before returning the results
+#
+# Value
+# returns a list object containing some or all of the following:
+#
+# n1				ED estimator based on the Shannon entropy H1 
+# n2				ED estimator based on the quadratic entropy H2 
+# nInf				ED estimator based on the min-entropy H_Inf; extremely conservative, not recommended
+# nC				ED estimator by Cheverud (2001); not recommended
+# n1.c				n1 corrected for small-sample bias
+# n2.c				n2 corrected for small-sample bias
+# nInf.c			nInf corrected for small-sample bias
+# nC.c				nC corrected for small-sample bias
+
+
+
+library(rootSolve)
+library(nlshrink)
+library(Matrix)
+
+estimate.ED <- function (x, sample.size = NULL, rel.values = NULL, cov.mat = FALSE, small.sample.c = FALSE, round.digits = 2, print.summary = TRUE) {
+
+indefinite.matrix = FALSE
+
+########## check the input format, compute the correlation or covariance matrix
+
+if (is.data.frame(x) == TRUE) {
+	sample.size = nrow(x)
+	
+	if (cov.mat == FALSE) {
+		matrix = cor(x, use="pairwise.complete.obs")
+	}
+	else matrix = cov(x, use="pairwise.complete.obs")
+}
+else {
+	matrix = x
+
+	if ( ((sum(diag(matrix)) != nrow(matrix) ) | (var(diag(matrix)) != 0)) & (cov.mat == FALSE) ) {  # checks if the matrix is a covariance matrix
+		matrix = cov2cor(matrix)
+	}	
+}
+
+########## disattenuate the correlation matrix if a vector of reliabilities has been supplied
+
+if ( (cov.mat == FALSE) & (is.null(rel.values) == FALSE) ) {
+	rel.matrix = sqrt(crossprod(t(rel.values), t(rel.values)))
+	diag(rel.matrix) = 1
+	matrix = matrix/rel.matrix
+}
+	
+output = list()
+
+########## check if the matrix is indefinite; if so, find the nearest positive definite matrix
+
+if (sum(eigen(matrix)$values < 0) > 0) {
+	indefinite.matrix = TRUE
+	matrix = nearPD(matrix, corr=!cov.mat)$mat
+}
+
+########## find the eigenvalues, sort them in ASCENDING order for later computations
+
+eigen_val = sort(eigen(matrix)$values)
+
+eigen_val.c = NULL
+
+########## correct the eigenvalues for small-sample bias 
+
+if (small.sample.c == TRUE) {
+
+	if (is.data.frame(x) == TRUE) {   #  from raw data: nonlinear shrinkage by Ledoit & Wolf 2012, 2015
+			
+		if(cov.mat == FALSE) {
+			
+			if(is.null(rel.values) == TRUE) {
+				suppress = file()
+				sink(file = suppress)  #  suppresses the print output from tau_estimate()
+				tmp = tau_estimate(as.matrix(scale(x)))
+				sink()
+				close(suppress)
+				eigen_val.c = tmp
+			}
+			else {  #  disattenuation
+				sink("NUL")  #  suppresses the print output from tau_estimate()
+				tmp = nlshrink_cov(as.matrix(scale(x)))
+				sink()
+				matrix.c = tmp/rel.matrix  #   disattenuate the corrected correlation matrix
+				if (sum(eigen(matrix.c)$values < 0) > 0) {
+					indefinite.matrix = TRUE
+					matrix.c = nearPD(matrix.c, corr=TRUE)$mat  #  check if the matrix is indefinite, find the nearest positive definite matrix
+				}
+				eigen_val.c = sort(eigen(matrix.c)$values)
+			}
+		}	
+		else {
+			suppress = file()
+			sink(file = suppress)  #  suppresses the print output from tau_estimate()
+			tmp = tau_estimate(as.matrix(x))
+			sink()
+			close(suppress)
+			eigen_val.c = tmp			
+		}
+		
+	}
+	else if (is.null(sample.size) == FALSE) {   #  from correlation/covariance matrix: correction by Mestre 2008
+				
+		eigen_val.rounded = round(eigen_val, 6)  #  to avoid errors when detecting duplicates
+		eigen_val.c = eigen_val
+			
+		function.body = paste(eigen_val.rounded[1],"/(",eigen_val.rounded[1],"-x)")  #  build equation to find mu values
+		for(index in 2:length(eigen_val.rounded)) {
+			function.body = paste(function.body, "+",eigen_val.rounded[index],"/(",eigen_val.rounded[index],"-x)" )
+		}
+		function.body = paste(function.body,"-",sample.size)
+		
+		eval(parse(text = paste("f = function(x) {", function.body,"}")))
+		
+		unique.eigen = sum(!duplicated(eigen_val.rounded[eigen_val.rounded != 0]) )  #   number of unique nonzero eigenvalues
+		
+		mu_val = uniroot.all(f, interval=c(0, max(eigen_val.rounded)), n=10000000)  #  find mu values
+		mu_val = mu_val[which( abs(f(mu_val)) %in% sort(abs(f(mu_val)))[1:unique.eigen]  ) ]   
+		mu.index = 1
+			for (index in 1:length(eigen_val.rounded)) {   
+				
+				if (eigen_val.rounded[index] != 0) {   # correct nonzero eigenvalues
+					if (duplicated(eigen_val.rounded)[index] == FALSE) {
+						eigen_val.c[index] = sample.size * (eigen_val.rounded[index] - mu_val[mu.index])
+						mu.index = mu.index + 1
+					}
+					else {
+						eigen_val.c[index] = eigen_val.c[index-1]
+						}
+				}
+			}
+	}
+
+}
+
+########## compute ED estimators
+
+K = length(eigen_val)	
+eigen_sum = sum(eigen_val)
+norm_eigen_val = eigen_val/eigen_sum
+eigen_var = var(eigen_val)*((K-1)/K)
+
+ 
+output$n1 = prod(norm_eigen_val^(-norm_eigen_val))  
+output$n2 = (eigen_sum^2)/sum(eigen_val^2) 
+output$nInf = eigen_sum/max(eigen_val)    
+output$nC = K - ((K^2)/(eigen_sum^2))*eigen_var  
+
+if ( (small.sample.c == TRUE) & (is.null(eigen_val.c) == FALSE) ) {  # estimators corrected for small-sample bias
+	eigen_sum.c = sum(eigen_val.c)
+	norm_eigen_val.c = eigen_val.c/eigen_sum.c
+	eigen_var.c = var(eigen_val.c)*((K-1)/K)
+
+ 	output$n1.c = max(prod(norm_eigen_val.c^(-norm_eigen_val.c)), output$n1)
+	output$n2.c = max((eigen_sum.c^2)/sum(eigen_val.c^2), output$n2)
+	output$nInf.c = max(eigen_sum.c/max(eigen_val.c), output$nInf) 
+	output$nC.c = max(K - ((K^2)/(eigen_sum.c^2))*eigen_var.c, output$nC) 
+}
+
+########## print summary of the analysis if requested
+
+if (print.summary == TRUE) {
+
+	description = "ED estimated from the"
+	if (cov.mat == TRUE) {description = paste(description, "covariance matrix;")}
+	else {description = paste(description, "correlation matrix;")}
+	if (is.null(rel.values) == FALSE) {description = paste(description, "disattenuated;")}
+	else {description = paste(description, "no disattenuation;")}
+	if ( (small.sample.c == TRUE) & (is.null(eigen_val.c) == FALSE) ) {
+		if (is.data.frame(x) == TRUE) {description = paste(description, "corrected for small-sample bias (Ledoit & Wolf 2015).")}
+		else {description = paste(description, "corrected for small-sample bias (Mestre 2008).")}
+	}
+	else {description = paste(description, "no small-sample correction.")}
+	if (indefinite.matrix == TRUE) {description = paste(description, "Warning: an indefinite matrix was detected and replaced with the nearest positive definite matrix.")} 
+	
+	print(description, quote = FALSE)
+	cat("\n")
+}
+
+########## return output list
+
+return(lapply(output,round,round.digits))
+}
+
+```
+
+
+```{r make_matrices}
+
+countries <- unique(ipip$country)
+
+cov_matrices <- list()
+cor_matrices <- list()
+sample_sizes <- list()
+
+for(i in 1:length(countries)){
+  
+  current_country <- countries[i]
+
+  
+  latent_covs_corrs <- # get just estimates of factor covariances and correlations from alignment
+    covariances %>% 
+    filter(iso2 == current_country) %>% # filter to current country
+    select(pair, covariance, correlation) %>% 
+    mutate(pair = paste0(pair, "_")) # for easier identificaion later on
+  
+  latent_variances <- # get just estimates of factor variances from alignment
+    variances %>% 
+    filter(iso2 == current_country) %>% # might need to remove the fixed country
+    select(factor = param, variance = est) # for easier identificaion later on
+  
+  # make empty square matrices to fill later
+  latent_corrmat <- # assign for correlation matrix
+    matrix(NA, 5, 5, # 5 by 5 matrix with all NA
+           # give rows and columns names for easier id later
+           dimnames = list(c("O", "C", "A", "E", "ES"), 
+                           c("O", "C", "A", "E", "ES")))
+  latent_covmat <- latent_corrmat #assign the same empty matrix for covariance matrix
+  
+  combos <- combn(dimnames(latent_corrmat)[[1]], 2) # all the pairwise combos
+  
+  # loop to put correct values in the correct cells of entry matrix
+  for(j in 1:ncol(combos)){
+    
+    row <- combos[1, j]
+    column <- combos[2, j]
+    
+    # pattern for matching in any order later on later 
+    pattern <- paste0(paste(row, column, sep = "_"), "_|", paste(column, row, sep = "_"), "_")
+    
+    # make correlation matrix with 1s on the diagonal
+    # put each pairwise correlation in the correct row/column combination
+    latent_corrmat[row, column] <- latent_covs_corrs[grepl(pattern, latent_covs_corrs$pair), 
+                                                     "correlation"]
+    latent_corrmat[column, row] <- latent_covs_corrs[grepl(pattern, latent_covs_corrs$pair), 
+                                                     "correlation"]
+    
+    # put 1s on the diagonal (all the remaining NA values)
+    latent_corrmat[is.na(latent_corrmat)] <- 1
+    
+    
+    # make covariance matrix with factor variances on the diagonal
+    # put each pairwise covariance in the correct row/column combination
+    latent_covmat[row, column] <- latent_covs_corrs[grepl(pattern, latent_covs_corrs$pair), 
+                                                    "covariance"]
+    latent_covmat[column, row] <- latent_covs_corrs[grepl(pattern, latent_covs_corrs$pair), 
+                                                    "covariance"]
+    # put variances on the diagonal
+    latent_covmat[column, column] <- latent_variances[which(latent_variances$factor == column), 
+                                                      "variance"]
+    
+    latent_covmat[row, row] <- latent_variances[which(latent_variances$factor == row), 
+                                                "variance"]
+  }
+  
+
+  cor_matrices[[current_country]] <- latent_corrmat  
+  cov_matrices[[current_country]] <- latent_covmat  
+  
+
+}
+
+```
+
+
+```{r effective_dimensionality, eval=T}
+
+n1s <- list()
+
+for(i in 1:length(countries)){
+  
+  current_country <- countries[i]
+
+  country_N <- subset(covariances, iso2 == current_country)[1, "N"]
+  
+  covmat <- cov_matrices[[current_country]]
+  
+  # effective dimensionality analysis with sample size correction
+  ED_results <- estimate.ED(covmat, sample.size = country_N, 
+                            small.sample.c = T, # apply correction for small sample bias
+                            print.summary = F)
+
+  n1s[[current_country]] <- ED_results$n1.c
+  
+  # save the results lists on each loop
+  save(n1s, file = "data/ED_results.Rdata")
+
+}
+
+
+```
+
+```{r results}
+
+load("data/ED_results.Rdata")
+
+ed_results_df <-
+  as.data.frame(n1s) %>%
+  t() %>%
+  as.data.frame() %>%
+  rownames_to_column("country") %>%
+  rename(n1s = V1) 
+
+mean(ed_results_df$n1s)
+sd(ed_results_df$n1s)
+
+ed_analysis_df <- 
+  ed_results_df %>% 
+  mutate(country = countrycode(country, origin = "iso2c", 
+                               destination = "country.name"),
+         iso3_n = countrycode(country, origin = "country.name", 
+                                           destination = "iso3n")) %>% 
+  left_join(country_data) %>% # country ID to join by 
+  full_join(means %>% rename(iso3_n = Group)) %>% 
+  mutate(Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         n1s_notscaled = n1s,
+         niche_diversity_notscaled = niche_diversity) %>% 
+  mutate_at(., .vars = c("n1s", "niche_diversity", "logN", "acquiescence",
+                         "homicide_rate", "mortality", "EPI",
+                         "eci", "hdi", "urban_pop",
+                         "A_mean", "C_mean", "E_mean", "ES_mean", "O_mean",
+                         "Asia",  "Africa", "Oceania", "Americas"),
+            .funs = scale)
+```
+
+
+```{r ed_analyses}
+
+# base model with standardized variables
+ed_model_base <- lm(n1s ~ niche_diversity, 
+                    data = ed_analysis_df)
+
+tbl_regression(ed_model_base)
+
+# unstandardized base model
+ed_model_base_unstandardized <- lm(n1s_notscaled ~ niche_diversity_notscaled, 
+                                   data = ed_analysis_df)
+
+tbl_regression(ed_model_base_unstandardized)
+
+# sensitivity check with niche diversity values above 0 only
+ed_model_scabove0 <- lm(n1s ~ niche_diversity, 
+                        data = ed_analysis_df %>% 
+                          filter(niche_diversity_notscaled > 0))
+tbl_regression(ed_model_scabove0)
+
+# senstivity check with english speaking nations only
+ed_model_english <- lm(n1s ~ niche_diversity, 
+                       data = ed_analysis_df %>% 
+                         filter(english_official == 1))
+tbl_regression(ed_model_english)
+
+# effective dimensionality with control variables
+ed_model_controls <- 
+  lm(n1s ~ niche_diversity + logN + acquiescence + 
+       homicide_rate +
+       mortality + 
+       EPI +
+       A_mean + C_mean + E_mean + ES_mean + O_mean + 
+       Asia + Africa + Oceania + Americas, 
+     data = ed_analysis_df)
+
+tbl_regression(ed_model_controls)
+
+# checking the vifs
+vifs <- car::vif(ed_model_controls)
+vifs
+min(vifs)
+max(vifs)
+
+```
+
+```{r effective_dimensionality_plot_nocontrols}
+
+effective_dimensionality_results <- summary(ed_model_base)
+
+R2 <- effective_dimensionality_results$r.squared
+b <- effective_dimensionality_results$coefficients[2,1]
+pval <- effective_dimensionality_results$coefficients[2,4]
+lwr95 <- confint(ed_model_base)[2]
+upr95 <- confint(ed_model_base)[4]
+
+eq <- substitute(italic(β)~"="~ b*","~~italic(p)~pval* ","~~italic(R)^2~"="~r2* ","~~plain("95% CI")~"["*lwr95*","~ upr95*"]",
+         list(b = rd(b, digits = 2),
+              pval = ifelse(pval < .001, "< .001", paste0("=", rd(pval, digits = 3))),
+             r2 = rd(R2, digits=2), lwr95 = rd(lwr95, digits = 2), upr95 = rd(upr95, digits = 2)))
+
+
+plot_ed <-
+  ed_analysis_df %>% 
+  ggplot(aes(x = niche_diversity_notscaled, y = n1s_notscaled)) + 
+  geom_point(aes(group = country,
+                 fill = continent),
+             alpha = .8, shape = 21, color = "white", size = 2) +
+  geom_smooth(method = "lm", color = "black", alpha = .2, size = .5) +
+  viridis::scale_fill_viridis(discrete = T, direction = -1,
+                              begin = 0, end = .9,  option = "A") +
+  geom_label(aes(x = 1.3, y = 1.2, 
+                 label = as.character(as.expression(eq))), parse = T) + 
+  ylab("\n Effective \n Dimensionality \n") +
+  xlab("\n Niche Diversity Index") + ylim(1, 5) +
+  xlim(-2.5, 3.1) +
+  scale_x_continuous(breaks=c(-2, 0, 2)) +
+  jtools::theme_apa(legend.pos = "bottom") +
+    theme(legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-5,-10,-5,-5),
+        legend.justification = "left")
+
+
+plot_ed
+```
+
+```{r combine_primary_results_plots}
+
+minimal_plot_covariance <- 
+  plot_covariance +
+  jtools::theme_apa(legend.pos = "none") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+
+minimal_plot_variance <- 
+  plot_variance +
+  jtools::theme_apa(legend.pos = "none") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+
+
+
+combined_plots <- minimal_plot_covariance / minimal_plot_variance / plot_ed
+
+
+# ggsave(plot = combined_plots,
+#        filename = "figs/prez/covariances_variances_results_plot.tiff", device = "tiff",
+#        width = 13, height = 7)
+# 
+ggsave(plot = combined_plots,
+       filename = "figs/paper/covariances_variances_results_plot.tiff", 
+       device = "tiff",
+       width = 6.5, height = 8, dpi=700)
+
+
+```
+
+
+
+```{r combine_all_outcomes_plot}
+all_outcomes_controls_data <- 
+ed_model_controls %>% broom::tidy() %>% 
+  filter(term != "(Intercept)") %>% 
+  mutate(label = recode(term,
+                       "niche_diversity" = "Niche Diversity Index",
+                       "logN" = "Sample Size",
+                       "acquiescence" = "Acquiescence",
+                       "homicide_rate" = "Homicide Rate",
+                       "mortality" = "Mortality Rate",
+                       "EPI" = "English Proficiency",
+                       "A_mean" = "Agreeableness",
+                       "C_mean" = "Conscientiousness",
+                       "E_mean" = "Extraversion", 
+                       "ES_mean" = "Emotional Stability",
+                       "O_mean" = "Openness"),
+             group = recode(term, 
+                            "niche_diversity" = "",
+                        "A_mean" = "Nation-Level Controls",
+                        "C_mean" = "Nation-Level Controls",
+                        "E_mean" = "Nation-Level Controls",
+                        "ES_mean" = "Nation-Level Controls",
+                        "O_mean" = "Nation-Level Controls",
+                        "logN" = "Nation-Level Controls",
+                        "acquiescence" = "Nation-Level Controls",
+                        "homicide_rate" = "Nation-Level Controls",
+                        "mortality" = "Nation-Level Controls",
+                        "EPI" = "Nation-Level Controls",
+                        "Asia" = " ",
+                        "Africa" = " ",
+                        "Oceania" = " ",
+                        "Americas" = " "),
+    param_order = recode(term, 
+                        "acquiescence" = 2,
+                        "logN" = 1,
+                        "A_mean" = 3,
+                        "C_mean" = 4,
+                        "E_mean" = 5,
+                        "ES_mean" = 6,
+                        "O_mean" = 7,
+                        "EPI" = 9,
+                        "homicide_rate" = 10,
+                        "mortality" = 11,
+                        # "Africa" = 14,
+                        # "Americas" = 14,
+                        # "Asia" = 13,
+                        # "Oceania" = 12,
+                        .missing = NULL),
+    outcome = "Effective Dimensionality",
+    group_order = factor(group, levels = c('','Nation-Level Controls'," "))) %>% 
+  rename(est = estimate, param = term,
+         se = std.error) %>% 
+  full_join(all_controls_data) %>% 
+  mutate(facet_order = factor(outcome, 
+                              levels = c('Inter-Factor Covariance',
+                                         'Intra-Factor Variance',
+                                         "Effective Dimensionality")),
+         label = as.factor(label),
+         label = fct_relevel(label, levels = c("Niche Diversity Index",
+                                               "Sample Size",
+                                               "Acquiescence",
+                                               "English Proficiency",
+                                               "Homicide Rate",
+                                               "Mortality Rate",
+                                               "Agreeableness",
+                                               "Conscientiousness",
+                                               "Extraversion",
+                                               "Emotional Stability",
+                                               "Openness",
+                                               "Africa",
+                                               "Americas" ,
+                                               "Asia",
+                                               "Oceania")))
+# levels(as.factor(all_outcomes_controls_data$label))
+```
+
+```{r}
+alloutcomes_controls_plot <- 
+  all_outcomes_controls_data %>% 
+  # ggplot(aes(x = est, 
+  #            y = tidytext::reorder_within(label, label, -param_order))) +
+  # ggplot(aes(x = est, y = reorder(label, param_order))) +
+  ggplot(aes(x = est, y = fct_rev(label))) + 
+  geom_vline(aes(xintercept = 0), color = "gray", linetype = "dashed") +
+  geom_errorbarh(aes(xmin = est - 1.96*se, xmax = est + 1.96*se), height = .4) +
+  geom_point(size = 1) +
+  scale_colour_grey(start = 0, end = .85) +
+  ylab("") + xlab("\n Standardized Effect Estimate") +
+  jtools::theme_apa(legend.pos = "bottom", remove.y.gridlines = F, facet.title.size = 10) +
+  facet_grid(group_order~facet_order, scales = "free_y", space = "free") +
+  guides(color = guide_legend(label.position = "bottom")) + 
+  xlim(-1.01, 1.01) +
+  theme(axis.text.x = element_text(size = 9))
+
+alloutcomes_controls_plot
+
+# ggsave(plot = alloutcomes_controls_plot,
+#        filename = "figs/prez/alloutcomes_controls_plot.tiff", device = "tiff",
+#        width = 13, height = 7)
+
+ggsave(plot = alloutcomes_controls_plot,
+       filename = "figs/paper/alloutcomes_controls_plot.tiff", device = "tiff",
+       width = 6.5, height = 4, dpi=700)
+
+```
+
+
+### Pairwise Facets
+
+```{r pairwise_facets}
+
+root_path <- "mplus/MetaRegression/" # for shorter file paths
+
+metareg_covariance_pairwise_mplus <- 
+  covariances %>% 
+  select(pair, covariance, correlation, se, niche_diversity, iso3n = Group, 
+         # control variables
+         continent, # keep continent dummy codes
+         # control variables
+         N, logN, acquiescence, hdi, urban_pop, eci,  
+         homicide_rate, mortality, EPI,
+         contains("mean")) %>% # mean IPIP factor scores for each country
+  gather(key = estimate_type, value = estimate, correlation, covariance) %>% 
+  filter(!is.na(pair)) %>% 
+  unite("pair", pair, estimate_type) %>% 
+    mutate(iso3n = as.numeric(iso3n), 
+         acquiescence = as.numeric(acquiescence),
+         estimate = abs(estimate), 
+         # Dummy codes with Europe as intercept
+         Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         num_continent = as.numeric(factor(continent))-1) %>% 
+  select(-continent) %>% 
+  pivot_wider(names_from = pair, values_from = estimate)
+
+# save data for use in metareg
+prepareMplusData(metareg_covariance_pairwise_mplus, 
+                 paste(root_path,
+                       "pairwise_covariances/metareg_covariance_pairwise_mplus.dat",
+                       sep = ""))
+
+
+metareg_variance_facets_mplus <- 
+  variances %>% 
+  filter(Group != 840) %>%  # (s.e. of 0 causes divide by zero error)
+  select(param, est, se, niche_diversity, iso3n = Group, 
+         # control variables
+         continent, # keep continent dummy codes
+         # control variables
+         N, logN, acquiescence, hdi, urban_pop, eci, 
+         homicide_rate, mortality, EPI,
+         contains("mean")) %>% # mean IPIP factor scores for each country
+  mutate(iso3n = as.numeric(iso3n), 
+         acquiescence = as.numeric(acquiescence),
+         # Dummy codes with Europe as intercept
+         Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         num_continent = as.numeric(factor(continent))-1) %>% 
+  select(-continent) %>% 
+  spread(param, est)
+
+# save data for use in metareg
+prepareMplusData(metareg_variance_facets_mplus, 
+                 paste(root_path,
+                 "individual_factor_variances/metareg_variance_facets_mplus.dat",
+                 sep = ""))
+
+```
+
+```{r run_pairwise_factor_analyses, message=F}
+
+runModels(target = paste(getwd(), "/", root_path, 
+                         "individual_factor_variances/", sep = ""), # need full file path
+          replaceOutfile="always") #alternative: 'modifiedDate'
+
+runModels(target = paste(getwd(), "/", root_path, 
+                         "pairwise_covariances/", sep = ""), # need full file path
+          replaceOutfile="always") #alternative: 'modifiedDate'
+
+```
+
+```{r pairwise_plots}
+
+all_pairs_output <- readModels(target = "mplus/MetaRegression/pairwise_covariances/")
+all_pairs_results <- list()
+pairs_point_estimates <- list()
+
+for(i in 1:length(all_pairs_output)){
+  current_pair_results <- all_pairs_output[[i]]
+  current_pair_name <- names(all_pairs_output)[i]
+  
+  all_pairs_results[[current_pair_name]] <- 
+  current_pair_results$parameters$unstandardized %>% 
+  data.frame() %>% 
+  filter(paramHeader == "New.Additional.Parameters")
+  
+  pairs_point_estimates[[current_pair_name]] <- 
+  current_pair_results$parameters$stdyx.standardized %>% 
+  data.frame() %>% 
+  filter(param == "SC")
+
+  
+  
+}
+
+point_estimates_no_controls <- 
+  bind_rows(pairs_point_estimates, .id = "pair") %>% 
+  filter(grepl(".ON",paramHeader)) %>% 
+  separate(pair, into = c("pair", NA), sep = "\\.") %>% 
+  select(pair, point_est = est, pvalue = pval, point_se = se)
+
+factor_pairwise_covariances_results <- 
+  bind_rows(all_pairs_results, .id = "pair") %>% 
+  filter(!grepl(".ON",paramHeader)) %>% 
+  separate(pair, into = c("pair", NA), sep = "\\.") %>% 
+  full_join(point_estimates_no_controls) %>% 
+  mutate(uci = est + 1.96*se, # upper confidience interval 
+         lci = est - 1.96*se, # upper confidience interval
+         niche_diversity = ifelse(param == "SC_LOW", -2.5, 
+                     ifelse(param == "SC_HIGH", 3.1, 
+                            0))) %>% 
+  mutate(pvalue = ifelse(pvalue < .001, paste("p < .001"), 
+                         paste("p = ", weights::rd(pvalue, digits = 3), sep = "")),
+         point_est = weights::rd(point_est, digits = 2)) %>% 
+  mutate(pair_order = fct_reorder(pair, point_est, .desc = T)) 
+
+
+```
+
+```{r pairwise_covariances_with_controls}
+
+all_pairs_output <- readModels(target = "mplus/MetaRegression/pairwise_covariances/with_controls/")
+all_pairs_results <- list()
+pairs_point_estimates <- list()
+
+for(i in 1:length(all_pairs_output)){
+  current_pair_results <- all_pairs_output[[i]]
+  current_pair_name <- names(all_pairs_output)[i]
+  
+  all_pairs_results[[current_pair_name]] <- 
+  current_pair_results$parameters$unstandardized %>% 
+  data.frame() %>% 
+  filter(paramHeader == "New.Additional.Parameters")
+  
+  pairs_point_estimates[[current_pair_name]] <- 
+  current_pair_results$parameters$stdyx.standardized %>% 
+  data.frame() %>% 
+  filter(param == "SC")
+  
+}
+
+covariance_point_estimates_control <- 
+  bind_rows(pairs_point_estimates, .id = "pair") %>% 
+  filter(grepl(".ON",paramHeader)) %>% 
+  separate(pair, into = c("pair", NA), sep = "\\.") %>% 
+  select(pair, point_est = est, point_se = se, pvalue = pval) %>% 
+  mutate(controls = "With Controls") %>% 
+  full_join(point_estimates_no_controls %>% mutate(controls = "Without Controls")) %>% 
+  mutate(pair = str_replace(pair, "_", "-")) %>% 
+  mutate(controls = factor(controls, levels = c("Without Controls", "With Controls"))) %>% 
+  mutate(outcome = "Pairwise Inter-Factor Covariances")
+  
+
+
+
+covariance_point_estimates_plot <- 
+  covariance_point_estimates_control %>% 
+  ggplot(aes(x = fct_reorder(pair, -point_est), 
+             y = point_est, color = controls)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  geom_pointrange(aes(ymin = point_est-1.96*point_se, ymax = point_est+1.96*point_se),
+                  position = position_dodge(width = .4)) +
+  viridis::scale_color_viridis(discrete = T, direction = -1,
+                               option = "E", end = .9, begin = .1) +
+  ylim(-1.1, 1.1) +
+  ylab("\n Association with Niche Diversity \n") + 
+  xlab("\n Pairwise Inter-Factor Covariances") +
+  jtools::theme_apa(legend.pos = "bottom", legend.font.size = "11")
+
+covariance_point_estimates_plot
+
+```
+
+
+```{r individual_factor_plots}
+
+all_factors_output <- readModels(target = "mplus/MetaRegression/individual_factor_variances/")
+all_factors_results <- list()
+factor_point_estimates <- list()
+
+for(i in 1:length(all_factors_output)){
+  current_factor_results <- all_factors_output[[i]]
+  current_factor_name <- names(all_factors_output)[i]
+  
+  all_factors_results[[current_factor_name]] <- 
+  current_factor_results$parameters$unstandardized %>% 
+  data.frame() %>% 
+  filter(paramHeader == "New.Additional.Parameters")
+  
+  factor_point_estimates[[current_factor_name]] <- 
+  current_factor_results$parameters$stdyx.standardized %>% 
+  data.frame() %>% 
+  filter(param == "SC")
+  
+  }
+
+factor_point_estimates_nocontrol <- 
+  bind_rows(factor_point_estimates, .id = "factor") %>% 
+  separate(factor, into = c("factor", NA), sep = "\\.") %>% 
+  select(factor, point_est = est, pvalue = pval, point_se = se)
+
+factor_variances_results <- 
+  bind_rows(all_factors_results, .id = "factor") %>% 
+  separate(factor, into = c("factor", "NA"), sep = "\\.") %>% 
+  full_join(factor_point_estimates_nocontrol) %>% 
+    mutate(uci = est + 1.96*se, # upper confidience interval 
+         lci = est - 1.96*se, # upper confidience interval
+         niche_diversity = ifelse(param == "SC_LOW", -2.5, 
+                     ifelse(param == "SC_HIGH", 3.1, 
+                            0))) %>% 
+    mutate(pvalue = ifelse(pvalue < .001, paste("p < .001"), 
+                         paste("p = ", weights::rd(pvalue, digits = 3), sep = "")),
+         point_est = weights::rd(point_est, digits = 2)) 
+
+```
+
+```{r individual_factor_plots2}
+
+all_factors_output <- readModels(target =
+                                   "mplus/MetaRegression/individual_factor_variances/with_controls")
+all_factors_results <- list()
+factor_point_estimates <- list()
+
+for(i in 1:length(all_factors_output)){
+  current_factor_results <- all_factors_output[[i]]
+  current_factor_name <- names(all_factors_output)[i]
+  
+  all_factors_results[[current_factor_name]] <- 
+  current_factor_results$parameters$unstandardized %>% 
+  data.frame() %>% 
+  filter(paramHeader == "New.Additional.Parameters")
+  
+  factor_point_estimates[[current_factor_name]] <- 
+  current_factor_results$parameters$stdyx.standardized %>% 
+  data.frame() %>% 
+  filter(param == "SC")
+  
+  }
+
+factor_point_estimates_controls <- 
+  bind_rows(factor_point_estimates, .id = "factor") %>% 
+  separate(factor, into = c("factor", NA), sep = "\\.") %>% 
+  select(factor, point_est = est, pvalue = pval, point_se = se) %>% 
+  mutate(controls = "With Controls") %>% 
+  full_join(factor_point_estimates_nocontrol %>% mutate(controls = "Without Controls")) %>% 
+  mutate(controls = factor(controls, levels = c("Without Controls", "With Controls")),
+         outcome = "Individual Factor Variances")%>% 
+  full_join(covariance_point_estimates_control %>% rename(factor = pair)) %>% 
+    mutate(outcome = factor(outcome, levels = c("Pairwise Inter-Factor Covariances", 
+                                                  "Individual Factor Variances")))  
+
+
+individual_pairwise_point_estimates_plot <- 
+  factor_point_estimates_controls %>% 
+    mutate(factor = as.factor(recode(factor, 
+                         "C-A" = "A-C", 
+                         "E-A" = "A-E", 
+                         "O-A" = "A-O",
+                         "O-C" = "C-O",
+                         "O-E" = "E-O",
+                         "O-ES" = "ES-O"))) %>% 
+  # ggplot(aes(x = fct_reorder(factor, -point_est), 
+  #            y = point_est, color = controls)) +
+    ggplot(aes(x = factor, y = point_est, color = controls)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  geom_pointrange(aes(ymin = point_est-1.96*point_se, ymax = point_est+1.96*point_se),
+                  position = position_dodge(width = .4)) +
+  viridis::scale_color_viridis(discrete = T, direction = -1,
+                               option = "E", end = .9, begin = .1) +
+  ylim(-1.1, 1.1) +
+  ylab("\n Association with Niche Diversity \n") + 
+  xlab("") +
+  facet_grid(.~outcome, scales = "free_x", space = "free_x") +
+    jtools::theme_apa(legend.pos = "bottom", legend.font.size = "10",
+                      facet.title.size = 10) +
+  theme(legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-15,-10,0,0))
+
+individual_pairwise_point_estimates_plot 
+
+ggsave(plot = individual_pairwise_point_estimates_plot,
+       filename = "figs/paper/individual_pairwise_point_estimates_plot.tiff",
+       device = "tiff",
+       width = 6.5, height = 4, dpi=700)
+
+```
+
+```{r pvalue_adjustment}
+factor_point_estimates_controls$adj_p <- p.adjust(factor_point_estimates_controls$pvalue, 
+         method = "fdr", n = length(factor_point_estimates_controls$pvalue))
+
+factor_point_estimates_controls %>% select(factor, adj_p) %>% filter(factor == "C-E")
+```
+
+
+## Correlations among personality structure variables
+
+```{r outcome_corrs, echo=F}
+
+ave_covariances <- covariances %>% 
+  group_by(iso3n) %>% 
+  summarise(covariance = mean(covariance))
+
+ave_variances <- variances %>% group_by(iso3n) %>% 
+  summarise(variance = mean(est))
+
+
+
+ave_variances %>% full_join(ave_covariances) %>% ungroup %>% 
+  full_join(ed_analysis_df %>% select(n1s, iso3n = iso3_n)) %>% 
+  select(-iso3n) %>% 
+  cor %>% 
+  kbl(format = "html",
+      col.names = c("Intra-factor Variance", "Inter-factor Covariance", "Effective Dimensionality"),
+      align = "c",
+      caption = "Correlations among the focal indices of personality structure") %>% 
+  kable_classic(full_width = F)
+
+```
+
+<!-- # Other Plots -->
+
+<!-- ## Map plots -->
+
+# Interactive Plots
+
+```{r map_plot, warning=F, message=F, include=F}
+
+full_map_data <- 
+  map_data("world") %>% 
+  mutate(region_id = countrycode(region, origin = "country.name", 
+                            destination = "iso3n"),
+         subregion_id = countrycode(subregion, origin = "country.name",
+                            destination = "iso3n"))
+
+blank_map <- 
+  full_map_data %>% 
+  filter(!grepl("Antarctica", region)) %>% 
+  ggplot(aes(x = long, y = lat)) +
+  geom_polygon(aes(group = group), fill = "white", color = "gray") +
+  theme_void() 
+
+
+# Function to calculate centroids from latitude and longitude:  
+# (https://stackoverflow.com/questions/29287038/adding-geom-point-to-ggmap-ggplot2)
+GetCentroidPoint <- function(data_for_centroids) {sp::Polygon(data_for_centroids[c('long', 'lat')])@labpt}
+
+data_for_centroids <- 
+  full_map_data %>% mutate(iso3n = ifelse(!is.na(subregion_id), subregion_id, region_id)) %>% 
+  right_join(country_data %>% select(iso3n, country, N)) %>% 
+  filter(!is.na(long), !is.na(lat)) %>% 
+  filter(is.na(subregion)) %>% 
+  filter(subregion_id == iso3n | region_id == iso3n)
+
+country_centroids <- 
+  do.call("rbind.data.frame", 
+          args = list(by(data_for_centroids, 
+                         factor(data_for_centroids$iso3n), 
+                         GetCentroidPoint), 
+                      make.row.names = FALSE)) %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "iso3n") %>% 
+  mutate(iso3n = as.numeric(str_remove(iso3n, "X"))) %>% 
+  rename(long = V1, lat = V2) %>% 
+  right_join(country_data %>% 
+               select(iso3n, country, niche_diversity, N, logN)) %>% 
+  filter(!is.na(N))
+
+
+map_plot <- 
+  full_map_data %>% 
+  filter(!grepl("Antarctica", region)) %>% 
+  ggplot(aes(x = long, y = lat)) +
+  geom_polygon(aes(group = group), fill = "white", color = "black", size = .08) +
+  theme_void() +
+  geom_point(data = country_centroids, 
+             aes(color = niche_diversity, size = N, group = country)) +
+  scale_color_viridis_c(direction = -1, option = "C", begin = 0, end = 1,
+                       guide = guide_colorbar(title = "Niche Diversity Index",
+                                              title.position = "top",
+                                              barheight = .6, barwidth = 13)) +
+  # scico::scale_color_scico(palette = "lajolla") +
+  # scale_fill_viridis_c(option = "magma") +
+  # paletteer::scale_color_paletteer_c("gameofthrones::targaryen",
+  #                                    guide = guide_colorbar(title = "Niche Diversity Index",
+  #                                             title.position = "top",
+  #                                             barheight = .6, barwidth = 13)) +
+  # scale_color_gradient(low = "grey", high = "brown") +
+  guides(size=FALSE) +
+  theme(legend.position = c(.6, .1), 
+        legend.direction = "horizontal")
+
+map_plot
+
+colorblindr::cvd_grid(map_plot)
+
+# ggsave(plot = map_plot,
+#        filename = "figs/prez/map_plot_prez.tiff", device = "tiff", 
+#        width = 13, height = 7)
+# 
+
+ggsave(plot = map_plot,
+       filename = "figs/paper/map_plot_pub.tiff", device = "tiff", width = 6.5, height = 4,
+       units = "in", dpi=700)
+
+```
+
+
+```{r plotly, message=F, warning=F, echo=F, include=T}
+
+library(plotly)
+
+ggplotly(map_plot)
+
+ggplotly(plot_covariance)
+
+ggplotly(plot_variance)
+
+ggplotly(plot_ed)
+
+
+# ggsave(plot = plot_covariance, "figs/prez/covariance.pdf",
+#        device = "pdf", width = 11, height = 6)
+# ggsave(plot = plot_variance, "figs/prez/variance.pdf",
+#        device = "pdf", width = 11, height = 6)
+# ggsave(plot = plot_ed, "figs/prez/Ed.pdf",
+#        device = "pdf", width = 11, height = 6)
+
+```
+
+
+# Supplemental Analyses
+
+## Individual components of the niche diversity index and stepwise control sets
+
+Here we present the relationships between each individual variable within the niche diversity index (i.e., sectoral diversity, urbanization, and HDI) and the focal outcomes (i.e., inter-factor covariance, intra-factor variance, and effective dimensionality) in order to exam whether the observed relationships for the niche diversity composite are driven by any one of its components. Moreover, we examined the effects of different sets of controls entered in a stepwise fashion, with methodological controls only, then with the addition of environmental harshness (EH) indictors (i.e., mortality and homicide rates), and finally with the geospatial controls as well.
+
+### Inter-factor covariance from individual niche diversity variables and different control sets
+
+```{r covariance_individual, include=F}
+
+niche_diversity_vars <- c("niche_diversity", # niche diversity composite
+                          "eci", # sectoral diversity
+                          "urban_pop", # percentage of people living in cities
+                          "hdi" # human development index
+                          )
+
+ind_cov_results <- list()
+ind_cov_controls_results <- list()
+ind_cov_methcontrols_results <- list()
+ind_cov_LHcontrols_results <- list()
+ind_cov_methLHcontrols_results <- list()
+
+for(i in 1:length(niche_diversity_vars)){
+  
+  current <- niche_diversity_vars[[i]] # assign the current individual variable
+  
+  # save data for use in metareg
+  prepareMplusData(metareg_covariance_mplusdata %>% 
+                     mutate(niche_diversity = get(current)), 
+                   "mplus/MetaRegression/metareg_covariance_mplusdata_indvars.dat")
+  
+  # run the model in mplus
+  runModels(target = paste(getwd(),"mplus/MetaRegression/metareg_Covariances_indvars.inp",
+                           sep = "/"),
+            replaceOutfile="always") 
+  
+  # read model results
+  full_cov_output <- readModels(target="mplus/MetaRegression/metareg_Covariances_indvars.out")
+  
+  ind_cov_results[[current]] <- 
+    cbind(full_cov_output$parameters$stdyx.standardized[2,],
+          full_cov_output$parameters$ci.stdyx.standardized[2,-c(1,2, 6)],
+          full_cov_output$data_summary$overall)
+  
+  # run the model in mplus
+  runModels(target = paste(getwd(),"mplus/MetaRegression/metareg_indCovariances_allcontrols.inp",
+                           sep = "/"),
+            replaceOutfile="always") 
+  
+  # read model results
+  full_cov_output <- 
+    readModels(target="mplus/MetaRegression/metareg_indCovariances_allcontrols.out")
+  
+  ind_cov_controls_results[[current]] <- 
+    data.frame(cbind(full_cov_output$parameters$stdyx.standardized,
+                     full_cov_output$parameters$ci.stdyx.standardized[,-c(1,2, 6)],
+                     full_cov_output$data_summary$overall)) %>% 
+    filter(paramHeader == "ABSCOV.ON")
+  
+  # run the model in mplus
+  runModels(target = paste(getwd(),
+                           "mplus/MetaRegression/metareg_indCovariances_methcontrols.inp",
+                           sep = "/"),
+            replaceOutfile="always") 
+  
+  # read model results
+  full_cov_output <- 
+    readModels(target="mplus/MetaRegression/metareg_indCovariances_methcontrols.out")
+  
+  ind_cov_methcontrols_results[[current]] <- 
+    data.frame(cbind(full_cov_output$parameters$stdyx.standardized,
+                     full_cov_output$parameters$ci.stdyx.standardized[,-c(1,2, 6)],
+                     full_cov_output$data_summary$overall)) %>% 
+    filter(paramHeader == "ABSCOV.ON")
+  
+  # run the model in mplus
+  runModels(target = paste(getwd(),
+                           "mplus/MetaRegression/metareg_indCovariances_LHcontrols.inp",
+                           sep = "/"),
+            replaceOutfile="always") 
+  
+  # read model results
+  full_cov_output <- 
+    readModels(target="mplus/MetaRegression/metareg_indCovariances_LHcontrols.out")
+  
+  ind_cov_LHcontrols_results[[current]] <- 
+    data.frame(cbind(full_cov_output$parameters$stdyx.standardized,
+                     full_cov_output$parameters$ci.stdyx.standardized[,-c(1,2, 6)],
+                     full_cov_output$data_summary$overall)) %>% 
+    filter(paramHeader == "ABSCOV.ON")
+  
+  # run the model in mplus
+  runModels(target = paste(getwd(),
+                           "mplus/MetaRegression/metareg_indCovariances_methLHcontrols.inp",
+                           sep = "/"),
+            replaceOutfile="always") 
+  
+  # read model results
+  full_cov_output <- 
+    readModels(target="mplus/MetaRegression/metareg_indCovariances_methLHcontrols.out")
+  
+  ind_cov_methLHcontrols_results[[current]] <- 
+    data.frame(cbind(full_cov_output$parameters$stdyx.standardized,
+                     full_cov_output$parameters$ci.stdyx.standardized[,-c(1,2, 6)],
+                     full_cov_output$data_summary$overall)) %>% 
+    filter(paramHeader == "ABSCOV.ON")
+  
+}
+
+cleaned_cov_results <- 
+  bind_rows(ind_cov_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI"))) %>% 
+  select(predictor, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "No Controls", param = predictor)
+
+cov_controls_cleaned <-
+  bind_rows(ind_cov_controls_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "SC", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "All Controls")
+
+cov_methcontrols_cleaned <-
+  bind_rows(ind_cov_methcontrols_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "SC", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "Methods Controls Only")
+
+cov_LHcontrols_cleaned <-
+  bind_rows(ind_cov_LHcontrols_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "SC", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "EH Controls Only")
+
+cov_methLHcontrols_cleaned <-
+  bind_rows(ind_cov_methLHcontrols_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "SC", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "Methods + EH Controls")
+
+
+all_ind_cov_results <- rbind(cov_controls_cleaned, 
+                             cleaned_cov_results, 
+                             cov_methcontrols_cleaned, 
+                             # cov_LHcontrols_cleaned,
+                             cov_methLHcontrols_cleaned)
+
+
+# all_ind_cov_results %>% 
+#   filter(predictor == param) %>% 
+#   ggplot(aes(x = est, y = predictor, color = control)) +
+#   geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+#   geom_point(size = 2, 
+#              position = position_dodge(width = .4)) +
+#   geom_linerange(aes(xmin = low2.5, xmax = up2.5), size = 3, alpha = .3,
+#                  position = position_dodge(width = .4)) +
+#   xlab("\nStandardized Effect Estimate") + ylab("") +
+#   theme_classic() +
+#   theme(legend.position = "bottom", legend.title = element_blank())
+
+```
+
+
+```{r covariance_allmodelresults_table, echo=F}
+
+all_ind_cov_results %>% 
+  mutate(control = fct_relevel(control, c("No Controls",
+                                              "Methods Controls Only",
+                                              "Methods + EH Controls",
+                                              "All Controls")),
+         model = paste0(predictor, " (", control, ")"),
+         param = recode(param, 
+                        "SC" = "Niche Diversity Index",
+                        "A_MEAN" = "Agreeableness",
+                        "C_MEAN" = "Conscientiousness",
+                        "E_MEAN" = "Extraversion",
+                        "ES_MEAN" = "Emotional Stability",
+                        "O_MEAN" = "Openness",
+                        "LOGN" = "Sample Size",
+                        "ACQUIESCEN" = "Acquiescence",
+                        "HOMICIDE_R" = "Homicide Rate",
+                        "MORTALITY" = "Mortality Rate",
+                        "EPI" = "English Proficiency",
+                        "ASIA" = "Asia",
+                        "AFRICA" = "Africa",
+                        "OCEANIA" = "Oceania",
+                        "AMERICAS" = "Americas"),
+         CI = paste0(low2.5, ", ", up2.5)
+         ) %>% 
+  arrange(control) %>% 
+  select(model, param:pval, CI) %>% 
+  mutate(pval = ifelse(pval <= 0.000, "< .001", pval)) %>% 
+  kbl(format = "html",
+      col.names = c("Focal Predictor (Control Set)", "Parameter", "$\\beta$", "$\\textit{SE}$", "$\\textit{p}$", "95% CI"),
+      align = c("l", "l", "c", "c", "c", "c")) %>% 
+  kable_paper("striped", full_width = T) %>%
+  collapse_rows(1, valign = "top", target = 1) %>% 
+  scroll_box(width = "100%", height = "750px")
+
+
+
+
+```
+
+### Intra-factor variance from individual niche diversity variables and different control sets
+
+```{r variance_individual, include = F}
+
+ind_var_results <- list()
+
+ind_var_controls_results <- list()
+ind_var_methcontrols_results <- list()
+# ind_cov_LHcontrols_results <- list()
+ind_var_methLHcontrols_results <- list()
+
+for(i in 1:length(niche_diversity_vars)){
+
+current <- niche_diversity_vars[[i]] # assign the current individual variable
+
+# save data for use in metareg
+prepareMplusData(metareg_variance_mplusdata %>% 
+                   mutate(niche_diversity = get(current)), 
+                 "mplus/MetaRegression/metareg_variance_mplusdata_indvars.dat")
+
+# run the model in mplus
+runModels(target = paste(getwd(),"mplus/MetaRegression/metareg_Variances_indvars.inp",
+                         sep = "/"),
+          replaceOutfile="always") 
+
+# read model results
+full_cov_output <- readModels(target="mplus/MetaRegression/metareg_Variances_indvars.out")
+
+ind_var_results[[current]] <- 
+  cbind(full_cov_output$parameters$stdyx.standardized[2,],
+        full_cov_output$parameters$ci.stdyx.standardized[2,-c(1,2, 6)],
+        full_cov_output$data_summary$overall)
+
+# run the model with controls in mplus
+runModels(target = paste(getwd(),"mplus/MetaRegression/metareg_Variances_indvars.inp",
+                         sep = "/"),
+          replaceOutfile="always") 
+
+# read model results
+full_cov_output <- readModels(target="mplus/MetaRegression/metareg_Variances_indvars.out")
+
+
+# run the model in mplus
+  runModels(target = paste(getwd(),
+                           "mplus/MetaRegression/metareg_indVariances_methcontrols.inp",
+                           sep = "/"),
+            replaceOutfile="always") 
+  
+  # read model results
+  full_cov_output <- 
+    readModels(target="mplus/MetaRegression/metareg_indVariances_methcontrols.out")
+  
+  ind_var_methcontrols_results[[current]] <- 
+    data.frame(cbind(full_cov_output$parameters$stdyx.standardized,
+                     full_cov_output$parameters$ci.stdyx.standardized[,-c(1,2, 6)],
+                     full_cov_output$data_summary$overall)) %>% 
+    filter(paramHeader == "VARIANCE.ON")
+  
+  # run the model in mplus
+  runModels(target = paste(getwd(),
+                           "mplus/MetaRegression/metareg_indVariances_methLHcontrols.inp",
+                           sep = "/"),
+            replaceOutfile="always") 
+  
+  # read model results
+  full_cov_output <- 
+    readModels(target="mplus/MetaRegression/metareg_indVariances_methLHcontrols.out")
+  
+  ind_var_methLHcontrols_results[[current]] <- 
+    data.frame(cbind(full_cov_output$parameters$stdyx.standardized,
+                     full_cov_output$parameters$ci.stdyx.standardized[,-c(1,2, 6)],
+                     full_cov_output$data_summary$overall)) %>% 
+    filter(paramHeader == "VARIANCE.ON")
+  
+    # run the model in mplus
+  runModels(target = paste(getwd(),
+                           "mplus/MetaRegression/metareg_alignmentVariances_allcontrols.inp",
+                           sep = "/"),
+            replaceOutfile="always") 
+  
+  # read model results
+  full_cov_output <- 
+    readModels(target="mplus/MetaRegression/metareg_alignmentVariances_allcontrols.out")
+  
+  ind_var_controls_results[[current]] <- 
+    data.frame(cbind(full_cov_output$parameters$stdyx.standardized,
+                     full_cov_output$parameters$ci.stdyx.standardized[,-c(1,2, 6)],
+                     full_cov_output$data_summary$overall)) %>% 
+    filter(paramHeader == "VARIANCE.ON")
+
+}
+
+cleaned_var_results <- 
+  bind_rows(ind_var_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI"))) %>% 
+  select(predictor, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "No Controls", param = predictor)
+
+var_controls_cleaned <-
+  bind_rows(ind_var_controls_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "SC", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "All Controls")
+
+var_methcontrols_cleaned <-
+  bind_rows(ind_var_methcontrols_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "SC", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "Methods Controls Only")
+
+
+var_methLHcontrols_cleaned <-
+  bind_rows(ind_var_methLHcontrols_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "SC", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "Methods + EH Controls")
+
+
+all_ind_var_results <- rbind(var_controls_cleaned, 
+                             cleaned_var_results, 
+                             var_methcontrols_cleaned, 
+                             # cov_LHcontrols_cleaned,
+                             var_methLHcontrols_cleaned)
+
+# 
+# all_ind_var_results %>% 
+#   filter(predictor == param) %>% 
+#   ggplot(aes(x = est, y = predictor, color = control)) +
+#   geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+#   geom_point(size = 2, 
+#              position = position_dodge(width = .4)) +
+#   geom_linerange(aes(xmin = low2.5, xmax = up2.5), size = 3, alpha = .3,
+#                  position = position_dodge(width = .4)) +
+#   xlab("\nStandardized Effect Estimate") + ylab("") +
+#   theme_classic() +
+#   theme(legend.position = "bottom", legend.title = element_blank())
+
+
+
+```
+
+```{r variance_allresults_table, echo=F}
+
+all_ind_var_results %>% 
+  mutate(control = fct_relevel(control, c("No Controls",
+                                              "Methods Controls Only",
+                                              "Methods + EH Controls",
+                                              "All Controls")),
+         model = paste0(predictor, " (", control, ")"),
+         param = recode(param, 
+                        "SC" = "Niche Diversity Index",
+                        "A_MEAN" = "Agreeableness",
+                        "C_MEAN" = "Conscientiousness",
+                        "E_MEAN" = "Extraversion",
+                        "ES_MEAN" = "Emotional Stability",
+                        "O_MEAN" = "Openness",
+                        "LOGN" = "Sample Size",
+                        "ACQUIESCEN" = "Acquiescence",
+                        "HOMICIDE_R" = "Homicide Rate",
+                        "MORTALITY" = "Mortality Rate",
+                        "EPI" = "English Proficiency",
+                        "ASIA" = "Asia",
+                        "AFRICA" = "Africa",
+                        "OCEANIA" = "Oceania",
+                        "AMERICAS" = "Americas"),
+         CI = paste0(low2.5, ", ", up2.5)
+         ) %>% 
+  arrange(control) %>% 
+  select(model, param:pval, CI) %>% 
+  mutate(pval = ifelse(pval <= 0.000, "< .001", pval)) %>% 
+  kbl(format = "html",
+      col.names = c("Focal Predictor (Control Set)", "Parameter", "$\\beta$", "$\\textit{SE}$", "$\\textit{p}$", "95% CI"),
+      align = c("l", "l", "c", "c", "c", "c")) %>% 
+  kable_paper("striped", full_width = T) %>%
+  collapse_rows(1, valign = "top", target = 1) %>% 
+  scroll_box(width = "100%", height = "750px")
+```
+
+
+
+### Effective dimensionality from individual niche diversity variables and different control sets
+
+```{r ED_individual, include=F}
+
+ind_ED_results <- list()
+ind_ED_allcontrols <- list()
+ind_ED_methcontrols <- list()
+ind_ED_methLHcontrols <- list()
+
+for(i in 1:length(niche_diversity_vars)){
+  
+  current <- niche_diversity_vars[[i]] # assign the current individual variable
+  
+  ed_model_base <- lm(n1s ~ get(current), 
+                      data = ed_analysis_df)
+  
+  result_df <- data.frame(
+    cbind(summary(ed_model_base)$coefficients[,-3], 
+          confint(ed_model_base), 
+          nrow(ed_model_base$model)))[2, ]
+  
+  names(result_df) <- names(cleaned_var_results %>% select(est:NClusters))
+  rownames(result_df) <- NULL
+  
+  ind_ED_results[[current]] <- result_df
+  
+  # all controls
+  ed_model_allcontrols <- 
+  lm(n1s ~ get(current) + 
+       # methods controls
+       logN + acquiescence + EPI + A_mean + C_mean + E_mean + ES_mean + O_mean +
+       # environmental harshness
+       homicide_rate + mortality + 
+       # regional
+       Asia + Africa + Oceania + Americas, 
+     data = ed_analysis_df)
+
+  result_df <- data.frame(
+    cbind(summary(ed_model_allcontrols)$coefficients[,-3], 
+          confint(ed_model_allcontrols), 
+          nrow(ed_model_allcontrols$model)))
+  
+  names(result_df) <- names(cleaned_var_results %>% select(est:NClusters))
+
+  ind_ED_allcontrols[[current]] <- result_df %>% rownames_to_column(., "param")
+  
+  # methods controls
+  ed_model_allcontrols <- 
+  lm(n1s ~ get(current) + 
+       # methods controls
+       logN + acquiescence + EPI + A_mean + C_mean + E_mean + ES_mean + O_mean,
+     data = ed_analysis_df)
+
+  result_df <- data.frame(
+    cbind(summary(ed_model_allcontrols)$coefficients[,-3], 
+          confint(ed_model_allcontrols), 
+          nrow(ed_model_allcontrols$model)))
+  
+  names(result_df) <- names(cleaned_var_results %>% select(est:NClusters))
+
+  ind_ED_methcontrols[[current]] <- result_df %>% rownames_to_column(., "param")
+  
+  
+  # methods controls
+  ed_model_allcontrols <- 
+  lm(n1s ~ get(current) + 
+       # methods controls
+       logN + acquiescence + EPI + A_mean + C_mean + E_mean + ES_mean + O_mean +
+       # environmental harshness
+       homicide_rate + mortality,
+     data = ed_analysis_df)
+
+  result_df <- data.frame(
+    cbind(summary(ed_model_allcontrols)$coefficients[,-3], 
+          confint(ed_model_allcontrols), 
+          nrow(ed_model_allcontrols$model))) 
+  
+  names(result_df) <- names(cleaned_var_results %>% select(est:NClusters))
+
+  ind_ED_methLHcontrols[[current]] <- result_df %>% rownames_to_column(., "param")
+    
+
+}
+
+
+cleaned_ED_results <- 
+  bind_rows(ind_ED_results, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI"))) %>% 
+  select(predictor, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "No Controls", param = predictor)
+
+ED_allcontrols_cleaned <-
+  bind_rows(ind_ED_allcontrols, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "get(current)", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "All Controls")
+
+ED_methcontrols_cleaned <-
+  bind_rows(ind_ED_methcontrols, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "get(current)", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "Methods Controls Only")
+
+
+ED_methLHcontrols_cleaned <-
+  bind_rows(ind_ED_methLHcontrols, .id = "predictor") %>% 
+  mutate(predictor = recode(predictor, 
+                            "niche_diversity" = "Niche Diversity Composite",
+                            "eci" = "Sectoral Diversity",
+                            "urban_pop" = "Urbanization",
+                            "hdi" = "HDI"),
+         predictor = fct_relevel(predictor, c("Niche Diversity Composite",
+                                              "Sectoral Diversity",
+                                              "Urbanization", "HDI")),
+         param = ifelse(param == "get(current)", as.character(predictor), param)) %>% 
+  select(predictor, param, est, se, pval, low2.5, up2.5, NClusters) %>% 
+  mutate(control = "Methods + EH Controls")
+
+
+all_ind_ED_results <- rbind(cleaned_ED_results, 
+                             ED_allcontrols_cleaned, 
+                             ED_methcontrols_cleaned, 
+                             ED_methLHcontrols_cleaned) %>% 
+    mutate(param = as.character(param))
+
+
+# all_ind_ED_results %>% 
+#   filter(predictor == param) %>% 
+#   ggplot(aes(x = est, y = predictor, color = control)) +
+#   geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+#   geom_point(size = 2, 
+#              position = position_dodge(width = .4)) +
+#   geom_linerange(aes(xmin = low2.5, xmax = up2.5), size = 3, alpha = .3,
+#                  position = position_dodge(width = .4)) +
+#   xlab("\nStandardized Effect Estimate") + ylab("") +
+#   theme_classic() +
+#   theme(legend.position = "bottom", legend.title = element_blank())
+
+```
+
+```{r effectivedimensionality_allresults_table, echo=F}
+
+all_ind_ED_results %>% filter(param != "(Intercept)") %>% 
+  mutate(control = fct_relevel(control, c("No Controls",
+                                              "Methods Controls Only",
+                                              "Methods + EH Controls",
+                                              "All Controls")),
+         model = paste0(predictor, " (", control, ")"),
+         param = recode(param,
+                       # "niche_diversity" = "Niche Diversity Index",
+                       "logN" = "Sample Size",
+                       "acquiescence" = "Acquiescence",
+                       "homicide_rate" = "Homicide Rate",
+                       "mortality" = "Mortality Rate",
+                       "EPI" = "English Proficiency",
+                       "A_mean" = "Agreeableness",
+                       "C_mean" = "Conscientiousness",
+                       "E_mean" = "Extraversion", 
+                       "ES_mean" = "Emotional Stability",
+                       "O_mean" = "Openness"),
+         pval = round(pval, 3), est = round(est, 3), se = round(se, 3), 
+         low2.5 = round(low2.5, 3),up2.5 = round(up2.5, 3),
+         CI = paste0(low2.5, ", ", up2.5)
+         ) %>% 
+  arrange(control) %>% 
+  select(model, param, est:pval, CI) %>% 
+  mutate(pval = ifelse(pval <= 0.000, "< .001", pval)) %>% 
+  kbl(format = "html",
+      col.names = c("Focal Predictor (Control Set)", "Parameter", "$\\beta$", "$\\textit{SE}$", "$\\textit{p}$", "95% CI"),
+      align = c("l", "l", "c", "c", "c", "c")) %>% 
+  kable_paper("striped", full_width = T) %>%
+  collapse_rows(1, valign = "top", target = 1) %>% 
+  scroll_box(width = "100%", height = "750px")
+```
+
+### Figure summarizing the focal relationships using different niche diversity indicators and control sets
+
+```{r ind_control_plot, include=T, echo=F}
+
+combined_ind_df <- rbind( #sryntsry
+  all_ind_cov_results %>% mutate(outcome = "Inter-Factor Covariance"),
+      all_ind_var_results %>% mutate(outcome = "Intra-Factor Variance"),
+      all_ind_ED_results %>% mutate(outcome = "Effective Dimensionality")) %>% 
+      mutate(param = as.character(param))
+
+
+ind_controls_plot <-
+combined_ind_df %>%
+  filter(predictor == param) %>% 
+  mutate(outcome = fct_relevel(outcome, 
+                               c("Inter-Factor Covariance", 
+                                 "Intra-Factor Variance",
+                                "Effective Dimensionality")),
+         control = str_replace_all(control, "Methods", "Method"),
+         control = str_replace_all(control, "Controls", "\nControls"),
+         control = str_remove_all(control, "Only"),
+         control = fct_relevel(control, "Method + EH \nControls", after = 1)) %>% 
+  ggplot(aes(x = est, y = predictor, color = control)) +
+  facet_grid(.~outcome, scales = "free") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgray") +
+  geom_point(size = .8, 
+             position = position_dodge(width = .4)) +
+  ggstance::geom_linerangeh(aes(xmin = low2.5, xmax = up2.5), size = 1, alpha = .3,
+                 position = position_dodge(width = .4)) +
+  viridis::scale_color_viridis(discrete = TRUE, direction = 1, 
+                               begin = .7, end = 0,
+                               option = "magma") +
+  xlab("\nStandardized Effect Estimate") + 
+  guides(colour = guide_legend(reverse=T)) +
+  scale_y_discrete(labels = function(x) str_wrap(x, width = 10)) +
+   jtools::theme_apa(legend.pos = "right", legend.font.size = "7",
+                      facet.title.size = 9) + 
+  theme(axis.text.x = element_text(size=8),
+        axis.title.y = element_blank(),
+        legend.spacing.x = unit(.00, "cm"),
+  legend.margin=margin(0,0,0,0))
+
+ind_controls_plot
+# ggsave(plot = ind_controls_plot,
+#        filename = "figs/paper/individualPreds_stepcontrols_coefplot.pdf", device = "pdf",
+#        width = 6.5, height = 2.8, units = "in")
+
+```
+
+## Comparison with and without multigroup alignment method
+
+Here, we compare the results of analyses based on inter-factor covariances and intra-factor variances estimated from simple factor mean-scores with those based on the multigroup alignment method The covariance and variance estimates based on the simple factor mean-scores did not exhibit enough systematic variability to conduct the metaregression analyses (Mplus estimates the nation-level variability as zero). We therefore conducted single-level regression analyses on the aggregated inter-factor covariance and the intra-factor variance estimates for each nation. This aggregation approach was used in Lukaszewski et al. (2016) and Smaldino et al. (2019). For comparison, we report these single-level regression analyses alongside single-level regression analyses using aggregated *alignment*-estimated inter-factor covariances and intra-factor variances as well (rather than the metaregression analyses reported in the main text). Differences between the results under the different approach can be attributed to a combination of measurement error and measurement non-invariance (bias).
+
+```{r calculatefactorscores}
+
+# get simple factor mean-scores
+simple_factor_scores <- 
+  ipip %>% # the cleaned IPIP data
+  # Calculate the means of items for each personality trait
+  # (these are already correctly reverse coded)
+  mutate(O = rowMeans(select(., OPN1:OPN10), na.rm = T), # mean of openness items
+         C = rowMeans(select(., CSN1:CSN10), na.rm = T), # mean of conscientiousness items
+         E = rowMeans(select(., EXT1:EXT10), na.rm = T),
+         A = rowMeans(select(., AGR1:AGR10), na.rm = T),
+         ES = rowMeans(select(., EST1:EST10), na.rm = T)) %>% 
+  # keep just the country info and the mean personality scores
+  select(country, O, C, E, A, ES)
+
+```
+
+### Inter-factor covariance
+
+```{r interfactor_correlations_simple}
+
+# get covariance and correlation estimates from simple scores
+simple_interfactor_covs_corrs <- 
+  simple_factor_scores %>% # these are the mean factor scores for each person 
+  group_by(country) %>% # groups by country to calculate country-level corrs easily
+  summarise(O_C = cor(O, C, # calculate cor between O_C in each country
+                      use = "pairwise.complete"), 
+            O_E = cor(O, E, use = "pairwise.complete"), # calculate O_E cor in each country
+            O_A = cor(O, A, use = "pairwise.complete"), # ...
+            O_ES = cor(O, ES, use = "pairwise.complete"),
+            C_E = cor(C, E, use = "pairwise.complete"),
+            C_A = cor(C, A, use = "pairwise.complete"),
+            C_ES = cor(C, ES, use = "pairwise.complete"),
+            E_A = cor(E, A, use = "pairwise.complete"),
+            E_ES = cor(E, ES, use = "pairwise.complete"), 
+            A_ES = cor(A, ES, use = "pairwise.complete"),
+            n = n()) %>% 
+  gather(key = pair, value = correlation, -country, -n) %>% 
+  mutate(se = sqrt((1-correlation^2)/(n-2))) %>%
+  # join with the same thing but covariances instead of correlations
+  full_join(simple_factor_scores %>% 
+      group_by(country) %>% 
+      summarise(O_C = cov(O, C, use = "pairwise.complete"),
+                O_E = cov(O, E, use = "pairwise.complete"),
+                O_A = cov(O, A, use = "pairwise.complete"),
+                O_ES = cov(O, ES, use = "pairwise.complete"),
+                C_E = cov(C, E, use = "pairwise.complete"),
+                C_A = cov(C, A, use = "pairwise.complete"),
+                C_ES = cov(C, ES, use = "pairwise.complete"),
+                E_A = cov(E, A, use = "pairwise.complete"),
+                E_ES = cov(E, ES, use = "pairwise.complete"), 
+                A_ES = cov(A, ES, use = "pairwise.complete"),
+                n = n()) %>% 
+      gather(key = pair, value = cov, -country, -n)
+  ) %>% 
+  rename(iso2 = country) %>% 
+  # # join with country level data
+  right_join(country_data, by = "iso2")
+    
+```
+
+```{r covariance_data_aggregation}
+# aggregate absolute values of covariances from simple scores
+covariance_df <-
+  simple_interfactor_covs_corrs %>%
+               group_by(iso3, country, continent, niche_diversity) %>%
+               summarise(covariance = mean(abs(cov))) %>% 
+  na.omit %>% ungroup() %>% 
+  full_join(country_data) %>% full_join(means %>% mutate(iso3n = as.numeric(Group))) 
+
+# aggregate absolute values of covariances from alignment scores
+alignment_covariance_df <- 
+  metareg_covariance_mplusdata %>% 
+  group_by(iso3n, niche_diversity, logN) %>% 
+  summarise(covariance = mean(abscov)) %>% 
+  full_join(country_data) %>% full_join(means %>% mutate(iso3n = as.numeric(Group))) %>% 
+  ungroup()
+
+```
+
+#### Comparison without controls
+
+The negative association between niche diversity and average inter-factor covariance is larger under the alignment-based analyses than the simple factor mean-score analyses (see scatterplot and regression tables below).
+
+```{r plot_covariance_simple}
+
+# plot niche diversity relationship to covariances under each approach
+covariance_df %>% rename(FactorMeans_covariance = covariance) %>% 
+  mutate(iso3n = countrycode(iso3, origin = "iso3c", destination = "iso3n")) %>%
+  full_join(alignment_covariance_df %>% 
+              select(iso3n, Alignment_covariance = covariance), 
+            by = "iso3n") %>% 
+  gather(key = method, value = covariance, 
+         c(FactorMeans_covariance, Alignment_covariance)) %>% 
+  group_by(method) %>% mutate(covariance = scale(covariance)) %>% 
+  ggplot(aes(x = niche_diversity, y = covariance, color = method)) + 
+  geom_smooth(method = "lm") +
+  geom_point(alpha = .7) +
+  xlab("Niche Diveristy") + ylab("Mean Inter-factor Covariance") +
+  jtools::theme_apa(legend.pos = "bottom")
+
+```
+
+```{r simple_covariance_analyses}
+
+# simple approach no controls
+covariance_model <- lm(scale(covariance) ~ scale(niche_diversity), 
+                       data = covariance_df)
+
+# alignment approach no controls
+alignment_covariance_model <- lm(scale(covariance) ~ scale(niche_diversity), 
+                                 data = alignment_covariance_df)
+
+```
+
+```{r covariance_heteroskedasticity, include=F}
+# sensitivity
+covariance_heteroskedasticity <- lm(scale(covariance) ~ scale(niche_diversity), 
+                                 data = alignment_covariance_df %>% filter(niche_diversity >= 0))
+
+summary(covariance_heteroskedasticity)
+confint(covariance_heteroskedasticity)
+```
+
+```{r}
+
+# simple approach no controls
+covariance_model %>% tbl_regression()
+
+# alignment approach no controls
+alignment_covariance_model %>% tbl_regression()
+
+```
+
+#### Comparison with controls
+
+The negative association between niche diversity and average inter-factor covariance is robust to controls in the alignment-based analyses, but it is not in the simple factor mean-score analyses (see regression tables below).
+
+```{r covariance_comparison_withcontrols, echo=F}
+
+# simple approach with controls
+covariance_model_control <- lm(scale(covariance) ~ scale(niche_diversity) +
+                                           logN + acquiescence + 
+                                           homicide_rate + mortality + 
+                                           EPI +
+                                           A_mean + C_mean + E_mean + ES_mean + O_mean + 
+                                           continent, 
+                               data = covariance_df)
+
+# alignment apprach with controls
+alignment_covariance_model_control <- lm(scale(covariance) ~ scale(niche_diversity) +
+                                           logN + acquiescence + 
+                                           homicide_rate + mortality + 
+                                           EPI +
+                                           A_mean + C_mean + E_mean + ES_mean + O_mean + 
+                                           continent, 
+                                         data = alignment_covariance_df)
+```
+
+```{r}
+
+# simple approach with controls
+covariance_model_control %>% tbl_regression()
+
+# alignment apprach with controls
+alignment_covariance_model_control %>% tbl_regression()
+
+```
+
+### Intra-factor variance 
+
+```{r factor_variances_simple, include=T, eval = T}
+
+# get variance estimates based on simple mean scores
+simple_factor_variances <- 
+  simple_factor_scores %>% # these are the mean factor scores for each person 
+  group_by(country) %>% # groups by country to calculate country-level sd easily
+  summarise(O = sd(O, na.rm = T), # gets the standard deviation of O for each country
+            C = sd(C, na.rm = T), # gets the standard deviation of C for each country
+            E = sd(E, na.rm = T), # ...
+            A = sd(A, na.rm = T),
+            ES = sd(ES, na.rm = T),
+            n = n()) %>% # gets N for each country
+  gather(key = factor, value = sd, -country, -n) %>% # converts to long (for mplus clustering)
+  # convert to variance and calculate se of variance
+  # se of variance = variance * sqrt(2 / (n -1))
+  # se formula from : https://web.eecs.umich.edu/~fessler/papers/files/tr/stderr.pdf
+  mutate(variance = sd^2, # variance
+         se = variance * (sqrt(2 / (n - 1)))) %>% # caclulate se
+  rename(iso2 = country) %>% 
+  # join with country level data
+  right_join(country_data, by = "iso2") 
+
+```
+
+```{r variance_data_aggregation}
+
+# aggregate simple variance estimates 
+variance_df <-
+  simple_factor_variances %>%
+               group_by(iso3, country, continent, niche_diversity) %>%
+               summarise(variance = mean(variance)) %>% na.omit %>% ungroup() %>% 
+  full_join(country_data) %>% full_join(means %>% mutate(iso3n = as.numeric(Group))) 
+
+# aggregate alignment variance estimates
+alignment_variance_df <- 
+  metareg_variance_mplusdata %>% 
+  group_by(iso3n, niche_diversity, logN) %>% 
+  summarise(variance = mean(variance)) %>% 
+  full_join(country_data) %>% full_join(means %>% mutate(iso3n = as.numeric(Group))) %>% 
+  ungroup()
+
+```
+
+#### Comparison without controls
+
+The association between niche diversity and average intra-factor variance is statistically significant and in the predicted direction under the simple mean-score appraoch, but the relationship is not significant under the alignment-based analyses (see scatterplot and regression tables below).
+
+```{r plot_variance_simple}
+
+variance_df %>% rename(FactorMeans_variance = variance) %>% 
+  mutate(iso3n = countrycode(iso3, origin = "iso3c", destination = "iso3n")) %>%
+  full_join(alignment_variance_df %>% 
+              select(iso3n, Alignment_variance = variance), 
+            by = "iso3n") %>% 
+  gather(key = method, value = variance, 
+         c(FactorMeans_variance, Alignment_variance)) %>% 
+  group_by(method) %>% mutate(variance = scale(variance)) %>% 
+  ggplot(aes(x = niche_diversity, y = variance, color = method)) + 
+  geom_smooth(method = "lm") +
+  geom_point(alpha = .7) +
+  xlab("Niche Diveristy") + ylab("Mean Intra-factor Variance") +
+  jtools::theme_apa(legend.pos = "bottom")
+
+```
+
+```{r simple_variance_analyses}
+
+# simple appraoch no controls
+variance_model <- lm(scale(variance) ~ scale(niche_diversity), data = variance_df)
+
+
+# alignment approach no controls
+alignment_variance_model <- lm(scale(variance) ~ scale(niche_diversity), 
+                               data = alignment_variance_df)
+```
+
+```{r}
+
+# simple appraoch no controls
+variance_model %>% tbl_regression()
+
+# alignment approach no controls
+alignment_variance_model %>% tbl_regression()
+
+```
+
+#### Comparison with controls
+
+The association between niche diversity and average intra-factor variance is not robust to controls under the simple mean-score appraoch, amd the relationship becomes negative (but not statistically significant) in the prescence of controls under the under the alignment-based analyses (see regression tables below).
+
+```{r alignment_variance_analyses}
+
+# simple appraoch with controls
+variance_model_control <- lm(scale(variance) ~ scale(niche_diversity) + 
+                               logN + acquiescence + 
+                         homicide_rate + mortality + 
+                         EPI +
+                         A_mean + C_mean + E_mean + ES_mean + O_mean + 
+                         continent, 
+                         data = variance_df)
+
+# alignment based results with controls
+alignment_variance_model_control <- lm(scale(variance) ~ scale(niche_diversity) + 
+                                         logN + acquiescence + 
+                                         homicide_rate + mortality + 
+                                         EPI +
+                                         A_mean + C_mean + E_mean + ES_mean + O_mean + 
+                                         continent, 
+                                       data = alignment_variance_df)
+
+```
+
+```{r}
+
+# simple appraoch with controls
+variance_model_control %>% tbl_regression()
+
+# alignment approach with controls
+alignment_variance_model_control %>% tbl_regression()
+
+```
+
+### Effective Dimensionality
+
+```{r make_matrices_simple}
+
+# make matrices for the effective dimensionality analyses
+
+countries <- unique(ipip$country)
+
+cov_matrices <- list()
+cor_matrices <- list()
+sample_sizes <- list()
+
+for(i in 1:length(countries)){
+  
+  current_country <- countries[i]
+
+  
+  latent_covs_corrs <- # get just estimates of factor covariances and correlations from alignment
+    simple_interfactor_covs_corrs %>% 
+    filter(iso2 == current_country) %>% # filter to current country
+    select(pair, covariance = cov, correlation) %>% 
+    mutate(pair = paste0(pair, "_")) # for easier identificaion later on
+  
+  latent_variances <- # get just estimates of factor variances from alignment
+    simple_factor_variances %>% 
+    filter(iso2 == current_country) %>% # might need to remove the fixed country
+    select(factor, variance) # for easier identificaion later on
+  
+  # make empty square matrices to fill later
+  latent_corrmat <- # assign for correlation matrix
+    matrix(NA, 5, 5, # 5 by 5 matrix with all NA
+           # give rows and columns names for easier id later
+           dimnames = list(c("O", "C", "A", "E", "ES"), 
+                           c("O", "C", "A", "E", "ES")))
+  latent_covmat <- latent_corrmat #assign the same empty matrix for covariance matrix
+  
+  combos <- combn(dimnames(latent_corrmat)[[1]], 2) # all the pairwise combos
+  
+  # loop to put correct values in the correct cells of entry matrix
+  for(j in 1:ncol(combos)){
+    
+    row <- combos[1, j]
+    column <- combos[2, j]
+    
+    # pattern for matching in any order later on later 
+    pattern <- paste0(paste(row, column, sep = "_"), "_|", paste(column, row, sep = "_"), "_")
+    
+    # make correlation matrix with 1s on the diagonal
+    # put each pairwise correlation in the correct row/column combination
+    latent_corrmat[row, column] <- latent_covs_corrs[grepl(pattern, latent_covs_corrs$pair), 
+                                                     "correlation"] %>% pull
+    latent_corrmat[column, row] <- latent_covs_corrs[grepl(pattern, latent_covs_corrs$pair), 
+                                                     "correlation"] %>% pull
+    
+    # put 1s on the diagonal (all the remaining NA values)
+    latent_corrmat[is.na(latent_corrmat)] <- 1
+    
+    
+    # make covariance matrix with factor variances on the diagonal
+    # put each pairwise covariance in the correct row/column combination
+    latent_covmat[row, column] <- latent_covs_corrs[grepl(pattern, latent_covs_corrs$pair), 
+                                                    "covariance"] %>% pull
+    latent_covmat[column, row] <- latent_covs_corrs[grepl(pattern, latent_covs_corrs$pair), 
+                                                    "covariance"] %>% pull
+    # put variances on the diagonal
+    latent_covmat[column, column] <- latent_variances[which(latent_variances$factor == column), 
+                                                      "variance"] %>% pull
+    
+    latent_covmat[row, row] <- latent_variances[which(latent_variances$factor == row), 
+                                                "variance"] %>% pull
+  }
+  
+
+  cor_matrices[[current_country]] <- latent_corrmat  
+  cov_matrices[[current_country]] <- latent_covmat  
+  
+
+}
+
+```
+
+```{r effective_dimensionality_simple}
+
+# calculate effective dimensionality in each country
+n1s <- list()
+
+for(i in 1:length(countries)){
+  
+  current_country <- countries[i]
+
+  country_N <- subset(simple_interfactor_covs_corrs, 
+                      iso2 == current_country)[1, "N"] %>% pull
+  
+  covmat <- cov_matrices[[current_country]]
+  
+  # effective dimensionality analysis with sample size correction
+  ED_results <- estimate.ED(covmat, sample.size = country_N, 
+                            small.sample.c = T, # apply correction for small sample bias
+                            print.summary = F)
+
+  n1s[[current_country]] <- ED_results$n1.c
+  
+  # save the results lists on each loop
+  save(n1s, file = "data/ED_results_simple.Rdata")
+
+}
+
+```
+
+```{r simple_ED_results}
+
+load("data/ED_results_simple.Rdata")
+
+# get results of Ed based on simple scores
+simple_ed_results_df <-
+  as.data.frame(n1s) %>%
+  t() %>%
+  as.data.frame() %>%
+  rownames_to_column("country") %>%
+  rename(n1s = V1) 
+
+simple_ed_analysis_df <- 
+  simple_ed_results_df %>% 
+  mutate(country = countrycode(country, origin = "iso2c", 
+                               destination = "country.name"),
+         iso3_n = countrycode(country, origin = "country.name", 
+                                           destination = "iso3n")) %>% 
+  left_join(country_data) %>% # country ID to join by 
+  full_join(means %>% rename(iso3_n = Group)) %>% 
+  mutate(Asia = ifelse(continent == "Asia", 1, 0),
+         Africa = ifelse(continent == "Africa", 1, 0),
+         Oceania = ifelse(continent == "Oceania", 1, 0),
+         Americas = ifelse(continent == "Americas", 1, 0),
+         n1s_notscaled = n1s,
+         niche_diversity_notscaled = niche_diversity) %>% 
+  mutate_at(., .vars = c("n1s", "niche_diversity", "logN", "acquiescence",  
+                         "homicide_rate", "mortality", "EPI",
+                         "A_mean", "C_mean", "E_mean", "ES_mean", "O_mean",
+                         "Asia",  "Africa", "Oceania", "Americas"),
+            .funs = scale)
+
+```
+
+#### Comparison without controls
+
+The relationship between effective dimensionality and niche diversity is larger under the alignment method than under the simple mean-score approach, although the relationship is statistically significant in both (see the scatterplot and regression tables below).
+
+```{r plot_ed_simple}
+
+# plot relationship of ED to niche diversity under the different appraoches
+simple_ed_analysis_df %>% rename(FactorMeans_n1s = n1s) %>% 
+  full_join(ed_analysis_df %>% select(iso3_n, Alignment_n1s = n1s)) %>% 
+  gather(key = method, value = n1s, c(FactorMeans_n1s, Alignment_n1s)) %>% 
+  ggplot(aes(x = niche_diversity_notscaled, y = n1s, color = method)) + 
+  geom_smooth(method = "lm") +
+  geom_point(alpha = .7) +
+  xlab("Niche Diveristy") + ylab("Effective Dimensionality") +
+  jtools::theme_apa(legend.pos = "bottom")
+
+```
+
+```{r ed_analyses_simple}
+
+# simple approch no controls
+ed_model_base <- lm(n1s ~ niche_diversity, data = simple_ed_analysis_df)
+
+# alignment approch no controls
+alignement_ed_model_base <- lm(n1s ~ niche_diversity, data = ed_analysis_df)
+
+```
+
+```{r output_results}
+
+# simple approch no controls
+ed_model_base %>% tbl_regression()
+
+# alignment approch no controls
+alignement_ed_model_base %>% tbl_regression()
+
+
+```
+
+#### Comparison with controls
+
+The relationship between effective dimensionality and niche diversity is robust to controls under the alignment method, but not under the simple mean-score method (see regression tables below).
+
+```{r ed_analyses_alignment}
+
+# simple appraoch with controls (already scaled for)
+ed_model_control <- lm(n1s ~ niche_diversity + logN + acquiescence + 
+                         homicide_rate + mortality + 
+                         EPI +
+                         A_mean + C_mean + E_mean + ES_mean + O_mean + 
+                         Asia + Africa + Oceania + Americas, 
+                       data = simple_ed_analysis_df)
+
+# alignment approach with controls
+alignement_ed_model_control <- lm(n1s ~ niche_diversity + logN + acquiescence + 
+                         homicide_rate + mortality + 
+                         EPI +
+                         A_mean + C_mean + E_mean + ES_mean + O_mean + 
+                         Asia + Africa + Oceania + Americas, 
+                         data = ed_analysis_df)
+
+```
+
+```{r}
+
+# simple appraoch with controls
+ed_model_control %>% tbl_regression()
+
+# alignment approach with controls
+alignement_ed_model_control %>% tbl_regression()
+
+
+```
+
+## Further examination of model fit 
+
+### CFAs for each nation
+
+```{r nation_cfa_loop, eval=F}
+
+
+# list of included countries and Ns
+country_include <- unique(ipip$country)
+
+results <- list() # make empty list for results
+
+for(i in 1:length(country_include)){ #begining of loop to run a CFA for each nation
+  
+ipip_CFA <- # create subset of current nation
+	ipip %>%  
+	filter(country == country_include[i]) %>% 
+	select(EXT1:OPN10) 
+
+# prepare for mplus and save
+prepareMplusData(ipip_CFA, "mplus/CFA/CFA_data.dat")
+
+# run the CFA model
+runModels(target = paste(getwd(),"mplus/CFA/", sep = "/"), # need full file path
+          replaceOutfile="always") 
+
+# read and save results into the results list country name
+results[[country_include[i]]] <- readModels(target = "mplus/CFA/CFA.out")$summaries
+
+# save to csv to have live results
+write.csv(bind_rows(results, .id = "country"), 
+          "mplus/CFA/countryCFA_results.csv", row.names = F)
+
+}
+
+```
+
+```{r cfa_results}
+
+CFAresults <- read.csv("mplus/CFA/countryCFA_results.csv")
+
+# get list of countries that fit ok (RMSEA below .08)
+fitok <- 
+  CFAresults %>% 
+  select(country, RMSEA_Estimate) %>% 
+  filter(RMSEA_Estimate < .08) %>% pull(country)
+
+
+```
+
+
+### Focal associations in nations with adequate model fit
+
+```{r}
+# covariance adequate rmsea
+alignment_covariance_model <- lm(scale(covariance) ~ scale(niche_diversity),
+                                         data = alignment_covariance_df %>% 
+                                           filter(iso2 %in% fitok))
+
+alignment_covariance_model %>% tbl_regression()
+
+
+# variance adequate rmsea
+alignment_variance_model <- lm(scale(variance) ~ scale(niche_diversity),
+                                         data = alignment_variance_df %>% 
+                                           filter(iso2 %in% fitok))
+
+alignment_variance_model %>% tbl_regression()
+
+# effective dimensinalty adequate rmsea
+alignement_ed_model <- lm(n1s ~ niche_diversity, 
+                         data = ed_analysis_df %>% 
+                                           filter(iso2 %in% fitok))
+alignement_ed_model %>% tbl_regression()
+
+```
+
+
+## Item-level correlations and analysis
+
+We also examined of the focal association between trait covariation and niche diversity at the item level. Because the IPIP items are specifically designed to cohere to the Big 5 factor structure, with items within each factor intentionally made to have stronger correlations than items from different factors, we examined the item-level correlations in three ways:
+(1) the average correlation across all pairs of items from  within the same factor (e.g., all extraversion items);
+(2) the average correlation across all items that are not from the same factor (e.g., each extraversion item with every other non-extraversion item); 
+(3) the average correlation across all IPIP items. 
+
+```{r}
+
+all_cors <- 
+  ipip %>% 
+  select(country, OPN1:OPN10, CSN1:CSN10, EXT1:EXT10, AGR1:AGR10, EST1:EST10) %>% 
+  split(f = as.factor(.$country)) %>% # create new dataframe for each country
+  map(select, -country) %>% # remove the country column
+  # get correlation correlation matrix between IPIP items
+  map(cor, use = "pairwise.complete") %>% 
+  reshape2::melt() %>% # convert to long format
+  rename(country = L1) %>% 
+  filter(Var1 != Var2) %>% # remove item correlations with self 
+  # separate into factor and item number columns
+  separate(Var1, into = c('Var1_factor', 'Var1_item'), sep = "(?<=[A-Z])(?=[0-9])") %>% 
+  separate(Var2, into = c('Var2_factor', 'Var2_item'), sep = "(?<=[A-Z])(?=[0-9])")
+
+# get only correlations among items within factors (e.g., extraversion items)
+within_factor_cors <- 
+  filter(all_cors, Var1_factor == Var2_factor) %>% 
+  group_by(country) %>% 
+  summarise(mean_within_r = mean(abs(value))) # get mean correlation of items
+
+# get only correlations among items that are not in same factors 
+# (e.g., each extraversion item with all items from other factors)
+between_factor_cors <- 
+  filter(all_cors, Var1_factor != Var2_factor) %>% 
+  group_by(country) %>% 
+  summarise(mean_between_r = mean(abs(value)))
+
+# get average correlation across all items regardless of scale
+across_factor_cors <- all_cors %>% 
+  group_by(country) %>% summarise(all_r = mean(abs(value)))
+
+
+# combine into one dataframe
+df <- 
+  country_data %>% 
+  right_join(between_factor_cors %>% rename(iso2 = country)) %>% 
+  right_join(within_factor_cors %>% rename(iso2 = country)) %>% 
+  right_join(across_factor_cors %>% rename(iso2 = country)) 
+
+```
+
+The niche diversity hypothesis leads to the expectation that the correlations between items that are from different factors will be higher in nations with lower niche diversity than in nations with higher niche diversity, while items that are designed to tap the same factor should cohere more strongly in higher niche diversity nations than lower niche diversity nations. Depending on the relative magnitude of these contrasting effects, the overall average correlation across all items irrespective of the Big 5 factors, could be positive, negative, or null.
+
+### Zero-order correlations
+
+The correlation matrix below shows the Spearman correlations between niche diversity and the three types of average item-level correlations (i.e., items from within the same factor, items from different factors, and items across the whole IPIP scale), along with scatterplots of the association and variable distributions. As expected, the nation-level average correlation across items that are from different factors is moderately negatively correlated with niche diversity, whereas the average correlation across items from within the same factor is strongly positively related to niche diversity. Although the average correlation across all items is negatively related to niche diversity, this association is small and non-significant. 
+
+```{r}
+library(GGally)
+ggpairs(df %>% select(niche_diversity, mean_between_r, mean_within_r, all_r),
+               progress = F, 
+                 upper = list(
+    continuous = wrap('cor', method = "spearman")))
+```
+
+### Associations with controls included
+
+We also examined the associations after controlling for the various confounds and alternative explanations discussed in the main text. As shown in the tables below, the relationships were robust to the inclusion of controls. Thus, at the item level, the Big 5 traits as measured by the IPIP are on average more distinct from other traits and more coherent in nations with greater niche diversity than nations with lower niche diversity.
+
+```{r between_item_r_controls}
+
+between_r_control <- lm(scale(mean_between_r) ~ scale(niche_diversity) +
+                                           logN + acquiescence + 
+                                           homicide_rate + mortality + 
+                                           EPI +
+                                           continent, 
+                               data = df) %>% 
+  tbl_regression()
+```
+
+```{r within_item_r_controls}
+within_r_control <- lm(scale(mean_within_r) ~ scale(niche_diversity) +
+                                           logN + acquiescence + 
+                                           homicide_rate + mortality + 
+                                           EPI +
+                                           continent, 
+                               data = df) %>% 
+  tbl_regression()
+```
+
+
+```{r all_item_r_controls}
+all_r_control <- lm(scale(all_r) ~ scale(niche_diversity) +
+                                           logN + acquiescence + 
+                                           homicide_rate + mortality + 
+                                           EPI +
+                                           continent, 
+                               data = df) %>% 
+  tbl_regression()
+```
+
+
+```{r item_level table}
+
+tbl_merge(list(between_r_control, within_r_control, all_r_control), 
+          tab_spanner = c("**Between factor correlation**", 
+                          "**Within factor correlation**", 
+                          "**All items correlation**")) %>% 
+  as_gt() %>%
+  gt::tab_header(title = "Item-level correlations with controls")
+
+```
+
+
+# Session Info
+
+```{r session_info}
+
+sessionInfo()
+```
+

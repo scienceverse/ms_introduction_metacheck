@@ -1,0 +1,508 @@
+---
+title: "Affective Forecasting and Wisdom"
+editor_options:
+  chunk_output_type: console
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    highlight: tango
+    number_sections: no
+    theme: united
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+  word_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+  
+```{r knitr_init, cache = FALSE}
+
+#In this section we set Global options for the entire document
+
+#Set the maximum number of rows to be printed in the console to 2,000.
+options(max.print=2000)
+
+#Set chunk options as follows: print code = Yes, save cache = Yes, 
+#Keep right arrow prompt  = No, reformat code = Yes, 
+#show information messages = No, show warning messages = No.
+knitr::opts_chunk$set(echo=T, cache=TRUE, prompt=F, tidy=T, message=FALSE, warning=FALSE)
+
+```
+
+
+```{r libraries}
+
+#In this section we load all the necessary libraries for data cleaning and analyses
+
+#We use an older versions of the jtools package than is currently available on CRAN. If you already have it installed you need to uninstall it first and restart R.
+
+#remotes::install_version("jtools", version = "1.1.1", repos = "http://cran.us.r-project.org")
+
+library(QuantPsyc) #functions used: Normalize()
+library(lme4) #functions used: lmer(), glmer(), glmerControl()
+library(car) #function used: Anova()
+library(ggthemes) #functions used: ggthemes()
+library(jtools) #functions used: sim_slopes, cat_plot(), interact.plot()
+library(ggeffects) #functions used: ggpredict()
+library(cowplot) #functions used: ggsave()
+library(viridis) #functions used: scale_color_viridis()
+#library(lmerTest)
+
+```
+
+# Data Cleaning
+
+## Recollecting Events
+
+```{r import.affect.scores}
+
+#In this section we import wisdom and emotion scores from event recollection
+
+#Set working directory to where the recollection file is located
+setwd("C:\\Users\\mypc\\Dropbox\\Community 1.0 Raw Files\\CSV\\")
+
+#setwd("C:\\Users\\igrossma\\Dropbox\\Community 1.0 Raw Files\\CSV\\")
+
+#Import recollection data
+
+recollection.demo.cond.wiz <- read.csv("C:\\Users\\mypc\\Dropbox\\Community 1.0 Raw Files\\CSV\\forecasting.analysis.wisdom_May7_2019.csv", stringsAsFactors = F)
+
+```
+
+
+```{r subset.recollection}
+
+#In this section we drop empty rows for participants who did not report any events during the course of the study. 
+
+community.affective <- subset(recollection.demo.cond.wiz, refl.event > 1)
+
+```
+
+
+```{r preparation.affect.scores}
+
+#In this segment we recode event, emotion, time and event variables
+
+#Declare Factors
+community.affective$PID <- factor(community.affective$subjectNumber)
+community.affective$Event <- factor(community.affective$Event)
+
+#Check number of events by type of event
+table(community.affective$Event)
+
+#Create positive and negative dummy codes for type of events
+community.affective$Eventpos[community.affective$Event == "Argument"] <- 0
+community.affective$Eventpos[community.affective$Event == "Betrayal"] <- 0
+community.affective$Eventpos[community.affective$Event == "Exclusion"] <- 0
+community.affective$Eventpos[community.affective$Event == "Gathering"] <- 1
+community.affective$Eventpos[community.affective$Event == "Pleasant Conversation"] <- 1
+community.affective$Eventpos[community.affective$Event == "Support"] <- 1
+
+
+#Create factor version of the dummy coded event variable
+community.affective$Eventpos_F <- factor(community.affective$Eventpos, labels=c("Negative", "Positive"))
+
+#Check Condition codes
+table(community.affective$Condition.D)
+
+#Recode Condition
+community.affective$cond[community.affective$Condition.D == 1] <- 0
+community.affective$cond[community.affective$Condition.D == 3] <- 1
+
+#Create a factor version of the condition variable
+community.affective$cond_F <- factor(community.affective$cond, labels = c("First Person", "Third Person"))
+
+#Check frequency of emotion terms
+table(community.affective$Emotion)
+
+#Dummy code emotion terms into positive and negative
+community.affective$Emopos[community.affective$Emotion == "Angry"] <- 0
+community.affective$Emopos[community.affective$Emotion == "Frustrated"] <- 0
+community.affective$Emopos[community.affective$Emotion == "Upset"] <- 0
+community.affective$Emopos[community.affective$Emotion == "Content"] <- 1
+community.affective$Emopos[community.affective$Emotion == "Liking"] <- 1
+community.affective$Emopos[community.affective$Emotion == "Trustful"] <- 1
+
+#Create a factor version for emotions and label the dummy codes
+community.affective$Emopos_F <- factor(community.affective$Emopos, labels = c("Negative", "Positive"))
+
+#Convert PrePost vector to numeric and dummy code it
+community.affective$PrePost_N[community.affective$PrePost == "Pre"] <- 0
+community.affective$PrePost_N[community.affective$PrePost == "Post"] <- 1
+
+```
+
+## Mood and Feeling to Close Others Accuracy
+
+```{r subset.aff.social}
+
+#Subsets for mood accuracy (happy only) and social emotions accuracy (emotions with social action tendencies)
+
+community.affect <- subset(community.affective, Emotion == "Happy")
+
+community.social <- subset(community.affective, !Emotion == "Happy")
+
+```
+
+
+```{r mean.center.aff.social}
+
+#In this section we mean mean-center all predictors for both community.social and community.affect and also Normalize the scores (since the variable is heavily skewed)
+
+#Community Affect
+
+#Mean center
+community.affect$Eventpos_C <- scale(community.affect$Eventpos,scale = F)
+community.affect$cond_C <- scale(community.affect$cond,scale = F)
+community.affect$Emopos_C <- scale(community.affect$Emopos,scale = F)
+community.affect$PrePost_C <- scale(community.affect$PrePost_N, scale = F)
+community.affect$diffwiz_C <- scale(community.affect$diff.wiz,scale = F)
+
+#Check distribution
+#hist(community.affect$Score) #variable skewed so need to normalize
+
+#Fix happy for the forecasting dataset
+community.affect[community.affect$PrePost_N == 0 , c("Score.fixed")] <- community.affect[community.affect$PrePost_N == 0 , c("Score")] - 4
+
+community.affect$Score.fixed <- ifelse(community.affect$PrePost_N == 1, community.affect$Score, community.affect$Score.fixed)
+
+#Normalize
+community.affect$score.norm <- Normalize(community.affect$Score.fixed)
+
+#hist(community.affect$score.norm) 
+
+#Community Social
+
+#Mean center
+community.social$Eventpos_C <- scale(community.social$Eventpos,scale = F)
+community.social$cond_C <- scale(community.social$cond,scale = F)
+community.social$Emopos_C <- scale(community.social$Emopos,scale = F)
+community.social$PrePost_C <- scale(community.social$PrePost_N, scale = F)
+community.social$diffwiz_C <- scale(community.social$diff.wiz,scale = F)
+
+#Check distribution
+#hist(community.social$Score) #variable skewed so need to normalize
+
+#Normalize
+community.social$score.norm <- Normalize(community.social$Score)
+
+```
+
+
+
+## Forecasting
+
+```{r import.probab.scores}
+
+#In this segment we import affective forecasting probability scores 
+
+forecasting.prob.demo.cond.wiz <- read.csv("C:\\Users\\mypc\\Dropbox\\Community 1.0 Raw Files\\CSV\\forecasting.analysis.probability_May7_2019.csv", stringsAsFactors = F)
+
+
+
+```
+
+
+```{r subset.forecasting}
+
+#In this section we drop empty rows for participants who did not report any events during the course of the study. 
+
+forecast.probab <- subset(forecasting.prob.demo.cond.wiz, refl.event > 1)
+
+```
+
+
+```{r preparation.probability.scores}
+
+#In this section we declare factors and dummy code event and condition variables
+
+#Declare factors
+forecast.probab$PID <- factor(forecast.probab$subjectNumber)
+forecast.probab$Event <- factor(forecast.probab$Scenario)
+
+#Create positive and negative dummy codes for type of events
+forecast.probab$Eventpos[forecast.probab$Event == "Argument"] <- 0
+forecast.probab$Eventpos[forecast.probab$Event == "Betrayal"] <- 0
+forecast.probab$Eventpos[forecast.probab$Event == "Exclusion"] <- 0
+forecast.probab$Eventpos[forecast.probab$Event == "Gathering"] <- 1
+forecast.probab$Eventpos[forecast.probab$Event == "Pleasant Conversation"] <- 1
+forecast.probab$Eventpos[forecast.probab$Event == "Support"] <- 1
+
+
+#Create factor version of the event variable
+forecast.probab$Eventpos_F <- factor(forecast.probab$Eventpos)
+
+#Check Condition
+table(forecast.probab$Condition.D)
+
+#Recode Condition
+forecast.probab$cond[forecast.probab$Condition.D == 1] <- 0
+forecast.probab$cond[forecast.probab$Condition.D == 3] <- 1
+
+#Create factor version of the condition variable
+forecast.probab$cond_F <- factor(forecast.probab$cond)
+
+```
+
+
+
+```{r mean.centering.prediction.scores}
+
+#In this section we mean center all predictors for the forecasting dataset.
+
+forecast.probab$Eventpos_C <- scale(forecast.probab$Eventpos, scale = F)
+forecast.probab$cond_C <- scale(forecast.probab$cond, scale = F)
+forecast.probab$diffwiz_C <- scale(Normalize(forecast.probab$diff.wiz), scale = F)
+forecast.probab$AFPProb_C <- scale(forecast.probab$AFPProb, scale = F)
+
+
+```
+
+# Analyses in the paper
+
+## Effect of Condition
+
+```{r tests.for.social.forecasting}
+
+#In this section we test the effect of Time, Condition, Emotion Type and Event Type on emotion scores
+
+#Model fit
+testS1 <- lme4::lmer(Normalize(Score) ~ (1|PID) + PrePost_C * cond_C * Emopos_C * Eventpos_C, data = community.social)
+
+#View Summary 1
+summary(testS1)
+
+#View Summary 2
+Anova(testS1, type = "III")
+
+```
+
+
+```{r subset.event.type}
+
+#In this section we subset community.social into positive and negative events
+
+community.social.negsit <- subset(community.social, Eventpos_F == "Negative")
+community.social.possit <- subset(community.social, Eventpos_F == "Positive")
+
+```
+
+## Positive Events
+
+```{r analyses.positive.events}
+
+#In this section we test the effect of Time, Condition and Emotion Type on Emotion for positive events only. 
+
+testS2.pos <- lmer(Normalize(Score) ~ (1|PID) + scale(PrePost_C, scale = F) * scale(cond_C, scale = F) * scale(Emopos_C, scale = F), data = community.social.possit)
+
+#View Summary 1
+summary(testS2.pos)
+
+#View Summary 2
+Anova(testS2.pos, type="III") 
+
+#Result - interaction is not significant.
+
+
+```
+
+## Negative Events
+
+```{r analyses.negative.events}
+
+#In this section we test the effect of Time, Condition and Emotion Type on Emotion using rows for negative events only. 
+
+#Mean Centering Emotion type, Time and Condition variables
+community.social.negsit$Emopos_C <- as.numeric(scale(community.social.negsit$Emopos_C, scale = F))
+
+community.social.negsit$PrePost_C <- as.numeric(scale(community.social.negsit$PrePost_C, scale = F))
+
+community.social.negsit$cond_C <- as.numeric(scale(community.social.negsit$cond_C, scale = F))
+
+
+#Normalize Score
+community.social.negsit$score.norm <- Normalize(community.social.negsit$Score)
+
+#Fit model
+testS2.neg <- lmer(score.norm ~ (1|PID) + PrePost_C * cond_C * Emopos_C,  data = community.social.negsit)
+
+#View Summary 1
+summary(testS2.neg)
+
+#View Summary 2
+Anova(testS2.neg, type = "III") 
+
+#Result : sig 3 way!
+
+#Plot
+
+plot1.neg <- cat_plot(testS2.neg, cond_C, PrePost_C, Emopos_C, geom = "point", interval.geom = "errorbar", centered = "all", robust = T, pred.labels = c("First Person", "Third Person"), modx.labels = c("Forecast", "Experience"), mod2.labels = c("Negative Emotions", "Positive Emotions"), x.label = "Condition", y.label = "Emotional Intensity + /- 95 CI", color.class = "Set1")
+
+plotA <- plot1.neg + theme_hc() + 
+ scale_color_viridis(discrete = TRUE, option = "D", direction = -1) + theme(legend.title = element_blank(), legend.justification = c(1, 0), legend.position = c(1, 0.7))
+
+plotA
+
+#Check simple effects
+
+jtools::sim_slopes(testS2.neg, PrePost_C, cond_C, mod2 = Emopos_C, centered = "all", digits = 3)
+
+jtools::sim_slopes(testS2.neg, cond_C, Emopos_C, mod2 = PrePost_C, centered = "all", digits = 3)
+
+```
+
+
+
+```{r mean.center.normalize.social}
+
+#In this section we mean center and normalize emotion and wisdom scores from 2 separate data.frames
+
+community.social.possit$score.norm <- Normalize(community.social.possit$Score)
+community.social.possit$diffwiz_C <- scale(community.social.possit$diffwiz, scale = F)
+community.social.negsit$diffwiz_C <- scale(community.social.negsit$diffwiz, scale = F)
+
+```
+
+## Wisdom Growth
+
+```{r analyses.wisdom.growth}
+
+#In this section we test the effect of Growth in Wise Reasoning, Time, Event type and Emotion Type on Emotion Scores.
+
+#Fit Model
+testS5 <- lmer(score.norm ~ (1|PID) + diffwiz_C * PrePost_C * Emopos_C * Eventpos_C, data = community.social)
+
+#Summary 1
+summary(testS5)
+
+summ(testS5, center = "all", digits = 4)
+
+#Summary 2
+Anova(testS5, type = "III")
+
+#Plot model
+interact_plot(testS5, PrePost_C, diffwiz_C, mod2 = Emopos_C, centered = "all", interval = T, robust = T, int.width = .8, x.label = "Forecasted vs. Experienced", pred.labels = c("Forecast", "Exper."), mod2.labels = c("Negative Emotions", "Positive Emotions"), legend.main = "Growth in Wise Reasoning", color.class = "Qual1")
+
+```
+
+## Positive Events
+
+```{r analyses.wisdom.growth.positive.sit}
+
+#In this section we examine the effect of wisdom growth, Time and Emotion Type for positive situations.
+
+###POSITIVE SITUATIONS
+
+#Model Fit
+testS6 <- lmer(score.norm ~ (1|PID) + diffwiz_C * PrePost_C * Emopos_C, data = community.social.possit)
+
+#View Summary 1
+summary(testS6)
+
+#View Summary 2
+Anova(testS6, type = "III") 
+
+#Result: no effect
+
+#Plot model
+interact_plot(testS6, PrePost_C, diffwiz_C, mod2 = Emopos_C, centered = "all", interval = T, robust = T, int.width = .8, x.label = "Forecasted vs. Experienced", pred.labels = c("Forecast", "Exper."), mod2.labels = c("Negative Emotions", "Positive Emotions"), legend.main = "Growth in Wise Reasoning", color.class = "Qual1")
+
+```
+
+## Negative Events
+
+```{r negative.situations}
+
+#In this section we examine the effect of wisdom growth, Time and Emotion Type for negative situations.  
+
+#Examine negative situations
+testS7 <- lmer(score.norm ~ (1|PID) + diffwiz_C * PrePost_C * Emopos_C, data = community.social.negsit)
+
+#View Summary 1
+summary(testS7)
+
+#View Summary 2
+Anova(testS7, type = "III") #sig interaction
+
+
+#Plot model
+plot7.neg <- jtools::interact_plot(testS7, PrePost_C, diffwiz_C, mod2 = Emopos_C, centered = "all")
+
+plot7.neg
+
+plotB <- interact_plot(testS7, diffwiz_C, PrePost_C, mod2 = Emopos_C, centered = "all", interval = T, robust = T, int.width = .8, x.label	
+ = "Growth in Wise Reasoning", mod2.labels = c("Negative Emotions", "Positive Emotions"), modx.labels = c("Forecast", "Experience")) + theme_hc() + theme(legend.title = element_blank(), legend.position = "none") + 
+ labs(color = "PrePost_C", linetype = "PrePost_C", shape = "PrePost_C", y = "") + 
+ scale_color_viridis(discrete = TRUE, option = "D", direction = -1) + 
+ scale_fill_viridis(discrete = TRUE, option = "D", direction = -1) 
+
+#Simple slopes
+sim_slopes(testS7, PrePost_C, diffwiz_C, mod2 = Emopos_C, centered = "all", digits = 3)
+
+#Plot both graphs in the same window
+plot_grid(plotA, plotB, nrow = 1, rel_widths = c(1, 1), labels = c('A', 'B')) 
+
+#cowplot::ggsave("Conditionxforecast.pdf", width = 9.5, height = 4, units = "in")
+
+
+```
+
+
+# Supplemental Section
+
+```{r tests.for.predictions, eval=FALSE, include=FALSE}
+
+testP1 <- glmer(AFP.dummy ~ (1|PID) + (1|Event) + AFPProb_C * cond_C * Eventpos_C, data = forecast.probab, family = binomial, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+
+summary(testP1) #prediction is more accurate in the third vs. first person condition. Event is also more likely to happen for pos third person vs. neg first person. marginal effects, though.
+
+test.1.values <- ggeffects::ggpredict(testP1, c("AFPProb_C", "cond_C"))
+
+plot(test.1.values)
+
+interact_plot(testP1, AFPProb_C, cond_C, mod2 = Eventpos_C, centered = "all", interval = T, robust = T, int.width = .8, x.label	= "Predicted Likelihood", y.label = "Event Likelihood (log)", legend.main = "Condition", modx.labels = c("First Person", "Third Person"), color.class = "Qual1") + theme(legend.title = element_blank(), legend.position = "bottom") + theme_gdocs() + theme(legend.title = element_blank(), legend.position = "top") 
+
+#examine effects for wise reasoning components
+testP4 <- glmer(AFP.dummy ~ (1|PID) + (1|Event) + AFPProb_C * scale(Normalize(diffwiz_C), scale = F) * Eventpos_C, data = forecast.probab, family = binomial, glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 100000)))
+
+summary(testP4)
+
+interact_plot(testP4, AFPProb_C, diffwiz_C, mod2 = Eventpos_C, centered = "all", interval = T, robust = T, int.width = .8, x.label = "Likelihood", pred.labels = c("Forecast", "Exper."), mod2.labels = c("Negative Sit", "Positive Sit"), legend.main = "Growth in Wise Reasoning", color.class = "Qual1") 
+
+#nothing for neg events, but greater accuracy in predictions for positive events among those who experienced growth between time 1 and time 2
+
+```
+
+
+## Affective Forecasting using Happy only
+
+```{r tests.for.affective.forecasting}
+
+#In this section we test the effect of Time, Condition and Event type on Emotion.
+
+#Fit the model
+test1 <- lme4::lmer(score.norm ~ PrePost_C + (1|PID), data = community.affect)
+
+#View Summary 1
+summary(test1)
+
+#View Summary 2
+Anova(test1,type="III")
+
+#Result: no effect of condition for happy, though a main effect of event positivity vs. negativity
+
+#Main Effects Model
+test1a <- lmer(score.norm ~ (1|PID) + PrePost_C , data = community.affect)
+
+#View Summary 1
+summary(test1a)
+
+#View Summary 2
+Anova(test1a,type="III")
+
+summ(test1a)
+
+```

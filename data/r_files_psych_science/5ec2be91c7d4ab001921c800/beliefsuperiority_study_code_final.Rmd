@@ -1,0 +1,502 @@
+---
+title: "Belief Superiority Replication"
+author: "Elizabeth Harris & Jay Van Bavel"
+date: "5/8/2020"
+output: pdf_document
+---
+
+```{r setup,include=FALSE}
+library(ggplot2)
+library(tidyverse)
+library(lmerTest)
+library(car)
+library(TOSTER)
+library(Hmisc)
+library(optimx)
+library(RColorBrewer)
+library(reshape2)
+library(psych)
+source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
+
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=40),tidy=TRUE)
+
+setwd("~/~grad school/research/8 psych sci replication")
+
+d=read.csv("beliefsuperiority_all.csv")
+d[] <- lapply(d, function(x) {
+    if(is.factor(x)) as.numeric(as.character(x)) else x
+})
+```
+
+Set up data
+
+```{r}
+#remove rows of those who did not agree to the consent form (and were directed to the end of survey)
+d= filter(d,Q62 == 1)
+
+#remove those who failed the attention check items and make a separate dataframe
+d_attn= filter(d,AC_a==3) %>% 
+  filter(AC_b==5)
+
+#remove attention check items from dataframe
+d_attn=dplyr::select(d_attn,-starts_with('AC'))
+
+#Creating a mean dogmatism score
+#First, items 2, 4, 5, 7, 10, 11, 13, 16, 18, 19 need to be reverse scored
+d_attn$Q37_2 = recode(d_attn$Q37_2, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d_attn$Q37_4 = recode(d_attn$Q37_4, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d_attn$Q37_5 = recode(d_attn$Q37_5, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d_attn$Q37_7 = recode(d_attn$Q37_7, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d_attn$Q37_10 = recode(d_attn$Q37_10, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d_attn$Q37_11 = recode(d_attn$Q37_11, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d_attn$Q37_13 = recode(d_attn$Q37_13, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d_attn$Q37_16 = recode(d_attn$Q37_16, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d_attn$Q37_18 = recode(d_attn$Q37_18, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d_attn$Q37_19 = recode(d_attn$Q37_19, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+
+dogscale=dplyr::select(d_attn,starts_with('Q37'))
+d_attn$meanD=rowMeans(dogscale,na.rm = TRUE)
+
+hist(d_attn$meanD)
+#positive skew (not as many people high on dogmatism, mean is almost exactly midpoint of scale)
+
+#Next, transform 4-pt attitude scales to 5-pt: vote, torture, affirmaction
+#(5 - 1) * (x - 1) / (4 - 1) + 1
+d_attn$vote_a = recode(d_attn$vote_a, '2=1; 3=2.3333; 4=3.6667; 5=5')
+d_attn$torture_a = recode(d_attn$torture_a, '2=1; 3=2.3333; 4=3.6667; 5=5')
+d_attn$affirmaction_a = recode(d_attn$affirmaction_a, '2=1; 3=2.3333; 4=3.6667; 5=5')
+
+#Calculate an average attitude score per participant (for dogmatism analysis)
+attitudes=dplyr::select(d_attn,ends_with('_a'))
+d_attn$meanA=rowMeans(attitudes,na.rm = TRUE)
+
+#mean center the variables
+#dogmatism
+d_attn$meanD_c= d_attn$meanD-mean(d_attn$meanD,na.rm=TRUE)
+#mean attitude 
+d_attn$meanA_c= d_attn$meanA-mean(d_attn$meanA,na.rm=TRUE)
+#individual attitude ratings
+d_attn$immigration_a_c=d_attn$immigration_a-mean(d_attn$immigration_a,na.rm=TRUE)
+d_attn$abortion_a_c=d_attn$abortion_a-mean(d_attn$abortion_a,na.rm=TRUE)
+d_attn$vote_a_c=d_attn$vote_a-mean(d_attn$vote_a,na.rm=TRUE)
+d_attn$tax_a_c=d_attn$tax_a-mean(d_attn$tax_a,na.rm=TRUE)
+d_attn$torture_a_c=d_attn$torture_a-mean(d_attn$torture_a,na.rm=TRUE)
+d_attn$affirmaction_a_c=d_attn$affirmaction_a-mean(d_attn$affirmaction_a,na.rm=TRUE)
+d_attn$military_a_c=d_attn$military_a-mean(d_attn$military_a,na.rm=TRUE)
+d_attn$covidgov_a_c=d_attn$covidgov_a-mean(d_attn$covidgov_a,na.rm=TRUE)
+#political orientation
+d_attn$PO_c= d_attn$Q12-mean(d_attn$Q12,na.rm=TRUE)
+```
+
+Demographics - political affiliation
+
+For a sample of 1300, a nationally politically representative sample is 31% D, 27% R and 39% I
+according to one source (Gallup, https://news.gallup.com/poll/15370/party-affiliation.aspx )
+
+In our sample we have: 
+
+```{r}
+
+#1= D, 2= R, 3=I
+table(d_attn$Q16)
+291/707
+225/707
+154/707
+
+#from the total sample:
+table(d$Q16)
+
+```
+Therefore, we have approximately the predicted proportion of Rs and over-sampled (but not extremely) the proportion of Ds
+
+Scale characteristics: 
+```{r}
+#dogmatism
+alpha(x=dogscale,na.rm=TRUE)
+mean(d_attn$meanD,na.rm=TRUE)
+sd(d_attn$meanD,na.rm=TRUE)
+
+#attitude ratings
+alpha(x=attitudes,na.rm=TRUE)
+mean(d_attn$meanA,na.rm=TRUE)
+sd(d_attn$meanA,na.rm=TRUE)
+
+#belief superiority 
+beliefs=dplyr::select(d_attn,ends_with('_b'))
+meanB=rowMeans(beliefs,na.rm = TRUE)
+alpha(x=beliefs,na.rm=TRUE)
+mean(meanB,na.rm=TRUE)
+sd(meanB,na.rm=TRUE)
+```
+
+
+--
+
+Dogmatism analyses - 1
+
+```{r}
+#multiple regression in which dogmatism is regressed onto a linear 
+#and quadratic term for average political attitude
+D1= lm(meanD~meanA_c+I(meanA_c^2),d_attn)
+summary(D1)
+
+```
+
+Dogmatism analyses - 2
+
+```{r}
+#same analysis but with the predictor being self-reported political orientation
+D2= lm(meanD~PO_c+I(PO_c^2),d_attn)
+summary(D2)
+
+```
+
+Dogmatism analyses - 3
+
+```{r}
+#simple t-test comparing the average dogmatism scores of self-identified Democrats and Republicans
+dems=filter(d_attn,Q16==1)
+reps=filter(d_attn,Q16==2)
+t.test(dems$meanD,reps$meanD)
+
+```
+Dogmatism analyses - 4 (exploratory)
+
+```{r}
+#regress dogmatism onto the participants’ economic conservatism score and social conservatism score
+d_attn$SC_c= d_attn$Q39 - mean(d_attn$Q39,na.rm=TRUE)
+d_attn$EC_c= d_attn$Q40 - mean(d_attn$Q40,na.rm=TRUE)
+
+SEdog=lm(meanD~SC_c+EC_c,d_attn)
+summary(SEdog)
+ 
+```
+
+--
+
+Belief superiority analyses
+
+```{r}
+#multilevel model: belief superiority regressed onto linear 
+#and quadratic terms for attitude, with and without dogmatism covariate 
+#random variables of subject and topic 
+
+#first converting the dataset to long format 
+d_attn$subject=c(1:nrow(d_attn))
+
+d_attnlong <- bind_cols(d_attn %>% 
+                        dplyr::select(.  , ends_with("_a_c"), subject,38:67,76) %>%
+                        gather(. , topic, attitude_c, ends_with("_a_c")),
+                      d_attn %>% dplyr::select(. ,ends_with("_b"), subject) %>%
+                        gather(. , topic, beliefsup, ends_with("_b")),
+                      d_attn %>% dplyr::select(. ,ends_with("_a"), subject) %>%
+                        gather(. , topic, attitude, ends_with("_a"))
+)
+
+#model 1, without dogmatism 
+beliefsup1= lmer(beliefsup~attitude_c+I(attitude_c^2)+
+                   (1|subject)+
+                   (1+attitude_c+I(attitude_c^2)|topic),d_attnlong,
+                 control =  lmerControl(optimizer="bobyqa"))
+summary(beliefsup1)
+coef(beliefsup1)$topic
+
+#model 2, with dogmatism 
+beliefsup2= lmer(beliefsup~attitude_c+I(attitude_c^2)+meanD_c+
+                   (1|subject)+
+                   (1+attitude_c+I(attitude_c^2)|topic),d_attnlong,
+                 control =  lmerControl(optimizer="bobyqa"))
+summary(beliefsup2)
+
+```
+Equivalence testing 
+```{r}
+#starting with model 2
+#this function requires SD, which I calculated with SE*sqrt(N)
+#with the SE and N from the regression model output
+0.07727*sqrt(706)
+TOSTone(m = -0.02096,mu = 0,sd = 2.053115,n = 706,
+        low_eqbound_d = -0.1,high_eqbound_d = 0.1,alpha = 0.05)
+
+#then model 1
+0.0767*sqrt(707)
+TOSTone(m = -0.02822,mu = 0,sd = 2.039412,n = 707,
+        low_eqbound_d = -0.1,high_eqbound_d = 0.1,alpha = 0.05)
+```
+
+
+Figures 
+
+```{r}
+#dogmatism plot - 1
+ggplot(d_attn, aes(x=meanA_c, y=meanD))+
+  #geom_jitter(alpha=.5)+
+  #theme(legend.position= "none") +
+  geom_point(aes(y = meanD), position = position_jitter(width = .15), size = 2.5, alpha = 0.5) +
+  labs(x='Average Attitude', y='Dogmatism') +
+  stat_smooth(method = "lm", formula = y ~ x + I(x^2), size = 2) +
+     theme_minimal()+
+  theme(axis.title.y = element_text(size=16, face="bold"))+
+  theme(axis.title.x = element_text(size=16, face="bold"))+
+  theme(axis.text.y=element_text(color = "black", size = 14))+
+  theme(axis.text.x=element_text(color = "black", size = 14))+
+  theme(legend.text = element_text(color = "black", size = 14))+
+  theme(legend.title = element_text(color = "black", size = 14))+
+  theme(axis.line= element_line(color="black")) +
+  theme(axis.ticks.y = element_line(color="black")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  theme(strip.text.x=element_text(color = "black", size = 14, face="bold"))+
+  xlim(c(-2,2))+
+  scale_y_continuous(breaks = c(0,1,2,3,4,5,6,7,8,9),lim=c(1,9))
+
+#dogmatism plot - 2
+ggplot(d_attn, aes(x=PO_c, y=meanD,color=PO_c))+
+  #geom_jitter(alpha=.5)+
+  #theme(legend.position= "none") +
+  geom_point(aes(y = meanD), position = position_jitter(width = .15), size = 2.5, alpha = 0.6) +
+  stat_summary(fun.y=mean, geom='point', size=2, color="black") +
+  stat_summary(fun.data = mean_cl_boot,geom='errorbar', fun.args=list(conf.int=.95), 
+               size=1.5, aes(width=.3), color="black")+
+  labs(x='Political Orientation', y='Dogmatism') +
+  stat_smooth(method = "lm", formula = y ~ x + I(x^2), size = 2) +
+   theme_minimal()+
+  theme(axis.title.y = element_text(size=16, face="bold"))+
+  theme(axis.title.x = element_text(size=16, face="bold"))+
+  theme(axis.text.y=element_text(color = "black", size = 14))+
+  theme(axis.text.x=element_text(color = "black", size = 14))+
+  theme(legend.text = element_text(color = "black", size = 14))+
+  theme(legend.title = element_text(color = "black", size = 14))+
+  theme(axis.line= element_line(color="black")) +
+  theme(axis.ticks.y = element_line(color="black")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  theme(strip.text.x=element_text(color = "black", size = 14, face="bold")) +
+  theme(legend.position = "none")+
+  scale_x_continuous(breaks = c(-3,-2,-1,0,1,2,3),lim=c(-3.1,3.1))+
+  scale_y_continuous(breaks = c(0,1,2,3,4,5,6,7,8,9),lim=c(1,9))
+
+#belief superiority plot 
+d_attnlong$attitude=as.factor(d_attnlong$attitude)
+forplot= d_attnlong[which(!is.na(d_attnlong$attitude)),]
+
+raincloud_theme = theme(
+  text = element_text(size = 10),
+  axis.title.x = element_text(size = 16),
+  axis.title.y = element_text(size = 16),
+  axis.text = element_text(size = 14),
+  axis.text.x = element_text(angle = 45, vjust = 0.5),
+  legend.title=element_text(size=16),
+  legend.text=element_text(size=16),
+  legend.position = "right",
+  plot.title = element_text(lineheight=.8, face="bold", size = 16),
+  panel.border = element_blank(),
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_blank(),
+  axis.line.x = element_line(colour = 'black', size=0.5, linetype='solid'),
+  axis.line.y = element_line(colour = 'black', size=0.5, linetype='solid'))
+
+ggplot(forplot, aes(x=attitude, y=beliefsup,color=attitude))+
+  theme(legend.position= "none") +
+  geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8) +
+  geom_point(aes(y = beliefsup, color = attitude), position = position_jitter(width = .15), 
+             size = 1.5, alpha = 0.2) +
+   stat_summary(fun.y=mean, size=2, color="black",geom="line", aes(group = 1)) +
+  stat_summary(fun.y=mean, size=2, color="black",geom="point", aes(group = 1)) +
+  stat_summary(fun.data = mean_cl_boot,geom='errorbar', fun.args=list(conf.int=.95), 
+               size=1.5, aes(width=.3), color="black")+
+  labs(x='Attitude', y='Belief Superiority') +
+   theme_minimal()+
+  theme(axis.title.y = element_text(size=16, face="bold"))+
+  theme(axis.title.x = element_text(size=16, face="bold"))+
+  theme(axis.text.y=element_text(color = "black", size = 14))+
+  theme(axis.text.x=element_text(color = "black", size = 14))+
+  theme(legend.text = element_text(color = "black", size = 14))+
+  theme(legend.title = element_text(color = "black", size = 14))+
+  theme(axis.line= element_line(color="black")) +
+  theme(axis.ticks.y = element_line(color="black")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  theme(strip.text.x=element_text(color = "black", size = 14, face="bold"))+
+  theme(legend.position = "none")+
+  scale_x_discrete(labels = c("1","2","2.3","3","3.7","4","5"))
+
+```
+
+
+
+
+
+----- SUPPLEMENTARY ANALYSES -----
+
+
+
+
+Belief superiority MLMs WITHOUT quadratic term in topic random effect
+
+```{r}
+#the two models while without the quadratic term in topic 
+#model without dogmatism 
+beliefsup3= lmer(beliefsup~attitude_c+I(attitude_c^2)+
+                   (1|subject)+
+                   (1+attitude_c|topic),d_attnlong,
+                 control =  lmerControl(optimizer="bobyqa"))
+summary(beliefsup3)
+#model with dogmatism 
+beliefsup4= lmer(beliefsup~attitude_c+I(attitude_c^2)+meanD_c+
+                   (1|subject)+
+                   (1+attitude_c|topic),d_attnlong,
+                 control =  lmerControl(optimizer="bobyqa"))
+summary(beliefsup4)
+```
+
+
+
+
+
+Exploratory breakdown by topic
+
+```{r}
+#per topic
+
+immigration= lm(immigration_b~immigration_a_c+I(immigration_a_c^2),d_attn)
+summary(immigration)
+#linear sig, more for C
+
+abortion= lm(abortion_b~abortion_a_c+I(abortion_a_c^2),d_attn)
+summary(abortion)
+#no linear
+
+vote= lm(vote_b~vote_a_c+I(vote_a_c^2),d_attn)
+summary(vote)
+#linear sig, more for C
+
+tax= lm(tax_b~tax_a_c+I(tax_a_c^2),d_attn)
+summary(tax)
+#linear sig, more for C
+
+torture= lm(torture_b~torture_a_c+I(torture_a_c^2),d_attn)
+summary(torture)
+#no linear
+
+affirmaction= lm(affirmaction_b~affirmaction_a_c+I(affirmaction_a_c^2),d_attn)
+summary(affirmaction)
+#no linear
+
+military= lm(military_b~military_a_c+I(military_a_c^2),d_attn)
+summary(military)
+#no linear, trending for more for L
+
+covidgov= lm(covidgov_b~covidgov_a_c+I(covidgov_a_c^2),d_attn)
+summary(covidgov)
+#linear, more for L 
+
+#although, with bonferroni correction for the 8 regressions here (0.05/8= 0.00625), 
+#tax no longer has a significant linear term
+```
+
+
+
+All the analyses with the whole dataset (including those who failed attention check)
+
+```{r}
+d=dplyr::select(d,-starts_with('AC'))
+d$Q37_2 = recode(d$Q37_2, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d$Q37_4 = recode(d$Q37_4, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d$Q37_5 = recode(d$Q37_5, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d$Q37_7 = recode(d$Q37_7, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d$Q37_10 = recode(d$Q37_10, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d$Q37_11 = recode(d$Q37_11, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d$Q37_13 = recode(d$Q37_13, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d$Q37_16 = recode(d$Q37_16, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d$Q37_18 = recode(d$Q37_18, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+d$Q37_19 = recode(d$Q37_19, '1=9; 2=8; 3=7; 4=6; 6=4; 7=3; 8=2; 9=1')
+dogscale=dplyr::select(d,starts_with('Q37'))
+d$meanD=rowMeans(dogscale,na.rm = TRUE)
+d$vote_a = recode(d$vote_a, '2=1; 3=2.3333; 4=3.6667; 5=5')
+d$torture_a = recode(d$torture_a, '2=1; 3=2.3333; 4=3.6667; 5=5')
+d$affirmaction_a = recode(d$affirmaction_a, '2=1; 3=2.3333; 4=3.6667; 5=5')
+attitudes=dplyr::select(d,ends_with('_a'))
+d$meanA=rowMeans(attitudes,na.rm = TRUE)
+d$meanD_c= d$meanD-mean(d$meanD,na.rm=TRUE)
+d$meanA_c= d$meanA-mean(d$meanA,na.rm=TRUE)
+d$immigration_a_c=d$immigration_a-mean(d$immigration_a,na.rm=TRUE)
+d$abortion_a_c=d$abortion_a-mean(d$abortion_a,na.rm=TRUE)
+d$vote_a_c=d$vote_a-mean(d$vote_a,na.rm=TRUE)
+d$tax_a_c=d$tax_a-mean(d$tax_a,na.rm=TRUE)
+d$torture_a_c=d$torture_a-mean(d$torture_a,na.rm=TRUE)
+d$affirmaction_a_c=d$affirmaction_a-mean(d$affirmaction_a,na.rm=TRUE)
+d$military_a_c=d$military_a-mean(d$military_a,na.rm=TRUE)
+d$covidgov_a_c=d$covidgov_a-mean(d$covidgov_a,na.rm=TRUE)
+d$PO_c= d$Q12-mean(d$Q12,na.rm=TRUE)
+
+##dogmatism 
+D1= lm(meanD~meanA_c+I(meanA_c^2),d)
+summary(D1)
+D2= lm(meanD~PO_c+I(PO_c^2),d)
+summary(D2)
+dems=filter(d,Q16==1)
+reps=filter(d,Q16==2)
+t.test(dems$meanD,reps$meanD)
+d$SC_c= d$Q39 - mean(d$Q39,na.rm=TRUE)
+d$EC_c= d$Q40 - mean(d$Q40,na.rm=TRUE)
+SEdog=lm(meanD~SC_c+EC_c,d)
+summary(SEdog)
+
+#beliefsup
+d$subject=c(1:nrow(d))
+dlong <- bind_cols(d %>% 
+                        dplyr::select(.  , ends_with("_a_c"), subject,38:67,76) %>%
+                        gather(. , topic, attitude_c, ends_with("_a_c")),
+                      d %>% dplyr::select(. ,ends_with("_b"), subject) %>%
+                        gather(. , topic, beliefsup, ends_with("_b"))
+)
+
+beliefsup1= lmer(beliefsup~attitude_c+I(attitude_c^2)+
+                   (1|subject)+
+                   (1+attitude_c+I(attitude_c^2)|topic),dlong,
+                 control =  lmerControl(optimizer="bobyqa"))
+summary(beliefsup1)
+coef(beliefsup1)$topic
+
+beliefsup2= lmer(beliefsup~attitude_c+I(attitude_c^2)+meanD_c+
+                   (1|subject)+
+                   (1+attitude_c+I(attitude_c^2)|topic),dlong,
+                 control =  lmerControl(optimizer="bobyqa"))
+summary(beliefsup2)
+
+#starting with model 2
+#this function requires SD, which I calculated with SE*sqrt(N)
+#with the SE and N from the regression model output
+0.0638*sqrt(1317)
+TOSTone(m = 0.0352,mu = 0,sd = 2.31533,n = 1317,low_eqbound_d = -0.1,high_eqbound_d = 0.1,alpha = 0.05)
+
+#then model 1
+0.06298*sqrt(1319)
+TOSTone(m = -0.04131,mu = 0,sd = 2.28731,n = 1319,low_eqbound_d = -0.1,high_eqbound_d = 0.1,alpha = 0.05)
+```
+
+Equivalence testing using 1. the number of trials as N in the analysis and 2. using the number of scales as N in the analysis 
+(in our paper, we report the TOSTs using number of participants as N)
+
+```{r}
+#with number of trials
+#starting with model 2
+0.07727*sqrt(5633)
+TOSTone(m = -0.02096,mu = 0,sd = 2.05311,n = 5633,
+        low_eqbound_d = -0.1,high_eqbound_d = 0.1,alpha = 0.05)
+
+#then model 1
+0.0767*sqrt(5641)
+TOSTone(m = -0.02822,mu = 0,sd = 2.03941,n = 5641,
+        low_eqbound_d = -0.1,high_eqbound_d = 0.1,alpha = 0.05)
+
+#with number of scales 
+0.07727*sqrt(8)
+TOSTone(m = -0.02096,mu = 0,sd = 2.05311,n = 8,
+        low_eqbound_d = -0.1,high_eqbound_d = 0.1,alpha = 0.05)
+
+0.0767*sqrt(8)
+TOSTone(m = -0.02822,mu = 0,sd = 2.03941,n = 8,
+        low_eqbound_d = -0.1,high_eqbound_d = 0.1,alpha = 0.05)
+
+```
+

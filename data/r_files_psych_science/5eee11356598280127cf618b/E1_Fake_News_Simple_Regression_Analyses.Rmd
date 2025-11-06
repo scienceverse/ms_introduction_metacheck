@@ -1,0 +1,1330 @@
+---
+title: "WAP_E1_Simple_Regression_Analyses"
+author: "Chris Wahlheim"
+date: "12/26/2019"
+output:
+pdf_document: default
+html_document: default
+---
+
+```{r}
+#Clear Environment
+rm(list=ls())
+```
+
+
+```{r}
+#Load packages
+library(tidyverse)
+library(tidyr)
+library(lme4)
+library(afex)
+library(ez)
+library(emmeans)
+library(car)
+library(sjstats)
+library(Hmisc)
+library(agricolae)
+library(multcomp)
+library(effsize)
+library(pander)
+library(psych)
+library(purrr)
+library(lmerTest)
+library(simr)
+library(MBESS)
+library(gridExtra)
+
+```
+
+Read in Experiment 1 Data
+
+```{r}
+#Read 1803.2 data
+cued_recall <- read.csv("Experiment_1_Fake_News.csv", stringsAsFactors = FALSE, fileEncoding="UTF-8-BOM")
+
+```
+
+
+```{r}
+#create binary variable for each Phase 1 recall response type
+cued_recall$P1_Correct <- ifelse(cued_recall$P1.Recall.Class == 1, 1, 0)
+cued_recall$P1_P2_Baseline_Production <- ifelse(cued_recall$P1.Recall.Class == 2, 1, 0)
+cued_recall$P1_Error <- ifelse(cued_recall$P1.Recall.Class == "E", 1, 0)
+
+#Create binary variables for each Phase 2 recall response type
+cued_recall$P2_Correct <- ifelse(cued_recall$P2.Recall.Class == "2", 1, 0)
+cued_recall$P1_Intrusion <- ifelse(cued_recall$P2.Recall.Class == "1", 1, 0)
+cued_recall$Ambiguous <- ifelse(cued_recall$P2.Recall.Class == "A", 1, 0)
+cued_recall$Error <- ifelse(cued_recall$P2.Recall.Class == "E", 1, 0)
+
+#create variable including labels for each classification type
+cued_recall$Correction_Class <- ifelse(cued_recall$CR.RESP == 1 & cued_recall$P1_Correct == 1, "Misinformation Recalled",
+                                ifelse(cued_recall$CR.RESP == 1 & cued_recall$P1_Correct == 0, "Correction Remembered", "Correction Not Remembered"))
+
+#create binary variables for each classification type
+cued_recall$Misinformation_Recalled <- ifelse(cued_recall$Correction_Class == "Misinformation Recalled", 1, 0)
+cued_recall$Correction_Remembered <- ifelse(cued_recall$Correction_Class == "Correction Remembered", 1, 0)
+cued_recall$Correction_Not_Remembered <- ifelse(cued_recall$Correction_Class == "Correction Not Remembered", 1, 0)
+
+#Create variable for control in glmers
+moreControl <- glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e4))
+
+```
+
+
+```{r}
+#Set factors
+cued_recall$Subject <- as.factor(cued_recall$Subject)
+cued_recall$Topic <- as.factor(cued_recall$Topic)
+cued_recall$ItemType <- as.factor(cued_recall$ItemType)
+cued_recall$Change_Class <- as.factor(cued_recall$Correction_Class)
+```
+
+
+```{r}
+#convert data frame to tibble
+cued_recall <- as_tibble(cued_recall)
+
+#look at data frame
+print(cued_recall)
+```
+
+Analyze Fact Recall during Phase 3 with ANOVA (Type III)
+
+```{r}
+#create data frame for fact recall ANOVA
+cued_recall_P2_Correct_sub_df <- cued_recall %>%
+                                 group_by(Subject, ItemType) %>%
+                                 summarise(P2_Correct = mean(P2_Correct))
+cued_recall_P2_Correct_sub_df <- as_tibble(cued_recall_P2_Correct_sub_df)
+
+cued_recall_P2_Correct_sub_df
+
+#fit simple regression model
+p2_model <- lm(P2_Correct ~ ItemType, cued_recall_P2_Correct_sub_df)
+
+#fit ANOVA from car package to linear model
+p2_ANOVA <- Anova(p2_model, type = 3)
+
+#print ANOVA output
+pander(p2_ANOVA, caption = "Fact Recall ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(p2_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(p2_model, pairwise ~ ItemType, type = "response")
+p2_correct_means <- em$emmeans
+p2_correct_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(p2_model, ~ ItemType, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(p2_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(p2_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+
+```
+
+Analyze Misinformation Intrusions during Phase 3 with ANOVA (Type III)
+
+```{r}
+#create data frame for fact recall ANOVA
+cued_recall_P1_Intrusion_sub_df <- cued_recall %>%
+                                   group_by(Subject, ItemType) %>%
+                                   summarise(P1_Intrusion = mean(P1_Intrusion))
+cued_recall_P1_Intrusion_sub_df <- as_tibble(cued_recall_P1_Intrusion_sub_df)
+
+cued_recall_P1_Intrusion_sub_df
+
+#fit simple regression model
+p1_model <- lm(P1_Intrusion ~ ItemType, cued_recall_P1_Intrusion_sub_df, subset = ItemType == c("Changed_NR", "Changed_R"))
+
+#fit ANOVA from car package to linear model
+p1_ANOVA <- Anova(p1_model, type = 3)
+
+#print ANOVA output
+pander(p1_ANOVA, caption = "Fact Recall ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(p1_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(p1_model, pairwise ~ ItemType, type = "response")
+p1_intrusion_means <- em$emmeans
+p1_intrusion_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(p1_model, ~ ItemType, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(p1_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(p1_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+
+```
+
+Data Frames to Visualize Mean Estimates for Fact Recall and Misinformation Intrusions
+
+```{r}
+#Fact recall means
+p2_recall_df <- p2_correct_means %>% as_tibble
+
+p2_recall_df
+
+#reorder factor levels
+p2_recall_df$ItemType <- factor(p2_recall_df$ItemType, levels = c("Repeated", "Control", "Changed_NR", "Changed_R"))
+
+#Misinformation intrusion means
+p1_intrusion_df <- p1_intrusion_means %>% as_tibble
+
+p1_intrusion_df
+
+#reorder factor levels
+p1_intrusion_df$ItemType <- factor(p1_intrusion_df$ItemType, levels = c("Changed_NR", "Changed_R"))
+
+
+```
+
+visualize Fact Recall
+
+```{r fig.height=4.5, fig.width=4.5}
+#Visualize list 2 recall responses
+l2_recall_all <- ggplot(p2_recall_df, aes(x = ItemType, y = emmean)) +
+                 geom_bar(aes(fill = ItemType), stat = "identity", 
+                          width = .5, size = .3, color = "black", position = position_dodge()) +
+                 geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                               width = .1, size = .3, position = position_dodge(), color = "black", show.legend = FALSE) +
+                 scale_fill_manual(values = c("Repeated" = "white", "Control" = "grey90", "Changed_NR" = "grey65", "Changed_R" = "grey30")) +   
+                 scale_x_discrete(labels=c("Repetition", "Control", "Correction", "Correction +\nReminder")) +
+                 scale_y_continuous(expand = c(0, 0), limits = c(0, 1.05), breaks = seq(0, 1, .1)) +
+                 ggtitle("Fact Recall") +                 
+                 xlab("Statement Type") +
+                 ylab("Probability") +
+                 theme(legend.position = "none",
+                   legend.key.size = unit(.65, "cm"),
+                   legend.key=element_rect(color = "black", size = .1),     
+                   legend.title=element_blank(),
+                   legend.text=element_blank(),
+                   strip.background=element_blank(),
+                   strip.text.x=element_text(size = 14, color = "black", margin = margin(0, 0, 8, 0)),
+                   strip.text.y=element_blank(),
+                   axis.ticks.x=element_blank(),
+                   axis.ticks.y=element_line(size=.3,color="black"),
+                   axis.text.x=element_text(size=11,color="black"),
+                   axis.text.y=element_text(size=11,color="black"),
+                   axis.title.x=element_text(size=14, margin = margin(8, 0, 0, 0), hjust = .825),
+                   axis.title.y=element_text(size=14, margin = margin(0, 8, 0, 0)),
+                   plot.margin = unit(c(.25, .00, .25, .25), "in"),
+                   plot.title = element_text(size = 12, color = "black", hjust = .5), 
+                   panel.background = element_blank(),
+                   panel.grid.major = element_blank(), 
+                   panel.grid.minor = element_blank(),
+                   panel.spacing.x = unit(-.01, "in"),
+                   panel.border = element_rect(size = .5, fill = NA, color = "black"))
+
+l2_recall_all
+```
+
+Visualize Misinformation Intrusions
+
+```{r fig.height=4.5, fig.width=2.25}
+#Visualize list 2 recall responses
+l1_intru_all <- ggplot(p1_intrusion_df, aes(x = ItemType, y = emmean)) +
+                 geom_bar(aes(fill = ItemType), stat = "identity", 
+                          width = .5, size = .3, color = "black", position = position_dodge()) +
+                 geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                               width = .1, size = .3, position = position_dodge(), color = "black", show.legend = FALSE) +
+                 scale_fill_manual(values = c("Changed_NR" = "grey65", "Changed_R" = "grey30")) +   
+                 scale_x_discrete(labels=c("Correction", "Correction +\nReminder")) +
+                 scale_y_continuous(expand = c(0, 0), limits = c(0, 1.05), breaks = seq(0, 1, .1)) +
+                 ggtitle("Fact Recall") +                 
+                 ggtitle("Misinformation Intrusions") +
+                xlab("") +
+                ylab(NULL) +
+                theme(legend.position = "none",
+                   legend.key.size = unit(.65, "cm"),
+                   legend.key=element_rect(color = "black", size = .1),     
+                   legend.title=element_blank(),
+                   legend.text=element_text(size = 12),
+                   strip.background=element_blank(),
+                   strip.text.x=element_text(size = 14, color = "black", margin = margin(0, 0, 8, 0)),
+                   strip.text.y=element_blank(),
+                   axis.ticks.x=element_blank(),
+                   axis.ticks.y=element_blank(),
+                   axis.text.x=element_text(size=11,color="black"),
+                   axis.text.y=element_blank(),
+                   axis.title.x=element_text(size=14, margin = margin(8, 0, 0, 0)),
+                   axis.title.y=element_text(size=14, margin = margin(0, 8, 0, 0)),
+                   plot.margin = unit(c(.25, .25, .25, -.05), "in"),
+                   plot.title = element_text(size = 12, color = "black", hjust = .5), 
+                   panel.background = element_blank(),
+                   panel.grid.major = element_blank(), 
+                   panel.grid.minor = element_blank(),
+                   panel.spacing.x = unit(-.01, "in"),
+                   panel.border = element_rect(size = .5, fill = NA, color = "black"))
+
+l1_intru_all
+```
+
+Combine Correct Facts and Misinformation Intrusions plots
+
+```{r fig.height=4.5, fig.width=6.75}
+e1_recall_intru <- grid.arrange(l2_recall_all, l1_intru_all, ncol = 2, widths = c(4.5, 2.25))
+
+e1_recall_intru
+```
+
+Analyze Belief Ratings for Fact Recall during Phase 3 with ANOVA (Type III)
+
+```{r}
+#create data frame for belief ratings for fact recall
+belief_fact_sub_df <- cued_recall %>%
+                      filter(P2_Correct == 1) %>%
+                      group_by(Subject, ItemType) %>%
+                      summarise(Belief.RESP = mean(Belief.RESP))
+belief_fact_sub_df <- as_tibble(belief_fact_sub_df)
+
+belief_fact_sub_df
+
+#fit simple regression model
+fbr_model <- lm(Belief.RESP ~ ItemType, belief_fact_sub_df)
+
+#fit ANOVA from car package to linear model
+fbr_ANOVA <- Anova(fbr_model, type = 3)
+
+#print ANOVA output
+pander(fbr_ANOVA, caption = "ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(fbr_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(fbr_model, pairwise ~ ItemType, type = "response")
+fbr_belief_means <- em$emmeans
+fbr_belief_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(fbr_model, ~ ItemType, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(fbr_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(fbr_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+```
+
+Analyze Belief Ratings for Misinformation Intrusions during Phase 3 with ANOVA (Type III)
+
+```{r}
+#create data frame for belief ratings for misinformation intrusions
+intr_belief_sub_df <- cued_recall %>%
+                      filter(P1_Intrusion == 1) %>%
+                      filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                      group_by(Subject, ItemType) %>%
+                      summarise(Belief.RESP = mean(Belief.RESP))
+intr_belief_sub_df <- as_tibble(intr_belief_sub_df)
+
+intr_belief_sub_df
+
+#fit simple regression model
+ibr_model <- lm(Belief.RESP ~ ItemType, intr_belief_sub_df)
+
+#fit ANOVA from car package to linear model
+ibr_ANOVA <- Anova(ibr_model, type = 3)
+
+#print ANOVA output
+pander(ibr_ANOVA, caption = "ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(ibr_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(ibr_model, pairwise ~ ItemType, type = "response")
+ibr_belief_means <- em$emmeans
+ibr_belief_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(ibr_model, ~ ItemType, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(ibr_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(ibr_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+```
+
+Data Frames to Visualize Mean Estimates for Fact Recall and Misinformation Intrusions
+
+```{r}
+#Fact belief means
+fbr_recall_df <- fbr_belief_means %>% as_tibble
+
+fbr_recall_df
+
+#reorder factor levels
+fbr_recall_df$ItemType <- factor(fbr_recall_df$ItemType, levels = c("Repeated", "Control", "Changed_NR", "Changed_R"))
+
+#Misinformation intrusion belief means
+ibr_intrusion_df <- ibr_belief_means %>% as_tibble 
+
+ibr_intrusion_df <- ibr_intrusion_df %>% filter(ItemType == "Changed_NR" | ItemType == "Changed_R") 
+
+ibr_intrusion_df
+
+#reorder factor levels
+ibr_intrusion_df$ItemType <- factor(ibr_intrusion_df$ItemType, levels = c("Changed_NR", "Changed_R"))
+
+```
+
+visualize Belief in Fact Recall
+
+```{r fig.height=4.5, fig.width=4.5}
+#Visualize
+fbr_all <- ggplot(fbr_recall_df, aes(x = ItemType, y = emmean)) +
+                 geom_bar(aes(fill = ItemType), stat = "identity", 
+                          width = .5, size = .3, color = "black", position = position_dodge()) +
+                 geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                               width = .1, size = .3, position = position_dodge(), color = "black", show.legend = FALSE) +
+                 coord_cartesian(ylim = c(1, 6.25)) +
+                 scale_fill_manual(values = c("Repeated" = "white", "Control" = "grey90", "Changed_NR" = "grey65", "Changed_R" = "grey30")) +   
+                 scale_x_discrete(labels=c("Repetition", "Control", "Correction", "Correction +\nReminder")) +
+                 scale_y_continuous(expand = c(0, 0), breaks = seq(1, 6, 1)) +
+                 ggtitle("Fact Recall") +                 
+                 xlab("Statement Type") +
+                 ylab("Belief Rating") +
+                 theme(legend.position = "none",
+                   legend.key.size = unit(.65, "cm"),
+                   legend.key=element_rect(color = "black", size = .1),     
+                   legend.title=element_blank(),
+                   legend.text=element_blank(),
+                   strip.background=element_blank(),
+                   strip.text.x=element_text(size = 14, color = "black", margin = margin(0, 0, 8, 0)),
+                   strip.text.y=element_blank(),
+                   axis.ticks.x=element_blank(),
+                   axis.ticks.y=element_line(size=.3,color="black"),
+                   axis.text.x=element_text(size=11,color="black"),
+                   axis.text.y=element_text(size=11,color="black"),
+                   axis.title.x=element_text(size=14, margin = margin(8, 0, 0, 0), hjust = .825),
+                   axis.title.y=element_text(size=14, margin = margin(0, 8, 0, 0)),
+                   plot.margin = unit(c(.25, .00, .25, .25), "in"),
+                   plot.title = element_text(size = 12, color = "black", hjust = .5), 
+                   panel.background = element_blank(),
+                   panel.grid.major = element_blank(), 
+                   panel.grid.minor = element_blank(),
+                   panel.spacing.x = unit(-.01, "in"),
+                   panel.border = element_rect(size = .5, fill = NA, color = "black"))
+
+fbr_all
+```
+
+Visualize Misinformation Intrusions
+
+```{r fig.height=4.5, fig.width=2.25}
+#Visualize list 2 recall responses
+ibr_all <- ggplot(ibr_intrusion_df, aes(x = ItemType, y = emmean)) +
+                 geom_bar(aes(fill = ItemType), stat = "identity", 
+                          width = .5, size = .3, color = "black", position = position_dodge()) +
+                 geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                               width = .1, size = .3, position = position_dodge(), color = "black", show.legend = FALSE) +
+                 coord_cartesian(ylim = c(1, 6.25)) +
+                 scale_fill_manual(values = c("Changed_NR" = "grey65", "Changed_R" = "grey30")) +   
+                 scale_x_discrete(labels=c("Correction", "Correction +\nReminder")) +
+                 scale_y_continuous(expand = c(0, 0), breaks = seq(1, 6, 1)) +
+                 ggtitle("Fact Recall") +                 
+                 ggtitle("Misinformation Intrusions") +
+                xlab("") +
+                ylab(NULL) +
+                theme(legend.position = "none",
+                   legend.key.size = unit(.65, "cm"),
+                   legend.key=element_rect(color = "black", size = .1),     
+                   legend.title=element_blank(),
+                   legend.text=element_text(size = 12),
+                   strip.background=element_blank(),
+                   strip.text.x=element_text(size = 14, color = "black", margin = margin(0, 0, 8, 0)),
+                   strip.text.y=element_blank(),
+                   axis.ticks.x=element_blank(),
+                   axis.ticks.y=element_blank(),
+                   axis.text.x=element_text(size=11,color="black"),
+                   axis.text.y=element_blank(),
+                   axis.title.x=element_text(size=14, margin = margin(8, 0, 0, 0)),
+                   axis.title.y=element_text(size=14, margin = margin(0, 8, 0, 0)),
+                   plot.margin = unit(c(.25, .25, .25, -.05), "in"),
+                   plot.title = element_text(size = 12, color = "black", hjust = .5), 
+                   panel.background = element_blank(),
+                   panel.grid.major = element_blank(), 
+                   panel.grid.minor = element_blank(),
+                   panel.spacing.x = unit(-.01, "in"),
+                   panel.border = element_rect(size = .5, fill = NA, color = "black"))
+
+ibr_all
+```
+
+Combine Belief in Correct Facts and Misinformation Intrusions plots
+
+```{r fig.height=4.5, fig.width=6.75}
+e1_belief_recall_intru <- grid.arrange(fbr_all, ibr_all, ncol = 2, widths = c(4.5, 2.25))
+
+e1_belief_recall_intru
+```
+
+Combine recall and belief plots
+
+```{r fig.height=9, fig.width=6.75}
+e1_recall_and_belief_plots <- grid.arrange(e1_recall_intru, e1_belief_recall_intru, nrow = 2)
+
+e1_recall_and_belief_plots
+
+ggsave("Fig_S1_E1_Recall_and_Beliefs.pdf", plot = e1_recall_and_belief_plots, width = 6.75, height = 9, units = "in", dpi = 320, device = "pdf")
+ggsave("Fig_S1_E1_Recall_and_Beliefs.png", plot = e1_recall_and_belief_plots, width = 6.75, height = 9, units = "in", dpi = 320, device = "png")
+```
+
+Analyze misinformation recollection probabilities using ANOVA with Type III sums of squares
+
+```{r}
+#create data frame for misinformation recall and correction rememebering for corrections and retractions
+correction_class_sub_df <- cued_recall %>%
+                           filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                           dplyr::select(Subject, ItemType, Topic, Misinformation_Recalled, Correction_Remembered) %>%
+                           gather(key = "Classification", value = "Observed", Misinformation_Recalled, Correction_Remembered) %>%
+                           group_by(Subject, ItemType, Classification) %>%
+                           summarise(Mean = mean(Observed))
+correction_class_sub_df
+
+#fit simple regression model
+mr_model <- lm(Mean ~ ItemType, correction_class_sub_df, subset = Classification == "Misinformation_Recalled")
+
+#fit ANOVA from car package to linear model
+mr_ANOVA <- Anova(mr_model, type = 3)
+
+#print ANOVA output
+pander(mr_ANOVA, caption = "ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(mr_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(mr_model, pairwise ~ ItemType, type = "response")
+mr_means <- em$emmeans
+mr_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(mr_model, ~ ItemType, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(mr_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(mr_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+
+```
+
+Analyze memory for retraction probabilities using ANOVA with Type III sums of squares
+
+```{r}
+#create data frame for misinformation recall and correction rememebering for corrections and retractions
+correction_class_sub_df <- cued_recall %>%
+                           filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                           dplyr::select(Subject, ItemType, Topic, Misinformation_Recalled, Correction_Remembered) %>%
+                           gather(key = "Classification", value = "Observed", Misinformation_Recalled, Correction_Remembered) %>%
+                           group_by(Subject, ItemType, Classification) %>%
+                           summarise(Mean = mean(Observed))
+correction_class_sub_df
+
+#fit simple regression model
+rr_model <- lm(Mean ~ ItemType, correction_class_sub_df, subset = Classification == "Correction_Remembered")
+
+#fit ANOVA from car package to linear model
+rr_ANOVA <- Anova(rr_model, type = 3)
+
+#print ANOVA output
+pander(rr_ANOVA, caption = "ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(rr_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(rr_model, pairwise ~ ItemType, type = "response")
+rr_means <- em$emmeans
+rr_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(rr_model, ~ ItemType, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(rr_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(rr_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+
+```
+
+Create data frame to visualize retraction classifications
+
+```{r}
+#misinformation recollection data frame
+mr_means_df <- mr_means %>% as_tibble()
+mr_means_df$Classification <- "Misinformation Recollected"
+
+#retraction classification data frame
+rr_means_df <- rr_means %>% as_tibble()
+rr_means_df$Classification <- "Correction Remembered"
+
+#bind data frames
+mr_rr_means_df <- bind_rows(mr_means_df, rr_means_df)
+mr_rr_means_df
+
+```
+
+Visualize retraction classifications
+
+```{r fig.height=5, fig.width=8}
+#reorder factor levels
+mr_rr_means_df$Classification <- factor(mr_rr_means_df$Classification, levels = c("Misinformation Recollected", "Correction Remembered"))
+
+#Visualize
+rc_all <- ggplot(mr_rr_means_df, aes(x = ItemType, y = emmean)) +
+                 geom_bar(aes(fill = ItemType), stat = "identity", 
+                          width = .5, size = .3, color = "black", position = position_dodge()) +
+                 geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                               width = .1, size = .3, position = position_dodge(), color = "black", show.legend = FALSE) +
+                 scale_fill_manual(values = c("Changed_NR" = "grey65", "Changed_R" = "grey30")) +   
+                 scale_x_discrete(labels=c("Correction", "Correction +\nReminder")) +
+                 scale_y_continuous(expand = c(0, 0), limits = c(0, .71), breaks = seq(0, 1, .1)) +                                    
+                 facet_grid(. ~ Classification) +
+                 xlab("Statement Type") +
+                 ylab("Probability") +
+                 theme(legend.position = "none",
+                   legend.key.size = unit(.65, "cm"),
+                   legend.key=element_rect(color = "black", size = .1),     
+                   legend.title=element_blank(),
+                   legend.text=element_blank(),
+                   strip.background=element_blank(),
+                   strip.text.x=element_text(size = 14, color = "black", margin = margin(0, 0, 8, 0)),
+                   strip.text.y=element_blank(),
+                   axis.ticks.x=element_blank(),
+                   axis.ticks.y=element_line(size=.3,color="black"),
+                   axis.text.x=element_text(size=11,color="black"),
+                   axis.text.y=element_text(size=11,color="black"),
+                   axis.title.x=element_text(size=14, margin = margin(8, 0, 0, 0), hjust = .5),
+                   axis.title.y=element_text(size=14, margin = margin(0, 8, 0, 0)),
+                   plot.margin = unit(c(.25, .25, .25, .25), "in"),
+                   plot.title = element_text(size = 12, color = "black", hjust = .5), 
+                   panel.background = element_blank(),
+                   panel.grid.major = element_blank(), 
+                   panel.grid.minor = element_blank(),
+                   panel.spacing.x = unit(-.01, "in"),
+                   panel.border = element_rect(size = .5, fill = NA, color = "black"))
+
+rc_all
+
+ggsave("Fig_S2_E1_Change_Classifications.pdf", plot = rc_all, width = 8, height = 5, units = "in", dpi = 320)
+ggsave("Fig_S2_E1_Change_Classifications.png", plot = rc_all, width = 8, height = 5, units = "in", dpi = 320)
+
+
+```
+
+Analyze fact recall conditionalized on correction classifications using ANOVA with Type III sums of squares
+
+```{r}
+#create data frame for misinformation recall and correction rememebering for corrections and retractions
+recall_cond_sub_df <- cued_recall %>%
+                      filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                      group_by(Subject, ItemType, Correction_Class) %>%
+                      summarise(Mean = mean(P2_Correct))
+recall_cond_sub_df
+
+#fit simple regression model
+rc_model <- lm(Mean ~ ItemType + Correction_Class + ItemType * Correction_Class, recall_cond_sub_df)
+
+#fit ANOVA from car package to linear model
+rc_ANOVA <- Anova(rc_model, type = 3)
+
+#print ANOVA output
+pander(rc_ANOVA, caption = "ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(rc_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(rc_model, pairwise ~ ItemType * Correction_Class, type = "response")
+rc_means <- em$emmeans
+rc_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(rc_model, ~ Correction_Class, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(rc_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(rc_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+
+```
+
+Analyze misinformation intrusions conditionalized on correction classifications using ANOVA with Type III sums of squares
+
+```{r}
+#create data frame for misinformation recall and correction rememebering for corrections and retractions
+intrus_cond_sub_df <- cued_recall %>%
+                      filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                      group_by(Subject, ItemType, Correction_Class) %>%
+                      summarise(Mean = mean(P1_Intrusion))
+intrus_cond_sub_df
+
+#fit simple regression model
+ic_model <- lm(Mean ~ ItemType + Correction_Class + ItemType * Correction_Class, intrus_cond_sub_df)
+
+#fit ANOVA from car package to linear model
+ic_ANOVA <- Anova(ic_model, type = 3)
+
+#print ANOVA output
+pander(ic_ANOVA, caption = "ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(ic_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(ic_model, pairwise ~ ItemType * Correction_Class, type = "response")
+ic_means <- em$emmeans
+ic_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(ic_model, ~ Correction_Class, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(ic_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(ic_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+
+```
+
+Analyze belief in fact recall conditionalized on correction classifications using ANOVA with Type III sums of squares
+
+```{r}
+#create data frame 
+fact_blf_cond_sub_df <- cued_recall %>%
+                        filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                        filter(P2_Correct == 1) %>%
+                        group_by(Subject, ItemType, Correction_Class) %>%
+                        summarise(Mean = mean(Belief.RESP))
+fact_blf_cond_sub_df
+
+#fit simple regression model
+fc_model <- lm(Mean ~ ItemType + Correction_Class + ItemType * Correction_Class, fact_blf_cond_sub_df)
+
+#fit ANOVA from car package to linear model
+fc_ANOVA <- Anova(fc_model, type = 3)
+
+#print ANOVA output
+pander(fc_ANOVA, caption = "ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(fc_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(fc_model, pairwise ~ ItemType * Correction_Class, type = "response")
+fc_means <- em$emmeans
+fc_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(fc_model, ~ Correction_Class, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(fc_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(fc_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+```
+
+Analyze belief in misinformation intrusions conditionalized on correction classifications using ANOVA with Type III sums of squares
+
+```{r}
+#create data frame 
+intru_blf_cond_sub_df <- cued_recall %>%
+                        filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                        filter(P1_Intrusion == 1) %>%
+                        filter(Correction_Class != "Misinformation Recalled") %>%
+                        group_by(Subject, ItemType, Correction_Class) %>%
+                        summarise(Mean = mean(Belief.RESP))
+intru_blf_cond_sub_df
+
+#fit simple regression model
+ib_model <- lm(Mean ~ ItemType + Correction_Class + ItemType * Correction_Class, intru_blf_cond_sub_df)
+
+#fit ANOVA from car package to linear model
+ib_ANOVA <- Anova(ib_model, type = 3)
+
+#print ANOVA output
+pander(ib_ANOVA, caption = "ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(ib_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(ib_model, pairwise ~ ItemType * Correction_Class, type = "response")
+ib_means <- em$emmeans
+ib_means
+
+#follow up tests with "dr" effect size estimate (see Rouder er al., 2012) for each comparison
+
+item_contrasts <- summary(pairs(emmeans(ib_model, ~ Correction_Class, type = "response"))) #display contrasts from emmeans
+
+item_contrasts$res_sd <- sigmaHat(ib_model) #add residual standard devation to the data frame
+
+item_contrasts$dr <- item_contrasts$estimate / sigmaHat(ib_model) #add dr effect size to the data frame
+
+item_contrasts$n <- length(unique(cued_recall$Subject)) #add sample size to data frame
+
+dr_ci <- d.ci(item_contrasts$dr, item_contrasts$n, alpha = .05) #create data frame with 95% confidence intervals for dr
+
+contrast_es_df <- cbind(item_contrasts, dr_ci) #combine contrast and dr ci data frames
+
+contrast_es_df %>% rename(dr_lower_cl = lower, dr_upper_cl = upper) #rename dr ci limit column labels
+
+contrast_es_df <- contrast_es_df %>% mutate_if(is.numeric, ~round(., 3)) #round integers 
+
+contrast_es_df #display data frame
+```
+
+create data frame for bubble plots of conditional fact recall
+
+```{r}
+plot_df <- cued_recall %>%
+           group_by(ItemType) %>% 
+           filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+           summarise(n = length(P2_Correct)) %>%
+           mutate(prop = 1)
+           plot_df$Correction_Class = "All"
+plot_df
+
+#compute model estimates probabilities of overall correct recall
+plot_df_boot <- p2_recall_df %>%
+                filter(ItemType == "Changed_NR" | ItemType == "Changed_R")
+
+plot_df_boot <- plot_df_boot[, -c(3, 4)]
+
+plot_df_boot
+
+#merge data frames for overall correct recall
+plot_df_uncond <- merge(plot_df, plot_df_boot)
+
+plot_df_uncond
+
+#Compute counts and proportions for corrections conditionalized change classifications at test
+plot_df_cond <- cued_recall %>%
+                filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                group_by(ItemType, Correction_Class) %>%
+                summarise(n = length(P2_Correct)) %>%
+                mutate(prop = n / sum(n))
+plot_df_cond
+
+plot_df_cond_boot <- rc_means %>% as_tibble()
+plot_df_cond_boot <- plot_df_cond_boot[, -c(4,5)]
+plot_df_cond_boot
+
+#merge data frames for conditional correct recall
+plot_df_cond <- merge(plot_df_cond, plot_df_cond_boot)
+
+plot_df_cond
+
+#change conditional labels for item types in conditional recall
+plot_df_cond$ItemType <- ifelse(plot_df_cond$ItemType == "Changed_NR", "Correction (Conditional)", "Retraction (Conditional)")
+  
+plot_df_cond
+
+#Bind data frames
+P2_recall_bubble_df <- bind_rows(plot_df_uncond, plot_df_cond)
+
+#reorder factor levels
+P2_recall_bubble_df$ItemType <- factor(P2_recall_bubble_df$ItemType, levels = c("Changed_NR", "Correction (Conditional)", "Changed_R", "Retraction (Conditional)"))
+
+#create variable for response type
+P2_recall_bubble_df$ResponseType <- "Fact Recall"
+
+#set x position for bubbles
+P2_recall_bubble_df$x_pos <- c(1, 3, 2, 2, 2, 4, 4, 4)
+
+P2_recall_bubble_df
+```
+
+create data frame for bubble plots of conditional misinformation intrusions
+
+```{r}
+plot_df <- cued_recall %>%
+           group_by(ItemType) %>% 
+           filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+           summarise(n = length(P1_Intrusion)) %>%
+           mutate(prop = 1)
+           plot_df$Correction_Class = "All"
+plot_df
+
+#compute model estimates probabilities of overall correct recall
+plot_df_boot <- p1_intrusion_df %>%
+                filter(ItemType == "Changed_NR" | ItemType == "Changed_R")
+
+plot_df_boot <- plot_df_boot[, -c(3, 4)]
+
+plot_df_boot
+
+#merge data frames for overall correct recall
+plot_df_uncond <- merge(plot_df, plot_df_boot)
+
+plot_df_uncond
+
+#Compute counts and proportions for corrections conditionalized change classifications at test
+plot_df_cond <- cued_recall %>%
+                filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                group_by(ItemType, Correction_Class) %>%
+                summarise(n = length(P1_Intrusion)) %>%
+                mutate(prop = n / sum(n))
+plot_df_cond
+
+plot_df_cond_boot <- ic_means %>% as_tibble()
+plot_df_cond_boot <- plot_df_cond_boot[, -c(4,5)]
+plot_df_cond_boot
+
+#merge data frames for conditional correct recall
+plot_df_cond <- merge(plot_df_cond, plot_df_cond_boot)
+
+plot_df_cond
+
+#change conditional labels for item types in conditional recall
+plot_df_cond$ItemType <- ifelse(plot_df_cond$ItemType == "Changed_NR", "Correction (Conditional)", "Retraction (Conditional)")
+  
+plot_df_cond
+
+#Bind data frames
+P1_intrusion_bubble_df <- bind_rows(plot_df_uncond, plot_df_cond)
+
+#reorder factor levels
+P1_intrusion_bubble_df$ItemType <- factor(P1_intrusion_bubble_df$ItemType, levels = c("Changed_NR", "Correction (Conditional)", "Changed_R", "Retraction (Conditional)"))
+
+#create variable for response type
+P1_intrusion_bubble_df$ResponseType <- "Misinformation Intrusions"
+
+#set x position for bubbles
+P1_intrusion_bubble_df$x_pos <- c(1, 3, 2, 2, 2, 4, 4.15, 4)
+
+P1_intrusion_bubble_df
+```
+
+Create data frame combining Correct Facts and Misinformation Intrusions Conditionalized on Correction Classifications
+
+```{r}
+recall_intrusion_bubble_df <- bind_rows(P2_recall_bubble_df, P1_intrusion_bubble_df)
+
+names(recall_intrusion_bubble_df)[5] <- "prob"
+
+recall_intrusion_bubble_df$lower.CL <- ifelse(recall_intrusion_bubble_df$lower.CL < 0, 0, recall_intrusion_bubble_df$lower.CL)
+
+recall_intrusion_bubble_df
+
+```
+
+Visualize Correct Recall and Misinformation Intrusions Conditionalized on Correction Classifications
+
+```{r fig.height=5, fig.width=10}
+#create data frames text labels
+ann_text_class_1a <- data.frame(ItemType = 2, prob = c(.96, .59, .14), lab = c("Misinformation\nRecollected", "Correction\nRemembered", "Correction\nNot Remembered"), ResponseType = "Fact Recall")
+ann_text_class_1b <- data.frame(ItemType = 4, prob = c(1.009, .74, .18), lab = c("Misinformation\nRecollected", "Correction\nRemembered", "Correction\nNot Remembered"), ResponseType = "Fact Recall")
+ann_text_class_2a <- data.frame(ItemType = c(2.45, 2.45, 2), prob = c(.06, .24, .46), lab = c("Misinformation\nRecollected", "Correction\nRemembered", "Correction\nNot Remembered"), ResponseType = "Misinformation Intrusions")
+ann_text_class_2b <- data.frame(ItemType = c(4.55, 4.60, 4), prob = c(.02, .14, .37), lab = c("Misinformation\nRecollected", "Correction\nRemembered", "Correction\nNot Remembered"), ResponseType = "Misinformation Intrusions")
+
+#Create data frames for line segments
+panel1a <- data.frame(x = 1.15, y = .493, xend = 1.9, yend = c(.27, .48, .81), ResponseType = "Fact Recall")
+panel1b <- data.frame(x = 3.15, y = .689, xend = 3.9, yend = c(.33, .63, .88), ResponseType = "Fact Recall")
+panel2a <- data.frame(x = 1.15, y = .217, xend = 1.9, yend = c(.06, .24, .33), ResponseType = "Misinformation Intrusions")
+panel2b <- data.frame(x = 3.15, y = .100, xend = c(3.9, 4.0, 3.9), yend = c(.05, .12, .23), ResponseType = "Misinformation Intrusions")
+
+#Plot List 1 correct recall for all responses and A-B, A-D conditionalized on change recollection
+e1_recall_cond <- ggplot(recall_intrusion_bubble_df, aes(x = ItemType, y = prob, color = Correction_Class))+
+                  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL, x = x_pos), position = position_dodge(), size = .4, width = 0, show.legend = FALSE) +
+                  geom_point(aes(size = prop, x = x_pos))+
+                  geom_segment(data = panel1a, aes(x=x,y=y,xend=xend,yend=yend),color="black",size = .25, arrow=arrow(length=unit(0.2,"cm")))+
+                  geom_segment(data = panel1b, aes(x=x,y=y,xend=xend,yend=yend),color="black",size = .25, arrow=arrow(length=unit(0.2,"cm")))+
+                  geom_segment(data = panel2a, aes(x=x,y=y,xend=xend,yend=yend),color="black",size = .25, arrow=arrow(length=unit(0.2,"cm")))+
+                  geom_segment(data = panel2b, aes(x=x,y=y,xend=xend,yend=yend),color="black",size = .25, arrow=arrow(length=unit(0.2,"cm")))+
+                  geom_text(data = ann_text_class_1a, aes(label = lab), color = "black", size = 2.75) +
+                  geom_text(data = ann_text_class_1b, aes(label = lab), color = "black", size = 2.75) +
+                  geom_text(data = ann_text_class_2a, aes(label = lab), color = "black", size = 2.75) +
+                  geom_text(data = ann_text_class_2b, aes(label = lab), color = "black", size = 2.75) +
+                  scale_color_manual("Response Classification", values=c("All" = "black", "Misinformation Recalled" = "forestgreen", "Correction Remembered" = "blue", "Correction Not Remembered" = "firebrick3")) +
+                  guides(size = FALSE, color = FALSE) +
+                  scale_x_continuous(breaks = seq(1, 4, 1), limits = c(.5, 5), labels = c("Correction", "Correction \n(Conditional)", "Correction +\nReminder", "Correction +\nReminder\n(Conditional)")) +
+                  scale_y_continuous(name = "Probability",limits = c(0, 1.01), breaks = seq(0, 1, .1)) +
+                  facet_grid(. ~ ResponseType) +
+                  labs(x = "Statement Type") +
+                  theme(legend.key=element_rect(fill="transparent",size=0),
+                        legend.key.height=unit(1.2,"cm"),
+                        legend.key.width=unit(.8,"cm"),
+                        legend.text=element_text(size=10),
+                        strip.background=element_blank(),
+                        strip.text.x = element_text(size = 14, color = "black",margin = margin(0, 0, 8, 0)),
+                        strip.text.y = element_text(size = 14, color = "black", margin = margin(0,0,0,8)),
+                        axis.text.x=element_text(size=11,color="black"),
+                        axis.text.y=element_text(size=11,color="black"),
+                        axis.title.x=element_text(size=14, margin = margin(8, 0, 0, 0)),
+                        axis.title.y=element_text(size=14, margin = margin(0, 8, 0, 0)),
+                        axis.ticks.x = element_line(size=.25),
+                        axis.ticks.y = element_line(size=.25),
+                        plot.title = element_text(size = 16, hjust = 0.5),
+                        panel.spacing.x = unit(-.01, "in"),
+                        panel.background = element_blank(),
+                        panel.grid.major = element_blank(),
+                        panel.grid.major.x = element_blank(),
+                        panel.grid.minor = element_blank(),
+                        panel.border = element_rect(size=.5, fill = NA, color = "black"))
+e1_recall_cond
+```
+
+Create Data Frame for Bubble Plots of Conditional Analyses of Beliefs in Correct Recall
+
+```{r}
+#compute overall counts and proportions for each item type
+plot_df <- cued_recall %>%
+           group_by(ItemType) %>% 
+           filter(ItemType == "Changed_NR" | ItemType == "Changed_R", P2_Correct == 1) %>%
+           summarise(n = length(P2_Correct)) %>%
+           mutate(prop = n/1440)
+           plot_df$Correction_Class = "All"
+plot_df
+
+#compute model estimates probabilities of overall belief ratings for correct recalls
+plot_df_boot <- fbr_recall_df %>%
+                filter(ItemType == "Changed_NR" | ItemType == "Changed_R")
+plot_df_boot <- plot_df_boot[,-c(3,4)]
+
+plot_df_boot
+
+#merge data frames for conditional beliefs in correct recall
+plot_df_uncond <- merge(plot_df, plot_df_boot)
+
+plot_df_uncond
+
+#Compute counts and proportions for belief in correct recalls conditionalized change classifications at test
+plot_df_cond <- cued_recall %>%
+                filter(ItemType == "Changed_NR" | ItemType == "Changed_R", P2_Correct == 1) %>%
+                group_by(ItemType, Correction_Class) %>%
+                summarise(n = length(Belief.RESP)) %>%
+                mutate(prop = n / 1440) %>%
+                as_tibble()
+plot_df_cond
+
+plot_df_cond_boot <- fc_means %>% as_tibble()
+plot_df_cond_boot <- plot_df_cond_boot[,-c(4,5)]
+plot_df_cond_boot
+
+
+#merge data frames for conditional correct recall
+plot_df_cond <- merge(plot_df_cond, plot_df_cond_boot)
+
+plot_df_cond
+
+#change conditional labels for item types in conditional recall
+plot_df_cond$ItemType <- ifelse(plot_df_cond$ItemType == "Changed_NR", "Correction (Conditional)", "Retraction (Conditional)")
+  
+#Bind data frames
+belief_correct_bubble_df <- bind_rows(plot_df_uncond, plot_df_cond)
+
+belief_correct_bubble_df
+
+#reorder factor levels
+belief_correct_bubble_df$ItemType <- factor(belief_correct_bubble_df$ItemType, 
+                                            levels = c("Changed_NR", "Correction (Conditional)", 
+                                                       "Changed_R", "Retraction (Conditional)"))
+
+#create variable for x position of points
+belief_correct_bubble_df$x_pos <- c(1, 3, 2, 2.15, 2, 4.25, 4.15, 4)
+
+#add variable for response type
+belief_correct_bubble_df$ResponseType <- "Fact Recall"
+
+belief_correct_bubble_df
+```
+
+create data frame for conditional intrusion beliefs
+
+```{r}
+intru_blf_cond_all_df <- cued_recall %>%
+                        filter(ItemType == "Changed_NR" | ItemType == "Changed_R") %>%
+                        filter(P1_Intrusion == 1) %>%
+                        group_by(Subject, ItemType, Correction_Class) %>%
+                        summarise(Mean = mean(Belief.RESP))
+intru_blf_cond_all_df
+
+#fit simple regression model
+ibc_model <- lm(Mean ~ ItemType + Correction_Class + ItemType * Correction_Class, intru_blf_cond_all_df)
+
+#fit ANOVA from car package to linear model
+ibc_ANOVA <- Anova(ibc_model, type = 3)
+
+#print ANOVA output
+pander(ibc_ANOVA, caption = "ANOVA Results")
+
+#partial eta squared effect size estimates
+eta_sq(ibc_model, partial = TRUE, ci.lvl = .95)
+
+#condition means
+em <- emmeans(ibc_model, pairwise ~ ItemType * Correction_Class, type = "response")
+ibc_means <- em$emmeans
+ibc_means
+```
+
+Create Data Frame for Bubble Plots of Conditional Analyses of Beliefs in Misinformation Intrusions
+
+```{r}
+#compute overall counts and proportions for each item type
+plot_df <- cued_recall %>%
+           group_by(ItemType) %>% 
+           filter(ItemType == "Changed_NR" | ItemType == "Changed_R", P1_Intrusion == 1) %>%
+           summarise(n = length(P1_Intrusion)) %>%
+           mutate(prop = n/1440)
+           plot_df$Correction_Class = "All"
+plot_df
+
+#compute model estimates probabilities of overall belief ratings for correct recalls
+plot_df_boot <- ibr_intrusion_df %>%
+                filter(ItemType == "Changed_NR" | ItemType == "Changed_R")
+plot_df_boot <- plot_df_boot[,-c(3,4)]
+
+plot_df_boot
+
+#merge data frames for conditional beliefs in correct recall
+plot_df_uncond <- merge(plot_df, plot_df_boot)
+
+plot_df_uncond
+
+#Compute counts and proportions for belief in correct recalls conditionalized change classifications at test
+plot_df_cond <- cued_recall %>%
+                filter(ItemType == "Changed_NR" | ItemType == "Changed_R", P1_Intrusion == 1) %>%
+                group_by(ItemType, Correction_Class) %>%
+                summarise(n = length(Belief.RESP)) %>%
+                mutate(prop = n / 1440) %>%
+                as_tibble()
+plot_df_cond
+
+plot_df_cond_boot <- ibc_means %>% as_tibble()
+plot_df_cond_boot <- plot_df_cond_boot[,-c(4,5)]
+plot_df_cond_boot
+
+
+#merge data frames for conditional correct recall
+plot_df_cond <- merge(plot_df_cond, plot_df_cond_boot)
+
+plot_df_cond
+
+#change conditional labels for item types in conditional recall
+plot_df_cond$ItemType <- ifelse(plot_df_cond$ItemType == "Changed_NR", "Correction (Conditional)", "Retraction (Conditional)")
+  
+#Bind data frames
+belief_intrusion_bubble_df <- bind_rows(plot_df_uncond, plot_df_cond)
+
+belief_intrusion_bubble_df
+
+#reorder factor levels
+belief_intrusion_bubble_df$ItemType <- factor(belief_intrusion_bubble_df$ItemType, 
+                                            levels = c("Changed_NR", "Correction (Conditional)", 
+                                                       "Changed_R", "Retraction (Conditional)"))
+
+#create variable for x position of points
+belief_intrusion_bubble_df$x_pos <- c(1, 3, 2.25, 2.15, 2, 4.25, 4.15, 4)
+
+#add variable for response type
+belief_intrusion_bubble_df$ResponseType <- "Misinformation Intrusions"
+
+belief_intrusion_bubble_df
+```
+
+Combine Conditional Belief Rating Data Frames
+
+```{r}
+belief_cond_df <- bind_rows(belief_correct_bubble_df, belief_intrusion_bubble_df)
+
+colnames(belief_cond_df)[5] <- "prob"
+
+belief_cond_df
+```
+
+visualize conditional belief ratings
+
+```{r fig.height=5, fig.width=10}
+#create data frames text labels
+ann_text_class_1a <- data.frame(ItemType = c(2.00, 2.60, 2.00), prob = c(5.25, 4.50, 3.65), lab = c("Misinformation\nRecollected", "Correction\nRemembered", "Correction\nNot Remembered"), ResponseType = "Fact Recall")
+ann_text_class_1b <- data.frame(ItemType = c(3.80, 4.50, 4.60), prob = c(5.35, 5.05, 4.15), lab = c("Misinformation\nRecollected", "Correction\nRemembered", "Correction\nNot Remembered"), ResponseType = "Fact Recall")
+ann_text_class_2a <- data.frame(ItemType = c(1.55, 2.35, 2.52), prob = c(3.50, 3.20, 4.65), lab = c("Misinformation\nRecollected", "Correction\nRemembered", "Correction\nNot Remembered"), ResponseType = "Misinformation Intrusions")
+ann_text_class_2b <- data.frame(ItemType = c(3.55, 4.60, 4.25), prob = c(2.50, 2.80, 4.40), lab = c("Misinformation\nRecollected", "Correction\nRemembered", "Correction\nNot Remembered"), ResponseType = "Misinformation Intrusions")
+
+#Create data frames for line segments
+panel1a <- data.frame(x = 1.15, y = 4.58, xend = c(1.9, 2.0, 1.9), yend = c(4.15, 4.53, 4.77), ResponseType = "Fact Recall")
+panel1b <- data.frame(x = 3.15, y = 4.79, xend = c(4.2, 4.0, 3.85), yend = c(4.26, 4.62, 4.86), ResponseType = "Fact Recall")
+panel2a <- data.frame(x = 1.15, y = 4.10, xend = c(1.95, 1.85, 1.90), yend = c(4.25, 4.12, 3.95), ResponseType = "Misinformation Intrusions")
+panel2b <- data.frame(x = 3.15, y = 3.51, xend = c(4.1, 3.95, 3.85), yend = c(3.78, 2.95, 2.85), ResponseType = "Misinformation Intrusions")
+
+#bubble plot
+e1_belief_cond <- ggplot(belief_cond_df, aes(x = ItemType, y = prob, color = Correction_Class)) +
+                  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL, x = x_pos), position = position_dodge(), size = .4, width = 0, show.legend = FALSE) +
+                  geom_point(aes(size = prop, x = x_pos)) +
+                  geom_segment(data = panel1a, aes(x=x,y=y,xend=xend,yend=yend),color="black",size = .25, arrow=arrow(length=unit(0.2,"cm")))+
+                  geom_segment(data = panel1b, aes(x=x,y=y,xend=xend,yend=yend),color="black",size = .25, arrow=arrow(length=unit(0.2,"cm")))+
+                  geom_segment(data = panel2a, aes(x=x,y=y,xend=xend,yend=yend),color="black",size = .25, arrow=arrow(length=unit(0.2,"cm")))+
+                  geom_segment(data = panel2b, aes(x=x,y=y,xend=xend,yend=yend),color="black",size = .25, arrow=arrow(length=unit(0.2,"cm")))+
+                  geom_text(data = ann_text_class_1a, aes(label = lab), color = "black", size = 2.75) +
+                  geom_text(data = ann_text_class_1b, aes(label = lab), color = "black", size = 2.75) +
+                  geom_text(data = ann_text_class_2a, aes(label = lab), color = "black", size = 2.75) +
+                  geom_text(data = ann_text_class_2b, aes(label = lab), color = "black", size = 2.75) +
+                  scale_color_manual("Response Classification", values=c("All" = "black", "Misinformation Recalled" = "forestgreen", "Correction Remembered" = "blue", "Correction Not Remembered" = "firebrick3")) +
+                  guides(size=FALSE, color=FALSE) +
+                  facet_grid(. ~ ResponseType) +
+                  scale_x_continuous(breaks=seq(1, 4, 1), limits = c(.5, 5), labels=c("Correction", "Correction\n(Conditional)", "Correction +\nReminder", "Correction +\nReminder\n(Conditional)")) +
+                  scale_y_continuous(name="Belief Rating",limits=c(1.95, 5.55), breaks=seq(2, 5.5, .5))+
+                  labs(x = "Statement Type") +
+                  theme(legend.key=element_rect(fill="transparent",size=0),
+                        legend.key.height=unit(1.2,"cm"),
+                        legend.key.width=unit(.8,"cm"),
+                        legend.text=element_text(size=10),
+                        strip.background=element_blank(),
+                        strip.text.x = element_text(size = 14, color = "black",margin = margin(0, 0, 8, 0)),
+                        strip.text.y = element_text(size = 14, color = "black", margin = margin(0,0,0,8)),
+                        axis.text.x=element_text(size=11,color="black"),
+                        axis.text.y=element_text(size=11,color="black"),
+                        axis.title.x=element_text(size=14, margin = margin(8, 0, 0, 0)),
+                        axis.title.y=element_text(size=14, margin = margin(0, 8, 0, 0)),
+                        axis.ticks.x = element_line(size=.25),
+                        axis.ticks.y = element_line(size=.25),
+                        plot.title = element_text(size = 16, hjust = 0.5),
+                        panel.spacing.x = unit(-.01, "in"),
+                        panel.background = element_blank(),
+                        panel.grid.major = element_blank(),
+                        panel.grid.major.x = element_blank(),
+                        panel.grid.minor = element_blank(),
+                        panel.border = element_rect(size=.5, fill = NA, color = "black"))
+
+e1_belief_cond
+```
+
+Combine Conditional Recall and Belief Plots
+
+```{r fig.height=10, fig.width=10}
+e1_cond_recall_and_belief_plots <- grid.arrange(e1_recall_cond, e1_belief_cond, nrow = 2)
+
+e1_cond_recall_and_belief_plots
+
+ggsave("Fig_S3_E1_Conditional_Analyses.pdf", plot = e1_cond_recall_and_belief_plots, width = 10, height = 10, units = "in", dpi = 320)
+ggsave("Fig_S3_E1_Conditional_Analyses.png", plot = e1_cond_recall_and_belief_plots, width = 10, height = 10, units = "in", dpi = 320)
+
+```
+
+
+
+
+
+
+
+
+
+

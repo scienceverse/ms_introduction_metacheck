@@ -1,0 +1,381 @@
+---
+title: 'PSA001: Stage 2 RR SUBSET Analyses'
+output:
+  html_document:
+    code_folding: hide
+    number_sections: true
+    toc: yes
+    toc_depth: 5
+---
+
+This file provides code to analyse a subset of a random 1/3 of participants for each lab.
+
+# Load Data
+
+```{r libraries, messages = FALSE}
+library(psych) # for SPSS-style PCA
+library(paran) # for parallel analyses
+library(GPArotation) # for robustness checks
+library(kableExtra) # for nice tables
+library(tidyverse) # for data cleaning
+
+# create directory for saving figures
+if (!dir.exists("figures")) { dir.create("figures") }
+
+options(knitr.kable.NA = '')
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE, 
+                      message = FALSE)
+
+R.version.string
+
+set.seed(8675309)
+```
+
+## Simulate Study Data (for Stage 1 RR)
+
+See https://osf.io/87rbg/ for Stage 1 RR code. The code below is modified from the original to account for a different raw data structure and to add additional tables and graphs. All analysis code is identical.
+
+## Load Study Data (SUBSET)
+
+Subset the data (this won't run unless you have the original full data).
+
+```{r subset-data, eval = FALSE}
+
+session <- read_csv("data/session.csv")
+dat_quest <- read_csv("data/quest_data.csv")
+dat_exp <- read_csv("data/exp_data.csv")
+
+session_subset <- session %>%
+  filter(user_status %in% c("guest", "registered")) %>%
+  group_by(proj_name) %>%
+  sample_frac(1/3) %>%
+  ungroup() %>%
+  pull(session_id)
+```
+
+Load study data and demographic questionnaires from the data folder.
+
+```{r data-load}
+
+# reshape questionnaire data to make wide
+quest <- dat_quest %>%
+  select(session_id, endtime, user_id, q_name, dv) %>%
+  group_by(session_id, user_id, q_name) %>%
+  arrange(endtime) %>%
+  filter(row_number() == 1) %>%
+  ungroup() %>%
+  spread(q_name, dv, convert = TRUE)
+```
+
+
+Join experiment and questionnaire data
+
+```{r exp-quest-join}
+
+ratings_raw <-  dat_exp %>%
+  left_join(session, by = c("user_id", "session_id")) %>%
+  filter(user_status %in% c("guest", "registered")) %>%
+  separate(exp_name, c("psa", "language", "trait", "block"), 
+           sep = "_") %>%
+  select(-psa) %>%
+  separate(proj_name, c("psa", "lang", "lab1", "lab2"),
+           sep = "_", fill = "right") %>%
+  filter(lab1 != "test") %>%
+  unite(lab_id, c("lab1", "lab2")) %>%
+  select(-psa, lang) %>%
+  left_join(quest, by = c("session_id", "user_id")) %>%
+  select(language, user_id = session_id, trait, 
+         stim_id = trial_name, 
+         order, rt, rating = dv,
+         country, sex, age, ethnicity, lab = lab_id, block) %>%
+  mutate(trait = recode(trait,
+                        "Res" = "responsible",
+                        "Wei" = "weird",
+                        "Old" = "old",
+                        "Tru" = "trustworthy",
+                        "Dom" = "dominant",
+                        "Emo" = "emostable",
+                        "Agg" = "aggressive",
+                        "Car" = "caring",
+                        "Int" = "intelligent",
+                        "Unh" = "unhappy",
+                        "Soc" = "sociable",
+                        "Mea" = "mean",
+                        "Con" = "confident",
+                        "Att" = "attractive"
+  )) 
+  
+write_csv(ratings_raw, "data/ratings_raw.csv")
+
+```
+
+## Load Auxillary Data
+
+Data on regions and stimuli.
+
+### Load Region Data
+
+```{r load-region}
+regions <- read_csv("data/regions.csv")
+```
+
+### Load Stimulus Info
+
+```{r load-stim-info}
+stim_info <- read_csv("data/psa_cfd_faces.csv") %>%
+  mutate(ethnicity = recode(Race, "A" = "asian", "B" = "black", "L" = "latinx", "W" = "white"),
+         gender = recode(Gender, "M" = "male", "F" = "female")
+  )
+
+stim_info %>%
+  group_by(ethnicity, gender) %>%
+  summarise(
+    n = n(),
+    mean_age = round(mean(Age), 2),
+    sd_age = round(sd(Age), 2)
+  ) %>%
+  knitr::kable("html") %>%
+  kable_styling("striped")
+
+stim_n_male <- sum(stim_info$gender == "male")
+stim_n_female <- sum(stim_info$gender == "female")
+mean_age <- mean(stim_info$Age) %>% round(2)
+sd_age <- sd(stim_info$Age) %>% round(2)
+min_age <- min(stim_info$Age)
+max_age <- max(stim_info$Age)
+```
+
+Stimuli in our study will be an open-access, full-color, face image set consisting of `r stim_n_male` men and `r stim_n_female` women (mean age=`r mean_age` years, SD=`r sd_age` years, range=`r min_age` to `r max_age` years), taken under standardized photographic conditions (Ma et al., 2015). 
+
+### Load O&T 2008 Data
+
+```{r otdata}
+# read original OT data and get into same format as data_agg will be
+
+traits <- ratings_raw %>%
+  filter(trait != "old", !is.na(trait)) %>%
+  arrange(trait) %>%
+  pull(trait) %>%
+  unique()
+  
+ot_data <- readxl::read_excel("data/Karolinska_14trait_judgmentswithlabels.xls") %>%
+  mutate(region = "(Oosterhof & Todorov, 2008)") %>%
+  rename(stim_id = `Todorov Label`,
+         emostable = `emotionally stable`) %>%
+  select(region, stim_id, traits)
+```
+
+
+## Data Processing
+
+### Join Data
+
+```{r join-data}
+
+ratings <- ratings_raw %>%
+  rename(qcountry = country) %>%
+  separate(lab, c("country", "lab")) %>%
+  left_join(regions, by = "country") %>%
+  filter(trait != "old")
+  
+```
+
+### Graph distributions for trait by region
+```{r plot-styles}
+# plot styles
+bgcolor <- "white"
+textcolor <- "black"
+PSA_theme <- theme(
+    plot.background = element_rect(fill = bgcolor, color = NA),
+    panel.background = element_rect(fill = NA, color = "grey"),
+    legend.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    text = element_text(color = textcolor, size=15),
+    axis.text = element_text(color = textcolor, size=10),
+    strip.text.y = element_text(angle = 0, hjust = 0)
+  )
+```
+
+```{r trait-by-region-plot, fig.width=15, fig.height=6}
+
+ggplot(ratings, aes(rating, fill = trait)) +
+  geom_histogram(binwidth = 1, color = "grey", show.legend = F) +
+  facet_grid(region~trait, space = "free") +
+  scale_x_continuous(breaks = 1:9) +
+  PSA_theme
+```
+
+## Data checks
+
+```{r data-checks}
+part <- ratings %>%
+  group_by(user_id, sex, age, country, language, trait, region, lab) %>%
+  summarise(trials = n(),
+            stim_n = n_distinct(stim_id)) %>%
+  ungroup()
+```
+
+### How many participants completed at least one rating for each of 120 stimuli
+
+```{r rated-1-stim}
+part %>% 
+  mutate(n120 = ifelse(stim_n == 120, "rated all 120", "rated < 120")) %>%
+  count(region, n120) %>%
+  spread(n120, n) %>%
+  knitr::kable("html") %>%
+  kable_styling("striped")
+```
+
+### Participants who did not complete exactly 240 trials
+
+```{r rated-lt-240}
+part %>% 
+  mutate(n240 = case_when(
+    trials == 240 ~ "rated 240", 
+    trials > 240 ~ "rated > 240",
+    trials < 120 ~ "rated < 120",
+    trials < 240 ~ "rated 120-239"
+  )) %>%
+  count(region, n240) %>%
+  spread(n240, n, fill = 0) %>%
+  knitr::kable("html") %>%
+  kable_styling("striped")
+```
+
+### Participants with low-variance responses in block 1
+
+```{r low-variance}
+
+identical_rating_threshold <- 0.75 * 120 # use this for registered analyses
+
+inv_participants <- ratings %>%
+  filter(block == 1) %>%
+  count(user_id, region, trait, rating) %>%
+  group_by(user_id, region, trait) %>%
+  filter(n == max(n)) %>% # find most common rating for each P
+  ungroup() %>%
+  filter(n >= identical_rating_threshold) # select Ps who gave the same rating to >= 75% of stimuli
+
+inv <- inv_participants %>%
+  count(region, trait) %>%
+  spread(region, n, fill = 0) %>%
+  mutate(TOTAL = rowSums(select_if(., is.numeric), na.rm = T))
+
+inv_total <-  group_by(inv) %>% 
+  summarise_if(is.numeric, sum, na.rm = T) %>%
+  mutate(trait = "TOTAL")
+ 
+bind_rows(inv,inv_total) %>%
+  knitr::kable("html") %>%
+  kable_styling("striped")
+```
+
+
+### Participants with no region
+
+```{r no-region}
+part %>% 
+  filter(is.na(region)) %>%
+  select(user_id, country, lab)
+```
+
+
+### Remove excluded data and average ratings
+
+```{r data-exclusions}
+data <- ratings %>%
+  group_by(user_id, trait) %>%
+  filter(
+    # did not complete 1+ ratings for each of 120 stimuli
+    dplyr::n_distinct(stim_id) == 120,      
+    !is.na(region)   # did not specify region (none expected)
+  ) %>%
+  anti_join(inv_participants, by = "user_id") %>% # exclude Ps with low variance
+  ungroup()
+
+write_csv(data, "data/psa001_ind_all.csv")
+
+```
+
+"psa001_ind_all.csv" is the data file that we use.
+
+## Participant Demographics
+
+```{r demog-language}
+data %>%
+  group_by(user_id, language) %>%
+  summarise() %>%
+  ungroup() %>%
+  group_by(language) %>%
+  summarise(n = n()) %>%
+  knitr::kable("html") %>%
+  kable_styling("striped")
+```
+
+```{r demog-region}
+by_region <- data %>%
+  group_by(user_id, region) %>%
+  summarise() %>%
+  ungroup() %>%
+  group_by(region) %>%
+  summarise(n = n()) %>%
+  add_row(region = "TOTAL", n = n_distinct(data$user_id)) %>%
+  knitr::kable("html") %>%
+  kable_styling("striped")
+
+save_kable(by_region, "figures/n_by_region.html")
+           
+by_region
+```
+
+### Age and sex distribution per region
+```{r age-sex-plot, fig.width=12, fig.height=10}
+data %>%
+  group_by(user_id, sex, age, region) %>%
+  summarise() %>%
+  ungroup() %>%
+  group_by(region) %>%
+  mutate(n = n()) %>%
+  ungroup() %>%
+  ggplot(aes(as.numeric(age), fill = sex)) +
+  geom_histogram(binwidth = 5, color = "grey") +
+  geom_text(aes(x=0, y=5, label = paste0("n=",n)), color = "black") +
+  labs(title="", y="", x="Participant age in 5-year bins") +
+  facet_grid(region~., scales="free_y") +
+  PSA_theme
+```
+
+
+### Participants per trait per region
+
+```{r n-trait-region-plot, fig.width=15, fig.height=10.5}
+data %>%
+  group_by(trait, region) %>%
+  summarise(n = n_distinct(user_id)) %>%
+  ggplot(aes(trait, n)) +
+  geom_col(aes(fill = trait), show.legend = F) +
+  geom_hline(yintercept = 15) +
+  facet_grid(region~., scale = "free") +
+  labs(title="", x="", y="Participants per trait per region") +
+  theme( axis.text.x = element_text(angle = -45, hjust = 0) ) + 
+  PSA_theme
+
+ggsave("figures/participants_per_trait_per_region.png", width = 15, height = 8)
+```
+
+### Participants per lab
+
+```{r n-per-lab}
+labs <- data %>%
+  unite(lab, country, lab) %>%
+  group_by(region, lab, user_id) %>%
+  summarise() %>%
+  ungroup() %>%
+  count(region, lab) %>%
+  arrange(region, lab)
+
+knitr::kable(labs) %>%
+  kable_styling("striped")
+```

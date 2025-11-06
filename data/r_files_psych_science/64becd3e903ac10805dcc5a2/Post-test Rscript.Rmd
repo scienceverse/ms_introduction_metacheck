@@ -1,0 +1,131 @@
+---
+title: "Field post study"
+author: "Rin Yoon"
+date: '2023-04-12'
+output: html_document
+---
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+#loading packages
+library('dplyr')
+library(psych)
+library(ggplot2)
+library(jtools)
+library('interactions')
+library(ltm)
+library(car)
+library(MBESS)
+
+#loading data
+post <- read.csv("~/Post-test Data.csv")
+```
+
+#Demographic
+```{r}
+#Gender, age and click cound data distribution
+post$gender <- factor(post$gender)
+levels(post$gender) <- c('female', 'non-binary', 'male')
+post  %>% count(gender)
+post  %>% count(alumni)
+describe(post[, c("age", "graduation")], range=TRUE) #Clicks for skewness and kurtosis
+```
+
+# Thought counts
+##Total thought
+```{r}
+#Thought about self-interest benefits at least once
+m1 = glm(Total_self ~ IS, data=post, family = binomial(link='logit'))
+summ(m1, digit=4)
+library(aod)
+l <- matrix(c(0, 1), nrow = 1) # Specifies the contrast to test, e.g., testing if IS coefficient is equal to 0
+Anova(m1, type="III", test="Wald")
+exp(cbind(OR = coef(m1), confint(m1))) #OR
+
+#Thought about other-regarding benefits at least once
+m1 = glm(Total_other ~ IS, data=post, family = "binomial"(link='logit'))
+summ(m1, digit=4)
+```
+```{r}
+#Thought about self-interest benefits at least once
+Means.Table<-post %>%
+  group_by(IS) %>%
+  summarise(N=n(),
+            Means=mean(Total_self),
+            SD=sd(Total_self),
+            SE=SD/N^.5)
+print(Means.Table)
+
+#Thought about other-regarding benefits at least once
+Means.Table<-post %>%
+  group_by(IS) %>%
+  summarise(N=n(),
+            Means=mean(Total_other),
+            SD=sd(Total_other),
+            SE=SD/N^.5)
+print(Means.Table)
+```
+##First thought
+```{r}
+#First thought was on self-interest benefits
+m1 = glm(First_Self ~ IS, data=post, family = binomial(link='logit'))
+summ(m1, digit=4)
+library(aod)
+l <- matrix(c(0, 1), nrow = 1) # Specifies the contrast to test, e.g., testing if IS coefficient is equal to 0
+Anova(m1, type="III", test="Wald")
+exp(cbind(OR = coef(m1), confint(m1))) #OR
+
+#First thought was on other-regarding benefits
+m1 = glm(First_other ~ IS, data=post, family = "binomial"(link='logit'))
+summ(m1, digit=4)
+```
+```{r}
+#First thought was on self-interest benefits
+Means.Table<-post %>%
+  group_by(IS) %>%
+  summarise(N=n(),
+            Means=mean(First_Self),
+            SD=sd(First_Self),
+            SE=SD/N^.5)
+print(Means.Table)
+
+#First thought was on other-regarding benefits
+Means.Table<-post %>%
+  group_by(IS) %>%
+  summarise(N=n(),
+            Means=mean(First_other),
+            SD=sd(First_other),
+            SE=SD/N^.5)
+print(Means.Table)
+```
+# Measured variables
+```{r}
+post  %>% count(IS)
+```
+
+```{r}
+post$relcons <- post$Focus_self/(post$Focus_self+post$Focus_others)
+
+#Relative attention
+t.test(relcons ~ IS, data=post, var.equal=TRUE)
+tapply(post$relcons, post$IS,sd) #SD
+ci.smd(ncp= 3.5769, n.1=94, n.2=89, conf.level=.95)
+
+#Focus on helping
+t.test(Focus_others ~ IS, data=post, var.equal=TRUE)
+tapply(post$Focus_others, post$IS,sd) #SD
+
+#Focus on self
+t.test(Focus_self ~ IS, data=post, var.equal=TRUE)
+tapply(post$Focus_self, post$IS,sd) #SD
+ci.smd(ncp= 3.1897, n.1=94, n.2=89, conf.level=.95)
+
+#Guilt
+t.test(guilt ~ IS, data=post, var.equal=TRUE)
+tapply(post$guilt, post$IS,sd) #SD
+ci.smd(ncp= 2.03, n.1=94, n.2=89, conf.level=.95)
+
+#Reciprocity
+t.test(reciprocity ~ IS, data=post, var.equal=TRUE)
+tapply(post$reciprocity, post$IS,sd) #SD
+```
+

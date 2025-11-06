@@ -1,0 +1,2045 @@
+---
+title: 'Relational Mobility & COVID-19: Cases Analysis'
+date: "9/1/2020"
+output:
+  word_document: default
+  pdf_document: default
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, echo=F, warning=F, message=F}
+#load packages
+library(emmeans)
+library(lme4)
+library(lmerTest)
+library(plyr)
+library(dplyr)
+library(knitr)
+library(forcats)
+library(scales)
+library(cowplot)
+library(ggplot2)
+library(ggrepel)
+library(tinytex)
+library(gtools)
+library(ggcorrplot)
+library(MuMIn)
+
+#set working directory to where files are saved
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/PsychScience_Revision2/')
+cases <- read.csv('time_series_covid_19_confirmed.csv')
+
+#sum for each country (for countries with multiple datapoints) - this creates a wide dataframe
+casesbycountry <- data.frame(matrix(ncol=ncol(cases)-4, nrow=0))
+countrylist <- unique(cases$Country.Region)
+for (i in countrylist){
+  bycountry <- subset(cases, cases$Country.Region==i)
+  if (nrow(bycountry) > 1){
+    newrow_dta <- bycountry[1,1:4]
+    newrow_days <- colSums(bycountry[5:ncol(bycountry)])
+    newrow <- c(newrow_dta, newrow_days)
+  } else {
+    newrow <- bycountry
+  }
+  casesbycountry <- rbind(casesbycountry, newrow)
+}
+#get rid of column for province/state
+casesbycountry <- casesbycountry[2:ncol(casesbycountry)]
+casesbycountry$Country.Region <- as.character(casesbycountry$Country.Region)
+
+#set baseline -- for each country, day 1 = first day of 20 confirmed infections, to a max of 30 days
+cases_baseline <- data.frame(matrix(ncol = 30, nrow = length(countrylist)))
+cases_baseline <- cbind(casesbycountry[,1:3], cases_baseline)
+
+newrows <- data.frame(matrix(ncol = 30, nrow = 0))
+
+for (i in 1:length(countrylist)){
+  row <- casesbycountry[i,4:ncol(casesbycountry)]
+  nonzero <- row[row>=100]
+  len <- length(nonzero)
+  if (len >= 30) { #this is for countries with more than 30 timepoints - we want just the first 30 points
+    newrow <- nonzero[1:30]
+  } else if (len >= 15) { #this picks only the countries with at least 15 non-zero days (15 days of data > 20 cases)
+    newrow <- c(nonzero, rep(NA, 30-len))
+  } else {
+    newrow <- rep(NA, 30)
+  }
+  newrows <- rbind(newrows, newrow)
+}
+cases_baseline[,4:33] <- newrows
+
+#get rid of countries that have no values (excluded countries based on our criteria)
+cases_baseline <- subset(cases_baseline, !is.na(cases_baseline$X1))
+#take out Countries without COVID-19 Data or  Relational Mobility Scores
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Afghanistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Albania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Algeria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Andorra")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Angola")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Antigua and Barbuda")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Argentina")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Armenia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Austria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Azerbaijan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bahamas")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bahrain")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bangladesh")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Belarus")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Barbados")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Belgium")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Benin")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bolivia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bosnia and Herzegovina")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Brunei")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bulgaria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Burundi")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Burkina Faso")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cabo Verde")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cambodia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Congo (Brazzaville)")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cameroon")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Central African Republic")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "China")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Chad")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Congo (Kinshasa)")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Costa Rica")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cote d'Ivoire")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Croatia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cyprus")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cuba")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Czechia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Djibouti")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Denmark")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Diamond Princess")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Dominican Republic")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "El Salvador")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Equatorial Guinea")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Eritrea")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Eswatini")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ethiopia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ecuador")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Finland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Gabon")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guinea")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guyana")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Georgia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ghana")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Greece")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Grenada")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guatemala")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Jamaica")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Haiti")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Honduras")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Iceland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "India")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Indonesia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Iran")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Iraq")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ireland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Italy")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Jamaica")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kazakhstan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kuwait")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kenya")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kyrgyzstan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Latvia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Liberia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Lithuania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Liechtenstein")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Luxembourg")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Malta")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mauritania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Maldives")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Malawi")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Moldova")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Monaco")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Montenegro")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Madagascar")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mongolia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Namibia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Niger")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Nepal")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Nicaragua")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Nigeria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "North Macedonia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Norway")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Oman")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Pakistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Panama")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Paraguay")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Peru")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Qatar")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Rwanda")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Romania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Russia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "San Marino")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sao Tome and Principe")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Saudi Arabia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Senegal")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Serbia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Slovakia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Slovenia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "South Africa")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "South Sudan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Somalia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Suriname")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sri Lanka")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sudan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Switzerland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Tanzania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Tajikistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Timor-Leste")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Togo")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Thailand")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "United Arab Emirates")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Uruguay")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Uzbekistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Uganda")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Zambia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Zimbabwe")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Vietnam")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Yemen")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Comoros")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mozambique")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Syria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guinea-Bissau")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Botswana")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sierra Leone")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mali")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kosovo")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Burma")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "United States")
+
+#add in other vars - read in from other spreadsheet
+#setwd()
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/')
+
+countrydata <-  read.csv('RelMob& Coronavirus.csv')
+##Fix NAs
+countrydata[countrydata=="#NULL!"] <- NA
+countrydata[countrydata=="#DIV/0!"] <- NA
+countrydata[countrydata=="#N/A"] <- NA
+countrydata[countrydata=="N/A"] <- NA
+countrydata[countrydata==""] <- NA
+#join dataframes
+cases_baseline <- plyr::rename(cases_baseline, replace = c("Country.Region" = "country"))
+cases_baseline <- left_join(cases_baseline, countrydata, by = "country")
+
+#create table of countries included & their Rel Mob Score to print
+CountriesIncluded.RelMob <- cases_baseline[c(1,34)]
+
+#reshape to long format - 1 day per row
+cases_baseline_long <- reshape(data = cases_baseline, varying = list(4:33),
+                               direction = "long")
+
+cases_baseline_long <- plyr::rename(cases_baseline_long, replace = c("X1" = "cases"))
+cases_baseline_long <- plyr::rename(cases_baseline_long, replace = c("time" = "day"))
+
+#prep for models
+#natural log of cases (to account for exponential growth), relational mobility and underreporting indicies.
+cases_baseline_long$lncases <- log(cases_baseline_long$cases)
+cases_baseline_long$RelationalMobility <- as.numeric(as.character(cases_baseline_long$Relational.Mobility))
+cases_baseline_long$c_RelationalMobility <- scale(cases_baseline_long$RelationalMobility, scale = FALSE)
+cases_baseline_long$reporting_index <- as.numeric(as.character(cases_baseline_long$Underreporting_April15))
+cases_baseline_long$z_reporting_index <- scale(cases_baseline_long$reporting_index, scale = TRUE)
+cases_baseline_long$testingpercase <- as.numeric(as.character(cases_baseline_long$Testing_perCase))
+cases_baseline_long$z_testingpercase <- scale(cases_baseline_long$testingpercase, scale = TRUE)
+
+#center day (so we can look at main effects - at the mean day)
+cases_baseline_long$c_day <- as.vector(scale(cases_baseline_long$day, center = T, scale = F))
+#rescale covariates
+cases_baseline_long$popdensity <- as.numeric(cases_baseline_long$Pop_Density2020_UN)
+cases_baseline_long$medianage <- as.numeric(cases_baseline_long$MedianAge_2020_UN)
+cases_baseline_long$gdp <- as.numeric(cases_baseline_long$GDP_2018)
+cases_baseline_long$gdppercap <- cases_baseline_long$gdp/1000
+cases_baseline_long$pop_thous <- as.numeric(cases_baseline_long$Population_2020_UN)
+cases_baseline_long$pop_mill <- cases_baseline_long$pop_thous/1000
+cases_baseline_long$migration <- as.numeric(cases_baseline_long$Migration)
+cases_baseline_long$tourism <- as.numeric(as.character(cases_baseline_long$Tourism))
+cases_baseline_long$lnpop_mill <- log(cases_baseline_long$pop_mill)
+cases_baseline_long$tourism <- as.numeric(as.character(cases_baseline_long$Tourism))
+cases_baseline_long$indiv <- as.numeric(as.character(cases_baseline_long$individualism))
+cases_baseline_long$TL <- as.numeric(as.character(cases_baseline_long$TL))
+cases_baseline_long$Govt_Efficiency <- as.numeric(as.character(cases_baseline_long$Gov_Efficiency))
+cases_baseline_long$Urban <- as.numeric(as.character(cases_baseline_long$PercUrban))
+cases_baseline_long$z_urban <- scale(cases_baseline_long$Urban, scale = TRUE)
+cases_baseline_long$z_indiv <- scale(cases_baseline_long$indiv, scale = TRUE)
+cases_baseline_long$z_TL <- scale(cases_baseline_long$TL, scale = TRUE)
+cases_baseline_long$z_Govt_Efficiency <- scale(cases_baseline_long$Govt_Efficiency, scale = TRUE)
+cases_baseline_long$z_lnpop_mill <- scale(cases_baseline_long$lnpop_mill, scale = TRUE)
+cases_baseline_long$z_popdensity <- scale(cases_baseline_long$popdensity, scale = TRUE)
+cases_baseline_long$z_medianage <- scale(cases_baseline_long$medianage, scale = TRUE)
+cases_baseline_long$z_gdppercap <- scale(cases_baseline_long$gdppercap, scale = TRUE)
+cases_baseline_long$z_pop_mill <- scale(cases_baseline_long$pop_mill, scale = TRUE)
+cases_baseline_long$z_migration <- scale(cases_baseline_long$migration, scale = TRUE)
+cases_baseline_long$z_tourism <- scale(cases_baseline_long$tourism, scale = TRUE)
+
+#BCG
+cases_baseline_long$BCGstatus[cases_baseline_long$BCG..After.2000.=="Only for certain groups"] <- 0
+cases_baseline_long$BCGstatus[cases_baseline_long$BCG..After.2000.=="In the Past"] <- 0
+cases_baseline_long$BCGstatus[cases_baseline_long$BCG..After.2000.=="BCG for all"] <- 1
+
+
+Case_Included <- data.frame(unique(cases_baseline_long$country[!is.na(cases_baseline_long$z_medianage) &
+                                                        
+                                                        !is.na(cases_baseline_long$z_lnpop) &
+                                                        !is.na(cases_baseline_long$z_migration)]))
+Case_Included <- plyr::rename(Case_Included, replace = c("unique.cases_baseline_long.country..is.na.cases_baseline_long.z_medianage...." = "country"))
+
+#for each country, get date of first day of 100 cases for 2nd column
+First100Cases <- data.frame(matrix(ncol = 2, nrow = 1))
+for (i in Case_Included$country){
+  country <- i
+  row <- subset(casesbycountry, casesbycountry$Country.Region==i)
+  row.daysonly <- row[,4:ncol(casesbycountry)]
+  colindex <- which(row.daysonly >= 100, arr.ind=TRUE)[1,2]
+  colname <- colnames(row.daysonly[colindex])
+  date <- sub('X', '', colname)
+  newrow <- c(country, date)
+  First100Cases <- rbind(First100Cases, newrow)
+}
+#remove empty first row
+First100Cases <- First100Cases[2:nrow(First100Cases),]
+#name columns
+colnames(First100Cases) <- c("country", "case_date")
+
+```
+
+##Correlations between variables
+```{r}
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/')
+countrydata <-  read.csv('RelMob& Coronavirus.csv')
+
+countrydata[countrydata=="#NULL!"] <- NA
+countrydata[countrydata=="#DIV/0!"] <- NA
+countrydata[countrydata=="#N/A"] <- NA
+countrydata[countrydata=="N/A"] <- NA
+countrydata[countrydata==""] <- NA
+predictors_clean <- subset(countrydata, !is.na(countrydata$Relational.Mobility))
+
+predictors_clean$Relational_Mobility <- as.numeric(as.character(predictors_clean$Relational.Mobility))
+predictors_clean$Reporting_Index <- as.numeric(as.character(predictors_clean$Underreporting_April15))
+predictors_clean$Testing_Per_Case <- as.numeric(as.character(predictors_clean$Testing_perCase))
+predictors_clean$Population_Density <- as.numeric(predictors_clean$Pop_Density2020_UN)
+predictors_clean$Median_Age <- as.numeric(predictors_clean$MedianAge_2020_UN)
+predictors_clean$gdp <- as.numeric(predictors_clean$GDP_2018)
+predictors_clean$GDP <- predictors_clean$gdp/1000
+predictors_clean$pop_thous <- as.numeric(predictors_clean$Population_2020_UN)
+predictors_clean$pop_mill <- predictors_clean$pop_thous/1000
+predictors_clean$Migration <- as.numeric(predictors_clean$Migration)
+predictors_clean$Tourism <- as.numeric(as.character(predictors_clean$Tourism))
+predictors_clean$Population <- log(predictors_clean$pop_mill)
+predictors_clean$Individualism <- as.numeric(as.character(predictors_clean$individualism))
+predictors_clean$Tightness_Looseness <- as.numeric(as.character(predictors_clean$TL))
+predictors_clean$Government_Efficiency <- as.numeric(as.character(predictors_clean$Gov_Efficiency))
+predictors_clean$Urban <- as.numeric(as.character(predictors_clean$PercUrban))
+predictors_clean$BCGstatus[predictors_clean$BCG..After.2000.=="Only for certain groups"] <- 0
+predictors_clean$BCGstatus[predictors_clean$BCG..After.2000.=="In the Past"] <- 0
+predictors_clean$BCGstatus[predictors_clean$BCG..After.2000.=="BCG for all"] <- 1
+
+
+cov_level3 <- data.frame(predictors_clean$Relational_Mobility,predictors_clean$Population,predictors_clean$Migration,predictors_clean$GDP,predictors_clean$Population_Density,predictors_clean$Tourism,predictors_clean$Urban,predictors_clean$Median_Age,predictors_clean$Individualism,predictors_clean$Government_Efficiency,predictors_clean$Tightness_Looseness,predictors_clean$BCGstatus,predictors_clean$Reporting_Index,predictors_clean$Testing_Per_Case)
+
+names(cov_level3) <- c("Relational Mobility","Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Individualism","Government Efficiency","Tightness", "BCG: Current vs. Not Current","Reporting Index", "Testing Per Case")
+
+mcor <- round(cor(cov_level3, use = "pairwise.complete.obs"),2)
+p.mat <- cor_pmat(cov_level3)
+rev.p.mat <- 1-p.mat
+
+corplot <- ggcorrplot(mcor, type = "lower",outline.col = "white", ggtheme = ggplot2::theme_gray,
+           colors = c("#6D9EC1", "white", "#E46726"), lab = TRUE, p.mat = rev.p.mat, insig = "pch",pch = 0, pch.cex = 14, sig.level=0.95)
+#ggsave with width = 10, height = 10
+
+```
+***
+##Stepwise Cases Model
+***
+```{r, echo=F, warning=F, message=F}
+##Effect size for day model
+cases_basemod <- lmer(lncases ~ c_day +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+##Effect size for RM model
+cases_basemod <- lmer(lncases ~ c_day*c_RelationalMobility +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Day x Relational Mobility", "Day x Population")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     (c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_mod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_mod2)
+r.squaredGLMM(cases_mod2)
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ (c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_mod3<- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population Density", "Migration", "Population", "Tourism","Day x Relational Mobility","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism")
+
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+##Growth Curves
+```{r, warning=F, echo=F, message=F}
+#graphs
+LABEL <- c("Low Relational Mobility","High Relational Mobility" )
+cases_baseline_long$RelMob_lvl <- quantcut(cases_baseline_long$Relational.Mobility, q=2, labels= LABEL ) 
+
+GraphA <- ggplot(data = cases_baseline_long, aes(x = day, y = cases, color = RelMob_lvl)) +
+  geom_point(alpha=0.2) +
+  stat_smooth(aes(color = RelMob_lvl), method = "loess") +
+   theme_classic() +
+scale_color_manual(values=c("steelblue1", "tomato")) +
+  theme(legend.position="none", axis.line = element_line(size = 0.75), axis.ticks = element_line(size = 0.75),
+        axis.text = element_text(size = 12), axis.title = element_text(size = 12)) +
+  labs(x="Day of outbreak", y="Number of cases", color="Relational Mobility") +
+  xlim(1,30)
+
+
+GraphB <- ggplot(data = cases_baseline_long, aes(x = day, y = cases, color = RelMob_lvl)) +
+  geom_point(alpha=0.2) +
+  stat_smooth(aes(color = RelMob_lvl), method = "lm") +
+  theme_classic() +
+  scale_color_manual(values=c("steelblue1", "tomato")) +
+  scale_y_continuous(trans = 'log10',
+                     breaks = trans_breaks('log10', function(x) 10^x),
+                     labels = trans_format('log10', math_format(10^.x))) +
+  theme(legend.position="right",axis.line = element_line(size = 0.75), axis.ticks = element_line(size = 0.75),
+        axis.text = element_text(size = 12), axis.title = element_text(size = 12)) +
+  labs(x="Day of outbreak", y="Number of cases", color="Relational Mobility"
+       ) +
+  xlim(1,30)
+
+#combine graphs and save
+graphs <- plot_grid(
+  GraphA + theme(legend.position="none"),
+  GraphB + theme(legend.position="none"),
+  align = 'vh',
+  hjust = -1,
+  nrow = 1
+)
+
+legend <- get_legend(
+  # create some space to the left of the legend
+  GraphA + theme(legend.box.margin = margin(0, 0, 0, 12))
+)
+
+# add the legend to the row we made earlier. Give it one-third of 
+# the width of one plot (via rel_widths).
+finalgraph <- plot_grid(graphs, legend, rel_widths = c(3, .7))
+finalgraph
+#ggsave('', finalgraph, width = 12, height = 4)
+```
+****
+##Slopes
+```{r, echo=F, message=F, warning=F}
+#compute slope (lncases ~ day) for each country
+#this is raw slope (no covariates)
+cases_rawslopebycountry <- data.frame(matrix(ncol=2, nrow=0), stringsAsFactors=FALSE)
+countrylist <- unique(cases_baseline_long$country)
+for (i in countrylist){
+  countryi <- subset(cases_baseline_long, cases_baseline_long$country==i)
+  countryi <- subset(countryi, !is.na(countryi$cases))
+  if (nrow(countrydata) > 1) {
+    country <- i
+    mod <- lm(lncases ~ day, data = countryi)
+    slope <- as.numeric(summary(mod)$coefficients[2,1])
+    newrow <- data.frame(country, slope)
+    newrow$country <- as.character(newrow$country)
+    cases_rawslopebycountry <- rbind(cases_rawslopebycountry, newrow)
+  } else {
+  }
+}
+
+#this is adjusted slope (with covariates included)
+cases_adjslopebycountry <- data.frame(matrix(ncol=2, nrow=0), stringsAsFactors=FALSE)
+countrylist <- unique(cases_baseline_long$country)
+for (i in countrylist){
+  countryi <- subset(cases_baseline_long, cases_baseline_long$country==i)
+  countryi <- subset(countryi, !is.na(countryi$cases))
+   if (nrow(countryi) > 1 & !is.na(countryi$pop_mill)) {
+    country <- i
+    mod <- lm(lncases ~ c_day + z_lnpop_mill + c_day:z_lnpop_mill, data = countryi)
+    slope <- as.numeric(summary(mod)$coefficients[2,1])
+    newrow <- data.frame(country, slope)
+    newrow$country <- as.character(newrow$country)
+    cases_adjslopebycountry <- rbind(cases_adjslopebycountry, newrow)
+  } else {
+  }
+}
+
+#combine these two and label them
+cases_slopes <- left_join(cases_rawslopebycountry, cases_adjslopebycountry, by = "country")
+colnames(cases_slopes) <- c("country", "rawslope", "adjslope")
+
+#combine this with the country data
+cases_withslopes <- left_join(cases_slopes, countrydata, by = "country")
+
+#graph it with region color-coded and save
+
+
+GraphA <- ggplot(data = cases_withslopes, aes(x = Relational.Mobility, y = adjslope)) +
+  theme_classic() +
+  stat_smooth(method="lm", size=1, color="black") +
+  ylim(0,.4) +
+  xlim(-.5, .5) +
+  geom_point(position = "jitter",size=2) +
+  geom_text_repel(aes(label = country)) +
+  theme(legend.position = "none", axis.line = element_line(size = 0.75), axis.ticks = element_line(size = 0.75),
+        axis.text = element_text(size = 12), axis.title = element_text(size = 12)) +
+  labs(x="Relational Mobility", y="Rate of exponential growth of cases (adjusted)")
+
+GraphA
+#ggsave('', GraphA, width = 9, height = 6)
+```
+***
+## Individualism
+***
+```{r, echo=F, warning=F, message=F}
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill + z_indiv + c_day:z_indiv +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Individualism","Day x Relational Mobility", "Day x Population", "Day x Individualism")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                  + z_indiv + c_day:z_indiv  +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_fullbasemod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod2)
+r.squaredGLMM(cases_fullbasemod2)
+
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Individualism","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x Individualism")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility+ z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+z_indiv + c_day:z_indiv + (c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Migration", "Population", "Tourism","Individualism","Day x Relational Mobility", "Day x Migration","Day x Population","Day x Tourism","Day x Individualism")
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","Individualism","Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x Individualism","Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+## Government Efficiency
+***
+```{r, echo=F, warning=F, message=F}
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill + z_Govt_Efficiency + c_day:z_Govt_Efficiency +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Government Efficiency","Day x Relational Mobility", "Day x Population", "Day x Government Efficiency")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                  z_Govt_Efficiency + c_day:z_Govt_Efficiency +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_fullbasemod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod2)
+r.squaredGLMM(cases_fullbasemod2)
+
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Government Efficiency","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x Government Efficiency")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+z_Govt_Efficiency + c_day:z_Govt_Efficiency+ (c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Migration", "Population", "Tourism","Government Efficiency","Day x Relational Mobility", "Day x Migration","Day x Population","Day x Tourism","Day x Government Efficiency")
+
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","Government Efficiency","Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x Government Efficiency","Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p","b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+## Tightness
+***
+```{r, echo=F, warning=F, message=F}
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill + z_TL + c_day:z_TL 
+                      +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_basemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Tightness-Looseness","Day x Relational Mobility", "Day x Population", "Day x Tightness-Looseness")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                  z_TL + c_day:z_TL +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_fullbasemod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod2)
+r.squaredGLMM(cases_fullbasemod2)
+
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration","Population", "Tourism","Percent Urban","Tightness-Looseness","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x Tightness-Looseness")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility +z_TL + c_day:z_TL+ z_lnpop_mill +c_day:z_lnpop_mill + z_migration + c_day:z_migration+ (c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Tightness-Looseness","Population","Migration", "Day x Relational Mobility","Day x Tightness-Looseness","Day x Population","Day x Migration")
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","Tightness-Looseness","Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x Tightness-Looseness","Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+##BCG Models
+***
+```{r, echo=F, warning=F, message=F}
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill+ BCGstatus + c_day:BCGstatus +(c_day||Region/country), data=cases_baseline_long)
+
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","BCG Current vs. Not Current", "Day x Relational Mobility", "Day x Population","Day x BCG Current vs. Not Current")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     BCGstatus + c_day:BCGstatus+
+                     (c_day||country), data=cases_baseline_long)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_mod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_mod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+
+summary(cases_mod2)
+r.squaredGLMM(cases_mod2)
+
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Median Age","GDP","Population Density","Migration","Population","Tourism","Percent Urban","BCG Current vs. Not Current", "Day x Relational Mobility","Day x Median Age","Day x GDP","Day x Population Density","Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x BCG Current vs. Not Current")
+
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+BCGstatus + c_day:BCGstatus+ (c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Migration","Population","Tourism","Percent Urban","BCG Current vs. Not Current", "Day x Relational Mobility","Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x BCG Current vs. Not Current")
+
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","BCG Current vs. Not Current","Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x BCG Current vs. Not Current", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+##Reporting Index
+***
+```{r, echo=F, warning=F, message=F}
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=cases_baseline_long, weights = reporting_index)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Day x Relational Mobility", "Day x Population")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     (c_day|country), data=cases_baseline_long, weights = reporting_index)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_mod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_mod2)
+r.squaredGLMM(cases_mod2)
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2, case_df2, case_p2)
+
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility + z_gdppercap + c_day:z_gdppercap +z_migration+ c_day:z_migration+z_tourism+ c_day:z_tourism+ (c_day|country), data=cases_baseline_long, weights = reporting_index)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_mod3<- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","GDP","Migration", "Tourism", "Day x Relational Mobility","Day x GDP","Day x Migration","Day x Tourism")
+
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+##Reporting Index as a covariate
+```{r, echo=F, warning=F, message=F}
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility+ z_reporting_index+c_day:z_reporting_index+z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Reporting Index", "Population","Day x Reporting Index", "Day x Relational Mobility", "Day x Population")
+case_cols <- cbind(preds, case_coefs, case_t, case_df, case_p)
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+z_reporting_index+c_day:z_reporting_index+
+                     (c_day|country), data=cases_baseline_long)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_mod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_mod2)
+r.squaredGLMM(cases_mod2)
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Reporting Index","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x Reporting Index")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2 , case_p2)
+
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility+ z_reporting_index+c_day:z_reporting_index+ + z_gdppercap + c_day:z_gdppercap+z_tourism+ c_day:z_tourism + (c_day|country), data=cases_baseline_long)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_mod3<- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Reporting Index","GDP","Tourism", "Day x Relational Mobility","Day x Reporting Index","Day x GDP","Day x Tourism")
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","Reporting Index", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x Reporting Index", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+##Testing 
+***
+```{r, echo=F, warning=F, message=F}
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=cases_baseline_long, weights = testingpercase)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Day x Relational Mobility", "Day x Population")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     (c_day||Region/country), data=cases_baseline_long, weights = testingpercase)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_mod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_mod2)
+r.squaredGLMM(cases_mod2)
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility + z_lnpop_mill + c_day:z_lnpop_mill+ z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity +z_tourism+ c_day:z_tourism+(c_day||Region/country), data=cases_baseline_long, weights = testingpercase)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_mod3<- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Population","GDP","Population Density", "Tourism","Day x Relational Mobility","Day x Population", "Day x GDP","Day x Population Density", "Day x Tourism")
+
+
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+##Testing as a covariate
+```{r, echo=F, warning=F, message=F}
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility+ z_testingpercase+c_day:z_testingpercase+ +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_basemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Testing", "Population","Day x Testing", "Day x Relational Mobility", "Day x Population")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+z_testingpercase+c_day:z_testingpercase+
+                     (c_day|country), data=cases_baseline_long)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_mod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_mod2)
+r.squaredGLMM(cases_mod2)
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Testing","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban","Day x Testing")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility+ z_testingpercase+c_day:z_testingpercase+ + z_lnpop_mill + c_day:z_lnpop_mill + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity +z_tourism+ c_day:z_tourism+ (c_day|country), data=cases_baseline_long)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_mod3<- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Testing","Population","GDP","Population Density", "Tourism","Day x Relational Mobility","Day x Testing","Day x Population","Day x GDP","Day x Population Density", "Day x Tourism")
+
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility","Testing", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility","Day x Testing", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+***
+#Time window is 15 days instead of 30
+***
+```{r, echo=F, warning=F, message=F}
+cases_baseline_long_15day <- subset(cases_baseline_long, cases_baseline_long$day<=15)
+cases_baseline_long_15day$c_day <- as.vector(scale(cases_baseline_long_15day$day, center = T, scale = F))
+
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=cases_baseline_long_15day)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_basemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Day x Relational Mobility", "Day x Population")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     (c_day|country), data=cases_baseline_long_15day)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_mod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_fullbasemod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod2)
+r.squaredGLMM(cases_fullbasemod2)
+
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration +z_tourism+ c_day:z_tourism+  (c_day||Region/country), data=cases_baseline_long_15day)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population Density", "Migration","Tourism","Day x Relational Mobility", "Day x Population Density", "Day x Migration","Day x Tourism")
+
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+
+###60 day analysis
+```{r, echo=F, warning=F, message=F}
+
+#set working directory to where files are saved
+#setwd()
+#read in file
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/PsychScience_Revision2/')
+cases <- read.csv('time_series_covid_19_confirmed.csv')
+
+#sum for each country (for countries with multiple datapoints) - this creates a wide dataframe
+casesbycountry <- data.frame(matrix(ncol=ncol(cases)-4, nrow=0))
+countrylist <- unique(cases$Country.Region)
+for (i in countrylist){
+  bycountry <- subset(cases, cases$Country.Region==i)
+  if (nrow(bycountry) > 1){
+    newrow_dta <- bycountry[1,1:4]
+    newrow_days <- colSums(bycountry[5:ncol(bycountry)])
+    newrow <- c(newrow_dta, newrow_days)
+  } else {
+    newrow <- bycountry
+  }
+  casesbycountry <- rbind(casesbycountry, newrow)
+}
+#get rid of column for province/state
+casesbycountry <- casesbycountry[2:ncol(casesbycountry)]
+casesbycountry$Country.Region <- as.character(casesbycountry$Country.Region)
+
+#set baseline -- for each country, day 1 = first day of 20 confirmed infections, to a max of 30 days
+cases_baseline <- data.frame(matrix(ncol = 60, nrow = length(countrylist)))
+cases_baseline <- cbind(casesbycountry[,1:3], cases_baseline)
+
+newrows <- data.frame(matrix(ncol = 60, nrow = 0))
+
+for (i in 1:length(countrylist)){
+  row <- casesbycountry[i,4:ncol(casesbycountry)]
+  nonzero <- row[row>=100]
+  len <- length(nonzero)
+  if (len >= 60) { #this is for countries with more than 30 timepoints - we want just the first 30 points
+    newrow <- nonzero[1:60]
+  } else if (len >= 15) { #this picks only the countries with at least 15 non-zero days (15 days of data > 20 cases)
+    newrow <- c(nonzero, rep(NA, 60-len))
+  } else {
+    newrow <- rep(NA, 60)
+  }
+  newrows <- rbind(newrows, newrow)
+}
+cases_baseline[,4:63] <- newrows
+
+#get rid of countries that have no values (excluded countries based on our criteria)
+cases_baseline <- subset(cases_baseline, !is.na(cases_baseline$X1))
+
+#take out Countries without COVID-19 Data or  Relational Mobility Scores
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Afghanistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Albania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Algeria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Andorra")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Angola")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Antigua and Barbuda")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Argentina")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Armenia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Austria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Azerbaijan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bahamas")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bahrain")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bangladesh")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Belarus")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Barbados")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Belgium")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Benin")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bolivia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bosnia and Herzegovina")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Brunei")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bulgaria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Burundi")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Burkina Faso")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cabo Verde")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cambodia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Congo (Brazzaville)")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cameroon")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Central African Republic")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "China")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Chad")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Congo (Kinshasa)")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Costa Rica")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cote d'Ivoire")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Croatia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cyprus")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cuba")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Czechia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Djibouti")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Denmark")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Diamond Princess")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Dominican Republic")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "El Salvador")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Equatorial Guinea")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Eritrea")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Eswatini")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ethiopia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ecuador")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Finland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Gabon")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guinea")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guyana")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Georgia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ghana")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Greece")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Grenada")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guatemala")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Jamaica")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Haiti")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Honduras")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Iceland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "India")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Indonesia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Iran")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Iraq")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ireland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Italy")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Jamaica")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kazakhstan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kuwait")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kenya")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kyrgyzstan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Latvia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Liberia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Lithuania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Liechtenstein")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Luxembourg")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Malta")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mauritania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Maldives")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Malawi")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Moldova")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Monaco")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Montenegro")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Madagascar")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mongolia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Namibia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Niger")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Nepal")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Nicaragua")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Nigeria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "North Macedonia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Norway")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Oman")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Pakistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Panama")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Paraguay")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Peru")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Qatar")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Rwanda")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Romania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Russia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "San Marino")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sao Tome and Principe")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Saudi Arabia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Senegal")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Serbia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Slovakia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Slovenia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "South Africa")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "South Sudan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Somalia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Suriname")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sri Lanka")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sudan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Switzerland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Tanzania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Tajikistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Timor-Leste")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Togo")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Thailand")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "United Arab Emirates")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Uruguay")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Uzbekistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Uganda")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Zambia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Zimbabwe")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Vietnam")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Yemen")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Comoros")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mozambique")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Syria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guinea-Bissau")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Botswana")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sierra Leone")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mali")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kosovo")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Burma")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "United States")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bhutan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Fiji")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Gambia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Saint Lucia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Saint Vincent and the Grenadines")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Seychelles")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Belize")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Lesotho")
+
+#add in other vars - read in from other spreadsheet
+#setwd()
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/')
+
+countrydata <-  read.csv('RelMob& Coronavirus.csv')
+##Fix NAs
+countrydata[countrydata=="#NULL!"] <- NA
+countrydata[countrydata=="#DIV/0!"] <- NA
+countrydata[countrydata=="#N/A"] <- NA
+countrydata[countrydata=="N/A"] <- NA
+countrydata[countrydata==""] <- NA
+#join dataframes
+cases_baseline <- plyr::rename(cases_baseline, replace = c("Country.Region" = "country"))
+cases_baseline <- left_join(cases_baseline, countrydata, by = "country")
+
+#create table of countries included & their Rel Mob Score to print
+CountriesIncluded.RelMob <- cases_baseline[c(1,34)]
+
+#reshape to long format - 1 day per row
+cases_baseline_long <- reshape(data = cases_baseline, varying = list(4:63),
+                               direction = "long")
+
+cases_baseline_long <- plyr::rename(cases_baseline_long, replace = c("X1" = "cases"))
+cases_baseline_long <- plyr::rename(cases_baseline_long, replace = c("time" = "day"))
+
+#prep for models
+#natural log of cases (to account for exponential growth), relational mobility and underreporting scores
+cases_baseline_long$lncases <- log(cases_baseline_long$cases)
+cases_baseline_long$RelationalMobility <- as.numeric(as.character(cases_baseline_long$Relational.Mobility))
+cases_baseline_long$c_RelationalMobility <- scale(cases_baseline_long$RelationalMobility, scale = FALSE)
+cases_baseline_long$reporting_index <- as.numeric(as.character(cases_baseline_long$Underreporting_April15))
+cases_baseline_long$z_reporting_index <- scale(cases_baseline_long$reporting_index, scale = TRUE)
+cases_baseline_long$testingpercase <- as.numeric(as.character(cases_baseline_long$Testing_perCase))
+cases_baseline_long$z_testingpercase <- scale(cases_baseline_long$testingpercase, scale = TRUE)
+
+#center day (so we can look at main effects - at the mean day)
+cases_baseline_long$c_day <- as.vector(scale(cases_baseline_long$day, center = T, scale = F))
+#rescale covariates
+cases_baseline_long$popdensity <- as.numeric(cases_baseline_long$Pop_Density2020_UN)
+cases_baseline_long$medianage <- as.numeric(cases_baseline_long$MedianAge_2020_UN)
+cases_baseline_long$gdp <- as.numeric(cases_baseline_long$GDP_2018)
+cases_baseline_long$gdppercap <- cases_baseline_long$gdp/1000
+cases_baseline_long$pop_thous <- as.numeric(cases_baseline_long$Population_2020_UN)
+cases_baseline_long$pop_mill <- cases_baseline_long$pop_thous/1000
+cases_baseline_long$migration <- as.numeric(cases_baseline_long$Migration)
+cases_baseline_long$tourism <- as.numeric(as.character(cases_baseline_long$Tourism))
+cases_baseline_long$lnpop_mill <- log(cases_baseline_long$pop_mill)
+cases_baseline_long$indiv <- as.numeric(as.character(cases_baseline_long$individualism))
+cases_baseline_long$TL <- as.numeric(as.character(cases_baseline_long$TL))
+cases_baseline_long$Govt_Efficiency <- as.numeric(as.character(cases_baseline_long$Gov_Efficiency))
+cases_baseline_long$Urban <- as.numeric(as.character(cases_baseline_long$PercUrban))
+cases_baseline_long$z_urban <- scale(cases_baseline_long$Urban, scale = TRUE)
+cases_baseline_long$z_indiv <- scale(cases_baseline_long$indiv, scale = TRUE)
+cases_baseline_long$z_TL <- scale(cases_baseline_long$TL, scale = TRUE)
+cases_baseline_long$z_Govt_Efficiency <- scale(cases_baseline_long$Govt_Efficiency, scale = TRUE)
+cases_baseline_long$z_lnpop_mill <- scale(cases_baseline_long$lnpop_mill, scale = TRUE)
+cases_baseline_long$z_popdensity <- scale(cases_baseline_long$popdensity, scale = TRUE)
+cases_baseline_long$z_medianage <- scale(cases_baseline_long$medianage, scale = TRUE)
+cases_baseline_long$z_gdppercap <- scale(cases_baseline_long$gdppercap, scale = TRUE)
+cases_baseline_long$z_pop_mill <- scale(cases_baseline_long$pop_mill, scale = TRUE)
+cases_baseline_long$z_migration <- scale(cases_baseline_long$migration, scale = TRUE)
+cases_baseline_long$z_tourism <- scale(cases_baseline_long$tourism, scale = TRUE)
+
+#BCG
+cases_baseline_long$BCGstatus[cases_baseline_long$BCG..After.2000.=="Only for certain groups"] <- 0
+cases_baseline_long$BCGstatus[cases_baseline_long$BCG..After.2000.=="In the Past"] <- 0
+cases_baseline_long$BCGstatus[cases_baseline_long$BCG..After.2000.=="BCG for all"] <- 1
+```
+***
+##Stepwise Cases Model: 60 days
+***
+```{r, echo=F, warning=F, message=F}
+
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Day x Relational Mobility", "Day x Population")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+(c_day|Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_mod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_mod2)
+r.squaredGLMM(cases_mod2)
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_mod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+
+mod2 <- data.frame(case_cols2)
+
+cases_mod3 <- lmer(lncases ~ c_day * c_RelationalMobility + z_lnpop_mill + c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ (c_day||Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_mod3<- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+
+ss <- getME(cases_mod3, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod3, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility","Population","Tourism", "Day x Relational Mobility","Day x Population","Day x Tourism")
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r','r','r','r'), row.names = F)
+```
+
+##First 20 cases
+```{r}
+#set working directory to where files are saved
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/PsychScience_Revision2/')
+cases <- read.csv('time_series_covid_19_confirmed.csv')
+
+#sum for each country (for countries with multiple datapoints) - this creates a wide dataframe
+casesbycountry <- data.frame(matrix(ncol=ncol(cases)-4, nrow=0))
+countrylist <- unique(cases$Country.Region)
+for (i in countrylist){
+  bycountry <- subset(cases, cases$Country.Region==i)
+  if (nrow(bycountry) > 1){
+    newrow_dta <- bycountry[1,1:4]
+    newrow_days <- colSums(bycountry[5:ncol(bycountry)])
+    newrow <- c(newrow_dta, newrow_days)
+  } else {
+    newrow <- bycountry
+  }
+  casesbycountry <- rbind(casesbycountry, newrow)
+}
+#get rid of column for province/state
+casesbycountry <- casesbycountry[2:ncol(casesbycountry)]
+casesbycountry$Country.Region <- as.character(casesbycountry$Country.Region)
+
+#set baseline -- for each country, day 1 = first day of 20 confirmed infections, to a max of 30 days
+cases_baseline <- data.frame(matrix(ncol = 30, nrow = length(countrylist)))
+cases_baseline <- cbind(casesbycountry[,1:3], cases_baseline)
+
+newrows <- data.frame(matrix(ncol = 30, nrow = 0))
+
+for (i in 1:length(countrylist)){
+  row <- casesbycountry[i,4:ncol(casesbycountry)]
+  nonzero <- row[row>=20]
+  len <- length(nonzero)
+  if (len >= 30) { #this is for countries with more than 30 timepoints - we want just the first 30 points
+    newrow <- nonzero[1:30]
+  } else if (len >= 15) { #this picks only the countries with at least 15 non-zero days (15 days of data > 20 cases)
+    newrow <- c(nonzero, rep(NA, 30-len))
+  } else {
+    newrow <- rep(NA, 30)
+  }
+  newrows <- rbind(newrows, newrow)
+}
+cases_baseline[,4:33] <- newrows
+
+#get rid of countries that have no values (excluded countries based on our criteria)
+cases_baseline <- subset(cases_baseline, !is.na(cases_baseline$X1))
+
+#take out Countries without COVID-19 Data or  Relational Mobility Scores
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Afghanistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Albania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Algeria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Andorra")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Angola")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Antigua and Barbuda")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Argentina")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Armenia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Austria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Azerbaijan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bahamas")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bahrain")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bangladesh")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Belarus")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Barbados")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Belgium")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Benin")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bolivia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bosnia and Herzegovina")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Brunei")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bulgaria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Burundi")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Burkina Faso")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cabo Verde")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cambodia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Congo (Brazzaville)")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cameroon")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Central African Republic")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "China")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Chad")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Congo (Kinshasa)")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Costa Rica")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cote d'Ivoire")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Croatia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cyprus")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Cuba")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Czechia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Djibouti")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Denmark")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Diamond Princess")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Dominican Republic")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "El Salvador")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Equatorial Guinea")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Eritrea")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Eswatini")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ethiopia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ecuador")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Finland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Gabon")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guinea")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guyana")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Georgia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ghana")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Greece")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Grenada")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guatemala")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Jamaica")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Haiti")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Honduras")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Iceland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "India")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Indonesia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Iran")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Iraq")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Ireland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Italy")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Jamaica")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kazakhstan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kuwait")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kenya")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kyrgyzstan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Latvia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Liberia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Lithuania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Liechtenstein")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Luxembourg")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Malta")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mauritania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Maldives")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Malawi")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Moldova")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Monaco")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Montenegro")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Madagascar")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mongolia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Namibia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Niger")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Nepal")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Nicaragua")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Nigeria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "North Macedonia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Norway")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Oman")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Pakistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Panama")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Paraguay")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Peru")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Qatar")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Rwanda")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Romania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Russia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "San Marino")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sao Tome and Principe")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Saudi Arabia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Senegal")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Serbia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Slovakia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Slovenia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "South Africa")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "South Sudan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Somalia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Suriname")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sri Lanka")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sudan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Switzerland")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Tanzania")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Tajikistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Timor-Leste")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Togo")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Thailand")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "United Arab Emirates")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Uruguay")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Uzbekistan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Uganda")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Zambia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Zimbabwe")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Vietnam")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Yemen")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Comoros")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mozambique")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Syria")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Guinea-Bissau")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Botswana")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Sierra Leone")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Mali")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Kosovo")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Burma")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "United States")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Bhutan")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Fiji")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Gambia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Saint Lucia")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Saint Vincent and the Grenadines")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Seychelles")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Belize")
+cases_baseline <- subset(cases_baseline, cases_baseline$Country.Region!= "Lesotho")
+
+#add in other vars - read in from other spreadsheet
+#setwd()
+setwd('/Users/cristinasalvador/Documents/Research/Coronavirus/Relational Mobility/')
+
+countrydata <-  read.csv('RelMob& Coronavirus.csv')
+##Fix NAs
+countrydata[countrydata=="#NULL!"] <- NA
+countrydata[countrydata=="#DIV/0!"] <- NA
+countrydata[countrydata=="#N/A"] <- NA
+countrydata[countrydata=="N/A"] <- NA
+countrydata[countrydata==""] <- NA
+#join dataframes
+cases_baseline <- plyr::rename(cases_baseline, replace = c("Country.Region" = "country"))
+cases_baseline <- left_join(cases_baseline, countrydata, by = "country")
+
+#create table of countries included & their Rel Mob Score to print
+CountriesIncluded.RelMob <- cases_baseline[c(1,34)]
+
+#reshape to long format - 1 day per row
+cases_baseline_long <- reshape(data = cases_baseline, varying = list(4:33),
+                               direction = "long")
+
+cases_baseline_long <- plyr::rename(cases_baseline_long, replace = c("X1" = "cases"))
+cases_baseline_long <- plyr::rename(cases_baseline_long, replace = c("time" = "day"))
+
+#prep for models
+#natural log of cases (to account for exponential growth), relational mobility and underreporting indicies.
+cases_baseline_long$lncases <- log(cases_baseline_long$cases)
+cases_baseline_long$RelationalMobility <- as.numeric(as.character(cases_baseline_long$Relational.Mobility))
+cases_baseline_long$c_RelationalMobility <- scale(cases_baseline_long$RelationalMobility, scale = FALSE)
+cases_baseline_long$reporting_index <- as.numeric(as.character(cases_baseline_long$Underreporting_April15))
+cases_baseline_long$z_reporting_index <- scale(cases_baseline_long$reporting_index, scale = TRUE)
+cases_baseline_long$testingpercase <- as.numeric(as.character(cases_baseline_long$Testing_perCase))
+cases_baseline_long$z_testingpercase <- scale(cases_baseline_long$testingpercase, scale = TRUE)
+
+#center day (so we can look at main effects - at the mean day)
+cases_baseline_long$c_day <- as.vector(scale(cases_baseline_long$day, center = T, scale = F))
+#rescale covariates
+cases_baseline_long$popdensity <- as.numeric(cases_baseline_long$Pop_Density2020_UN)
+cases_baseline_long$medianage <- as.numeric(cases_baseline_long$MedianAge_2020_UN)
+cases_baseline_long$gdp <- as.numeric(cases_baseline_long$GDP_2018)
+cases_baseline_long$gdppercap <- cases_baseline_long$gdp/1000
+cases_baseline_long$pop_thous <- as.numeric(cases_baseline_long$Population_2020_UN)
+cases_baseline_long$pop_mill <- cases_baseline_long$pop_thous/1000
+cases_baseline_long$migration <- as.numeric(cases_baseline_long$Migration)
+cases_baseline_long$tourism <- as.numeric(as.character(cases_baseline_long$Tourism))
+cases_baseline_long$lnpop_mill <- log(cases_baseline_long$pop_mill)
+cases_baseline_long$tourism <- as.numeric(as.character(cases_baseline_long$Tourism))
+cases_baseline_long$indiv <- as.numeric(as.character(cases_baseline_long$individualism))
+cases_baseline_long$TL<- as.numeric(as.character(cases_baseline_long$TL))
+cases_baseline_long$Govt_Efficiency <- as.numeric(as.character(cases_baseline_long$Gov_Efficiency))
+cases_baseline_long$Urban <- as.numeric(as.character(cases_baseline_long$PercUrban))
+cases_baseline_long$z_urban <- scale(cases_baseline_long$Urban, scale = TRUE)
+cases_baseline_long$z_indiv <- scale(cases_baseline_long$indiv, scale = TRUE)
+cases_baseline_long$z_TL <- scale(cases_baseline_long$TL, scale = TRUE)
+cases_baseline_long$z_Govt_Efficiency <- scale(cases_baseline_long$Govt_Efficiency, scale = TRUE)
+cases_baseline_long$z_lnpop_mill <- scale(cases_baseline_long$lnpop_mill, scale = TRUE)
+cases_baseline_long$z_popdensity <- scale(cases_baseline_long$popdensity, scale = TRUE)
+cases_baseline_long$z_medianage <- scale(cases_baseline_long$medianage, scale = TRUE)
+cases_baseline_long$z_gdppercap <- scale(cases_baseline_long$gdppercap, scale = TRUE)
+cases_baseline_long$z_pop_mill <- scale(cases_baseline_long$pop_mill, scale = TRUE)
+cases_baseline_long$z_migration <- scale(cases_baseline_long$migration, scale = TRUE)
+cases_baseline_long$z_tourism <- scale(cases_baseline_long$tourism, scale = TRUE)
+
+#BCG
+cases_baseline_long$BCGstatus[cases_baseline_long$BCG..After.2000.=="Only for certain groups"] <- 0
+cases_baseline_long$BCGstatus[cases_baseline_long$BCG..After.2000.=="In the Past"] <- 0
+cases_baseline_long$BCGstatus[cases_baseline_long$BCG..After.2000.=="BCG for all"] <- 1
+```
+***
+##Stepwise Cases Model: 20 cases as start
+***
+```{r, echo=F, warning=F, message=F}
+
+cases_basemod <- lmer(lncases ~ c_day + c_RelationalMobility +z_lnpop_mill+c_day:c_RelationalMobility +c_day:z_lnpop_mill +(c_day|Region/country), data=cases_baseline_long)
+ss <- getME(cases_basemod, c("theta"))
+#try again
+cases_fullbasemod <- update(cases_basemod, start=ss, 
+                            control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod)
+r.squaredGLMM(cases_fullbasemod)
+
+#make regression table
+case_coefs <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p <- formatC(round(as.numeric(summary(cases_fullbasemod)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p[case_p=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population", "Day x Relational Mobility", "Day x Population")
+case_cols <- cbind(preds, case_coefs, case_t,case_df, case_p)
+
+mod1 <- data.frame(case_cols)
+
+cases_mod2 <- lmer(lncases ~ c_day * c_RelationalMobility + z_medianage +
+                     c_day:z_medianage + z_gdppercap + c_day:z_gdppercap + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ z_urban+ c_day:z_urban+
+                     (c_day|Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod2, c("theta"))
+#try again
+cases_fullbasemod2 <- update(cases_mod2, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod2)
+r.squaredGLMM(cases_fullbasemod2)
+
+#make regression table
+case_coefs2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p2 <- formatC(round(as.numeric(summary(cases_fullbasemod2)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p2[case_p2=="0.000"] <- "<.001"
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Median Age", "GDP","Population Density", "Migration", "Population", "Tourism","Percent Urban","Day x Relational Mobility", "Day x Median Age", "Day x GDP","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism","Day x Percent Urban")
+
+case_cols2 <- cbind(preds, case_coefs2, case_t2,case_df2, case_p2)
+
+mod2 <- data.frame(case_cols2)
+
+cases_mod1 <- lmer(lncases ~ c_day * c_RelationalMobility + z_popdensity +
+                     c_day:z_popdensity + z_migration + c_day:z_migration + z_lnpop_mill +
+                     c_day:z_lnpop_mill +z_tourism+ c_day:z_tourism+ (c_day|Region/country), data=cases_baseline_long)
+ss <- getME(cases_mod1, c("theta"))
+#try again
+cases_fullbasemod3 <- update(cases_mod1, start=ss, 
+                             control = lmerControl(optCtrl = list(maxeval = 100000000, xtol_abs=1e-8, ftol_abs=1e-8)))
+summary(cases_fullbasemod3)
+r.squaredGLMM(cases_fullbasemod3)
+
+#make regression table
+case_coefs3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,1]), digits = 3), format="f", digits = 3)
+case_t3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,4]), digits = 3), format="f", digits = 3)
+case_df3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,3]), digits = 3), format="f", digits = 3)
+case_p3 <- formatC(round(as.numeric(summary(cases_fullbasemod3)$coefficients[,5]), digits = 3), format="f", digits = 3)
+case_p3[case_p3=="0.000"] <- "<.001"
+
+
+preds <- c("Intercept", "Day", "Relational Mobility", "Population Density", "Migration", "Population", "Tourism","Day x Relational Mobility","Day x Population Density", "Day x Migration","Day x Population","Day x Tourism")
+
+case_cols3 <- cbind(preds, case_coefs3, case_t3,case_df3, case_p3)
+
+mod3 <- data.frame(case_cols3)
+
+#CHANGE THIS ONE IF YOU WANT TO CHANGE THE ORDER OF THE ROWS IN THE FINAL TABLE
+preds <- c("Intercept", "Day", "Relational Mobility", "Population","Migration", "GDP", "Population Density","Tourism","Percent Urban","Median Age","Day x Relational Mobility", "Day x Population","Day x Migration", "Day x GDP","Day x Population Density","Day x Tourism","Day x Percent Urban","Day x Median Age")
+preds <- data.frame(preds)
+
+tbl1 <- left_join(preds, mod1, by="preds")
+tbl2 <- left_join(tbl1, mod2, by="preds")
+tbl3 <- left_join(tbl2, mod3, by="preds")
+
+options(knitr.kable.NA = '')
+kable(tbl3, col.names = c("Predictor", "b", "t","df", "p", "b", "t","df", "p","b", "t","df", "p"), align = c('l','r','r','r','r','r','r','r','r','r'), row.names = F)
+```

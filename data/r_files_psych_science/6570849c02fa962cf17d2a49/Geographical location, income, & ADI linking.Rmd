@@ -1,0 +1,115 @@
+---
+title: "IP, zipcode and ADI"
+output: html_document
+---
+
+```{r clean workspace}
+rm(list=ls())
+```
+
+```{r}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ei)
+library(zipcodeR) #https://www.sciencedirect.com/science/article/pii/S2665963821000373/
+library(eiCompare)
+library(RJSONIO)
+library(data.table)
+library(stringr)
+select <- dplyr::select
+```
+
+```{r record package version}
+used_packages <-loadedNamespaces()
+used_package_versions <- tibble(package = used_packages)%>%
+  rowwise()%>%
+  mutate(version=packageVersion(package))
+
+#write_csv(used_package_versions, "./Geographical location, income, & ADI linking package version.csv")
+```
+
+```{r read in data}
+# this adi_fips data is not included in the data folder, see https://www.neighborhoodatlas.medicine.wisc.edu/ for data download
+adi_fips<- read_csv("./adi-download/US_2020_ADI_Census\ Block\ Group_v3.2.csv")
+
+raw_data <- read_csv("./data/exp-2/06.exp2-included-participants-forADI-linking.csv")
+```
+
+```{r prepare data}
+data <- raw_data%>%
+  filter(is.na(loc_fromIP)==F)%>%
+  select(unique_id,loc_fromIP,zipcode_fromIP)%>%
+  separate(loc_fromIP,into=c("lat","lon"),sep=",")%>%
+  rename(zip=zipcode_fromIP)%>%
+  mutate(zip_temp = as.character(zip))%>%
+  mutate(zip = case_when(str_length(zip_temp)==4 ~ paste("0",zip_temp,sep=""),
+                         TRUE ~ zip_temp))%>%
+  select(-zip_temp)
+
+missing_data <- raw_data%>%filter(is.na(loc_fromIP)==T)%>%select(unique_id,zip)
+```
+
+```{r}
+lat_and_lon <- list()
+
+for (i in 1:nrow(missing_data)) {
+  info <- reverse_zipcode(missing_data$zip[i])
+  lat_and_lon[[i]] <- list(missing_data$unique_id[i],info$lat, info$lng, missing_data$zip[i])
+}
+
+lat_lon_df <- rbindlist(lat_and_lon)%>%rename(unique_id=V1, lat=V2, lon=V3,zip=V4)
+
+data_all <- rbind(data,lat_lon_df)
+```
+
+```{r eiCompare: get 15 digits fips code}
+census_block <- list()
+
+for (i in 1:nrow(data_all)) {
+  census_block[[i]] <- latlong2fips(data_all$lat[i], data_all$lon[i], data_all$unique_id[i])
+}
+
+fips_df <- rbindlist(census_block)
+```
+
+```{r conversion and ADI mapping}
+fips_df_12 <- fips_df%>%mutate(FIPS = str_sub(FIP,start=0,end=-4))%>%left_join(adi_fips)%>%rename(unique_id = row_id)
+
+fips_ADI_for_export <- fips_df_12%>%select(unique_id,FIPS,ADI_NATRANK,ADI_STATERNK)
+```
+
+```{r zipcode R: get median household income}
+data_all_zip <- data%>%select(unique_id,zip)%>%rbind(missing_data)
+
+income <- list()
+
+for (i in 1:nrow(data_all_zip)) {
+  info <- reverse_zipcode(data_all_zip$zip[i])
+  income[[i]] <- list(data_all_zip$unique_id[i],info$median_household_income)
+}
+
+income_df <- rbindlist(income)%>%rename(unique_id=V1, zipcodeR_median_household_income = V2)
+```
+
+```{r}
+missing_income <- income_df%>%filter(is.na(zipcodeR_median_household_income)==T)%>%left_join(raw_data)%>%select(unique_id,zip)
+
+data_all_zip2 <- data_all_zip%>%filter(!unique_id %in% missing_income$unique_id)%>%rbind(missing_income)
+
+income2 <- list()
+
+for (i in 1:nrow(data_all_zip2)) {
+  info2 <- reverse_zipcode(data_all_zip2$zip[i])
+  income2[[i]] <- list(data_all_zip2$unique_id[i],info2$median_household_income)
+}
+
+income_df2 <- rbindlist(income2)%>%rename(unique_id=V1, zipcodeR_median_household_income = V2)
+```
+
+
+```{r export both ADI and income measures}
+db_for_export <- fips_ADI_for_export%>%left_join(income_df2)
+write_csv(db_for_export,"./data/geographical-info/00.exp2_ADI_income_info.csv")
+```
+

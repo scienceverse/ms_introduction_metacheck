@@ -1,0 +1,68 @@
+---
+title: "Field Study Pretests"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#loading packages
+library('dplyr')
+library(psych)
+library(jtools)
+library('interactions')
+library(haven)
+```
+
+# Pretest 1: Rewarding
+```{r}
+#loading data
+Pre <- read.csv("~/Pre-test 1 Data.csv")
+```
+
+```{r}
+#Demographics
+Pre$Gender <- factor(Pre$Gender)
+levels(Pre$Gender) <- c('female', 'non-binary', 'male')
+Pre  %>% count(Gender)
+Pre$Age <- as.numeric(Pre$Age)
+summary(Pre$Age)
+```
+
+```{r}
+#Is the card considered an incentive?; scale midpoint = 5
+with(Pre, t.test(Rewarding[Seed==1], mu=5))
+with(Pre, t.test(Rewarding[Seed==-1], mu=5))
+```
+
+# Pretest 2: Economic value
+```{r}
+#loading data
+Pre <- read.csv("~/Pre-test 2 Data.csv")
+Pre <- Pre %>% filter(Value < mean(Value)+3*sd(Value))
+```
+
+```{r}
+#Demographics
+Pre$Gender <- factor(Pre$Gender)
+levels(Pre$Gender) <- c('female', 'non-binary', 'male')
+Pre  %>% count(Gender)
+Pre$Age <- as.numeric(Pre$Age)
+summary(Pre$Age)
+```
+
+```{r}
+#Economic value
+t.test(Value ~ Seed, data=Pre, var.equal=T)
+
+Means.Table<-Pre %>%
+  group_by(Seed) %>%
+  summarise(N=n(),
+            Means=mean(Value),
+            SD=sd(Value),
+            SE=SD/N^.5)
+print(Means.Table)
+```

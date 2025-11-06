@@ -1,0 +1,68 @@
+---
+title: "S2 Post-test 2: Breaking the ceiling"
+output: html_document
+---
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+#loading packages
+library('dplyr')
+library(psych)
+library(ggplot2)
+library(jtools)
+library('interactions')
+library(ltm)
+library(car)
+library(MBESS)
+
+#loading data
+ceil <- read.csv("~/Study 2 Post-test 2 Data.csv")
+```
+
+```{r}
+ceil <- ceil %>% filter(duplicate==0) #n=21 deleted
+ceil <- ceil %>% filter(Clicks>0) #n=19 deleted
+mean(ceil$Clicks) + 3*sd(ceil$Clicks)
+ceil <- ceil %>% filter(Clicks<2174.67) #n=2 deleted
+```
+#Key Variable Names
+ * IS = Incentive Salience manipulation condition
+  - low = Low Incentive Salience condition
+  - high = High Incentive Salience condition
+  - extra = High Incentive Salience with Performance Bonus condition
+ * Clicks = Prosocial effort investment, counted in keypress pairs
+
+#Demographic
+```{r}
+#Gender, age and click cound data distribution
+ceil$gender <- factor(ceil$gender)
+levels(ceil$gender) <- c('female', 'non-binary', 'male')
+ceil  %>% count(gender)
+describe(ceil[, c("age", "Clicks")], range=TRUE) #Clicks for skewness and kurtosis
+```
+
+# Effort DV
+```{r}
+Means.Table<-ceil %>%
+  group_by(IS) %>%
+  summarise(N=n(),
+            Means=mean(Clicks),
+            SD=sd(Clicks),
+            Medians=median(Clicks),
+            SE=SD/N^.5)
+print(Means.Table)
+
+anova <- lm(Clicks ~ IS, data = ceil)
+Anova(anova, type=3)
+library(effectsize)
+eta_squared(anova)
+
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+pwc <- ceil %>%
+  pairwise_t_test(
+    Clicks ~ IS, paired = FALSE,
+    p.adjust.method = "bonferroni"
+  )
+pwc
+```

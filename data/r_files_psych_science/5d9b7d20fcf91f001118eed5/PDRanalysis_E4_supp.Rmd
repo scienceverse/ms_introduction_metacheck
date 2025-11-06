@@ -1,0 +1,633 @@
+---
+title: "Experiment 4 Supplemental - Supraliminal & Explicit"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+# Information on How These Data Are Organized:
+
+`Trial` indicates the trial number that participants are on. -12 to -1 are the 12 practice trials. There were 250 trials in the experiment. The first 50 trials, participants could respond at their leisure. After that, we applied a threshold for their RT: the 60th percentile of their repeat trials. Participants were told that their responses would now need to be quick *and* accurate. A new threshold was applied again after 100 trials. Please see our manuscript / registration at https://osf.io/7jfbp/ for more details.
+
+There were attention checks ensuring that participants could not move on in the task unless they selected the particular cue that was associated with being a task-switch or task-repeat predictive cue or a nonpredictive cue. This was to ensure that participants really and truly encoded the information about the cues, i.e., `CueProbe`, `False_Attempts`, and `Full_attempt_list`. CueProbe indicates which attention check number it was, false attempts indicates the number of times they had to repeat the probe trial (e.g., choosing 3 each time b/c they wanted to be done w/ expt), and full_attempt_list indicates their accuracy on the probe trials.
+
+`Task` refers to the specific task judgement: judging whether a letter is a vowel or consonant or whether it is printed in uppercase or lowercase.
+
+`TaskColor` refers to the color of the border that indicates the specific task judgement. This is because we have counterbalanced for assignment of the task color judgements to specific tasks across different task versions. (We also counterbalance for the predictive identity of the subliminal/supraliminal cues).
+
+`Continuity` indicates the trial type: a task-repeat or task-switch. Notably, in this task, the overall task context is a 75:25 repeat:switch context.
+
+`StimLetter` refers to the stimulus to which the participant responded on each trial.
+
+`StimLetterStartTime` & `StimLetterEndTime` document the time at which the stimulus was on the screen. This is important for our task because of the different RT thresholds. Note that in the beginning, RT is just the difference between these two, and there are likely outliers in the RTs. However, after the 50th trial (trial 49), the threshold has been applied, and the RTs become narrower in their distribution.
+
+`Response` indicates what the participant responded & `CorrectAnswer` indicates what they should have pressed. When `Response` == `CorrectAnswer` (within the threshold that is in place at the time of the particular trial), `Accuracy` = 1; Else `Accuracy` = 0.
+
+`RT` is recorded in seconds. Here it is simply calculated as the EndTime - StartTime of the stimuli, because the stimulus was removed from the screen as soon as a participant responded or the RT threshold deadline was applied (i.e., lack of response before threshold deadline met). (In the code, it's specified as a timer to zero when the stimulus appears and if a response button is pressed, the timer ends; note RT cells are blank when there is no response.)
+
+`fixationStartTimeinOverallExp` is a global clock, so it records how long it's been since the experiment began (since the fixation is the start of the trial, this column essentially gives how long into the experiment this trial is beginning) & `fixationStartTime`  is 0 because that's when the trial begins; it's just really a manipulation check as much as anything & `fixationEndTime` marks the end of the fixation period.
+
+`CueStartTime` is when the subliminal (Expts 1/2) and supraliminal (Expts 3/4) cue was shown on screen and `CueEndTime` is when the cue was removed from the screen. The cue was displayed for 11.67 ms (aka 1 screen refresh), so it was important to make sure that the timing was consistent across most trials.
+
+`Cue` could be 2, 4, or 8. One of the cues was 100% predictive of switch trials, one was 100% predictive of repeat trials, one was nonpredictive (i.e., preceded trials at the same percentage as the overall task context).
+
+`MaskStartTime` & `MaskEndTime` likewise mark the onset and removal of the mask that made the cue subliminal in Expts 1/2. This lasted 494 ms.
+
+`Session` refers to the Experiment number in the study. Experiment 2 is the same as Experiment 1, but with additional task instructions meant to inform participants of the predictive value of the cues. Experiment 3 is the same as Experiment 1, but with the cues made supraliminal. Experiment 4 has the instructions of Experiment 2 and supraliminal cues like Experiment 3.
+
+`Participant` - self-explanatory.
+
+`CueVersion` refers to the task version. As I noted earlier, we counterbalanced across task-color/task judgement and cue identity (e.g., whether 2 was predictive of switch or repeats, or not predictive at all) assignments.
+
+In CueVersion 0 and 1, the predictive switch is 2
+In CueVersion 2 and 3, the predictive switch is 4
+In CueVersion 4 and 5, the predictive switch is 8
+
+In CueVersion 3 and 5, the predictive repeat is 2
+In CueVersion 1 and 4, the predictive repeat is 4
+In CueVersion 0 and 2, the predictive repeat is 8
+
+In CueVersion 2 and 4, the non-predictive cue is 2
+In CueVersion 0 and 5, the non-predictive cue is 4
+In CueVersion 1 and 3, the non-predictive cue is 8
+
+`FrameRate` refers to the frame rate on our CRT monitor.
+
+`ExpName` refers to the name of the experiment script.
+
+```{r packages, echo = FALSE, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#clear workspace
+rm(list=ls())
+
+# Install packages if not already installed, then load them
+if (!require(devtools)) install.packages('devtools')
+if (!require(smisc)) devtools::install_github("stevenworthington/smisc")
+smisc::ipak(c("methods", "BayesFactor", "dplyr", "BFEffects", "TOSTER", "doParallel", "afex", "prmisc", "data.table", "ggplot2", "BFDA", "reshape2", "showtext", "rstudioapi"))
+detectCores()
+
+font_add("Myriad Pro", "Myriad-Pro.ttf")
+showtext_auto()
+
+#Code the working directory to be the source file location - can't use when knitting b/c this code is default in the knitting process actually
+#current_path = rstudioapi::getActiveDocumentContext()$path
+#setwd(dirname(current_path ))
+#print( getwd() )
+
+```
+
+# Note that this is the supplemental data analysis. This includes n = 50, the ten people who'd gotten the cue-trial type associations incorrect on the Qualtrics post-test.
+
+```{r setup}
+
+#after loading in required packages (not shown here in HTML)
+
+#import raw data
+data.raw <- read.csv("AllSubs_E4_excl.csv", header=T,na.strings=c(""))
+data.raw$Accuracy <- as.numeric(as.character(data.raw$Accuracy))
+data.raw$RT <- as.numeric(as.character(data.raw$RT))*1000 #convert to ms scale
+data.raw$TrialType <- data.raw$Continuity
+data.raw$sub <- data.raw$participant
+
+#Creating the Cue Type variable
+data.raw <- mutate(data.raw, CueType = case_when(cueVersion %in% c(2,4) & Cue == 2 ~ 'nonpredictive',
+                            cueVersion %in% c(0,5) & Cue == 4 ~ 'nonpredictive',
+                            cueVersion %in% c(1,3) & Cue == 8 ~ 'nonpredictive',
+                             TRUE ~ 'predictive'))
+
+```
+
+# What are our conditions for data analysis?
+
+From our Stage 1 preregistered manuscript (https://osf.io/tnzvb/):
+
+"Median reaction time (RT) data will be analyzed for correct trials in which participants were not excessively slow (<200 ms) or fast (+3 SDs) to respond. We will also analyze accuracy data, and divide RT by accuracy data to obtain a global performance index, consistent with Farooqui and Manly (2015).
+
+Note that for within-experiment comparisons, median RT, instead of mean RT, will be used to facilitate an optimal comparison with Farooqui and Manly (2015). However, because sequential Bayes Factor analysis may lead to uneven sample sizes between experiments and because small sample sizes overestimate the true median (Miller, 1998), we will use mean RT to compare effects between experiments.
+
+We will run a repeated-measures ANOVA with cue (predictive/non-predictive) and trial type (task-switch/task-repeat) as within-subjects factors. We expect to find an interaction between cue and trial type, such that participants are quicker and more efficient to respond to task-switch trials following the predictive vs. non-predictive cues.
+
+Because our experiments involve a 2x2 design with independent manipulations of conscious perception and knowledge, we will combine the data across experiments and run a Bayesian repeated-measures ANOVA that includes cue visibility (subliminal/supraliminal) and preparatory cue knowledge (implicit/explicit) as between-subjects factors, in addition to our within-subjects factors of cue (predictive/non-predictive) and trial type (task-switch/task-repeat). This will quantify the amount of evidence that conscious perception and knowledge impact control-learning. 
+
+We will also run equivalence tests using the two one-sided test procedure, in order to provide support for the potential lack of a meaningful effect. This could occur in individual experiment manipulations or when we compare effects between experiments."
+
+# Do Some Basic Cleaning
+
+#### We are filtering and preparing the data for analysis.
+
+FOR BOTH:
+
+-Only take trials from the main task (not post-test or practice task).
+
+-Don't take the first trials of each new block (i.e., when the RT threshold changes), because you can't have a trial repeat or switch trial then.
+
+
+FOR REACTION TIMES:
+
+-Select only `Response` equal to NOT `None`.
+
+-Only take the RTs that are greater than 200ms and less than 3 SDs away.
+
+-Only take the RTs on accurate trials.
+
+
+FOR ACCURACY:
+
+-All other errors are errors
+
+```{r}
+
+#filter out the post-test & practice trials & the first trials of each block
+data.accanaly <- dplyr::filter(data.raw, between(data.raw$Trial, 0, 249))
+data.accanaly <- data.accanaly[with (data.accanaly, Trial != 0 & Trial != 50 & Trial != 150),]
+
+#for RT, filter out the lack of button presses + inaccurate responses + outlier RTs
+data.rtanaly <- data.accanaly[with (data.accanaly, Response != "None" & Accuracy == 1),]
+data.rtanaly <- dplyr::filter(data.rtanaly, between(data.rtanaly$RT, 200, (sd(data.rtanaly$RT, na.rm = TRUE)*3)))
+
+#to be compiled for the across experiment analysis
+write.csv(data.rtanaly, file="Filtered_E4_RT_supp.csv")
+write.csv(data.accanaly, file="Filtered_E4_ACC_supp.csv")
+
+```
+
+#### Aggregate the data for analysis, create Global Performance Index metric
+
+```{r}
+st.err <- function(x) {
+    sd(x)/sqrt(length(x))
+}
+
+#reaction time
+data.anova.rt <- data.rtanaly %>% group_by(sub, TrialType, CueType) %>% summarise(RT = median(RT))
+data.plot.rt <- data.anova.rt %>% group_by(TrialType, CueType) %>% summarise(RT = mean(RT))
+data.se.rt <- data.anova.rt %>% group_by(TrialType, CueType) %>% summarise(RT.se = st.err(RT))
+
+#accuracy
+data.anova.acc <- data.accanaly %>% group_by(sub, TrialType, CueType) %>% summarise(Accuracy = mean(Accuracy))
+data.plot.acc <- data.anova.acc %>% group_by(TrialType, CueType) %>% summarise(Accuracy = mean(Accuracy))
+data.se.acc <- data.anova.acc %>% group_by(TrialType, CueType) %>% summarise(Accuracy.se = st.err(Accuracy))
+
+#global performance index
+data.ie = data.frame(IE=(((data.anova.acc$Accuracy*100)/data.anova.rt$RT)*100), TrialType=data.anova.acc$TrialType, CueType=data.anova.acc$CueType, sub=data.anova.acc$sub)
+data.plot.ie <- data.ie %>% group_by(TrialType, CueType) %>% summarise(IE = mean(IE))
+data.se.ie <- data.ie %>% group_by(TrialType, CueType) %>% summarise(IE.se = st.err(IE))
+
+write.csv(data.anova.rt, file="E4_ANOVA_RT_supp.csv")
+write.csv(data.anova.acc, file="E4_ANOVA_ACC_supp.csv")
+write.csv(data.ie, file="E4_ANOVA_IE_supp.csv")
+
+```
+
+#### Run repeated-measures ANOVAs on RT, accuracy, and Global Performance Index
+
+```{r}
+
+RTanova <- aov_car(RT ~ Error(sub/(CueType*TrialType)), data = data.anova.rt, anova_table = list(es = "pes"))
+RTanova
+
+#to print to three decimals on p-value in accordance w/ APA guidelines
+print_anova(RTanova, decimals_p = 3)
+
+ACCanova <- aov_car(Accuracy ~ Error(sub/(CueType*TrialType)), data = data.anova.acc, anova_table = list(es = "pes"))
+ACCanova
+
+#to print to three decimals on p-value in accordance w/ APA guidelines
+print_anova(ACCanova, decimals_p = 3)
+
+IEanova <- aov_car(IE ~ Error(sub/(CueType*TrialType)), data = data.ie, anova_table = list(es = "pes"))
+IEanova
+
+#to print to three decimals on p-value in accordance w/ APA guidelines
+print_anova(IEanova, decimals_p = 3)
+
+```
+
+#### Plot the Results
+
+```{r, echo=FALSE, fig.width = 11, fig.height = 8}
+
+ggplot(data.plot.rt, aes(x = factor(CueType), y = (RT), fill = factor(TrialType)))  + 
+    geom_bar(position = "dodge", stat = "identity", width = (.75))  + 
+    coord_cartesian(ylim = c(550,900)) +
+    scale_fill_manual(values=c("#E69F00", "#56B4E9"), name= "Trial Type") +
+    scale_x_discrete(name = "Cue Type", labels=c("Nonpredictive", "Predictive")) +
+    geom_errorbar(data=data.plot.rt, aes(x=(factor(data.plot.rt$CueType)), ymin=(data.plot.rt$RT-data.se.rt$RT.se), ymax=(data.plot.rt$RT+data.se.rt$RT.se)),
+        width=0, size=2,
+        position=position_dodge(.75)) +
+    labs(title= paste('Median RT (N = ', length(unique(data.anova.rt$sub)), ')',sep=""), y="Median Response Time (ms)")  +
+    theme_classic(base_size = 26) +
+    theme(text = element_text(size = 28, family = "Myriad Pro")) +
+    NULL
+
+ggsave("E4_medianrt_supp.pdf", plot=last_plot(), dpi=300, width=11, height=8)
+
+ggplot(data.plot.acc, aes(x = factor(CueType), y = (Accuracy), fill = factor(TrialType)))  + 
+    geom_bar(position = "dodge", stat = "identity", width = (.75))  + 
+    coord_cartesian(ylim = c(0.7,1.0)) +
+    scale_fill_manual(values=c("#E69F00", "#56B4E9"), name= "Trial Type") +
+    scale_x_discrete(name = "Cue Type", labels=c("Nonpredictive", "Predictive")) +
+    geom_errorbar(data= data.plot.acc, aes(x=(factor(data.plot.acc$CueType)), ymin=(data.plot.acc$Accuracy-data.se.acc$Accuracy.se), ymax=(data.plot.acc$Accuracy+data.se.acc$Accuracy.se)),
+        width=0, size=2,
+        position=position_dodge(.75)) +
+    labs(title= paste('Mean Accuracy (N = ', length(unique(data.anova.acc$sub)), ')',sep=""), y="Mean Accuracy (Proportion Correct)")  +
+    theme_classic(base_size = 26) +
+    theme(text = element_text(size = 28, family = "Myriad Pro")) +
+    NULL
+
+ggsave("E4_meanacc_supp.pdf", plot=last_plot(), dpi=300, width=11, height=8)
+
+ggplot(data.plot.ie, aes(x = factor(CueType), y = (IE), fill = factor(TrialType)))  + 
+    geom_bar(position = "dodge", stat = "identity", width = (.75))  + 
+    coord_cartesian(ylim = c(8.0,15.0)) +
+    scale_fill_manual(values=c("#E69F00", "#56B4E9"), name= "Trial Type") +
+    scale_x_discrete(name = "Cue Type", labels=c("Nonpredictive", "Predictive")) +
+    geom_errorbar(data=data.plot.ie, aes(x=(factor(data.plot.ie$CueType)), ymin=(data.plot.ie$IE-data.se.ie$IE.se), ymax=(data.plot.ie$IE+data.se.ie$IE.se)),
+        width=0, size=2,
+        position=position_dodge(.75)) +
+    labs(title= paste('Global Performance Index (N = ', length(unique(data.ie$sub)), ')',sep=""), y="Accuracy (%) / RT (ms)")  +
+    theme_classic(base_size = 26) +
+    theme(text = element_text(size = 28, family = "Myriad Pro")) +
+    NULL
+
+ggsave("E4_medianIE_supp.pdf", plot=last_plot(), dpi=300, width=11, height=8)
+
+```
+
+#### What about Bayesian ANOVAs? Printed below are the inclusion BFs.
+
+What are inclusion Bayes Factors? From https://easystats.github.io/bayestestR/articles/bayes_factors.html:
+
+"Inclusion Bayes factors answer the question:
+
+Are the observed data more probable under models with a particular predictor, than they are under models without that particular predictor?
+
+In other words, on average - are models with predictor X more likely to have produce the observed data than models without predictor X?
+
+Since each model has a prior probability, it is possible to sum the prior probability of all models that include a predictor of interest (the prior inclusion probability), and of all models that do not include that predictor (the prior exclusion probability). After the data are observed, we can similarly consider the sums of the posterior models' probabilities to obtain the posterior inclusion probability and the posterior exclusion probability. Again, the change from prior to posterior inclusion odds is the Inclusion Bayes factor ("BFInclusion"; Clyde, Ghosh, & Littman, 2011)."
+
+```{r, echo=FALSE}
+
+data.anova.rt <- data.frame(data.anova.rt)
+data.anova.acc <- data.frame(data.anova.acc)
+
+#factorizing the data to run the ANOVAs
+data.anova.rt <- within(data.anova.rt, {TrialType <- factor(TrialType)
+  sub <- factor(sub)
+  CueType <- factor(CueType)
+})
+
+data.anova.acc <- within(data.anova.acc, {TrialType <- factor(TrialType) 
+sub <- factor(sub) 
+CueType <- factor(CueType)
+})
+
+data.ie <- within(data.ie, {TrialType <- factor(TrialType) 
+sub <- factor(sub) 
+CueType <- factor(CueType)
+})
+
+#inclusionBF + anovaBF
+bf_rt <- anovaBF(RT ~ CueType * TrialType + sub, data = data.anova.rt, 
+             whichRandom="sub")
+
+print(inclusionBF(bf_rt))
+
+bf_acc <- anovaBF(Accuracy ~ CueType * TrialType + sub, data = data.anova.acc, 
+             whichRandom="sub")
+
+print(inclusionBF(bf_acc))
+
+bf_ie <- anovaBF(IE ~ CueType * TrialType + sub, data = data.ie, 
+             whichRandom="sub")
+
+print(inclusionBF(bf_ie))
+
+```
+
+#### Let's visualize the results of the Bayesian ANOVAs
+
+```{r, echo=FALSE, fig.width = 11, fig.height=8}
+
+plot(bf_rt)
+plot(bf_acc)
+plot(bf_ie)
+
+```
+
+#### Calculating the Effect Size of the Paired Interaction + Switch Costs within Cue Type
+
+```{r}
+
+#sample size
+n <- length(unique(data.anova.rt$sub))
+
+#about to do some data transformation, so I don't want to use the same dataframes
+data.anova.rt.e <- data.anova.rt
+data.ie.e <- data.ie
+
+#calculate switch costs within the 2x2 dataframe for data.anova.rt
+setDT(data.anova.rt.e)
+setkey(data.anova.rt.e, TrialType)
+diffscore.rt <- data.anova.rt.e[ , diff := c(NA, diff(RT)), by = list(sub, CueType)]  
+
+setDT(data.ie.e)
+setkey(data.ie.e, TrialType)
+diffscore.ie <- data.ie.e[ , diff := c(NA, diff(IE)), by = list(sub, CueType)]
+
+#reshape the data to calculate the correlation between the switch costs across Cue Types
+corrdata.rt <- dcast(diffscore.rt, sub + TrialType ~ CueType, value.var="diff")
+corrdata.ie <- dcast(diffscore.ie, sub + TrialType ~ CueType, value.var="diff")
+
+#eliminate the empty NAs within the TrialType data
+corrdata.rt <- corrdata.rt[with (corrdata.rt, TrialType != "repeat"),]
+corrdata.ie <- corrdata.ie[with (corrdata.ie, TrialType != "repeat"),]
+
+#run correlations between the switch costs
+RTcorr <- cor.test(corrdata.rt$nonpredictive, corrdata.rt$predictive)
+IEcorr <- cor.test(corrdata.ie$nonpredictive, corrdata.ie$predictive)
+
+#it put the switch costs into the rows with "switch as a trial, so remove repeat as a trial type"
+switch.rt <- data.anova.rt.e[with (data.anova.rt.e, TrialType != "repeat"),]
+switch.ie <- data.ie.e[with (data.ie.e, TrialType != "repeat"),]
+
+#get rid of TrialType + RT/IE as columns now
+switch.rt = subset(switch.rt, select = c(CueType,sub,diff))
+switch.ie = subset(switch.ie, select = c(CueType,sub,diff))
+
+#rename column to reflect switch cost
+switch.rt$switchcost <- switch.rt$diff
+switch.ie$switchcost <- switch.ie$diff
+
+#get median switch costs from data now
+switchcosts <- switch.rt %>% group_by(CueType) %>% summarise(Mean = mean(switchcost))
+switchcosts_sd <- switch.rt %>% group_by(CueType) %>% summarise(SD = sd(switchcost))
+switchcosts_ie <- switch.ie %>% group_by(CueType) %>% summarise(Mean = mean(switchcost))
+switchcosts_sd_ie <- switch.ie %>% group_by(CueType) %>% summarise(SD = sd(switchcost))
+
+#Cohen's dz = t/sqrt(n), or alternately, sqrt(F)/sqrt(n)
+cohensd_ie <- sqrt(as.data.frame((IEanova)[1])[3, "anova_table.F"])/sqrt(n)
+cohensd_rt <- sqrt(as.data.frame((RTanova)[1])[3, "anova_table.F"])/sqrt(n)
+
+```
+
+##### Calculate mean switch costs
+
+```{r}
+
+mean(c(data.plot.rt[[3]][[1]],data.plot.rt[[3]][[2]])) - mean(c(data.plot.rt[[3]][[3]],data.plot.rt[[3]][[4]]))
+
+(mean(c(data.plot.acc[[3]][[1]],data.plot.acc[[3]][[2]])) - mean(c(data.plot.acc[[3]][[3]],data.plot.acc[[3]][[4]])))*100
+
+mean(c(data.plot.ie[[3]][[1]],data.plot.ie[[3]][[2]])) - mean(c(data.plot.ie[[3]][[3]],data.plot.ie[[3]][[4]]))
+
+```
+
+#### Equivalence Testing
+
+We could set a different equivalence bound - Lakens et al. (2018) suggest "justifying the smallest effect size of interest." We could do the 'just-noticeable difference' or set it to a standardized effect size (e.g., 0.5, allowing us to reject hypothesis effect is at least as extreme as a medium sized effect) or set it to the smallest observed effect size that could have been statistically significant in a previous study.
+
+Cohen's dz is used for TOSTpaired, so from Farooqui & Manly, with their global performance index, t/sqrt(n) = 2.2/sqrt(21) = 0.48 for E1 switch trials and 1.98/sqrt(21) = 0.43 for E1 repeat trials; 3.8/sqrt(20) for E2 = 0.85; 2.2/sqrt(19) = 0.50 for E3. They did not report the repeat cue t statistic for E2 or E3, just the means + CIs. So, the smallest effect size they got for the three experiments that reproduced the effect of interest was 0.43. Notably, these effect sizes are for the switch and repeat trial comparison, not the interaction effect. However, in theory, the follow-up test should have a larger effect size than the interaction effect (especially given their argument that this is specific to switch trials), so we'd just be underestimating the effect size.
+
+For RT: 3.34/sqrt(21) = 0.73 for E1; other experiments do not list this. However, 0.73 is much larger than expected, so we should just use the same smallest effect size of interest across the index metric and the RT analysis (i.e., 0.43 across both experiments)
+
+```{r, fig.width=11, fig.height=8}
+
+RTequiv <- TOSTpaired(n=n, m1=switchcosts[[2]][[1]], m2=switchcosts[[2]][[2]], sd1=switchcosts_sd[[2]][[1]], sd2=switchcosts_sd[[2]][[2]], r12=RTcorr[[4]][[1]], low_eqbound_dz=-0.43, high_eqbound_dz=0.43, alpha = 0.05, verbose = TRUE, plot = TRUE)
+
+IEequiv <- TOSTpaired(n=n, m1=switchcosts_ie[[2]][[1]], m2=switchcosts_ie[[2]][[2]], sd1=switchcosts_sd_ie[[2]][[1]], sd2=switchcosts_sd_ie[[2]][[2]], r12=IEcorr[[4]][[1]], low_eqbound_dz=-0.43, high_eqbound_dz=0.43, alpha = 0.05, verbose = TRUE, plot = TRUE)
+
+```
+
+#### Time for some Bayesian analysis simulations. First, null hypothesis simulation, given a n.min
+
+```{r null hypothesis sim}
+set.seed(100)
+
+sim.H0 <- BFDA.sim(expected.ES=0, type="t.paired", n.min=20, n.max = 250, alternative="two.sided", design="sequential", boundary=Inf, stepsize=5, B=10000, verbose=TRUE, cores=7)
+```
+
+#### Simulation Based Off Our Data for RT + Global Performance Index
+
+Note that when I was doing the sequential Bayes Factor simulation for our data, I would also include n.max = 40 in the sim + BFDA.analyze code. This would tell me how many samples stopped at the n.max point. I did this for both RT + the global performance index. Fortunately, there was never a time when the two provided different guidance as to whether we should continue running participants. We specified n.max in our Stage 1 manuscript; having max stopping points is generally to save time and money for expt designs.
+
+```{r my data simulation}
+set.seed(100)
+
+sim.H1rt <- BFDA.sim(expected.ES=cohensd_rt, type="t.paired", n.min=20, n.max = 250, alternative="two.sided", design="sequential", boundary=Inf, stepsize=5, B=10000, verbose=TRUE, cores=7)
+
+sim.H1ie <- BFDA.sim(expected.ES=cohensd_ie, type="t.paired", n.min=20, n.max = 250, alternative="two.sided", design="sequential", boundary=Inf, stepsize=5, B=10000, verbose=TRUE, cores=7)
+
+```
+
+#### Analyze the simulations
+
+Let's first take a look at a fixed-n design, because we've now collected the n.max we specified in our Stage 1 manuscript. What is my 'power' - i.e. chance of getting BF > 10 for $H_{1}$ - to detect an effect?
+    
+If the Alternate hypothesis is true, for what we got for RT + what we got for the global performance index:
+
+```{r, echo=TRUE}
+
+BFDA.analyze(sim.H1rt, design="fixed", n=50, boundary=10)
+
+BFDA.analyze(sim.H1ie, design="fixed", n=50, boundary=10)
+
+```
+    
+If the Null hypothesis is true:
+
+```{r, echo=TRUE}
+
+BFDA.analyze(sim.H0, design="fixed", n=50, boundary=10)
+
+```
+
+#### Plot fixed-n design
+
+This compares the distributions of BFs that would result from our null hypothesis simulation vs. the simulations using 1) ours from RT and 2) ours from the global performance index... with a fixed n of 40, since we hit our n.max. For the result using the Farooqui & Manly effect size, see the Experiment 1 html doc.
+
+Here's what the BFDA manual says about evDens: "The following function gives a graphic representation of the distribution of Bayes factors for a fixed-N design. Bayes factors showing "strong enough" evidence (as defined by the boundary argument) in the right direction are shown in green, Bayes factors showing "strong enough" evidence in the wrong direction are shown in red. Inconclusive evidence is indicated in yellow color."
+
+```{r, echo=TRUE,quietly = TRUE, warning=FALSE,message=FALSE, fig.width=11, fig.height=7}
+
+evDens(BFDA.H1=sim.H1rt, BFDA.H0=sim.H0, n=50, boundary=c(1/10, 10), 
+       xlim=c(1/31, 10000))
+
+evDens(BFDA.H1=sim.H1ie, BFDA.H0=sim.H0, n=50, boundary=c(1/10, 10), 
+       xlim=c(1/31, 10000))
+```
+
+#### Since we did SBF with n.max = 40, well, what if we hadn't had a max sub recruitment? How many subjects would we have needed to run?
+
+We can see the comparison between an analysis with a sample size max vs. one without and the percentages of samples with BF > 10 with both. Here I am doing this for both RT + global performance index. In theory, the sequential design with n.min = 20 and n.max = 40 should be about the same as the fixed design with n=40 in terms of the percentages of BFs > 10, but of course there may be studies terminating before n=40, and the fixed-N assumes all sample sizes are equal. And in theory, the sequential design with no max sample size should converge to about the same N as the SSD determination below.
+
+```{r, echo=TRUE, quietly = TRUE, warning=FALSE,message=FALSE, fig.width=11, fig.height=7}
+
+BFDA.analyze(sim.H1rt, design="sequential", n.min=20, n.max=50, boundary=10)
+
+BFDA.analyze(sim.H1rt, design="sequential", n.min=20, boundary=10)
+
+BFDA.analyze(sim.H1ie, design="sequential", n.min=20, n.max=50, boundary=10)
+
+BFDA.analyze(sim.H1ie, design="sequential", n.min=20, boundary=10)
+
+```
+
+#### SBF plots - how many subs would we have needed? + what percentage of simulations have BF > 10 with our current pool?
+
+This is just plotting the information mentioned in the BFDA.analyze code above. Here's what the BFDA manual says about these plots: "The following function gives a graphic summary of an open-ended sequential process, that is a sequential process without a maximum sample size. For didactic purposes, we will apply it to our simulated dataset which was simulated with a maximum sample size of N = 300 (since all sequential processes reached a boundary before n.max was reached, we will pretend the data set was simulated with n.max = Inf)..."
+
+```{r, echo = TRUE, quietly = TRUE, warning=FALSE,message=FALSE, fig.width=11, fig.height=7}
+
+plot(sim.H1rt, n.min=20, n.max = 50, boundary=c(1/10, 10))
+
+plot(sim.H1rt, n.min=20, boundary=c(1/10, 10))
+
+plot(sim.H1ie, n.min=20, n.max = 50, boundary=c(1/10, 10))
+
+plot(sim.H1ie, n.min=20, boundary=c(1/10, 10))
+
+```
+
+#### What about from a priori power analysis?
+
+Here's what the BFDA manual suggests from this function: "The SSD function helps you to find the right sample size in a fixed-N design.
+
+What sample size do you need to ensure, say, 80% probability that a study design finds an effect of size of 0.5, that is, that at least 80% of resulting Bayes factors are equal or larger than the upper boundary (here: BF >= 10) when the population effect size is 0.5?"
+
+SSD for the null hypothesis (H0): "What sample size do I need to have less than 2% of studies with a false positive error, i.e., Bayes factors equal or larger than the upper boundary (here: BF >= 6) when H0 is true in the population? Note that you should never use this as the only criterion to select a fixed sample size because it does not ensure strong evidence (e.g., with a sample size of 20, less than 2% of studies yield a false positive result, but also only 14.9% of the Bayes factors are smaller or equal 1/6)." Manual is here: https://rawgit.com/nicebread/BFDA/master/package/doc/BFDA_manual.html.
+
+For established effects, BF = 10 is suggested, whereas novel effects, BF = 6 is suggested as the target.
+
+```{r, echo=TRUE, cache=FALSE, message=FALSE, quietly = TRUE, warning=FALSE,message=FALSE}
+
+powerH1rt <- SSD(sim.H1rt, power=.80, boundary=c(1/10, 10))
+powerH1rt
+
+powerH1ie <- SSD(sim.H1ie, power=.80, boundary=c(1/10, 10))
+powerH1ie
+
+```
+
+#### Post-test data
+
+`expt` - self-explanatory; `subjID` - self-explanatory; `gender` - self-explanatory; `age` - self-explanatory; `ethnicity` - self-explanatory; `race` - self-explanatory
+
+`num_2`, `num_4`, & `num_8` refers to the "Third Question" section below.
+
+`CueVersion` is just something I added in from the main task scripts b/c it determines whether people were correct on Q3 and also the comparisons being made for the Second Question.
+
+
+```{r}
+posttest <- read.csv("posttest_E4_excl.csv", header=T,na.strings=c(""))
+
+posttest <- posttest %>%
+ mutate(NeutralAcc = ifelse((CueVersion %in% c(2,4) & num_2 == 'Neutral') |
+                              (CueVersion %in% c(0,5) & num_4 == 'Neutral') |
+                              (CueVersion %in% c(1,3) & num_8 == 'Neutral'), 1, 0),
+         SwitchAcc = ifelse((CueVersion %in% c(0,1) & num_2 == 'Task-switch/Hard') |
+                              (CueVersion %in% c(2,3) & num_4 == 'Task-switch/Hard') |
+                              (CueVersion %in% c(4,5) & num_8 == 'Task-switch/Hard'), 1, 0),
+         RepeatAcc = ifelse((CueVersion %in% c(3,5) & num_2 == 'Task-repeat/Easy') |
+                              (CueVersion %in% c(1,4) & num_4 == 'Task-repeat/Easy') |
+                              (CueVersion %in% c(0,2) & num_8 == 'Task-repeat/Easy'), 1, 0))
+
+posttest$Q3 <- posttest %>% group_by(subjID) %>% summarise(sumACCs = sum(c(NeutralAcc, SwitchAcc, RepeatAcc)))
+
+```
+
+#### Summary Statistics - Demographics
+
+```{r}
+
+f_ID <- posttest[with (posttest, gender == 'Female' | gender == 'female' | gender == 'FEMALE' | gender == 'F' | gender == 'f'),]
+nrow(f_ID)
+
+m_ID <- posttest[with (posttest, gender == 'male' | gender == 'Male' | gender == 'MALE' | gender == 'M' | gender == 'm'),]
+nrow(m_ID)
+
+ageID <- posttest %>% summarise(Age = mean(age))
+ageID[[1]]
+
+ageSD <- posttest %>% summarise(Age = sd(age))
+ageSD[[1]]
+
+```
+
+#### Third Question: "Hard trials (i.e., the color of the rectangle / task judgment switched on successive trials) may have occurred more frequently for one number cue, while easy trials (i.e., the color of the rectangle / task judgment repeated on successive trials) may have occurred more frequently for the one other number cue. One number cue may have been neutral and not predicted hard or easy trials as often as the other cues did. Please match each number cue to its most likely trial type."
+
+The following t-test should most definitely be significant, especially given the section below where I talk about how we exclude participants who didn't get all 3 associations correct. This is possibly a redundant analysis, but I guess useful to consider for main vs. supplemental analyses texts, and with E3 main vs. supplemental analysis texts.
+
+```{r}
+#by chance, on each question someone has 1/3 of getting it right; with 3 questions, we test against 1 to test whether they've learned the cue associations more than chance
+#Q3answer <- t.test(posttest$Q3[[2]], mu = 1, alternative = "two.sided")
+#Q3answer
+
+```
+
+#### Which participants should I exclude?
+
+In Experiments 2 and 4, to ensure that participants actually remembered and knew the information about the cue-trial type associations (and didn't, e.g., skip past the screen quickly), we probed them a total of 4 times across the experiment. They were told the correct associations in the initial instructions and at subsequent breaks during the experiment. In these breaks, they had to *repeat* the probe if they did not answer correctly.
+
+In E4, relative to E2, there was no cue probe 4; there was only a Qualtrics form that they filled out (no post-test perception test) right after they finished the task. So, here we're testing on the Qualtrics whether they got all 3 associations correct. If they didn't, we exclude them for the main analysis and just include their data in the supplementary text.
+
+```{r}
+
+#who needs to be excluded
+participantfilterq3 <- posttest[with (posttest, Q3[[2]] != 3),]
+participantfilterq3$subjID
+
+```
+
+Since this is the supplemental, there will be subs in the output here.
+
+#### Supplementary Table for Global Performance Index
+
+```{r, echo=FALSE}
+row1 <- data.frame(variable="NP.R", mean=data.plot.ie[[3]][[1]], LB=data.plot.ie[[3]][[1]]-data.se.ie[[3]][[1]]*qnorm(.975), UB=data.plot.ie[[3]][[1]]+data.se.ie[[3]][[1]]*qnorm(.975))
+                     
+row2 <- data.frame(variable="P.R", mean=data.plot.ie[[3]][[2]], LB=data.plot.ie[[3]][[2]]-data.se.ie[[3]][[2]]*qnorm(.975), UB=data.plot.ie[[3]][[2]]+data.se.ie[[3]][[2]]*qnorm(.975))
+
+row3 <- data.frame(variable="NP.S", mean=data.plot.ie[[3]][[3]], LB=data.plot.ie[[3]][[3]]-data.se.ie[[3]][[3]]*qnorm(.975), UB=data.plot.ie[[3]][[3]]+data.se.ie[[3]][[3]]*qnorm(.975))
+
+row4 <- data.frame(variable="P.S", mean=data.plot.ie[[3]][[4]], LB=data.plot.ie[[3]][[4]]-data.se.ie[[3]][[4]]*qnorm(.975), UB=data.plot.ie[[3]][[4]]+data.se.ie[[3]][[4]]*qnorm(.975))
+
+CItable.IE <- rbind(row1,row2,row3,row4)
+CItable.IE
+
+```
+
+#### Supplementary Table for Accuracy
+
+```{r, echo=FALSE}
+
+row1 <- data.frame(variable="NP.R", mean=data.plot.acc[[3]][[1]], LB=data.plot.acc[[3]][[1]]-data.se.acc[[3]][[1]]*qnorm(.975), UB=data.plot.acc[[3]][[1]]+data.se.acc[[3]][[1]]*qnorm(.975))
+                     
+row2 <- data.frame(variable="P.R", mean=data.plot.acc[[3]][[2]], LB=data.plot.acc[[3]][[2]]-data.se.acc[[3]][[2]]*qnorm(.975), UB=data.plot.acc[[3]][[2]]+data.se.acc[[3]][[2]]*qnorm(.975))
+
+row3 <- data.frame(variable="NP.S", mean=data.plot.acc[[3]][[3]], LB=data.plot.acc[[3]][[3]]-data.se.acc[[3]][[3]]*qnorm(.975), UB=data.plot.acc[[3]][[3]]+data.se.acc[[3]][[3]]*qnorm(.975))
+
+row4 <- data.frame(variable="P.S",mean=data.plot.acc[[3]][[4]], LB=data.plot.acc[[3]][[4]]-data.se.acc[[3]][[4]]*qnorm(.975), UB=data.plot.acc[[3]][[4]]+data.se.acc[[3]][[4]]*qnorm(.975))
+
+CItable.ACC <- rbind(row1,row2,row3,row4)
+CItable.ACC
+
+```
+
+#### Supplementary Table for RT (ms)
+
+```{r, echo=FALSE}
+row1 <- data.frame(variable="NP.R", mean=data.plot.rt[[3]][[1]], LB=data.plot.rt[[3]][[1]]-data.se.rt[[3]][[1]]*qnorm(.975), UB=data.plot.rt[[3]][[1]]+data.se.rt[[3]][[1]]*qnorm(.975))
+                     
+row2 <- data.frame(variable="P.R", mean=data.plot.rt[[3]][[2]], LB=data.plot.rt[[3]][[2]]-data.se.rt[[3]][[2]]*qnorm(.975), UB=data.plot.rt[[3]][[2]]+data.se.rt[[3]][[2]]*qnorm(.975))
+
+row3 <- data.frame(variable="NP.S", mean=data.plot.rt[[3]][[3]], LB=data.plot.rt[[3]][[3]]-data.se.rt[[3]][[3]]*qnorm(.975), UB=data.plot.rt[[3]][[3]]+data.se.rt[[3]][[3]]*qnorm(.975))
+
+row4 <- data.frame(variable="P.S",mean=data.plot.rt[[3]][[4]], LB=data.plot.rt[[3]][[4]]-data.se.rt[[3]][[4]]*qnorm(.975), UB=data.plot.rt[[3]][[4]]+data.se.rt[[3]][[4]]*qnorm(.975))
+
+CItable.RT <- rbind(row1,row2,row3,row4)
+CItable.RT
+
+```

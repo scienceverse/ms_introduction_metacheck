@@ -1,0 +1,579 @@
+---
+title: "Turnwald,etal_DISHStudy_PsychScience_AnalysisScript"
+author: "Brad Turnwald"
+date: "8/12/2019"
+output: html_document
+---
+
+```{r}
+#loading packages
+library("psych")
+library("lmerTest")
+
+#load data from multi-site study
+mcdata <- read.csv("~/Downloads/Data_Multisite_Study.csv")
+
+#recode vegtype as a factor (identifies a specific vegetable dish recipe, regardless of label condition)
+mcdata$vegtype <-as.factor(mcdata$vegtype)
+
+
+#subset data by school in order to standardize the vegetable selection outcome within each school
+
+schoolAdata <- mcdata[ which(mcdata$school== "A"), ]
+schoolBdata <- mcdata[ which(mcdata$school== "B"), ]
+schoolCdata <- mcdata[ which(mcdata$school== "C"), ]
+schoolDdata <- mcdata[ which(mcdata$school== "D"), ]
+schoolEdata <- mcdata[ which(mcdata$school== "E"), ]
+
+#calculate standardized selection outcome at each school. 
+PercDinerChooseVeg_zscore_A  <- scale(schoolAdata$PercentDinersChooseVeg); PercDinerChooseVeg_zscore_A
+PercDinerChooseVeg_zscore_B  <- scale(schoolBdata$PercentDinersChooseVeg); PercDinerChooseVeg_zscore_B
+PercDinerChooseVeg_zscore_C  <- scale(schoolCdata$PercentDinersChooseVeg); PercDinerChooseVeg_zscore_C
+PercDinerChooseVeg_zscore_D  <- scale(schoolDdata$PercentDinersChooseVeg); PercDinerChooseVeg_zscore_D
+PercDinerChooseVeg_zscore_E  <- scale(schoolEdata$PansPerDinerinHall_SchoolE); PercDinerChooseVeg_zscore_E
+#these values are saved in data set as "PercentDinersChooseVeg_zscore_withinschool
+
+
+#relevel the condition factor so that the health-focused condition is the reference group
+mcdata$condition <- relevel(mcdata$condition, ref = "healthy")
+
+### SELECTION OUTCOME
+model1 <-lmer(PercentDinersChooseVeg_zscore_withinschool ~ condition + (1|school/vegtype), data=mcdata, weights = weights)
+summary(model1)
+# the effect of taste-focused vs. health-focused is B = 0.46, p < .001. 
+# the effect of basic vs. health-focused is B = 0.21, p = .072. 
+# (note: if get error when running above model, remove "school/" from the model and rerun - it is essentially redundant becuase the outcome is standardized within school already)
+
+# "confint"" can't calculate 95% CI when using weights, so we'll use 1.96*SE for the 95% CI. 
+
+#95% CI of difference between taste-focused and health-focused: 
+1.96*.0995
+# so 95% CI is 0.4616 +/- 0.1950 = [0.27, 0.66]
+
+#95% CI of difference between basic and health-focused: 
+1.96*.1149
+#so 95% CI is .2087 +/- 0.2252 = [-0.02, 0.43]
+
+
+#relevel the condition factor so that the basic condition is the reference group (for comparing taste-focused to basic)
+mcdata$condition <- relevel(mcdata$condition, ref = "basic")
+
+#rerun mixed model for vegetable selection outcome
+model1 <-lmer(PercentDinersChooseVeg_zscore_withinschool ~ condition + (1|school/vegtype), data=mcdata, weights = weights)
+summary(model1)
+# the effect of taste-focused vs. basic is B = 0.25, p = .030.
+
+#95% CI of difference between taste-focused and basic: 
+1.96*.11537
+# so 95% CI is 0.2528 +/- 0.2261 = [0.03, 0.48]
+
+
+
+# Selection outcome effects split by school (Table S3 in SOM)
+
+#school A
+model6 <-lmer(PercentDinersChooseVeg_zscore_withinschool ~ condition + (1|vegtype), data=schoolAdata)
+summary(model6); confint(model6)
+## At school A, the effect of taste-focused vs. health-focused is B = 0.89, 95% CI: [0.45, 1.32], p = .004.
+
+#school B
+schoolBdata$condition <- relevel(schoolBdata$condition, ref = "healthy")
+model6 <-lmer(PercentDinersChooseVeg_zscore_withinschool ~ condition + (1|vegtype), data=schoolBdata)
+summary(model6); confint(model6)
+## At school B, the effect of taste-focused vs. health-focused is B = 0.55, 95% CI: [0.25, 0.85], p = .001. The effect of basic vs. health-focused is B = 0.16, 95% CI: [-0.16, 0.49], p = .33.
+
+#school C
+schoolCdata$condition <- relevel(schoolCdata$condition, ref = "healthy")
+model6 <-lmer(PercentDinersChooseVeg_zscore_withinschool ~ condition + (1|vegtype), data=schoolCdata)
+summary(model6); confint(model6)
+## At school C, the effect of taste-focused vs. health-focused is B = 0.63, 95% CI: [0.11, 1.15], p = .027. The effect of basic vs. health-focused is B = -0.07, 95% CI: [-0.58, 0.41], p = .78.
+
+#school D
+schoolDdata$condition <- relevel(schoolDdata$condition, ref = "healthy")
+model6 <-lmer(PercentDinersChooseVeg_zscore_withinschool ~ condition + (1|vegtype), data=schoolDdata)
+summary(model6); confint(model6)
+## At school D, the effect of taste-focused vs. health-focused is B = 0.19, 95% CI: [-0.21, 0.58], p = .37. The effect of basic vs. health-focused is B = 0.40, 95% CI: [-0.00, 0.81], p = .066.
+
+#school E
+schoolEdata$condition <- relevel(schoolEdata$condition, ref = "healthy")
+model6 <-lmer(PercentDinersChooseVeg_zscore_withinschool ~ condition + (1|vegtype), data=schoolEdata)
+summary(model6); confint(model6)
+## At school E, the effect of taste-focused vs. health-focused is B = -0.10, 95% CI: [-0.58, 0.38], p = .68. The effect of basic vs. health-focused is B = -0.00, 95% CI: [-0.49, 0.49], p = .99.
+
+
+
+
+
+
+### CONSUMPTION OUTCOME
+
+#loading consumption data from School A
+massdata <- read.csv("~/Downloads/Data_Consumption.csv")
+
+#recode vegtype as a factor (identifies a specific vegetable dish recipe, regardless of label condition)
+massdata$vegtype <-as.factor(massdata$vegtype)
+
+
+# Effect of label condition on mass of vegetables SELECTED
+model2 = lmer(Adj_TotalMassChosen_lbs ~ condition + (1|vegtype), data = massdata)
+summary(model2)
+confint(model2) #calculate 95% CI
+# effect of taste-focused vs health-focused labeling on mass of vegetables selected is 4.142 lbs/day, 95% CI: [1.103, 7.272], p = .029.
+# converting this to kg (divide by 2.205), it's 1.88 kg/day, 95% CI: [0.50, 3.30].
+
+
+#Effect of label condition on mass of vegetables WASTED
+model3 = lmer(Adj_TotalMassWasted_lbs ~ condition + (1|vegtype), data = massdata)
+summary(model3)
+confint(model3)
+# effect of taste-focused vs health-focused labeling on mass of vegetables wasted is 0.2195 lbs/day, 95% CI: [-0.4289, 0.9618], p = .56.
+# converting this to kg (divide by 2.205), it's 0.10 kg/day, 95% CI: [-0.19, 0.44].
+
+
+#Effect of label condition on mass of vegetables CONSUMED
+model4 = lmer(Adj_TotalMassConsumed_lbs ~ condition + (1|vegtype), data = massdata)
+summary(model4)
+confint(model4)
+# effect of taste-focused vs health-focused labeling on mass of vegetables consumed is 3.922 lbs/day, 95% CI: [1.547, 6.588], p = .018.
+# converting this to kg (divide by 2.205), it's 1.78 kg/day, 95% CI: [0.70, 2.99].
+
+
+#calculating Cohen's d (effect size) for each of the above consumption outcomes
+tasted <- massdata[ which(massdata$condition=='tasty'),]
+healthd <- massdata[ which(massdata$condition=='healthy'),]
+describe(tasted) # SD for tasty condition of selection is 4.54, waste is 1.07, consumed is 3.89
+describe(healthd) # SD for healthy condition of selection is 2.79, waste is 0.86, consume is 2.76
+
+#SDpooled for tasty vs healthy selection is: 3.7680
+sqrt(((4.54*4.54) + (2.79*2.79))/2)
+#cohens d is: 1.10 
+4.142/3.7680
+#lower 95% CI: 0.29
+1.1033/3.7680
+#upper 95% CI: 1.93
+7.2718/3.7680
+
+#SDpooled for tasty vs healthy waste is: .9707
+sqrt(((1.07*1.07) + (.86*.86))/2)
+#cohens d is: .23 
+.2195/.9707
+#lower 95% CI: -.44
+-.4289/.9707
+#upper 95% CI: .99
+.9618/.9707
+
+#SDpooled for tasty vs healthy consumption is: 3.37266
+sqrt(((3.89*3.89) + (2.76*2.76))/2)
+#cohens d is: 1.16 
+3.922/3.37266
+#lower 95% CI: .46
+1.5473/3.37266
+#upper 95% CI: 1.95
+6.5879/3.37266
+
+
+
+# MODERATING EFFECT OF VEGETABLE TASTINESS ON VEGETABLE SELECTION 
+
+#relevel the condition factor so that the health-focused condition is the reference group
+mcdata$condition <- relevel(mcdata$condition, ref = "healthy")
+
+
+#effect of individual vegetable dish tastiness
+model5 <-lmer(PercentDinersChooseVeg_zscore_withinschool ~ condition*RecipeDeliciousness_zscore_acrossschools + (1|school/vegtype),data=mcdata, weights = weights)
+summary(model5)
+# the interactive effect of taste-focused condition x individual dish tastiness is B = 0.18, p = .111. 
+
+#confint can't calculate 95% CI when using weights, so we'll use 1.96*SE for the 95% CI.
+#95% CI of taste-focused:
+1.96*.1103
+# so 95% CI is 0.1770 +/- 0.2162 = [-0.04, 0.39]
+
+
+#effect of school-level average vegetable dish tastiness
+model6 <-lmer(PercentDinersChooseVeg_zscore_withinschool ~ condition*SchoolDeliciousness_zscore + (1|school/vegtype),data=mcdata, weights = weights)
+summary(model6)
+# the interactive effect of taste-focused condition x average school-level dish tastiness is B = 0.32, p = .002.
+
+#95% CI of taste-focused:
+1.96*.10306
+# so 95% CI is 0.3212 +/- 0.2020 = [0.12, 0.52]
+
+
+
+
+##SUPPLEMENTARY STUDY A
+
+#load data from Supplementary Study A
+SuppStudyA_data <- read.csv("~/Downloads/Data_SuppStudy_A.csv")
+
+#recode dish as a factor (identifies a specific vegetable dish recipe, regardless of label condition)
+SuppStudyA_data$dish <- as.factor(SuppStudyA_data$dish)
+
+
+#subset data by condition to calculate SD's for later calculations of effect size
+tasty_SuppStudyA_data <- SuppStudyA_data[ which(SuppStudyA_data$condition=='tasty'),]
+basic_SuppStudyA_data <- SuppStudyA_data[ which(SuppStudyA_data$condition=='basic'),]
+healthy_SuppStudyA_data <- SuppStudyA_data[ which(SuppStudyA_data$condition=='healthy'),]
+
+describe(tasty_SuppStudyA_data) #SD of expected tastiness outcome for tasty condition is 1.24; for likelihood of choosing outcome is 1.41
+describe(basic_SuppStudyA_data) #SD of expected tastiness outcome for basic condition is 1.34; for likelihood of choosing outcome is 1.44
+describe(healthy_SuppStudyA_data) #SD of expected tastiness for healthy condition is 1.31; for likelihood of choosing outcome is 1.43
+
+
+# Effect of label on likelihood of choosing
+model7= lmer(choose ~ condition + (1|participant) + (1|dish), data= SuppStudyA_data); summary(model7); confint(model7)
+# effect of taste-focused vs. basic labels on likelihood of choosing is b = 0.32, 95% CI: [0.23, 0.40], p < .001.  
+
+#relevel and rerun model with healthy as reference group
+SuppStudyA_data$condition <- relevel(SuppStudyA_data$condition, ref = "healthy")
+model7= lmer(choose ~ condition + (1|participant) + (1|dish), data= SuppStudyA_data); summary(model7); confint(model7)
+# effect of taste-focused vs. healthy labels on likelihood of choosing is b = 0.51, 95% CI: [0.43, 0.59], p < .001. Effect of basic vs. healthy labels is b = 0.19, 95% CI: [0.11, 0.28], p < .001.
+
+
+#SDpooled for tasty vs healthy is: 1.4200
+sqrt(((1.41*1.41) + (1.43*1.43))/2)
+#SDpooled for tasty vs basic is: 1.4251
+sqrt(((1.41*1.41) + (1.44*1.44))/2)
+#SDpooled for healthy vs basic is: 1.4350
+sqrt(((1.43*1.43) + (1.44*1.44))/2)
+
+#cohens d for tasty vs healthy is: .36 
+0.51088/1.4200
+#lower 95% CI: .30
+0.4287/1.4200
+#upper 95% CI: .42
+0.5930/1.4200
+
+#cohens d for tasty vs basic is: .22
+0.31633/1.4251
+#lower 95% CI: .16
+0.2342/1.4251
+#upper 95% CI: .28
+0.3985/1.4251
+
+#cohens d for healthy vs basic is: .14
+.19455/1.4350
+#lower 95% CI: .08
+0.1124/1.4350
+#upper 95% CI: .19
+0.2767/1.4350
+
+
+# Effect of label condition on expected tastiness
+model8= lmer(taste ~ condition + (1|participant) + (1|dish), data= SuppStudyA_data); summary(model8); confint(model8)
+# effect of taste-focused vs. healthy labels on expected tastiness is b = 0.64, 95% CI: [0.56, 0.71], p < .001. Effect of basic vs. healthy labels is b = 0.18, 95% CI: [0.11, 0.26], p < .001.
+
+#relevel and rerun model with basic as reference group
+SuppStudyA_data$condition <- relevel(SuppStudyA_data$condition, ref = "basic")
+model8= lmer(taste ~ condition + (1|participant) + (1|dish), data= SuppStudyA_data); summary(model8); confint(model8)
+# effect of taste-focused vs. basic labels on expected tastiness is b = 0.46, 95% CI: [0.38, 0.53], p < .001.
+
+
+#SDpooled for tasty vs healthy is: 1.2755
+sqrt(((1.24*1.24) + (1.31*1.31))/2)
+#SDpooled for tasty vs basic is: 1.2910
+sqrt(((1.24*1.24) + (1.34*1.34))/2)
+#SDpooled for healthy vs basic is: 1.3251
+sqrt(((1.34*1.34) + (1.31*1.31))/2)
+
+#cohens d for tasty vs healthy is: .50 
+0.63741/1.2755
+#lower 95% CI: .44
+0.5613/1.2755
+#upper 95% CI: .56
+0.7135/1.2755
+
+#cohens d for tasty vs basic is: .35
+0.45578/1.2910
+#lower 95% CI: .29
+0.3797/1.2910
+#upper 95% CI: .41
+0.5319/1.2910
+
+#cohens d for healthy vs basic is: .14
+0.1816/1.3251
+#lower 95% CI: .08
+0.1056/1.3251
+#upper 95% CI: .19
+0.2577/1.3251
+
+
+
+# see PROCESS model output from SPSS for mediation statistics
+
+
+
+
+# Effect of labels on participants' reason for choosing vegetables
+model9= lmer(reason ~ condition + (1|participant) + (1|dish), data= SuppStudyA_data); summary(model9); confint(model9)
+# effect of taste-focused labels vs basic labels is b = 0.81, 95%CI: [0.73, 0.89], p < .001. Effect of health-focused vs basic is b = -0.27, 95% CI: [-0.35, -0.19], p < .001. 
+
+#relevel and rerun model with healthy as reference group
+SuppStudyA_data$condition <- relevel(SuppStudyA_data$condition, ref = "healthy")
+model9= lmer(reason ~ condition + (1|participant) + (1|dish), data= SuppStudyA_data); summary(model9); confint(model9)
+# effect of taste-focused vs. health-focused is b = 1.08, 95% CI: [1.00, 1.16], p < .001.
+
+#calculating cohen's D
+describe(tasty_SuppStudyA_data) #SD of reason for tasty is 1.37
+describe(basic_SuppStudyA_data) #SD of reason for basic is 1.40
+describe(healthy_SuppStudyA_data) #SD of reason for healthy is 1.33
+
+#SDpooled for tasty vs healthy is: 1.3501
+sqrt(((1.37*1.37) + (1.33*1.33))/2)
+#cohens d for tasty vs healthy is: .80 
+1.079/1.3501
+#lower 95% CI: .74
+0.9994/1.3501
+#upper 95% CI: .86
+1.1584/1.3501
+
+
+#SDpooled for tasty vs basic is: 1.3851
+sqrt(((1.37*1.37) + (1.40*1.40))/2)
+#cohens d for tasty vs healthy is: .58 
+.80816/1.3851
+#lower 95% CI: .53
+.7286/1.3851
+#upper 95% CI: .64
+.8877/1.3851
+
+
+#SDpooled for healthy vs basic is: 1.3654
+sqrt(((1.33*1.33) + (1.40*1.40))/2)
+#cohens d for tasty vs healthy is: .20 
+.2707/1.3654
+#lower 95% CI: .14
+.1912/1.3654
+#upper 95% CI: .26
+.3503/1.3654
+
+
+# Testing for differences among schools in participants' expectations of a positive taste experience based on taste-focused labels alone (absent school context)
+
+#relevel school with school B as the reference group (school with lowest average tastiness rating of taste-focused labels)
+tasty_SuppStudyA_data$school <- relevel(tasty_SuppStudyA_data$school, ref = "B")
+model= lmer(taste ~ school + (1|participant) + (1|dish), data= tasty_SuppStudyA_data); summary(model); confint(model)
+# there are no significant differences among schools; range of effects is 0.02 - 0.22, all p > .134 
+
+#subsetting the tasty label condition by school
+tasty_SSA_schoolAdata <- tasty_SuppStudyA_data[ which(tasty_SuppStudyA_data$school=='A'),] 
+tasty_SSA_schoolBdata <- tasty_SuppStudyA_data[ which(tasty_SuppStudyA_data$school=='B'),] 
+tasty_SSA_schoolCdata <- tasty_SuppStudyA_data[ which(tasty_SuppStudyA_data$school=='C'),] 
+tasty_SSA_schoolDdata <- tasty_SuppStudyA_data[ which(tasty_SuppStudyA_data$school=='D'),] 
+tasty_SSA_schoolEdata <- tasty_SuppStudyA_data[ which(tasty_SuppStudyA_data$school=='E'),] 
+
+#calculating SD of each school for calculation of effect sizes
+describe(tasty_SSA_schoolAdata) #SD of taste for school A taste-focused labels is 1.28
+describe(tasty_SSA_schoolBdata) #SD of taste for school B taste-focused labels is 1.25
+describe(tasty_SSA_schoolCdata) #SD of taste for school B taste-focused labels is 1.21
+describe(tasty_SSA_schoolDdata) #SD of taste for school B taste-focused labels is 1.24
+describe(tasty_SSA_schoolEdata) #SD of taste for school E taste-focused labels is 1.21
+
+#largest diff is for school A vs B
+#SDpooled for A vs B is: 1.2651
+sqrt(((1.28*1.28) + (1.25*1.25))/2)
+#cohens d for A vs B is: .17 
+.2199/1.2651
+
+#smallest diff is for school D vs B
+#SDpooled for B vs D is: 1.24501
+sqrt(((1.25*1.25) + (1.24*1.24))/2)
+#cohens d for A vs B is: .01
+.0182/1.24501
+
+#relevel school with school A as the reference group to compare to school E
+tasty_SuppStudyA_data$school <- relevel(tasty_SuppStudyA_data$school, ref = "A")
+model= lmer(taste ~ school + (1|participant) + (1|dish), data= tasty_SuppStudyA_data); summary(model); confint(model)
+# the taste-focused labels at school E did not elicit lower taste expectations than taste-focused labels at school A absent the school context, b = -0.02, 95% CI: [-0.34, 0.30], p = .92.
+
+#SDpooled for A vs E is: 1.2455
+sqrt(((1.28*1.28) + (1.21*1.21))/2)
+#cohens d for A vs E is: .01
+.0179/1.2455
+#lower 95% CI: -.27
+-.3389/1.2455
+#upper 95% CI: .24
+.3040/1.2455
+
+
+
+
+
+
+
+
+
+## SUPPLEMENTARY STUDY B
+
+#load in data from Supplementary Study B
+SuppStudyB_data <- read.csv("~/Downloads/Data_SuppStudyB.csv")
+
+#relevel so that health-focused is the reference group
+SuppStudyB_data$condition <- relevel(SuppStudyB_data$condition, ref = "healthy")
+
+
+
+#effect of taste-focused vs health-focused label condition (matched for description length) on perceived tastiness 
+model= lmer(taste ~ condition + (1|participant) + (1|dish), data= SuppStudyB_data); summary(model); confint(model)
+# b = .86, 95% CI: [0.73, 0.99], p < .001.
+
+
+#effect of taste-focused vs health-focused label condition (matched for description length) on likelihood of choosing 
+model= lmer(choose ~ condition + (1|participant) + (1|dish), data= SuppStudyB_data); summary(model); confint(model)
+# b = .81, 95% CI: [0.67, 0.95], p < .001.
+
+
+#effect of taste-focused vs health-focused label condition (matched for description length) on surprise/curiosity
+model= lmer(surprise ~ condition + (1|participant) + (1|dish), data= SuppStudyB_data); summary(model); confint(model)
+# b = .97, 95% CI: [0.84, 1.11], p < .001.
+
+
+#subset data by label condition 
+tasted <- SuppStudyB_data[ which(SuppStudyB_data$condition=='tasty'),]
+healthd <- SuppStudyB_data[ which(SuppStudyB_data$condition=='healthy'),]
+basicd <- SuppStudyB_data[ which(SuppStudyB_data$condition=='basic'),]
+fancyd <- SuppStudyB_data[ which(SuppStudyB_data$condition=='fancy'),]
+vagueposd <- SuppStudyB_data[ which(SuppStudyB_data$condition=='vaguepos'),]
+ingredsd <- SuppStudyB_data[ which(SuppStudyB_data$condition=='ingreds'),]
+
+#calculating cohen's d
+describe(tasted) # SD for tasty condition of taste  is 1.28, choose is 1.34, surprise is 1.33
+describe(healthd) # SD for healthy condition of taste  is 1.33, choose is 1.37, surprise is 1.24
+describe(basicd) # SD for basic condition of taste  is 1.31, choose is 1.41, surprise is 1.13
+describe(fancyd) # SD for fancy condition of taste  is 1.33, choose is 1.37, surprise is 1.37
+describe(vagueposd) # SD for vaguepos condition of taste  is 1.27, choose is 1.39, surprise is 1.32
+describe(ingredsd) # SD for healthy condition of taste  is 1.34, choose is 1.40, surprise is 1.30
+
+#SDpooled for tasty vs healthy TASTE is: 1.3052
+sqrt(((1.28*1.28) + (1.33*1.33))/2)
+#cohens d is: .66 
+.85714/1.3052
+#lower 95% CI: .56
+.7281/1.3052
+#upper 95% CI: .76
+.9862/1.3052
+
+#SDpooled for tasty vs healthy CHOOSE is: 1.35508
+sqrt(((1.34*1.34) + (1.37*1.37))/2)
+#cohens d is: .60 
+.8081/1.35508
+#lower 95% CI: .49
+.6683/1.35508
+#upper 95% CI: .70
+.9479/1.35508
+
+#SDpooled for tasty vs healthy SURPRISE is: 1.2858
+sqrt(((1.33*1.33) + (1.24*1.24))/2)
+#cohens d is: .76 
+.9744/1.2858
+#lower 95% CI: .66
+.8424/1.2858
+#upper 95% CI: .86
+1.1065/1.2858
+
+
+
+## see PROCESS output from SPSS for multiple mediation model
+
+
+
+#calculating effect sizes for tasty vs. basic, vague positive, fancy, and ingredients list labels
+
+#relevel so that taste-focused is the reference group
+SuppStudyB_data$condition <- relevel(SuppStudyB_data$condition, ref = "tasty")
+
+
+#rerun models for expected tastiness and likelihood of choosing 
+model= lmer(taste ~ condition + (1|participant) + (1|dish), data= SuppStudyB_data); summary(model); confint(model)
+
+model= lmer(choose ~ condition + (1|participant) + (1|dish), data= SuppStudyB_data); summary(model); confint(model)
+
+# for both expected tastiness outcome and likelihood of choosing outcome, basic is the largest difference and ingredients list labels is the smallest difference compared to taste-focused labels of these 4 conditions so calculating these effect sizes below using the above models (excluding healthy because calculated above).
+
+#SDpooled for tasty vs basic TASTE is: 1.2951
+sqrt(((1.28*1.28) + (1.31*1.31))/2)
+#cohens d is: .56 
+.72495/1.2951
+
+#SDpooled for tasty vs basic CHOOSE is: 1.375445
+sqrt(((1.34*1.34) + (1.41*1.41))/2)
+#cohens d is: .58 
+.79744/1.375445
+
+#SDpooled for tasty vs ingreds TASTE is: 1.31034
+sqrt(((1.28*1.28) + (1.34*1.34))/2)
+#cohens d is: .27 
+.36034/1.31034
+
+#SDpooled for tasty vs ingreds CHOOSE is: 1.3703
+sqrt(((1.34*1.34) + (1.40*1.40))/2)
+#cohens d is: .31 
+.42004/1.3703
+
+
+
+
+
+
+
+## Expected Recipe tastiness (absent the label) from N = 301 MTurkers
+
+#load data
+recipe_expectedtaste_data <- read.csv("~/Downloads/Data_Recipes_ExpectedTaste_N=301_longform.csv")
+
+model = lm(ExpectedTastiness~ VegRecipe, data = recipe_expectedtaste_data); summary(model)
+
+# printing intercept (average tastiness) for each dish, except for dish 1_1, which had an average tastiness of 2.2663.
+coef(model) + 2.2663
+
+# the expected taste of the 12 dishes used in actual taste test below were as follows:
+#1_1 <- 2.2663
+#1_2 <- 4.1237
+#1_5 <- 4.6629
+#2_1 <- 4.2087
+#2_5 <- 3.3185
+#2_6 <- 5.1281
+#3_2 <- 3.1370
+#3_3 <- 5.1420
+#3_4 <- 4.2621
+#5_5 <- 4.8281
+#5_6 <- 4.0617
+#5_8 <- 5.7682
+
+
+
+## Actual Taste Test of 12 recipes. Does actual taste correlate with expected taste of recipes?
+
+#load data
+recipe_actualtaste_data <- read.csv("~/Downloads/Data_TasteTest_N=139actualdiners.csv")
+
+model = lm(postconsumption_TasteRating ~ VegRecipe, data = recipe_actualtaste_data); summary(model)
+
+# printing intercept (average actual tastiness) for each of the 12 dishes, except for dish 1_1 which had actual tastiness of 3.6115
+coef(model) + 3.6115
+
+#recipe actual taste values:  
+#1_1 <- 3.6115
+#1_2 <- 5.0288
+#1_5 <- 4.7266
+#2_1 <- 4.1727
+#2_5 <- 3.2374
+#2_6 <- 4.4604
+#3_2 <- 3.7226
+#3_3 <- 5.1667
+#3_4 <- 4.2074
+#5_5 <- 5.9352
+#5_6 <- 3.9640
+#5_8 <- 5.8582
+
+# test correlation coefficient between expected tastiness and actual tastiness
+expected = c(2.2663, 4.1237, 4.6629, 4.2087, 3.3185, 5.1281, 3.1370, 5.1420, 4.2621, 4.8281, 4.0617, 5.7682)
+actual= c(3.6115, 5.0288, 4.7266, 4.1727, 3.2374, 4.4604, 3.7226, 5.1667, 4.2074, 5.9352, 3.9640, 5.8582)
+
+res <- cor.test(expected, actual, method = "pearson"); res
+# the correlation is r = .80, p = .002
+
+
+
+```

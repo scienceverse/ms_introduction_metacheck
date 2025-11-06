@@ -1,0 +1,638 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+ ---
+ title: "Prejudice and Narcissism"
+ author: "Matthias Ziegler & Oliver Keenan"
+ date: "`r format(Sys.time(), '%d %B, %Y')`"
+ output:
+   html_document:
+   code_folding: hide
+   number_sections: yes
+   toc: yes
+   toc_float: yes
+editor_options:
+ chunk_output_type: inline
+---
+# Preps
+
+
+```{r}
+library(tidyverse)
+library(lavaan)
+source(paste0(getwd(), "/CFA_functions_Matthias.R"))
+
+dat <- tibble(rio::import(paste0(getwd(),"/SupplementalData.sav")))
+dat$group <- as.numeric(unlist(dat$group))
+
+
+fit_row <- function(fit){
+  out <- getFit(fit)$quick %>% as.data.frame() %>% 
+    pivot_wider(names_from = Var1, values_from = Freq) %>% 
+    select(chisq.scaled, df.scaled, pvalue.scaled, cfi.robust, 
+           rmsea.robust, srmr_mplus)
+  
+}
+```
+
+
+# Effectiveness of training
+
+
+Gratitude
+```{r}
+s.trant0 <- 's.trant0 =~ grat1_t0 + grat2_t0 + grat3_t0'
+s.trant1 <- 's.trant1 =~ grat1_t1 + grat2_t1 + grat3_t1'
+```
+
+
+Mindfulness
+```{r}
+s.trant0 <- 's.trant0 =~ Nffmq_t0 + Affmq_t0 + Dffmq_t0 + Jffmq_t0'
+s.trant1 <- 's.trant1 =~ Nffmq_t1 + Affmq_t1 + Dffmq_t1 + Jffmq_t1'
+```
+
+
+
+```{r}
+# run twice in tandem with gratitude and mindfulness
+out_t0 <- cfa(s.trant0, dat, estimator = "mlr")
+summary(out_t0, fit = T, standardized = T)
+
+
+out_t1 <- cfa(s.trant1, dat, estimator = "mlr")
+summary(out_t1, fit = T, standardized = T)
+
+```
+
+Longitudinal invariance
+
+
+Gratitude
+
+```{r}
+long.conf <- "
+pre.t0=~grat1_t0 + grat2_t0 + grat3_t0
+pre.t1=~grat1_t1 + grat2_t1 + grat3_t1
+
+pre.t0~~pre.t1
+
+grat1_t0~~grat1_t1
+grat2_t0~~grat2_t1
+grat3_t0~~grat3_t1
+"
+
+long.wf <- "
+pre.t0=~a*grat1_t0 + b*grat2_t0 + c*grat3_t0
+pre.t1=~a*grat1_t1 + b*grat2_t1 + c*grat3_t1
+
+pre.t0~~pre.t1
+
+grat1_t0~~grat1_t1
+grat2_t0~~grat2_t1
+grat3_t0~~grat3_t1
+"
+
+long.sf <- "
+pre.t0=~a*grat1_t0 + b*grat2_t0 + c*grat3_t0
+pre.t1=~a*grat1_t1 + b*grat2_t1 + c*grat3_t1
+
+pre.t0~~pre.t1
+
+grat1_t0~~grat1_t1
+grat2_t0~~grat2_t1
+grat3_t0~~grat3_t1
+
+grat1_t0 ~ ai*1
+grat2_t0 ~ bi*1
+grat3_t0 ~ ci*1
+
+
+grat1_t1 ~ ai*1
+grat2_t1 ~ bi*1
+grat3_t1 ~ ci*1
+
+pre.t1~NA*1
+
+"
+```
+
+
+
+Mindfulness
+
+```{r}
+long.conf <- "
+pre.t0=~Nffmq_t0 + Affmq_t0 + Dffmq_t0 + Jffmq_t0
+pre.t1=~Nffmq_t1 + Affmq_t1 + Dffmq_t1 + Jffmq_t1
+
+pre.t1~~pre.t0
+
+Nffmq_t0~~Nffmq_t1
+Affmq_t0~~Affmq_t1
+Dffmq_t0~~Dffmq_t1
+Jffmq_t0~~Jffmq_t1
+"
+
+long.wf <- "
+pre.t0=~a*Nffmq_t0 + b*Affmq_t0 + c*Dffmq_t0 + d*Jffmq_t0
+pre.t1=~a*Nffmq_t1 + b*Affmq_t1 + c*Dffmq_t1 + d*Jffmq_t1
+
+pre.t1~~pre.t0
+
+Nffmq_t0~~Nffmq_t1
+Affmq_t0~~Affmq_t1
+Dffmq_t0~~Dffmq_t1
+Jffmq_t0~~Jffmq_t1
+"
+
+long.sf <- "
+pre.t0=~a*Nffmq_t0 + b*Affmq_t0 + c*Dffmq_t0 + d*Jffmq_t0
+pre.t1=~a*Nffmq_t1 + b*Affmq_t1 + c*Dffmq_t1 + d*Jffmq_t1
+
+pre.t1~~pre.t0
+
+Nffmq_t0~~Nffmq_t1
+Affmq_t0~~Affmq_t1
+Dffmq_t0~~Dffmq_t1
+Jffmq_t0~~Jffmq_t1
+
+Nffmq_t0 ~ ai*1
+Affmq_t0 ~ bi*1
+Dffmq_t0 ~ ci*1
+Jffmq_t0 ~ di*1
+
+Nffmq_t1 ~ ai*1
+Affmq_t1 ~ bi*1
+Dffmq_t1 ~ ci*1
+Jffmq_t1 ~ di*1
+
+pre.t1~NA*1
+
+"
+```
+
+## Model test - ran for each specification above
+```{r}
+fit.conf.long <- cfa(long.conf,data=dat, estimator="mlr")
+summary(fit.conf.long, standardized =TRUE, fit.measures=TRUE)
+
+
+fit.wf.long <- cfa(long.wf,data=dat, estimator="mlr")
+summary(fit.wf.long, standardized =TRUE, fit.measures=TRUE)
+
+
+fit.sf.long <- cfa(long.sf,data=dat, estimator="mlr")
+summary(fit.sf.long, standardized =TRUE, fit.measures=TRUE)
+
+cf <- fit_row(fit.conf.long)
+wf <- fit_row(fit.wf.long)
+sf <- fit_row(fit.sf.long)
+
+rbind(cf, wf, sf) %>% 
+  flextable::flextable()
+```
+
+## Latent change score model- Gratitude
+
+```{r}
+lcsm <- "
+#Building parts
+
+pre.t0=~a*grat1_t0 + b*grat2_t0 + c*grat3_t0
+pre.t1=~a*grat1_t1 + b*grat2_t1 + c*grat3_t1
+
+
+
+grat1_t0~~grat1_t1
+grat2_t0~~grat2_t1
+grat3_t0~~grat3_t1
+
+grat1_t0 ~ ai*1
+grat2_t0 ~ bi*1
+grat3_t0 ~ ci*1
+
+
+grat1_t1 ~ ai*1
+grat2_t1 ~ bi*1
+grat3_t1 ~ ci*1
+
+
+#Actual model
+
+pre.t1~1*pre.t0
+pre.t1~~0*pre.t1
+
+delta=~1*pre.t1
+
+delta~pre.t0
+
+delta~NA*1
+"
+
+```
+
+
+## Latent change score model- Mindfulness
+```{r}
+lcsm <- "
+#Building parts
+pre.t0=~a*Nffmq_t0 + b*Affmq_t0 + c*Dffmq_t0 + d*Jffmq_t0
+pre.t1=~a*Nffmq_t1 + b*Affmq_t1 + c*Dffmq_t1 + d*Jffmq_t1
+
+
+Nffmq_t0~~Nffmq_t1
+Affmq_t0~~Affmq_t1
+Dffmq_t0~~Dffmq_t1
+Jffmq_t0~~Jffmq_t1
+
+Nffmq_t0 ~ ai*1
+Affmq_t0 ~ bi*1
+Dffmq_t0 ~ ci*1
+Jffmq_t0 ~ di*1
+
+Nffmq_t1 ~ ai*1
+Affmq_t1 ~ bi*1
+Dffmq_t1 ~ ci*1
+Jffmq_t1 ~ di*1
+
+
+
+
+#Actual model
+
+pre.t1~1*pre.t0
+pre.t1~~0*pre.t1
+
+delta=~1*pre.t1
+
+delta~pre.t0
+
+delta~NA*1
+"
+
+
+```
+
+
+## LCSM test - ran for each specification above
+```{r}
+fit.lcsm <- cfa(lcsm,data=dat, estimator="mlr")
+getFit(fit.lcsm)
+summary(fit.lcsm, standardized = TRUE, fit.measures=TRUE, rsquare=TRUE)
+
+```
+
+```{r}
+# Group differences
+
+fit.lcsm.group <- cfa(lcsm.group,data=dat, estimator="mlr")
+getFit(fit.lcsm.group)
+summary(fit.lcsm.group, standardized =TRUE, fit.measures=TRUE, rsquare=TRUE)
+```
+
+
+
+# General prejudice and sexism
+
+# Parceled indicators of sexism
+```{r}
+dat <- dat %>% mutate(parc1_t0 = furniture::rowmeans(sexism1_t0,sexism2_t0,sexism3_t0),
+                      parc2_t0 = furniture::rowmeans(sexism4_t0,sexism5_t0,sexism6_t0),
+                      parc3_t0 = furniture::rowmeans(sexism7_t0,sexism8_t0,sexism9_t0),
+                      parc4_t0 = furniture::rowmeans(sexism10_t0,sexism11_t0,sexism12_t0),
+                      parc1_t1 = furniture::rowmeans(sexism1_t1,sexism2_t1,sexism3_t1),
+                      parc2_t1 = furniture::rowmeans(sexism4_t1,sexism5_t1,sexism6_t1),
+                      parc3_t1 = furniture::rowmeans(sexism7_t1,sexism8_t1,sexism9_t1),
+                      parc4_t1 = furniture::rowmeans(sexism10_t1,sexism11_t1,sexism12_t1))
+```
+
+# CFA of outcome variables
+
+```{r}
+# general prejudice - to be run separately 
+pre.t0 <- "pre.t0=~ant_t0+sexT_t0+homo_t0+PreUK_t0"
+pre.t1 <- "pre.t1=~ant_t1+sexT_t1+homo_t1+PreUK_t1"
+
+```
+
+```{r}
+# sexism
+pre.t0 <- "pre.t0=~parc1_t0+parc2_t0+parc3_t0+parc4_t0"
+pre.t1 <- "pre.t1=~parc1_t1+parc2_t1+parc3_t1+parc4_t1"
+```
+
+```{r}
+# run twice in tandem with general prejudice and sexism
+out <- cfa(pre.t0, dat, estimator = "mlr")
+summary(out, fit = T, standardized = T)
+getFit(out)
+
+out <- cfa(pre.t1, dat, estimator = "mlr")
+summary(out, fit = T, standardized = T)
+getFit(out)
+```
+
+# Longitudinal model
+## Models
+
+General prejudice longitudinal invariance 
+```{r}
+long.conf <- "
+pre.t0=~ant_t0+sexT_t0+homo_t0+PreUK_t0
+pre.t1=~ant_t1+sexT_t1+homo_t1+PreUK_t1
+pre.t1~~pre.t0
+ant_t0~~ant_t1
+sexT_t0~~sexT_t1
+homo_t0~~homo_t1
+PreUK_t0~~PreUK_t1
+"
+long.wf <- "
+pre.t0=~a*ant_t0+b*sexT_t0+c*homo_t0+d*PreUK_t0
+pre.t1=~a*ant_t1+b*sexT_t1+c*homo_t1+d*PreUK_t1
+pre.t1~~pre.t0
+ant_t0~~ant_t1
+sexT_t0~~sexT_t1
+homo_t0~~homo_t1
+PreUK_t0~~PreUK_t1
+"
+long.sf <- "
+  pre.t0=~a*ant_t0+b*sexT_t0+c*homo_t0+d*PreUK_t0
+  pre.t1=~a*ant_t1+b*sexT_t1+c*homo_t1+d*PreUK_t1
+  pre.t1~~pre.t0
+  ant_t0~~ant_t1
+  sexT_t0~~sexT_t1
+  homo_t0~~homo_t1
+  PreUK_t0~~PreUK_t1
+  ant_t0 ~ ai*1
+  sexT_t0 ~ bi*1
+  homo_t0 ~ ci*1
+  PreUK_t0 ~ di*1
+  ant_t1 ~ ai*1
+  sexT_t1 ~ bi*1
+  homo_t1 ~ ci*1
+  PreUK_t1 ~ di*1
+  pre.t1~NA*1
+"
+```
+
+Sexism longitudinal invariance
+
+```{r}
+long.conf <- "
+  pre.t0=~parc1_t0+parc2_t0+parc3_t0+parc4_t0
+  pre.t1=~parc1_t1+parc2_t1+parc3_t1+parc4_t1
+
+  pre.t1~~pre.t0
+
+  parc1_t0~~parc1_t1
+  parc2_t0~~parc2_t1
+  parc3_t0~~parc3_t1
+  parc4_t0~~parc4_t1
+"
+long.wf <- "
+  pre.t0=~a*parc1_t0+b*parc2_t0+c*parc3_t0+d*parc4_t0
+  pre.t1=~a*parc1_t1+b*parc2_t1+c*parc3_t1+d*parc4_t1
+
+  pre.t1~~pre.t0
+
+  parc1_t0~~parc1_t1
+  parc2_t0~~parc2_t1
+  parc3_t0~~parc3_t1
+  parc4_t0~~parc4_t1
+"
+long.sf <- "
+
+  pre.t0=~a*parc1_t0+b*parc2_t0+c*parc3_t0+d*parc4_t0
+  pre.t1=~a*parc1_t1+b*parc2_t1+c*parc3_t1+d*parc4_t1
+  
+  pre.t1~~pre.t0
+
+  parc1_t0~~parc1_t1
+  parc2_t0~~parc2_t1
+  parc3_t0~~parc3_t1
+  parc4_t0~~parc4_t1
+  
+  parc1_t0 ~ ai*1
+  parc2_t0 ~ bi*1
+  parc3_t0 ~ ci*1
+  parc4_t0 ~ di*1
+  
+  parc1_t1 ~ ai*1
+  parc2_t1 ~ bi*1
+  parc3_t1 ~ ci*1
+  parc4_t1 ~ di*1
+  
+  pre.t1~NA*1
+  
+
+"
+```
+
+
+## Model test of longitudinal invariance
+```{r}
+fit.conf.long <- cfa(long.conf,data=dat, estimator="mlr")
+conf <- fit_row(fit.conf.long) 
+summary(fit.conf.long, standardized =TRUE, fit.measures=TRUE)
+
+
+fit.wf.long <- cfa(long.wf,data=dat, estimator="mlr")
+
+wf <- fit_row(fit.wf.long)
+summary(fit.wf.long, standardized =TRUE, fit.measures=TRUE)
+
+
+fit.sf.long <- cfa(long.sf,data=dat, estimator="mlr")
+
+str <- fit_row(fit.sf.long)
+summary(fit.sf.long, standardized =TRUE, fit.measures=TRUE)
+
+
+rbind(conf, wf, str) %>% 
+  flextable::flextable()
+```
+
+
+
+Latent score models - General prejudice
+
+```{r}
+lcsm <- "
+#Building parts
+pre.t0=~a*sexT_t0+c*homo_t0+d*PreUK_t0
+pre.t1=~a*ant_t1+b*sexT_t1+c*homo_t1+d*PreUK_t1
+
+ant_t0~~ant_t1
+sexT_t0~~sexT_t1
+homo_t0~~homo_t1
+PreUK_t0~~PreUK_t1
+
+ant_t0 ~ ai*1
+sexT_t0 ~ bi*1
+homo_t0 ~ ci*1
+PreUK_t0 ~ di*1
+
+ant_t1 ~ ai*1
+sexT_t1 ~ bi*1
+homo_t1 ~ ci*1
+PreUK_t1 ~ di*1
+
+#Actual model
+
+pre.t1~1*pre.t0
+pre.t1~~0*pre.t1
+
+delta=~1*pre.t1
+
+delta~pre.t0
+
+delta~NA*1
+"
+
+
+```
+
+## LCSM test
+```{r}
+fit.lcsm <- cfa(lcsm,data=dat, estimator="mlr")
+getFit(fit.lcsm)
+summary(fit.lcsm, standardized =TRUE, fit.measures=TRUE, rsquare = T)
+
+```
+
+
+### Model test
+```{r}
+# Group differences
+lcsm.group <- paste(lcsm, "delta~group", sep="\n")
+fit.lcsm.group <- cfa(lcsm.group,data=dat, estimator="mlr")
+getFit(fit.lcsm.group)
+summary(fit.lcsm.group, standardized =TRUE, fit.measures=TRUE, rsquare = T)
+
+```
+
+
+
+# Moderators terms
+
+moderator term for collective narcissism
+
+```{r}
+dat$CNbyGroup <- scale(dat$CN_t0, center=TRUE, scale = FALSE)*scale(dat$group, center=TRUE, scale = FALSE)
+```
+
+
+
+### Moderation model
+
+
+```{r}
+lcsm.group.n <- paste(lcsm.group, "delta~CN_t0", "delta~CNbyGroup", sep="\n")
+cat(lcsm.group.n)
+```
+
+
+### Model test
+
+```{r}
+fit.lcsm.group.n <- cfa(lcsm.group.n,data=dat, estimator="mlr")
+getFit(fit.lcsm.group.n)
+summary(fit.lcsm.group.n, standardized =TRUE, fit.measures=TRUE, rsquare = T)
+parameterestimates(fit.lcsm.group.n)
+```
+
+
+
+Latent change score model - Sexism - Female participants only 
+
+
+```{r}
+# filter data to contain only women
+dat <- filter(dat, gender == 1)
+```
+
+
+
+
+## Latent change score model
+```{r}
+lcsm <- "
+#Building parts
+pre.t0=~a*parc1_t0+b*parc2_t0+c*parc3_t0+d*parc4_t0
+pre.t1=~a*parc1_t1+b*parc2_t1+c*parc3_t1+d*parc4_t1
+
+parc1_t0~~parc1_t1
+parc2_t0~~parc2_t1
+parc3_t0~~parc3_t1
+parc4_t0~~parc4_t1
+
+parc1_t0 ~ ai*1
+parc2_t0 ~ bi*1
+parc3_t0 ~ ci*1
+parc4_t0 ~ di*1
+
+parc1_t1 ~ ai*1
+parc2_t1 ~ bi*1
+parc3_t1 ~ ci*1
+parc4_t1 ~ di*1
+
+#Actual model
+
+pre.t1~1*pre.t0
+pre.t1~~0*pre.t1
+
+delta=~1*pre.t1
+
+delta~pre.t0
+
+delta~NA*1
+"
+
+
+```
+
+## LCSM test
+```{r}
+fit.lcsm <- cfa(lcsm,data=dat, estimator="mlr")
+getFit(fit.lcsm)
+summary(fit.lcsm, standardized =TRUE, fit.measures=TRUE, rsquare = T)
+
+
+```
+
+
+### Model test
+```{r}
+# Group differences
+lcsm.group <- paste(lcsm, "delta~group", sep="\n")
+
+fit.lcsm.group <- cfa(lcsm.group,data=dat, estimator="mlr")
+getFit(fit.lcsm.group)
+summary(fit.lcsm.group, standardized =TRUE, fit.measures=TRUE, rsquare = T)
+
+```
+
+# Role of narcissism 
+
+
+```{r}
+# moderator term
+dat$CNbyGroup <- scale(dat$CN_t0, center=TRUE, scale = FALSE)*scale(dat$group, center=TRUE, scale = FALSE)
+```
+
+```{r}
+# specify in model 
+lcsm.group.n <- paste(lcsm.group, "delta~CN_t0", "delta~CNbyGroup", sep="\n")
+cat(lcsm.group.n)
+```
+
+### Model test
+```{r}
+fit.lcsm.group.n <- cfa(lcsm.group.n,data=dat, estimator="mlr")
+getFit(fit.lcsm.group.n)
+summary(fit.lcsm.group.n, standardized =TRUE, fit.measures=TRUE, rsquare = T)
+
+```

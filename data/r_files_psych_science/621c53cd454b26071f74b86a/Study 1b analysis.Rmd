@@ -1,0 +1,823 @@
+---
+title: "Happy to have helped: Study 1b (MTurk)"
+date: "11/21/2021"
+output:
+  html_document:
+    number_sections: no
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+theme: sandstone
+highlight: tango
+---
+
+# Background information
+
+**Core research idea: Underestimating others' prosociality**:
+
+One of the greatest debates in Western Society is whether humans are born "cooperative and helpful" or "selfish and unhelpful" (Tomasello, 2004). Decades of empirical research has revealed that great thinkers like Hobbes might have underestimated how remarkably and intrinsically prosocial humans are. And the current research investigates whether everyday people similarly underestimate the prosociality in other people and the price they therefore pay for this systematic underestimation.
+
+In everyday life, those who are in need of help often hesitate to seek out for help because they don’t want to bother other people, believing that when they make others go out of their way to offer help, this would create an inconvenience to the help-providers. Yet we found that this concern is considerably exaggerated --- in fact, help-provider view the helping behavior much less of an inconvenience than the help-requesters predicted, yet help-providers report feeling happier after helping than help-seekers predicted. 
+
+Help-seekers' mispredictions on help-providers' perception and feeling may arise, at least partially, from their systematic attribution discrepancies on why help-providers' would have agreed to help. Help-seekers tend to attribute help-providers' prosocial act to a compliance motivation --- to comply with their request because they asked --- which help-providers disagree. In contrast, help-providers attribute their helping behavior to a prosocial motivation --- to better the help-seeker's situation --- considerably more than help-seekers realized. Because attribution to prosocial motivation strongly correlates with people's predictions on how likely one agres to help as well as how positive the help-provider would feel afterwards, underestimating how much people are intrinsically motivated to help may lead those in need to underestimate how likely and willing others would reach out a helping hand as well as the surprising benefit of providing help on the help-provider's subjective well-being.
+
+[One thing impressive in these prosocial scenarios is, because we focus on helping strangers, we have largely ruled out other primary contributors to human prosocial behaviors, such as reciprocity and managing judgments from other members in a social group. Therefore, we focus primarily on people's intrinsic motivation to help.]
+
+**Study design**: 
+2 (Perspective: helper vs. requester) by 2 (gratitude: mentioned vs. not measured) by 6 (scenario)
+
+**Summary of 6 scenarios**:
+
+* Providing Information
+    + **Library Kiosk: Asking to teach how to use a library kiosk** (original); 
+    + **Ask Directions: Asking for an escort to a restaurant** (conceptually adapted from Flynn & Lake, 2008, Study 2, “asking for an escort to a campus gym”); 
+
+* Providing Service 
+    + **Carrying Boxes: Asking for help carrying boxes down to subway platform** (conceptually adapted from Flynn & Lake, 2008, Study 5, “helping a woman carry a stroller down a flight of stairs to a subway platform”)
+    + **Borrowing Phone: Borrowing a phone to make a call** (conceptually adapted from Flynn & Lake, 2008, Study 2 & Study 4 & Study 5, “borrowing a cell phone from a stranger on campus/in Times Square”)
+
+* Providing Resources
+    + **Subway Seat: Asking for a seat on subway** (conceptually adapted from Flynn & Lake, 2008, Study 5, “giving up one’s seat to a man on the train”)
+    + **Food Truck: Asking for 2 quarters at a food truck** (original)
+
+**Study location**: 
+MTurk
+
+**Preregistration link**: 
+[redacted for anonymity]
+
+**Data collection**:
+On August 3rd, 2018, 1204 participants completed our study. 19 other participants started the study to some capacity (at least started reading the first page of a vignette) but never finished. Therefore, the retension rate is 1.6%  --- a satisfyingly low number.
+
+**Data exclusion**: 
+The following two cases may warrant data exclusion. I did NOT exclude them yet. Also, due to the small number of participants in each case, either including or excluding them is highly unlikely to change any findings. 
+
+* 4 participants assigned to the requester Perspective explicitly indicated in the comment that they would never actually make the corresponding request (3 were in the "asking for seat" scenario; 1 in the "asking for direction" scenario).
+
+* 49 participants responded "0: Not at all likely" to the question, "How likely do you think [you/this person] would be to actually agree to ..." Including them might be problematic, especially for the helpers who have indicated that there is a zero change they would agree to help. (Asking Directions has 17 participants; Borrow Phone has 15; Subway Seat has 11; Food Truck has 4; Carry Boxes has 1; Library Kiosk has 0.)
+
+**Demographic Information**:
+
+* 45.2% female; M age = 35.6 years.
+* Highest degree: Doctoral (2.9%), Master's (13.2%), Bachelor's (44.2%), Some college (27.7%), High school (11.3%), some high school or less (0.7%).
+
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+library(readr)
+library(ggplot2)
+library(ggExtra)
+library(ggthemes)
+library(ggpubr)
+library(gridExtra)
+library(ggExtra)
+library(viridisLite)
+library(viridis)
+library(plyr)
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(psych)
+library(effsize)
+library(mediation)
+library(lsr)
+
+setwd("/Users/xuanzhao/Dropbox/Zhao Epley Happy to Help/OSF documents/Study 1b/")
+data_folder <- "/Users/xuanzhao/Dropbox/Zhao Epley Happy to Help/OSF documents/Study 1b/"
+file <- "Study 1b data.csv"
+  
+data <- read_csv(paste0(data_folder,file))
+data$ID <- as.factor(data$ID)
+
+data$PositiveMood <- (data$Positive + 5 + data$Pleased)/2
+data$InconveniencePerc <- (data$Inconvenient + data$Annoyed)/2
+data$ProsocialAttr <- (data$Prosocial1 + data$Prosocial2)/2
+data$ComplyAttr <- (data$Comply1 + data$Comply2)/2
+data$Mood <- (data$PositiveMood + (10-data$InconveniencePerc))/2
+data$Willingness <- (data$Willing + data$Likely)/2
+
+data <- data %>%
+  mutate(Perspective = factor(Perspective, levels = c("Requester", "Helper"), labels = c("Requester", "Helper")))
+
+data <- data %>%
+  mutate(Gratitude = factor(Gratitude, levels = c("No", "Yes"), labels = c("No", "Yes")))
+
+data <- data %>%
+  mutate(Scenario = factor(Scenario, levels = c("Borrow Phone", "Carry Boxes", "Library Kiosk", "Ask Directions", "Subway Seat", "Food Truck"), labels = c("Cell Phone", "Carry Boxes", "Library Kiosk", "Walking Escort", "Subway Seat", "Food Truck")))
+
+```
+
+# Part 1: Seeking help
+
+[Page 1]
+Imagine that [someone needs/you need] to borrow a few books from a local library. The library recently installed self-service kiosks for people to check out books by themselves.
+
+[Page 2]
+But [this person is/you’re] having a difficult time with the kiosk’s user interface. The options seem confusing, and [this person keeps/you keep] getting the same error message.
+
+[Page 3]
+Wondering what to do, [this person notices/you notice] that [you have just finished checking out books at the next kiosk and are about to leave/the person at the next kiosk has just finished checking out books and is about to leave]. So [this person approaches you /you approach this person]. 
+
+“I’m having a hard time figuring out how to use the kiosk. Could you please show me how you used it to check out books?” [this person asks/you ask].
+
+
+## Willingness to help
+
+[Below is the Library Kiosk scenario as an example]
+
+* How willing do you think [you/this person] would be to teach [this person/you] how to use the kiosk? [0: not at all willing; 10: completely willing]
+
+* "How likely do you think [you/this person] would be to actually agree to teach [this person/you] how to use the kiosk? [0: not at all likely; 10: completely likely]
+
+Accordingly to the reliability test below, these two items "hang togehter" tightly. Therefore, I averaged them to calculate one composite score: "Inclination to agree". See the results in the bar graph below:
+
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+# Willing_alpha <- data %>%
+#   dplyr::select(Willing:Likely)
+# 
+# alpha(Willing_alpha)
+
+cor.test(data$Willing, data$Likely, method=c("pearson"))
+
+w_gg <- ggbarplot(data, x = "Perspective", y = "Willingness", add = "mean_se",
+          color = "black", fill = "Perspective", alpha = 0.8, facet.by = "Scenario", palette = c("#767676","#181818"),
+          position = position_dodge(0.8)) +
+  xlab("Scenario") + 
+  ylab("Willingness to help") + 
+  coord_cartesian(ylim = c(0, 10)) + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12)
+
+hhh2_willing <- facet(w_gg, facet.by = "Scenario", nrow = 1) +
+  rremove("x.text") 
+
+p_attr_aov <- aov(Willingness ~ Perspective * Scenario, data = data)
+summary(p_attr_aov)
+etaSquared(p_attr_aov)
+
+lower_ci <- function(mean, se, n, conf_level = 0.95){
+  lower_ci <- mean - qt(1 - ((1 - conf_level) / 2), n - 1) * se
+}
+
+ddply(data, c("Perspective"), summarise,
+               N    = length(Willingness),
+               mean = mean(Willingness, na.rm = TRUE),
+               sd   = sd(Willingness, na.rm = TRUE),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+```
+
+Let's perform an ANOVA (2 perspective x 6 scenarios):
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+willing_aov <- aov(Willingness ~ Perspective * Scenario, data = data)
+summary(willing_aov)
+# effsize::cohen.d(Willingness ~ Perspective, data = data)
+
+```
+
+<br>
+
+## Flynn & Lake replication
+
+### Estimated percentage agreement {.tabset}
+
+* "What percentage of people do you think would agree to this request?"
+
+The bargraph below shows that there is quite some variance among scenarios. Strangely, the cell phone scenario, which showed up in 3 studies in Flynn & Lake, has the weakest effect.
+
+#### All scenarios
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+pa_gg <- ggbarplot(data, x = "Perspective", y = "PercentageAgree", add = "mean_se",
+          color = "black", fill = "Perspective", facet.by = "Scenario", alpha = 0.75, palette = c("#000000", "#696969"),
+          position = position_dodge(0.8)) +
+  xlab("Scenario") + 
+  ylab("Estimated agreement percentage (%)") + 
+  coord_cartesian(ylim = c(0, 100)) + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12)
+
+hhh2_percentage <- facet(pa_gg, facet.by = "Scenario", nrow = 1) +
+  rremove("x.text")
+
+# ggsave("hhh2_percentage.pdf", plot = last_plot(), device = "pdf", width = 7.5, height = 3.5, dpi = 300)
+
+ddply(data, c("Perspective", "Scenario"), summarise,
+               N    = length(PercentageAgree),
+               mean = mean(PercentageAgree),
+               sd   = sd(PercentageAgree),
+               se   = sd / sqrt(N))
+
+p_attr_aov <- aov(PercentageAgree ~ Perspective * Scenario, data = data)
+summary(p_attr_aov)
+etaSquared(p_attr_aov)
+
+```
+
+
+Below shows the ANOVA results (2 perspective x 6 scenarios). Cohen's d shows a much smaller effect size than our measures:
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+percentage_aov <- aov(PercentageAgree ~ Perspective * Scenario, data = data)
+summary(percentage_aov)
+effsize::cohen.d(PercentageAgree ~ Perspective, data = data)
+
+```
+
+#### Cell Phone
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_1 <- data %>%
+  filter(Scenario == "Cell Phone")
+
+# t.test(PercentageAgree ~ Perspective, data = hhh2_discomfort_1, var.equal = TRUE, alternative = "two.sided")
+
+effsize::cohen.d(PercentageAgree ~ Perspective, paired=FALSE, data = hhh2_discomfort_1)
+
+```
+
+#### Carry Boxes
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_2 <- data %>%
+  filter(Scenario == "Carry Boxes")
+effsize::cohen.d(PercentageAgree ~ Perspective, paired=FALSE, data = hhh2_discomfort_2)
+
+```
+
+#### Library Kiosk
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_3 <- data %>%
+  filter(Scenario == "Library Kiosk")
+effsize::cohen.d(PercentageAgree ~ Perspective, paired=FALSE, data = hhh2_discomfort_3)
+
+```
+
+#### Walking Escort
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_4 <- data %>%
+  filter(Scenario == "Walking Escort")
+effsize::cohen.d(PercentageAgree ~ Perspective, paired=FALSE, data = hhh2_discomfort_4)
+
+```
+
+#### Subway Seat
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_5 <- data %>%
+  filter(Scenario == "Subway Seat")
+effsize::cohen.d(PercentageAgree ~ Perspective, paired=FALSE, data = hhh2_discomfort_5)
+
+```
+
+#### Food Truck
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_6 <- data %>%
+  filter(Scenario == "Food Truck")
+effsize::cohen.d(PercentageAgree ~ Perspective, paired=FALSE, data = hhh2_discomfort_6)
+
+```
+
+
+### Discomfort rejecting request {.tabset}
+
+Note that Flynn & Lake measured discomfort in **both** Studies 4 & 5; however, they **only reported the discomfort results in Study 4**. I can't tell why they did not report that in Study 5. I wish they have reported whether they indeed replicated the discomfort discrepency in Study **or not**. 
+
+**Their initial questions[1 to 7]**:
+
+* How difficult do you think it would be to say “no” to this request?
+* How awkward do you think it would be to say “no” to this request?
+* How embarrassed do you think the average person would feel if they said “no” to this request? 
+
+**Our adapted questions[0 to 10]**: 
+
+* How difficult [would you/do you think this person would] find it to say “no” to [this person’s/your] request?
+* How awkward [would you/do you think this person would] find it to say “no” to [this person’s/your] request?
+* How embarrassed [would you/do you think this person would] feel if they were to say “no” to [this person’s/your] request?
+
+**Cronbach's alpha:**
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+Flynn_discomfort <- data %>%
+ dplyr::select(Difficult:Embarrased)
+
+ psych::alpha(Flynn_discomfort)
+
+```
+
+Now, let's average all three discomfort measures to **calculate a composite score**, like what Flynn & Lake did:
+
+#### All scenarios 
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+discomfort <- rowMeans(Flynn_discomfort)
+data$discomfort <- discomfort
+
+data$Discomfort_score <- (data$Difficult + data$Awkward + data$Embarrased)/3
+
+di_gg <- ggbarplot(data, x = "Perspective", y = "Discomfort_score", add = "mean_se",
+          color = "black", fill = "Perspective", facet.by = "Scenario", alpha = 0.8, palette = c("#767676","#181818"),
+          position = position_dodge(0.8)) +
+  ylab("Discomfort of Refusing Compliance") + 
+  xlab("Scenario") + 
+  coord_cartesian(ylim = c(0, 10)) + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12)
+
+hhh2_discomfort <- facet(di_gg, facet.by = "Scenario", nrow = 1) +
+  rremove("x.text")
+
+p_attr_aov <- aov(Discomfort_score ~ Perspective * Scenario, data = data)
+summary(p_attr_aov)
+etaSquared(p_attr_aov)
+
+# I ended up using SPSS to calculate simple effect tests. SPSS Syntax:
+# GLM discomfort BY Role Scenario
+#   /EMMEANS = TABLES(Role*Scenario) COMPARE(Role).
+
+ddply(data, c("Perspective", "Scenario"), summarise,
+               N    = length(Discomfort_score),
+               mean = mean(Discomfort_score),
+               sd   = sd(Discomfort_score),
+               se   = sd / sqrt(N))
+
+```
+
+So according to the composite scores, 3 out of 6 scenarios showed significant perspective difference. Flynn & Lake had scenario as a within-subjects design, and they found that "this difference was significant across all four scenarios (4.3 vs. 3.4), F(1, 60) = 9.88, p = .003." (1 to 7 scale)
+
+So if we similarly perform an ANOVA (2 perspective x 6 scenarios), we also see a significant main effect of perspective, even though the effect size is quite a bit smaller than theirs on a 0 to 10 scale. See the ANOVA results and effect size below:
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+discomfort_aov <- aov(Discomfort_score ~ Perspective * Scenario, data = data)
+summary(discomfort_aov)
+effsize::cohen.d(Discomfort_score ~ Perspective, data = data)
+
+```
+
+<br>
+
+#### Cell Phone
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_1 <- data %>%
+  filter(Scenario == "Cell Phone")
+
+# t.test(Discomfort_score ~ Perspective, data = hhh2_discomfort_1, var.equal = TRUE, alternative = "two.sided")
+effsize::cohen.d(Discomfort_score ~ Perspective, paired=FALSE, data = hhh2_discomfort_1)
+
+```
+
+#### Carry Boxes
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_2 <- data %>%
+  filter(Scenario == "Carry Boxes")
+effsize::cohen.d(Discomfort_score ~ Perspective, paired=FALSE, data = hhh2_discomfort_2)
+
+```
+
+#### Library Kiosk
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_3 <- data %>%
+  filter(Scenario == "Library Kiosk")
+effsize::cohen.d(Discomfort_score ~ Perspective, paired=FALSE, data = hhh2_discomfort_3)
+
+```
+
+#### Walking Escort
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_4 <- data %>%
+  filter(Scenario == "Walking Escort")
+effsize::cohen.d(Discomfort_score ~ Perspective, paired=FALSE, data = hhh2_discomfort_4)
+
+```
+
+#### Subway Seat
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_5 <- data %>%
+  filter(Scenario == "Subway Seat")
+effsize::cohen.d(Discomfort_score ~ Perspective, paired=FALSE, data = hhh2_discomfort_5)
+
+```
+
+#### Food Truck
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh2_discomfort_6 <- data %>%
+  filter(Scenario == "Food Truck")
+effsize::cohen.d(Discomfort_score ~ Perspective, paired=FALSE, data = hhh2_discomfort_6)
+
+```
+
+<br>
+
+# Part 2: After helping
+
+[Page 1]
+
+Now imagine that [you agree/this person agrees] to [this person’s/your] request, and begin to [show this person/ shows you] how to use the kiosk.
+
+[This person follows/You follow] every step accordingly, first [sets/set] up a personal account, and then [scans/scan] the books to check them out.
+
+[Page 2 (only "gratitude" condition)]
+
+“Thanks so much for helping me! I really appreciate it! It would have taken me a lot longer to figure this out otherwise!” [The person thanks you/You thank this person] for helping.
+
+## Experience of helping
+
+According to the PCA below, there are two PCs:
+
+* Positive Mood:
+
+    + How positive/negative [would you/do you think this person would] feel after this interaction?
+    +	How pleased [would you/do you think this person would] feel about this interaction?
+
+* Inconvenience Perception:
+
+     + How inconvenient [would it be/do you think it would be for this person] to o	have taught [this person/you] how to use the kiosk?
+    +	How annoyed [would you feel/do you think this person would feel about this interaction? 
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+after_mood <- data %>%
+  dplyr::select(Positive:Pleased)
+
+# alpha(after_mood, check.keys=TRUE)
+# cor.test(data$Positive, data$Pleased, method=c("pearson"))
+
+scree(after_mood)
+
+pca_after_mood <- principal(after_mood, nfactors=2, rotate="varimax")
+print(pca_after_mood)
+
+p_mood <- data %>%
+  dplyr::select(Positive,Pleased)
+
+cor.test(data$Positive, data$Pleased)
+
+# psych::alpha(p_mood, check.keys=TRUE)
+
+incon_perception <- data %>%
+  dplyr::select(Annoyed,Inconvenient)
+
+cor.test(data$Annoyed, data$Inconvenient)
+
+# psych::alpha(incon_perception, check.keys=TRUE)
+
+```
+
+
+**Correlation between Positive Mood and Inconvenience Perception?**
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+cor.test(data$PositiveMood, data$InconveniencePerc, method=c("pearson"))
+
+```
+
+
+### Positive mood
+
+As shown in the figure below, there is a consistent main effect of perspective and a consistent main effect of gratitude on positive mood. However, there is no interaction between gratitude and perspective, that is, the requesters did not consistently underestimate the mood increase due to the gratitude expression.
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggbarplot(data, x = "Perspective", y = "PositiveMood", add = "mean_se",
+          color = "black", fill = "Perspective", alpha = 0.8, palette = c("#767676","#181818"),
+          position = position_dodge(0.8)) +
+  coord_cartesian(ylim = c(0, 10)) +
+  ylab("Positive Mood") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  coord_cartesian(ylim = c(0, 10))+
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12)
+
+p_mood_aov <- aov(PositiveMood ~ Perspective * Gratitude * Scenario, data = data)
+summary(p_mood_aov)
+etaSquared(p_mood_aov)
+
+ddply(data, c("Perspective"), summarise,
+               N    = length(PositiveMood),
+               mean = mean(PositiveMood, na.rm = TRUE),
+               sd   = sd(PositiveMood, na.rm = TRUE),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+# effsize::cohen.d(PositiveMood ~ Perspective, data = data)
+# effsize::cohen.d(PositiveMood ~ Gratitude, data = data)
+
+
+```
+
+
+### Inconvenience perception
+
+A very consistent main effect of perspective! And no main effect of gratitude. This is consistent with our Study 1.
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggbarplot(data, x = "Perspective", y = "InconveniencePerc", add = "mean_se",
+          color = "black", fill = "Perspective", alpha = 0.8, palette = c("#767676","#181818"),
+          position = position_dodge(0.8)) +
+  ylab("Inconvenience Perception") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  coord_cartesian(ylim = c(0, 10))+
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12)
+
+ggbarplot(data, x = "Gratitude", y = "InconveniencePerc", add = "mean_se",
+          color = "black", fill = "Perspective", alpha = 0.8, palette = c("#767676","#181818"),
+          position = position_dodge(0.8)) +
+  coord_cartesian(ylim = c(0, 10)) +
+  ylab("Inconvenience Perception") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12)
+
+ddply(data, c("Perspective"), summarise,
+               N    = length(InconveniencePerc),
+               mean = mean(InconveniencePerc, na.rm = TRUE),
+               sd   = sd(InconveniencePerc, na.rm = TRUE),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+n_mood_aov <- aov(InconveniencePerc ~ Perspective * Gratitude * Scenario, data = data)
+summary(n_mood_aov)
+etaSquared(n_mood_aov)
+
+# effsize::cohen.d(InconveniencePerc ~ Perspective, data = data)
+# effsize::cohen.d(InconveniencePerc ~ Gratitude, data = data)
+
+```
+
+<br>
+
+## Motivation attribution
+
+*To what extent do you agree or disagree that each of the following statements describes [your/this person’s] motivation to help?* [-3: Strongly disagree; 3: Strongly agree]
+
+[I/this person] would have agreed to help [this person/me] because…
+
+* Prosocial Motivation: 
+
+    + [I/this person] wanted to see [this person/me] out of [their/my] trouble.
+    +[I/this person] believed [my/their] small favor would mean a lot to [this person/me].
+
+* Compliance Motivation:
+
+    + [I/this person] wanted to avoid saying “no” to [this person/me]. 
+    + [I/this person] was forced by social pressure.
+
+According to the PCA, there are two PCs. Clearly, the first two focuses on prosocial motivation (i.e., want to help), whereas the last two focuses on compliance motivation (i.e., has to comply to the request).
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+attribution <- data %>%
+  dplyr::select(Prosocial1:Comply2)
+
+# psych::alpha(attribution, check.keys=TRUE)
+
+scree(attribution)
+
+pca_attribution <- principal(attribution, nfactors=2, rotate="varimax")
+print(pca_attribution)
+
+p_attr <- data %>%
+  dplyr::select(Prosocial1,Prosocial2)
+
+# psych::alpha(p_attr, check.keys=TRUE)
+cor.test(data$Prosocial1, data$Prosocial2, method=c("pearson"))
+
+
+c_attr <- data %>%
+  dplyr::select(Comply1,Comply2)
+
+# psych::alpha(c_attr, check.keys=TRUE)
+cor.test(data$Comply1, data$Comply2, method=c("pearson"))
+
+```
+
+**Correlation between attributions to Prosocial Motivation and Compliance Motivation?**
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+cor.test(data$ProsocialAttr, data$ComplyAttr, method=c("pearson"))
+
+```
+
+### Prosocial Motivation
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+# cor.test(data$Prosocial1, data$Prosocial2, method=c("pearson"))
+
+ggbarplot(data, x = "Perspective", y = "ProsocialAttr", add = "mean_se", 
+          color = "black", fill = "Perspective", alpha = 0.8, palette = c("#767676","#181818"),
+          position = position_dodge(0.8)) +
+  ylab("Prosocial Motivation") + 
+  xlab ("") +
+  coord_cartesian(ylim = c(-3, 3)) + 
+  rremove("x.text") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 10.5) + 
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12) +
+  scale_y_continuous(breaks=seq(-3,3,1))
+
+ddply(data, c("Perspective"), summarise,
+               N    = length(ProsocialAttr),
+               mean = mean(ProsocialAttr, na.rm = TRUE),
+               sd   = sd(ProsocialAttr, na.rm = TRUE),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+p_attr_aov <- aov(ProsocialAttr ~ Perspective * Scenario * Gratitude, data = data)
+summary(p_attr_aov)
+etaSquared(p_attr_aov)
+
+# effsize::cohen.d(ProsocialAttr ~ Perspective, data = data)
+
+```
+
+### Compliance Motivation
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+# cor.test(data$Comply1, data$Comply2, method=c("pearson"))
+
+ggbarplot(data, x = "Perspective", y = "ComplyAttr", add = "mean_se", 
+          color = "black", fill = "Perspective", alpha = 0.8, palette = c("#767676","#181818"),
+          position = position_dodge(0.8)) +
+  ylab("Compliance Motivation") + 
+  xlab ("") +
+  coord_cartesian(ylim = c(-3, 3)) + 
+  rremove("x.text") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 10.5) + 
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12) +
+  scale_y_continuous(breaks=seq(-3,3,1))
+
+ddply(data, c("Perspective"), summarise,
+               N    = length(ComplyAttr),
+               mean = mean(ComplyAttr, na.rm = TRUE),
+               sd   = sd(ComplyAttr, na.rm = TRUE),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+p_comply_aov <- aov(ComplyAttr ~ Perspective * Scenario * Gratitude, data = data)
+summary(p_comply_aov)
+etaSquared(p_comply_aov)
+
+effsize::cohen.d(ComplyAttr ~ Perspective, data = data)
+
+```
+
+<br>
+
+## Requesters' experiences
+
+### Feeling grateful
+
+There is a small-to-medium effect of perspective, that is, requesters feel more grateful than the helpers predicted. Because there is neither a main effect of gratitude nor an interaction between gratitude and perspective, I have collapsed the two gratitude conditions below.
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+gra_gg <- ggbarplot(data, x = "Perspective", y = "Grateful", add = "mean_se", facet.by = "Scenario",
+          color = "black", fill = "Perspective", alpha = 0.75, palette = c("#000000", "#696969"),
+          position = position_dodge(0.8)) +
+  xlab("Scenario") + 
+  ylab("Feeling grateful") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  coord_cartesian(ylim = c(0, 10))+
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12)
+
+facet(gra_gg, facet.by = "Scenario", nrow = 1) + rremove ("x.text")
+
+ddply(data, c("Perspective"), summarise,
+               N    = length(Grateful),
+               mean = mean(Grateful),
+               sd   = sd(Grateful),
+               se   = sd / sqrt(N))
+
+grateful_aov <- aov(Grateful ~ Perspective * Gratitude * Scenario, data = data)
+summary(grateful_aov)
+etaSquared(grateful_aov)
+
+```
+
+### Feeling indebted
+
+Notice that there is a medium-to-large effect on feeling indebtedness. Again, no main effect of gratitude nor an interaction.
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+indebt_gg <- ggbarplot(data, x = "Perspective", y = "Indebt", add = "mean_se", 
+          color = "black", fill = "Perspective", facet.by = "Scenario", alpha = 0.75, palette = c("#000000", "#696969"), 
+          position = position_dodge(0.8)) +
+  xlab("Scenario") + 
+  ylab("Feeling indebted") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  coord_cartesian(ylim = c(0, 10))+
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12)
+
+facet(indebt_gg, facet.by = "Scenario", nrow = 1) + rremove ("x.text")
+
+
+ddply(data, c("Perspective"), summarise,
+               N    = length(Indebt),
+               mean = mean(Indebt),
+               sd   = sd(Indebt),
+               se   = sd / sqrt(N))
+
+indebt_aov <- aov(Indebt ~ Perspective * Gratitude * Scenario, data = data)
+summary(indebt_aov)
+etaSquared(indebt_aov)
+
+```
+
+
+**Correlation between feeling grateful and feeling indebted?**
+
+**Among requesters:**
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+data_requester <- data %>%
+  filter(Perspective %in% c("Requester"))
+
+cor.test(data_requester$Grateful, data_requester$Indebt, method=c("pearson"))
+
+```
+
+**Among helpers:**
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+data_helper <- data %>%
+  filter(Perspective %in% c("Helper"))
+
+cor.test(data_helper$Grateful, data_helper$Indebt, method=c("pearson"))
+
+```
+
+<br>
+
+# Next steps
+
+Lab/Field studies with actual helping behavior.
+

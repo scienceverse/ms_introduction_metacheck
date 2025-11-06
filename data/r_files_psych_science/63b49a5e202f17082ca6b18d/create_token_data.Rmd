@@ -1,0 +1,61 @@
+---
+title: "Creating Token Data"
+output: html_notebook
+---
+
+
+```{r import libraries and process data}
+# Import libraries:
+library(tidyverse)
+library(tidytext)
+library(dplyr)
+library(stringr)
+
+know_col <- c('know')
+
+# Read in data:
+d <- read.csv('../data/raw/Raw data_EMA_SCALES_CREATED.csv')
+
+# Select subset of variables:
+d <- d %>%
+  select(Response_Id, User_Id, Subject_ID, know, know_text)
+
+# Omit NA rows:
+d <- na.omit(d)
+
+# Convert to token format:
+d_tokens <- d %>%
+  unnest_tokens(feature, know_text)
+
+response_lengths <- d %>%
+  unnest_tokens(feature, know_text) %>%
+  group_by(Response_Id) %>%
+  mutate(response_length = n()) %>%
+  select(Response_Id, response_length) %>%
+  ungroup()
+
+d_tokens <- d_tokens %>%
+  inner_join(response_lengths, on = 'Response_Id') %>%
+  distinct()
+
+d_tokens <- d_tokens %>%
+  group_by(feature) %>%
+  mutate(rel_freq=n() / nrow(d_tokens))
+
+d_features_only <- d_tokens %>%
+  select(-Subject_ID, -Response_Id) %>%
+  group_by(User_Id, feature) %>%
+  summarise_all('mean') %>%
+  ungroup()
+
+d_features_only <- d_features_only %>%
+  select(feature, know, rel_freq) %>%
+  group_by(feature) %>%
+  summarise_all('mean')
+
+# Save data:
+write.csv(d_features_only, '../data/raw/ema_scales_dlatk_tokens.csv', row.names=FALSE)
+write.csv(d_tokens, '../data/raw/tokens_responses_full_data.csv', row.names = FALSE)
+```
+
+

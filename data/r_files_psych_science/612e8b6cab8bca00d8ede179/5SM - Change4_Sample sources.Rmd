@@ -1,0 +1,964 @@
+---
+  title: "Change4_SM for sample sources"
+output:
+  word_document: default
+pdf_document: default
+date: "September 1st, 2021"
+---
+
+
+```{r, setup, include=FALSE}
+## Set wd to data location
+# knitr::opts_knit$set(root.dir = **)
+
+```
+
+
+```{r loading, echo = FALSE, message=FALSE}
+
+# Load data 
+load("timeseries_NEWDATA.RData")
+
+# Load packages
+if (!require(plyr)) {install.packages("plyr", dependencies = TRUE); require(plyr)}
+if (!require(lsr)) {install.packages("lsr", dependencies = TRUE); require(lsr)}
+if (!require(forecast)) {install.packages("forecast", dependencies = TRUE); require(forecast)}
+if (!require(tseries)) {install.packages("tseries", dependencies = TRUE); require(tseries)}
+
+
+```
+
+
+```{r codeCreateSourceTS, include=FALSE}
+## Check sources across all attitudes --------------
+
+
+## AGE ----
+table(timeseriesAge_NEW$brought_simp)/sum(table(timeseriesAge_NEW$brought_simp))
+
+## Monthly frequencies
+age.sourcedems <- as.data.frame(table(timeseriesAge_NEW$brought_simp, timeseriesAge_NEW$month.cent))
+colnames(age.sourcedems) <- c("source", "month", "freq")
+age.sourcedems$month <- as.numeric(as.character(age.sourcedems$month)) + 156
+age.sourcedems$source <- factor(age.sourcedems$source, labels = levels(age.sourcedems$source))
+age.sourcedemswide <- reshape(age.sourcedems, v.names = "freq", 
+                       timevar = "month", idvar = "source",
+                       direction = "wide")
+age.sourcedemswideN <- colSums(age.sourcedemswide[,-1])
+age.sourcedemswide[,-1] <- sweep(age.sourcedemswide[,-1], 2, age.sourcedemswideN, FUN = '/')
+
+
+plot(age.sourcedems$freq[age.sourcedems$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 15000))
+lines(age.sourcedems$freq[age.sourcedems$source == "search"], col = "darkblue")
+lines(age.sourcedems$freq[age.sourcedems$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(age.sourcedemswide)-1), y = as.numeric(age.sourcedemswide[1,2:ncol(age.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(age.sourcedemswide[3,2:ncol(age.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(age.sourcedemswide[2,2:ncol(age.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+age.corsource <- list()
+age.corsourcedat <- as.data.frame(matrix(nrow = 3, ncol = 4))
+colnames(age.corsourcedat) <- c("att", "grp", "r", "p")
+age.corsourcedat$att <- "age"
+age.corsourcedat$grp <- age.sourcedemswide$source
+
+for (i in 1:3){
+  age.corsource[[i]] <- cor.test(as.numeric(age.sourcedemswide[i,2:ncol(age.sourcedemswide)]), 1:c(ncol(age.sourcedemswide)-1)) 
+  age.corsourcedat$r[i] <- age.corsource[[i]]$estimate
+  age.corsourcedat$p[i] <- age.corsource[[i]]$p.value
+}
+
+
+
+
+## Yearly frequencies
+timeseriesAge_NEW$year <- paste("20", substr(timeseriesAge_NEW$month, start = 1, stop = 2), sep = "")
+
+age.sourcedems_year <- as.data.frame(table(timeseriesAge_NEW$brought_simp, timeseriesAge_NEW$year))
+colnames(age.sourcedems_year) <- c("source", "year", "freq")
+age.sourcedems_year$year <- as.numeric(as.character(age.sourcedems_year$year))
+age.sourcedems_year_wide <- reshape(age.sourcedems_year, v.names = "freq", 
+                       timevar = "year", idvar = "source",
+                       direction = "wide")
+age.sourcedems_year_wideN <- colSums(age.sourcedems_year_wide[,-1])
+age.sourcedems_year_wide[,-1] <- sweep(age.sourcedems_year_wide[,-1], 2, age.sourcedems_year_wideN, FUN = '/')
+
+
+plot(age.sourcedems_year$freq[age.sourcedems_year$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 100000))
+lines(age.sourcedems_year$freq[age.sourcedems_year$source == "search"], col = "darkblue")
+lines(age.sourcedems_year$freq[age.sourcedems_year$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(age.sourcedems_year_wide)-1), y = as.numeric(age.sourcedems_year_wide[1,2:ncol(age.sourcedems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = c(1:4), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(age.sourcedems_year_wide[3,2:ncol(age.sourcedems_year_wide)]), col = "darkblue")
+lines(as.numeric(age.sourcedems_year_wide[2,2:ncol(age.sourcedems_year_wide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+
+## RACE ----
+table(timeseriesRace_NEW$brought_simp)/sum(table(timeseriesRace_NEW$brought_simp))
+
+## Monthly frequencies
+race.sourcedems <- as.data.frame(table(timeseriesRace_NEW$brought_simp, timeseriesRace_NEW$month.cent))
+colnames(race.sourcedems) <- c("source", "month", "freq")
+race.sourcedems$month <- as.numeric(as.character(race.sourcedems$month)) + 156
+race.sourcedems$source <- factor(race.sourcedems$source, labels = levels(race.sourcedems$source))
+race.sourcedemswide <- reshape(race.sourcedems, v.names = "freq", 
+                       timevar = "month", idvar = "source",
+                       direction = "wide")
+race.sourcedemswideN <- colSums(race.sourcedemswide[,-1])
+race.sourcedemswide[,-1] <- sweep(race.sourcedemswide[,-1], 2, race.sourcedemswideN, FUN = '/')
+
+
+plot(race.sourcedems$freq[race.sourcedems$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 50000))
+lines(race.sourcedems$freq[race.sourcedems$source == "search"], col = "darkblue")
+lines(race.sourcedems$freq[race.sourcedems$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(race.sourcedemswide)-1), y = as.numeric(race.sourcedemswide[1,2:ncol(race.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(race.sourcedemswide[3,2:ncol(race.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(race.sourcedemswide[2,2:ncol(race.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+race.corsource <- list()
+race.corsourcedat <- as.data.frame(matrix(nrow = 3, ncol = 4))
+colnames(race.corsourcedat) <- c("att", "grp", "r", "p")
+race.corsourcedat$att <- "race"
+race.corsourcedat$grp <- race.sourcedemswide$source
+
+for (i in 1:3){
+  race.corsource[[i]] <- cor.test(as.numeric(race.sourcedemswide[i,2:ncol(race.sourcedemswide)]), 1:c(ncol(race.sourcedemswide)-1)) 
+  race.corsourcedat$r[i] <- race.corsource[[i]]$estimate
+  race.corsourcedat$p[i] <- race.corsource[[i]]$p.value
+}
+
+
+
+
+## Yearly frequencies
+timeseriesRace_NEW$year <- paste("20", substr(timeseriesRace_NEW$month, start = 1, stop = 2), sep = "")
+
+race.sourcedems_year <- as.data.frame(table(timeseriesRace_NEW$brought_simp, timeseriesRace_NEW$year))
+colnames(race.sourcedems_year) <- c("source", "year", "freq")
+race.sourcedems_year$year <- as.numeric(as.character(race.sourcedems_year$year))
+race.sourcedems_year_wide <- reshape(race.sourcedems_year, v.names = "freq", 
+                       timevar = "year", idvar = "source",
+                       direction = "wide")
+race.sourcedems_year_wideN <- colSums(race.sourcedems_year_wide[,-1])
+race.sourcedems_year_wide[,-1] <- sweep(race.sourcedems_year_wide[,-1], 2, race.sourcedems_year_wideN, FUN = '/')
+
+
+plot(race.sourcedems_year$freq[race.sourcedems_year$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 300000))
+lines(race.sourcedems_year$freq[race.sourcedems_year$source == "search"], col = "darkblue")
+lines(race.sourcedems_year$freq[race.sourcedems_year$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(race.sourcedems_year_wide)-1), y = as.numeric(race.sourcedems_year_wide[1,2:ncol(race.sourcedems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = c(1:4), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(race.sourcedems_year_wide[3,2:ncol(race.sourcedems_year_wide)]), col = "darkblue")
+lines(as.numeric(race.sourcedems_year_wide[2,2:ncol(race.sourcedems_year_wide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+## SKIN-TONE ----
+table(timeseriesSkin_NEW$brought_simp)/sum(table(timeseriesSkin_NEW$brought_simp))
+
+## Monthly frequencies
+skin.sourcedems <- as.data.frame(table(timeseriesSkin_NEW$brought_simp, timeseriesSkin_NEW$month.cent))
+colnames(skin.sourcedems) <- c("source", "month", "freq")
+skin.sourcedems$month <- as.numeric(as.character(skin.sourcedems$month)) + 156
+skin.sourcedems$source <- factor(skin.sourcedems$source, labels = levels(skin.sourcedems$source))
+skin.sourcedemswide <- reshape(skin.sourcedems, v.names = "freq", 
+                       timevar = "month", idvar = "source",
+                       direction = "wide")
+skin.sourcedemswideN <- colSums(skin.sourcedemswide[,-1])
+skin.sourcedemswide[,-1] <- sweep(skin.sourcedemswide[,-1], 2, skin.sourcedemswideN, FUN = '/')
+
+
+plot(skin.sourcedems$freq[skin.sourcedems$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 20000))
+lines(skin.sourcedems$freq[skin.sourcedems$source == "search"], col = "darkblue")
+lines(skin.sourcedems$freq[skin.sourcedems$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(skin.sourcedemswide)-1), y = as.numeric(skin.sourcedemswide[1,2:ncol(skin.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(skin.sourcedemswide[3,2:ncol(skin.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(skin.sourcedemswide[2,2:ncol(skin.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+skin.corsource <- list()
+skin.corsourcedat <- as.data.frame(matrix(nrow = 3, ncol = 4))
+colnames(skin.corsourcedat) <- c("att", "grp", "r", "p")
+skin.corsourcedat$att <- "skin"
+skin.corsourcedat$grp <- skin.sourcedemswide$source
+
+for (i in 1:3){
+  skin.corsource[[i]] <- cor.test(as.numeric(skin.sourcedemswide[i,2:ncol(skin.sourcedemswide)]), 1:c(ncol(skin.sourcedemswide)-1)) 
+  skin.corsourcedat$r[i] <- skin.corsource[[i]]$estimate
+  skin.corsourcedat$p[i] <- skin.corsource[[i]]$p.value
+}
+
+
+
+
+## Yearly frequencies
+timeseriesSkin_NEW$year <- paste("20", substr(timeseriesSkin_NEW$month, start = 1, stop = 2), sep = "")
+
+skin.sourcedems_year <- as.data.frame(table(timeseriesSkin_NEW$brought_simp, timeseriesSkin_NEW$year))
+colnames(skin.sourcedems_year) <- c("source", "year", "freq")
+skin.sourcedems_year$year <- as.numeric(as.character(skin.sourcedems_year$year))
+skin.sourcedems_year_wide <- reshape(skin.sourcedems_year, v.names = "freq", 
+                       timevar = "year", idvar = "source",
+                       direction = "wide")
+skin.sourcedems_year_wideN <- colSums(skin.sourcedems_year_wide[,-1])
+skin.sourcedems_year_wide[,-1] <- sweep(skin.sourcedems_year_wide[,-1], 2, skin.sourcedems_year_wideN, FUN = '/')
+
+
+plot(skin.sourcedems_year$freq[skin.sourcedems_year$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 100000))
+lines(skin.sourcedems_year$freq[skin.sourcedems_year$source == "search"], col = "darkblue")
+lines(skin.sourcedems_year$freq[skin.sourcedems_year$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(skin.sourcedems_year_wide)-1), y = as.numeric(skin.sourcedems_year_wide[1,2:ncol(skin.sourcedems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = c(1:4), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(skin.sourcedems_year_wide[3,2:ncol(skin.sourcedems_year_wide)]), col = "darkblue")
+lines(as.numeric(skin.sourcedems_year_wide[2,2:ncol(skin.sourcedems_year_wide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+## SEXUALITY ----
+table(timeseriesSex_NEW$brought_simp)/sum(table(timeseriesSex_NEW$brought_simp))
+
+## Monthly frequencies
+sex.sourcedems <- as.data.frame(table(timeseriesSex_NEW$brought_simp, timeseriesSex_NEW$month.cent))
+colnames(sex.sourcedems) <- c("source", "month", "freq")
+sex.sourcedems$month <- as.numeric(as.character(sex.sourcedems$month)) + 156
+sex.sourcedems$source <- factor(sex.sourcedems$source, labels = levels(sex.sourcedems$source))
+sex.sourcedemswide <- reshape(sex.sourcedems, v.names = "freq", 
+                       timevar = "month", idvar = "source",
+                       direction = "wide")
+sex.sourcedemswideN <- colSums(sex.sourcedemswide[,-1])
+sex.sourcedemswide[,-1] <- sweep(sex.sourcedemswide[,-1], 2, sex.sourcedemswideN, FUN = '/')
+
+
+plot(sex.sourcedems$freq[sex.sourcedems$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 25000))
+lines(sex.sourcedems$freq[sex.sourcedems$source == "search"], col = "darkblue")
+lines(sex.sourcedems$freq[sex.sourcedems$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(sex.sourcedemswide)-1), y = as.numeric(sex.sourcedemswide[1,2:ncol(sex.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(sex.sourcedemswide[3,2:ncol(sex.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(sex.sourcedemswide[2,2:ncol(sex.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+sex.corsource <- list()
+sex.corsourcedat <- as.data.frame(matrix(nrow = 3, ncol = 4))
+colnames(sex.corsourcedat) <- c("att", "grp", "r", "p")
+sex.corsourcedat$att <- "sex"
+sex.corsourcedat$grp <- sex.sourcedemswide$source
+
+for (i in 1:3){
+  sex.corsource[[i]] <- cor.test(as.numeric(sex.sourcedemswide[i,2:ncol(sex.sourcedemswide)]), 1:c(ncol(sex.sourcedemswide)-1)) 
+  sex.corsourcedat$r[i] <- sex.corsource[[i]]$estimate
+  sex.corsourcedat$p[i] <- sex.corsource[[i]]$p.value
+}
+
+
+
+
+## Yearly frequencies
+timeseriesSex_NEW$year <- paste("20", substr(timeseriesSex_NEW$month, start = 1, stop = 2), sep = "")
+
+sex.sourcedems_year <- as.data.frame(table(timeseriesSex_NEW$brought_simp, timeseriesSex_NEW$year))
+colnames(sex.sourcedems_year) <- c("source", "year", "freq")
+sex.sourcedems_year$year <- as.numeric(as.character(sex.sourcedems_year$year))
+sex.sourcedems_year_wide <- reshape(sex.sourcedems_year, v.names = "freq", 
+                       timevar = "year", idvar = "source",
+                       direction = "wide")
+sex.sourcedems_year_wideN <- colSums(sex.sourcedems_year_wide[,-1])
+sex.sourcedems_year_wide[,-1] <- sweep(sex.sourcedems_year_wide[,-1], 2, sex.sourcedems_year_wideN, FUN = '/')
+
+
+plot(sex.sourcedems_year$freq[sex.sourcedems_year$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 100000))
+lines(sex.sourcedems_year$freq[sex.sourcedems_year$source == "search"], col = "darkblue")
+lines(sex.sourcedems_year$freq[sex.sourcedems_year$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(sex.sourcedems_year_wide)-1), y = as.numeric(sex.sourcedems_year_wide[1,2:ncol(sex.sourcedems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = c(1:4), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(sex.sourcedems_year_wide[3,2:ncol(sex.sourcedems_year_wide)]), col = "darkblue")
+lines(as.numeric(sex.sourcedems_year_wide[2,2:ncol(sex.sourcedems_year_wide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+## DISABILITY ----
+table(timeseriesDis_NEW$brought_simp)/sum(table(timeseriesDis_NEW$brought_simp))
+
+## Monthly frequencies
+dis.sourcedems <- as.data.frame(table(timeseriesDis_NEW$brought_simp, timeseriesDis_NEW$month.cent))
+colnames(dis.sourcedems) <- c("source", "month", "freq")
+dis.sourcedems$month <- as.numeric(as.character(dis.sourcedems$month)) + 156
+dis.sourcedems$source <- factor(dis.sourcedems$source, labels = levels(dis.sourcedems$source))
+dis.sourcedemswide <- reshape(dis.sourcedems, v.names = "freq", 
+                       timevar = "month", idvar = "source",
+                       direction = "wide")
+dis.sourcedemswideN <- colSums(dis.sourcedemswide[,-1])
+dis.sourcedemswide[,-1] <- sweep(dis.sourcedemswide[,-1], 2, dis.sourcedemswideN, FUN = '/')
+
+
+plot(dis.sourcedems$freq[dis.sourcedems$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 15000))
+lines(dis.sourcedems$freq[dis.sourcedems$source == "search"], col = "darkblue")
+lines(dis.sourcedems$freq[dis.sourcedems$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(dis.sourcedemswide)-1), y = as.numeric(dis.sourcedemswide[1,2:ncol(dis.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(dis.sourcedemswide[3,2:ncol(dis.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(dis.sourcedemswide[2,2:ncol(dis.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+dis.corsource <- list()
+dis.corsourcedat <- as.data.frame(matrix(nrow = 3, ncol = 4))
+colnames(dis.corsourcedat) <- c("att", "grp", "r", "p")
+dis.corsourcedat$att <- "dis"
+dis.corsourcedat$grp <- dis.sourcedemswide$source
+
+for (i in 1:3){
+  dis.corsource[[i]] <- cor.test(as.numeric(dis.sourcedemswide[i,2:ncol(dis.sourcedemswide)]), 1:c(ncol(dis.sourcedemswide)-1)) 
+  dis.corsourcedat$r[i] <- dis.corsource[[i]]$estimate
+  dis.corsourcedat$p[i] <- dis.corsource[[i]]$p.value
+}
+
+
+
+
+## Yearly frequencies
+timeseriesDis_NEW$year <- paste("20", substr(timeseriesDis_NEW$month, start = 1, stop = 2), sep = "")
+
+dis.sourcedems_year <- as.data.frame(table(timeseriesDis_NEW$brought_simp, timeseriesDis_NEW$year))
+colnames(dis.sourcedems_year) <- c("source", "year", "freq")
+dis.sourcedems_year$year <- as.numeric(as.character(dis.sourcedems_year$year))
+dis.sourcedems_year_wide <- reshape(dis.sourcedems_year, v.names = "freq", 
+                       timevar = "year", idvar = "source",
+                       direction = "wide")
+dis.sourcedems_year_wideN <- colSums(dis.sourcedems_year_wide[,-1])
+dis.sourcedems_year_wide[,-1] <- sweep(dis.sourcedems_year_wide[,-1], 2, dis.sourcedems_year_wideN, FUN = '/')
+
+
+plot(dis.sourcedems_year$freq[dis.sourcedems_year$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 100000))
+lines(dis.sourcedems_year$freq[dis.sourcedems_year$source == "search"], col = "darkblue")
+lines(dis.sourcedems_year$freq[dis.sourcedems_year$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(dis.sourcedems_year_wide)-1), y = as.numeric(dis.sourcedems_year_wide[1,2:ncol(dis.sourcedems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = c(1:4), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(dis.sourcedems_year_wide[3,2:ncol(dis.sourcedems_year_wide)]), col = "darkblue")
+lines(as.numeric(dis.sourcedems_year_wide[2,2:ncol(dis.sourcedems_year_wide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+## BODY WEIGHT ----
+table(timeseriesWeight_NEW$brought_simp)/sum(table(timeseriesWeight_NEW$brought_simp))
+
+## Monthly frequencies
+weight.sourcedems <- as.data.frame(table(timeseriesWeight_NEW$brought_simp, timeseriesWeight_NEW$month.cent))
+colnames(weight.sourcedems) <- c("source", "month", "freq")
+weight.sourcedems$month <- as.numeric(as.character(weight.sourcedems$month)) + 156
+weight.sourcedems$source <- factor(weight.sourcedems$source, labels = levels(weight.sourcedems$source))
+weight.sourcedemswide <- reshape(weight.sourcedems, v.names = "freq", 
+                       timevar = "month", idvar = "source",
+                       direction = "wide")
+weight.sourcedemswideN <- colSums(weight.sourcedemswide[,-1])
+weight.sourcedemswide[,-1] <- sweep(weight.sourcedemswide[,-1], 2, weight.sourcedemswideN, FUN = '/')
+
+
+plot(weight.sourcedems$freq[weight.sourcedems$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 15000))
+lines(weight.sourcedems$freq[weight.sourcedems$source == "search"], col = "darkblue")
+lines(weight.sourcedems$freq[weight.sourcedems$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(weight.sourcedemswide)-1), y = as.numeric(weight.sourcedemswide[1,2:ncol(weight.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(weight.sourcedemswide[3,2:ncol(weight.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(weight.sourcedemswide[2,2:ncol(weight.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+weight.corsource <- list()
+weight.corsourcedat <- as.data.frame(matrix(nrow = 3, ncol = 4))
+colnames(weight.corsourcedat) <- c("att", "grp", "r", "p")
+weight.corsourcedat$att <- "weight"
+weight.corsourcedat$grp <- weight.sourcedemswide$source
+
+for (i in 1:3){
+  weight.corsource[[i]] <- cor.test(as.numeric(weight.sourcedemswide[i,2:ncol(weight.sourcedemswide)]), 1:c(ncol(weight.sourcedemswide)-1)) 
+  weight.corsourcedat$r[i] <- weight.corsource[[i]]$estimate
+  weight.corsourcedat$p[i] <- weight.corsource[[i]]$p.value
+}
+
+
+
+
+## Yearly frequencies
+timeseriesWeight_NEW$year <- paste("20", substr(timeseriesWeight_NEW$month, start = 1, stop = 2), sep = "")
+
+weight.sourcedems_year <- as.data.frame(table(timeseriesWeight_NEW$brought_simp, timeseriesWeight_NEW$year))
+colnames(weight.sourcedems_year) <- c("source", "year", "freq")
+weight.sourcedems_year$year <- as.numeric(as.character(weight.sourcedems_year$year))
+weight.sourcedems_year_wide <- reshape(weight.sourcedems_year, v.names = "freq", 
+                       timevar = "year", idvar = "source",
+                       direction = "wide")
+weight.sourcedems_year_wideN <- colSums(weight.sourcedems_year_wide[,-1])
+weight.sourcedems_year_wide[,-1] <- sweep(weight.sourcedems_year_wide[,-1], 2, weight.sourcedems_year_wideN, FUN = '/')
+
+
+plot(weight.sourcedems_year$freq[weight.sourcedems_year$source == "assign"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 100000))
+lines(weight.sourcedems_year$freq[weight.sourcedems_year$source == "search"], col = "darkblue")
+lines(weight.sourcedems_year$freq[weight.sourcedems_year$source == "other"], col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(weight.sourcedems_year_wide)-1), y = as.numeric(weight.sourcedems_year_wide[1,2:ncol(weight.sourcedems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = c(1:4), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(weight.sourcedems_year_wide[3,2:ncol(weight.sourcedems_year_wide)]), col = "darkblue")
+lines(as.numeric(weight.sourcedems_year_wide[2,2:ncol(weight.sourcedems_year_wide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+
+```
+
+## Print table
+```{r tablOutput, echo=FALSE}
+## CREATE TABLE ----
+sourcechanges_table <- as.data.frame(matrix(nrow = 6*3, ncol = 6))
+colnames(sourcechanges_table) <- c("att", "grp", "r", "p", "startprop", "endprop")
+sourcechanges_table$att <- rep(c("Age", "Race", "Skin-tone", "Sexuality", "Disability", "Weight"), each = 3)
+sourcechanges_table$grp <- rep(c("Assignment", "Search", "Other"), times = 6)
+
+sourcechanges_table$r <- round(c(age.corsourcedat$r, race.corsourcedat$r, skin.corsourcedat$r, sex.corsourcedat$r,
+                              dis.corsourcedat$r, weight.corsourcedat$r), 2) 
+sourcechanges_table$p <- round(c(age.corsourcedat$p, race.corsourcedat$p, skin.corsourcedat$p, sex.corsourcedat$p,
+                              dis.corsourcedat$p, weight.corsourcedat$p), 3)
+
+sourcechanges_table$startprop <-round(c(as.numeric(age.sourcedems_year_wide[1:3,2]), as.numeric(race.sourcedems_year_wide[1:3,2]),
+                                     as.numeric(skin.sourcedems_year_wide[1:3,2]), as.numeric(sex.sourcedems_year_wide[1:3,2]),
+                                     as.numeric(dis.sourcedems_year_wide[1:3,2]), as.numeric(weight.sourcedems_year_wide[1:3,2])), 3)
+sourcechanges_table$endprop <-round(c(as.numeric(age.sourcedems_year_wide[1:3,5]), as.numeric(race.sourcedems_year_wide[1:3,5]),
+                                     as.numeric(skin.sourcedems_year_wide[1:3,5]), as.numeric(sex.sourcedems_year_wide[1:3,5]),
+                                     as.numeric(dis.sourcedems_year_wide[1:3,5]), as.numeric(weight.sourcedems_year_wide[1:3,5])), 3)
+
+knitr::kable(sourcechanges_table,
+             col.names = c("Attitude", "Group", "Correlation w Time", "p of Correlation",
+                           "Starting Proportion (2017)", "Ending Proportion (2020)"))
+```
+
+
+## Save PDF of figures
+``` {r figureOutput, echo = FALSE}
+
+## Monthly relative ----
+pdf(file = "sourcerep_monthly.pdf", height = 7, width = 11)
+op <- par(mfrow = c(2,3))
+
+plot(x = 1:c(ncol(sex.sourcedemswide)-1), y = as.numeric(sex.sourcedemswide[1,2:ncol(sex.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "SEXUALITY", cex.main = 2,
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(sex.sourcedemswide[3,2:ncol(sex.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(sex.sourcedemswide[2,2:ncol(sex.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2, cex = 1.2)
+
+plot(x = 1:c(ncol(race.sourcedemswide)-1), y = as.numeric(race.sourcedemswide[1,2:ncol(race.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "RACE",cex.main = 2,
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(race.sourcedemswide[3,2:ncol(race.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(race.sourcedemswide[2,2:ncol(race.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2, cex = 1.2)
+
+plot(x = 1:c(ncol(skin.sourcedemswide)-1), y = as.numeric(skin.sourcedemswide[1,2:ncol(skin.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "SKIN-TONE",cex.main = 2,
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(skin.sourcedemswide[3,2:ncol(skin.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(skin.sourcedemswide[2,2:ncol(skin.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2, cex = 1.2)
+
+
+plot(x = 1:c(ncol(age.sourcedemswide)-1), y = as.numeric(age.sourcedemswide[1,2:ncol(age.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "AGE",cex.main = 2,
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(age.sourcedemswide[3,2:ncol(age.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(age.sourcedemswide[2,2:ncol(age.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2, cex = 1.2)
+
+plot(x = 1:c(ncol(dis.sourcedemswide)-1), y = as.numeric(dis.sourcedemswide[1,2:ncol(dis.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "DISABILITY",cex.main = 2,
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(dis.sourcedemswide[3,2:ncol(dis.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(dis.sourcedemswide[2,2:ncol(dis.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2, cex = 1.2)
+
+
+plot(x = 1:c(ncol(weight.sourcedemswide)-1), y = as.numeric(weight.sourcedemswide[1,2:ncol(weight.sourcedemswide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "BODY WEIGHT",cex.main = 2,
+     ylim = c(0, 1), axes = FALSE)
+box()
+axis(1, at = seq(1, 48, by = 12), labels = c(2017:2020))
+axis(2, at = seq(0, 1, by = 0.2), labels = seq(0, 1, by = 0.2))
+lines(as.numeric(weight.sourcedemswide[3,2:ncol(weight.sourcedemswide)]), col = "darkblue")
+lines(as.numeric(weight.sourcedemswide[2,2:ncol(weight.sourcedemswide)]), col = "lightgrey")
+legend("topleft", c("Assignment", "Search", "Other"),
+       col = c("darkred", "darkblue", "lightgrey"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2, cex = 1.2)
+par(op)
+dev.off()
+
+
+
+
+```
+
+
+## Timeseries of sample sources
+``` {r analyzeTStrends, echo = FALSE}
+## Create vectors for subgroups ----
+table(timeseriesAge_NEW$brought_simp)
+
+sourceTSvecs <- function(sourceid, attitudedat){
+  sourceTSvecdat <- ddply(attitudedat[attitudedat$brought_simp == sourceid,], .(month.cent), summarize, 
+                       mean = mean(dscore), weight.mean = weighted.mean(dscore, weightvec), cohens = cohensD(dscore))
+  
+  sourceTSvec <- ts(sourceTSvecdat$weight.mean, frequency = 12, start = c(2017, 1), end = c(2020, 12))
+  sourceTStrend <- decompose(sourceTSvec)$trend
+  
+  sourceTSvecout <- list(sourceTSvecdat, sourceTSvec, sourceTStrend)
+  return(sourceTSvecout)
+}
+
+sourceids <- levels(timeseriesAge_NEW$brought_simp)
+
+## AGE ----
+age.sourceTSlist <- list()
+age.sourceTSlisttrend <- list()
+for(i in 1:3){
+    age.sourceTSlist[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesAge_NEW)[[2]]
+    age.sourceTSlisttrend[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesAge_NEW)[[3]]
+}
+
+## RACE ----
+race.sourceTSlist <- list()
+race.sourceTSlisttrend <- list()
+for(i in 1:3){
+    race.sourceTSlist[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesRace_NEW)[[2]]
+    race.sourceTSlisttrend[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesRace_NEW)[[3]]
+    }
+
+## SKIN-TONE ----
+skin.sourceTSlist <- list()
+skin.sourceTSlisttrend <- list()
+for(i in 1:3){
+    skin.sourceTSlist[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesSkin_NEW)[[2]]
+    skin.sourceTSlisttrend[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesSkin_NEW)[[3]]
+    }
+
+## SEXUALITY ----
+sex.sourceTSlist <- list()
+sex.sourceTSlisttrend <- list()
+for(i in 1:3){
+    sex.sourceTSlist[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesSex_NEW)[[2]]
+    sex.sourceTSlisttrend[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesSex_NEW)[[3]]
+    }
+
+## DISABILITY ----
+dis.sourceTSlist <- list()
+dis.sourceTSlisttrend <- list()
+for(i in 1:3){
+    dis.sourceTSlist[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesDis_NEW)[[2]]
+    dis.sourceTSlisttrend[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesDis_NEW)[[3]]
+}
+
+## BODY WEIGHT ----
+weight.sourceTSlist <- list()
+weight.sourceTSlisttrend <- list()
+for(i in 1:3){
+    weight.sourceTSlist[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesWeight_NEW)[[2]]
+    weight.sourceTSlisttrend[[i]] <- sourceTSvecs(sourceid = sourceids[i], attitudedat = timeseriesWeight_NEW)[[3]]
+    }
+
+
+## ** Overall differences ----
+## AGE ----
+toverall_age <- t.test(timeseriesAge_NEW$dscore[timeseriesAge_NEW$brought_simp == "assign"],
+       timeseriesAge_NEW$dscore[timeseriesAge_NEW$brought_simp == "search"])
+cohend_age <- cohensD(timeseriesAge_NEW$dscore[timeseriesAge_NEW$brought_simp == "assign"],
+       timeseriesAge_NEW$dscore[timeseriesAge_NEW$brought_simp == "search"])
+
+## RACE ----
+toverall_race <- t.test(timeseriesRace_NEW$dscore[timeseriesRace_NEW$brought_simp == "assign"],
+       timeseriesRace_NEW$dscore[timeseriesRace_NEW$brought_simp == "search"])
+cohend_race <- cohensD(timeseriesRace_NEW$dscore[timeseriesRace_NEW$brought_simp == "assign"],
+       timeseriesRace_NEW$dscore[timeseriesRace_NEW$brought_simp == "search"])
+
+## SKIN-TONE ----
+toverall_skin <- t.test(timeseriesSkin_NEW$dscore[timeseriesSkin_NEW$brought_simp == "assign"],
+       timeseriesSkin_NEW$dscore[timeseriesSkin_NEW$brought_simp == "search"])
+cohend_skin <- cohensD(timeseriesSkin_NEW$dscore[timeseriesSkin_NEW$brought_simp == "assign"],
+       timeseriesSkin_NEW$dscore[timeseriesSkin_NEW$brought_simp == "search"])
+
+## SEXUALITY ----
+toverall_sex <- t.test(timeseriesSex_NEW$dscore[timeseriesSex_NEW$brought_simp == "assign"],
+       timeseriesSex_NEW$dscore[timeseriesSex_NEW$brought_simp == "search"])
+cohend_sex <- cohensD(timeseriesSex_NEW$dscore[timeseriesSex_NEW$brought_simp == "assign"],
+       timeseriesSex_NEW$dscore[timeseriesSex_NEW$brought_simp == "search"])
+
+## DISABILITY ----
+toverall_dis <- t.test(timeseriesDis_NEW$dscore[timeseriesDis_NEW$brought_simp == "assign"],
+       timeseriesDis_NEW$dscore[timeseriesDis_NEW$brought_simp == "search"])
+cohend_dis <- cohensD(timeseriesDis_NEW$dscore[timeseriesDis_NEW$brought_simp == "assign"],
+       timeseriesDis_NEW$dscore[timeseriesDis_NEW$brought_simp == "search"])
+
+## WEIGHT ----
+toverall_weight <- t.test(timeseriesWeight_NEW$dscore[timeseriesWeight_NEW$brought_simp == "assign"],
+       timeseriesWeight_NEW$dscore[timeseriesWeight_NEW$brought_simp == "search"])
+cohend_weight <- cohensD(timeseriesWeight_NEW$dscore[timeseriesWeight_NEW$brought_simp == "assign"],
+       timeseriesWeight_NEW$dscore[timeseriesWeight_NEW$brought_simp == "search"])
+
+
+
+## ** Interactions w/ time ----
+## AGE ----
+age_timedat <- as.data.frame(c(age.sourceTSlisttrend[[1]], age.sourceTSlisttrend[[3]]))
+colnames(age_timedat) <- c("dscore")
+age_timedat$source <- rep(c("assign", "search"), each = 48)
+age_timedat$month <- rep(1:48, times = 2)
+age.timelm <- lm(dscore ~ source*month, data = age_timedat)
+
+
+## RACE ----
+race_timedat <- as.data.frame(c(race.sourceTSlisttrend[[1]], race.sourceTSlisttrend[[3]]))
+colnames(race_timedat) <- c("dscore")
+race_timedat$source <- rep(c("assign", "search"), each = 48)
+race_timedat$month <- rep(1:48, times = 2)
+race.timelm <- lm(dscore ~ source*month, data = race_timedat)
+summary(race.timelm)[["coefficients"]][4,]
+
+## SKIN ----
+skin_timedat <- as.data.frame(c(skin.sourceTSlisttrend[[1]], skin.sourceTSlisttrend[[3]]))
+colnames(skin_timedat) <- c("dscore")
+skin_timedat$source <- rep(c("assign", "search"), each = 48)
+skin_timedat$month <- rep(1:48, times = 2)
+skin.timelm <- lm(dscore ~ source*month, data = skin_timedat)
+summary(skin.timelm)[["coefficients"]][4,]
+
+## SEXUALITY ----
+sex_timedat <- as.data.frame(c(sex.sourceTSlisttrend[[1]], sex.sourceTSlisttrend[[3]]))
+colnames(sex_timedat) <- c("dscore")
+sex_timedat$source <- rep(c("assign", "search"), each = 48)
+sex_timedat$month <- rep(1:48, times = 2)
+sex.timelm <- lm(dscore ~ source*month, data = sex_timedat)
+summary(sex.timelm)[["coefficients"]][4,]
+
+## DISABILITY ----
+dis_timedat <- as.data.frame(c(dis.sourceTSlisttrend[[1]], dis.sourceTSlisttrend[[3]]))
+colnames(dis_timedat) <- c("dscore")
+dis_timedat$source <- rep(c("assign", "search"), each = 48)
+dis_timedat$month <- rep(1:48, times = 2)
+dis.timelm <- lm(dscore ~ source*month, data = dis_timedat)
+summary(dis.timelm)[["coefficients"]][4,]
+
+## WEIGHT ----
+weight_timedat <- as.data.frame(c(weight.sourceTSlisttrend[[1]], weight.sourceTSlisttrend[[3]]))
+colnames(weight_timedat) <- c("dscore")
+weight_timedat$source <- rep(c("assign", "search"), each = 48)
+weight_timedat$month <- rep(1:48, times = 2)
+weight.timelm <- lm(dscore ~ source*month, data = weight_timedat)
+summary(weight.timelm)[["coefficients"]][4,]
+
+## PLotting visualization ----
+pdf(file = "sourcetrends.pdf", height = 7, width = 11)
+op <- par(mfrow = c(2,3))
+
+plot(sex.sourceTSlist[[1]], ylim = c(-0.1, 0.4), ylab = "IAT D score", xlab = "", col = "darkred", lwd = .7,
+     main  = "SEXUALITY", cex.main = 2)
+lines(sex.sourceTSlisttrend[[1]], col = "darkred", lwd = 2)
+lines(sex.sourceTSlist[[3]], col = "darkblue")
+lines(sex.sourceTSlisttrend[[3]], col = "darkblue", lwd = 2)
+legend("topleft", c("Assignment", "Search"),
+       col = c("darkred", "darkblue"),
+       lty = 1, lwd = 4, bty = "n", cex = 1.2)
+abline(h = 0, lty = 2, col = "lightgrey")
+
+plot(race.sourceTSlist[[1]], ylim = c(-0.1, 0.4), ylab = "IAT D score", xlab = "", col = "darkred", lwd = .7,
+     main  = "RACE", cex.main = 2)
+lines(race.sourceTSlisttrend[[1]], col = "darkred", lwd = 2)
+lines(race.sourceTSlist[[3]], col = "darkblue")
+lines(race.sourceTSlisttrend[[3]], col = "darkblue", lwd = 2)
+legend("topleft", c("Assignment", "Search"),
+       col = c("darkred", "darkblue"),
+       lty = 1, lwd = 4, bty = "n", cex = 1.2)
+abline(h = 0, lty = 2, col = "lightgrey")
+
+plot(skin.sourceTSlist[[1]], ylim = c(-0.1, 0.4), ylab = "IAT D score", xlab = "", col = "darkred", lwd = .7,
+     main  = "SKIN-TONE", cex.main = 2)
+lines(skin.sourceTSlisttrend[[1]], col = "darkred", lwd = 2)
+lines(skin.sourceTSlist[[3]], col = "darkblue")
+lines(skin.sourceTSlisttrend[[3]], col = "darkblue", lwd = 2)
+legend("topleft", c("Assignment", "Search"),
+       col = c("darkred", "darkblue"),
+       lty = 1, lwd = 4, bty = "n", cex = 1.2)
+abline(h = 0, lty = 2, col = "lightgrey")
+
+plot(age.sourceTSlist[[1]], ylim = c(0.2, 0.7), ylab = "IAT D score", xlab = "", col = "darkred", lwd = .7,
+     main  = "AGE", cex.main = 2)
+lines(age.sourceTSlisttrend[[1]], col = "darkred", lwd = 2)
+lines(age.sourceTSlist[[3]], col = "darkblue")
+lines(age.sourceTSlisttrend[[3]], col = "darkblue", lwd = 2)
+legend("topleft", c("Assignment", "Search"),
+       col = c("darkred", "darkblue"),
+       lty = 1, lwd = 4, bty = "n", cex = 1.2)
+
+plot(dis.sourceTSlist[[1]], ylim = c(0.2, 0.7), ylab = "IAT D score", xlab = "", col = "darkred", lwd = .7,
+     main  = "DISABILITY", cex.main = 2)
+lines(dis.sourceTSlisttrend[[1]], col = "darkred", lwd = 2)
+lines(dis.sourceTSlist[[3]], col = "darkblue")
+lines(dis.sourceTSlisttrend[[3]], col = "darkblue", lwd = 2)
+legend("topleft", c("Assignment", "Search"),
+       col = c("darkred", "darkblue"),
+       lty = 1, lwd = 4, bty = "n", cex = 1.2)
+
+plot(weight.sourceTSlist[[1]], ylim = c(0.2, 0.7), ylab = "IAT D score", xlab = "", col = "darkred", lwd = .7,
+     main  = "BODY WEIGHT", cex.main = 2)
+lines(weight.sourceTSlisttrend[[1]], col = "darkred", lwd = 2)
+lines(weight.sourceTSlist[[3]], col = "darkblue")
+lines(weight.sourceTSlisttrend[[3]], col = "darkblue", lwd = 2)
+legend("topleft", c("Assignment", "Search"),
+       col = c("darkred", "darkblue"),
+       lty = 1, lwd = 4, bty = "n", cex = 1.2)
+par(op)
+dev.off()
+
+
+```
+
+
+# Print table for attitudes across groups
+```{r tablOutput, echo=FALSE}
+## CREATE TABLE ----
+sourceattitudes_table <- as.data.frame(matrix(nrow = 6*2, ncol = 9))
+
+colnames(sourceattitudes_table) <- c("att", "grp", "startatt", "endatt", "tdiff", "pdiff", "ddiff", "intb", "intp")
+
+sourceattitudes_table$att <- rep(c("Age", "Race", "Skin-tone", "Sexuality", "Disability", "Weight"), each = 2)
+sourceattitudes_table$grp <- rep(c("Assignment", "Search"), times = 6)
+
+sourceattitudes_table$startatt <-round(c(age.sourceTSlisttrend[[1]][7], age.sourceTSlisttrend[[3]][7],
+                                     race.sourceTSlisttrend[[1]][7], race.sourceTSlisttrend[[3]][7],
+                                     skin.sourceTSlisttrend[[1]][7], skin.sourceTSlisttrend[[3]][7],
+                                     sex.sourceTSlisttrend[[1]][7], sex.sourceTSlisttrend[[3]][7],
+                                     dis.sourceTSlisttrend[[1]][7], dis.sourceTSlisttrend[[3]][7],
+                                     weight.sourceTSlisttrend[[1]][7], weight.sourceTSlisttrend[[3]][7]), 2)
+sourceattitudes_table$endatt <-round(c(age.sourceTSlisttrend[[1]][42], age.sourceTSlisttrend[[3]][42],
+                                     race.sourceTSlisttrend[[1]][42], race.sourceTSlisttrend[[3]][42],
+                                     skin.sourceTSlisttrend[[1]][42], skin.sourceTSlisttrend[[3]][42],
+                                     sex.sourceTSlisttrend[[1]][42], sex.sourceTSlisttrend[[3]][42],
+                                     dis.sourceTSlisttrend[[1]][42], dis.sourceTSlisttrend[[3]][42],
+                                     weight.sourceTSlisttrend[[1]][42], weight.sourceTSlisttrend[[3]][42]), 2)
+
+sourceattitudes_table$tdiff <- round(rep(c(as.numeric(toverall_age$statistic),
+                                                          as.numeric(toverall_race$statistic),
+                                                          as.numeric(toverall_skin$statistic),
+                                                          as.numeric(toverall_sex$statistic),
+                                                          as.numeric(toverall_dis$statistic),
+                                                          as.numeric(toverall_weight$statistic)), each = 2), 2)
+sourceattitudes_table$pdiff <- round(rep(c(as.numeric(toverall_age$p.value),
+                                                          as.numeric(toverall_race$p.value),
+                                                          as.numeric(toverall_skin$p.value),
+                                                          as.numeric(toverall_sex$p.value),
+                                                          as.numeric(toverall_dis$p.value),
+                                                          as.numeric(toverall_weight$p.value)), each = 2), 2)
+
+sourceattitudes_table$ddiff <- round(rep(c(cohend_age, cohend_race, cohend_skin,
+                                                      cohend_sex, cohend_dis, cohend_weight), each = 2), 2)
+
+sourceattitudes_table$intb <- round(rep(c(as.numeric(summary(age.timelm)[["coefficients"]][4,1]),
+                                          as.numeric(summary(race.timelm)[["coefficients"]][4,1]), 
+                                          as.numeric(summary(skin.timelm)[["coefficients"]][4,1]), 
+                                          as.numeric(summary(sex.timelm)[["coefficients"]][4,1]), 
+                                          as.numeric(summary(dis.timelm)[["coefficients"]][4,1]),
+                                          as.numeric(summary(weight.timelm)[["coefficients"]][4,1])), each = 2), 3)
+
+sourceattitudes_table$intp <- round(rep(c(as.numeric(summary(age.timelm)[["coefficients"]][4,4]),
+                                          as.numeric(summary(race.timelm)[["coefficients"]][4,4]), 
+                                          as.numeric(summary(skin.timelm)[["coefficients"]][4,4]), 
+                                          as.numeric(summary(sex.timelm)[["coefficients"]][4,4]), 
+                                          as.numeric(summary(dis.timelm)[["coefficients"]][4,4]),
+                                          as.numeric(summary(weight.timelm)[["coefficients"]][4,4])), each = 2), 2)
+
+
+knitr::kable(sourceattitudes_table,
+             col.names = c("Attitude", "Group", "Starting Attitude (2017)", "Ending Attitude (2020)",
+                           "t Difference", "p Difference", "d Difference",
+                           "Interaction b", "Interaction p"))
+```
+

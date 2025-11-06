@@ -1,0 +1,208 @@
+---
+title: "Searching without a template - visits analysis (Israeli)"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE, warning=FALSE, message= FALSE}
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(reshape2)
+library(tibble)
+library(devtools)
+library(ggtextures)
+library(grid)
+library(magick)
+library(lsr)
+
+options("scipen" = 999)
+```
+
+```{r echo=FALSE, warning=FALSE, message= FALSE}
+
+# read files
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+df_fix_reveal = read.csv("Israeli_df_reveal.csv")
+
+#params 
+sub_vec = unique(df_fix_reveal$RECORDING_SESSION_LABEL)
+nsub = length(sub_vec)
+```
+
+
+```{r echo=FALSE, warning=FALSE, message= FALSE}
+
+df_visits = matrix(NA, nrow = 1, ncol = 10)
+for (s in sub_vec){
+  cur_sub = df_fix_reveal[df_fix_reveal$RECORDING_SESSION_LABEL == s,]
+  for (t in unique(cur_sub$TRIAL_INDEX)){
+    cur_trial =  cur_sub[cur_sub$TRIAL_INDEX == t,]
+    cur_israli = unique(cur_trial$israeli_loc)
+    cur_german = unique(cur_trial$german_loc)
+    cur_soa = unique(cur_trial$soa_reveal)
+    
+    prev_IA = 0 # 0 is for center
+    is_first = 1
+    visit_IA = as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[1]))
+    prev_sac_amp = as.numeric(as.character(cur_trial$PREVIOUS_SAC_AMPLITUDE_manual[1]))
+    if (nrow(cur_trial)>1){
+      for (i in 2:nrow(cur_trial)){
+        
+        if(!(as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[i])) == visit_IA[length(visit_IA)])){
+          if ((as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[i]))) %in% visit_IA){
+          is_first = append(is_first, 0)
+          }
+          else{
+            is_first = append(is_first, 1)
+          }
+          visit_IA = append(visit_IA, as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[i])))
+          prev_sac_amp = append(prev_sac_amp, as.numeric(as.character(cur_trial$PREVIOUS_SAC_AMPLITUDE_manual[i])))
+          prev_IA = append(prev_IA,visit_IA[length(visit_IA)-1])
+        }
+      }
+    }
+    df_visits = rbind(df_visits, cbind(rep(s, length(visit_IA)),
+                                       rep(t, length(visit_IA)), 
+                                       visit_IA,
+                                       1:length(visit_IA),
+                                       is_first,
+                                       prev_IA,
+                                       prev_sac_amp,
+                                       rep(cur_israli,length(visit_IA)),
+                                       rep(cur_german,length(visit_IA)),
+                                       rep(cur_soa,length(visit_IA))))
+  }
+}
+
+df_visits = df_visits[-1,]
+df_visits = as.data.frame(df_visits)
+colnames(df_visits) = c("sub", "trial", "visit_IA", "visit_index", "is_first", "prev_IA",
+                        "prev_sac_amp", "israel_IA", "german_IA", "soa")
+df_visits$familiar = ifelse(as.character(df_visits$israel_IA)==
+                              as.character(df_visits$visit_IA),1,0)
+df_visits$familiar_other = ifelse(as.character(df_visits$german_IA)==
+                              as.character(df_visits$visit_IA),1,0)
+df_visits$visit_IA = as.numeric(as.character(df_visits$visit_IA))
+df_visits$prev_IA = as.numeric(as.character(df_visits$prev_IA))
+df_visits$israel_IA = as.numeric(as.character(df_visits$israel_IA))
+df_visits$german_IA = as.numeric(as.character(df_visits$german_IA))
+
+```
+
+
+```{r}
+# extract the data for the first entrance of gaze in the familiar face
+df_familiar_only_first = df_visits[!(df_visits$is_first==0 & df_visits$familiar==1),]
+df_familiar_only_first = df_familiar_only_first[df_familiar_only_first$familiar==1,]
+
+# compute the distance between the current IA and previous IA
+df_familiar_only_first$visit_IA = as.numeric(as.character(df_familiar_only_first$visit_IA))
+df_familiar_only_first$prev_IA = as.numeric(as.character(df_familiar_only_first$prev_IA))
+df_familiar_only_first$dist = ifelse (df_familiar_only_first$prev_IA==0, 0, 
+                                     abs(df_familiar_only_first$visit_IA-df_familiar_only_first$prev_IA))
+df_familiar_only_first$dist[df_familiar_only_first$dist==4] = 1 # shifts between IA 1 and IA 5 (adjacent IAs)
+df_familiar_only_first$dist[df_familiar_only_first$dist==3] = 2 # shifts between IA 2 and IA 5 / shifts between IA 1 and IA 4 (not adjacent IAs)
+
+# compute proportion of trials in which gaze was shifted from adjacent IA (dist = 1) or non-adjacent IA (dist = 2)
+df_familiar_group = df_familiar_only_first %>% group_by(sub, dist) %>%
+  summarise(n_trials = n())
+df_familiar_n_trials = df_familiar_only_first %>% group_by(sub) %>%
+  summarise(n_trials_all = n(),
+            max_dist = max(dist))
+df_familiar = merge(df_familiar_group,df_familiar_n_trials,
+                    by.x = "sub",
+                    by.y = "sub", all = T)
+df_familiar$prop_trials = df_familiar$n_trials/df_familiar$n_trials_all
+mean(df_familiar$prop_trials[df_familiar$dist==2], na.rm = T)
+
+# add cases in which the proportion of long distance shifts (i.e., dist = 2) is 0
+df_no_two = df_familiar_n_trials[df_familiar_n_trials$max_dist==1,]
+df_add = data.frame(sub = df_no_two$sub,
+                   dist = 2,
+                   n_trials= 0,
+                   n_trials_all = df_no_two$n_trials_all,
+                   max_dist = df_no_two$max_dist,
+                   prop_trials = 0)
+df_familiar = rbind(df_familiar,df_add)
+
+# extract the data for the first entrance of gaze in the familiar face of the other group
+df_other_familiar_only_first = df_visits[!(df_visits$is_first==0 & df_visits$familiar_other==1),]
+df_other_familiar_only_first = df_other_familiar_only_first[df_other_familiar_only_first$familiar_other==1,]
+
+# compute the distance between the current IA and previous IA
+df_other_familiar_only_first$visit_IA = as.numeric(as.character(df_other_familiar_only_first$visit_IA))
+df_other_familiar_only_first$prev_IA = as.numeric(as.character(df_other_familiar_only_first$prev_IA))
+df_other_familiar_only_first$dist = ifelse (df_other_familiar_only_first$prev_IA==0, 0, 
+                                     abs(df_other_familiar_only_first$visit_IA-df_other_familiar_only_first$prev_IA))
+df_other_familiar_only_first$dist[df_other_familiar_only_first$dist==4] = 1 # shifts between IA 1 and IA 5 (adjacent IAs)
+df_other_familiar_only_first$dist[df_other_familiar_only_first$dist==3] = 2 # shifts between IA 2 and IA 5 / shifts between IA 1 and IA 4 (not adjacent IAs)
+
+# compute proportion of trials in which gaze was shifted from adjacent IA (dist = 1) or non-adjacent IA (dist = 2)
+df_other_group = df_other_familiar_only_first %>% group_by(sub, dist) %>%
+  summarise(n_trials = n())
+df_other_n_trials = df_other_familiar_only_first %>% group_by(sub) %>%
+  summarise(n_trials_all = n(),
+            max_dist = max(dist))
+df_other = merge(df_other_group,df_other_n_trials,
+                    by.x = "sub",
+                    by.y = "sub", all = T)
+df_other$prop_trials = df_other$n_trials/df_other$n_trials_all
+
+# add cases in which the proportion of long distance shifts (i.e., dist = 2) is 0
+df_no_two = df_other_n_trials[df_other_n_trials$max_dist==1,]
+df_add = data.frame(sub = df_no_two$sub,
+                   dist = 2,
+                   n_trials= 0,
+                   n_trials_all = df_no_two$n_trials_all,
+                   max_dist = df_no_two$max_dist,
+                   prop_trials = 0)
+
+df_other = rbind(df_other,df_add)
+
+
+```
+
+```{r}
+# analysis of long distance shifts
+df_test = merge(df_familiar,df_other,
+                by = c("sub", "dist"))
+t.test(df_test$prop_trials.x[df_test$dist==2],df_test$prop_trials.y[df_test$dist==2], paired = T)
+cohens_d(df_test$prop_trials.x[df_test$dist==2],df_test$prop_trials.y[df_test$dist==2], paired = T)
+
+```
+
+
+```{r}
+# plot long distance shifts
+Israel_flag = "Blue_white.png"
+German_flag = "German_flag.png"
+
+t_criti = qt(0.975, df = nsub-1)
+condition = c("Israeli familiar", "German familiar")
+
+df_graph = tibble(condition = factor(condition, levels = condition),
+                      value = c(mean(df_test$prop_trials.x[df_test$dist==2]),
+                                mean(df_test$prop_trials.y[df_test$dist==2])),
+                  sd = c(sd(df_test$prop_trials.x[df_test$dist==2])/sqrt(nsub),
+                             sd(df_test$prop_trials.y[df_test$dist==2])/sqrt(nsub)),
+                  image = list(image_read(Israel_flag),image_read(German_flag)))
+
+ggplot(df_graph, aes(x=condition, y=value, image = image)) +
+  geom_textured_col(img_width = unit(0.5, "null"))+
+  geom_errorbar(aes(ymin = value - (t_criti*sd), ymax = value+(t_criti*sd)), width = 0.25) +
+  theme_minimal() + 
+  coord_cartesian (ylim =c(0,0.0875)) +
+  ylab ("Proportion of trials") +
+  xlab ("Condition")+
+  theme (axis.title.y = element_text(size=16, margin=margin(0,20,0,0)),
+         axis.title.x = element_text(size=16, margin=margin(20,0,0,0)),
+         axis.text.y = element_text(size = 12),
+         axis.text.x = element_text(size = 12), legend.position = "top",
+         legend.title = element_text(size = 12))+
+    guides(fill = guide_legend(title.position="top"))
+
+```

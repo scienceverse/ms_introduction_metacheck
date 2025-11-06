@@ -1,0 +1,288 @@
+---
+title: "Prejudice and Narcissism"
+author: "Matthias Ziegler"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    code_folding: hide
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+
+# Preps
+
+Here I am reading the data and looking at the structure.
+
+```{r}
+
+library(lavaan)
+source(paste0(getwd(), "/CFA_functions_Matthias.R"))
+
+
+dat <- rio::import(paste0(getwd(),"/MainData.sav"))
+dat$group <- as.numeric(unlist(dat$group))
+
+
+psych::describe(dat)
+psych::describeBy(dat, group = "group")
+psych::corr.test(dat)
+```
+
+# Model building
+
+Now I am building model for T0 and T1.
+
+```{r}
+prejudicest0 <- grep("t0", names(dat), value=TRUE)[c(1:4)]
+pre.t0 <- paste("pre.t0=~", paste(prejudicest0, collapse = "+"), sep="")
+cat(pre.t0)
+
+prejudicest1 <- grep("t1", names(dat), value=TRUE)[c(1:4)]
+pre.t1 <- paste("pre.t1=~", paste(prejudicest1, collapse = "+"), sep="")
+cat(pre.t1)
+
+```
+
+
+# Longitudinal model
+## Models
+
+```{r}
+long.conf <- "
+pre.t0=~ant_t0+sexT_t0+homo_t0+PreUK_t0
+pre.t1=~ant_t1+sexT_t1+homo_t1+PreUK_t1
+
+pre.t1~~pre.t0
+
+ant_t0~~ant_t1
+sexT_t0~~sexT_t1
+homo_t0~~homo_t1
+PreUK_t0~~PreUK_t1
+"
+
+long.wf <- "
+pre.t0=~a*ant_t0+b*sexT_t0+c*homo_t0+d*PreUK_t0
+pre.t1=~a*ant_t1+b*sexT_t1+c*homo_t1+d*PreUK_t1
+
+pre.t1~~pre.t0
+
+ant_t0~~ant_t1
+sexT_t0~~sexT_t1
+homo_t0~~homo_t1
+PreUK_t0~~PreUK_t1
+"
+
+long.sf <- "
+pre.t0=~a*ant_t0+b*sexT_t0+c*homo_t0+d*PreUK_t0
+pre.t1=~a*ant_t1+b*sexT_t1+c*homo_t1+d*PreUK_t1
+
+pre.t1~~pre.t0
+
+ant_t0~~ant_t1
+sexT_t0~~sexT_t1
+homo_t0~~homo_t1
+PreUK_t0~~PreUK_t1
+
+ant_t0 ~ ai*1
+sexT_t0 ~ bi*1
+homo_t0 ~ ci*1
+PreUK_t0 ~ di*1
+
+ant_t1 ~ ai*1
+sexT_t1 ~ bi*1
+homo_t1 ~ ci*1
+PreUK_t1 ~ di*1
+
+pre.t1~NA*1
+
+"
+```
+
+## Model test
+```{r}
+fit.conf.long <- cfa(long.conf,data=dat, estimator="mlr")
+getFit(fit.conf.long)
+summary(fit.conf.long, standardized =TRUE, fit.measures=TRUE)
+omega2(fit.conf.long)
+
+fit.wf.long <- cfa(long.wf,data=dat, estimator="mlr")
+getFit(fit.wf.long)
+summary(fit.wf.long, standardized =TRUE, fit.measures=TRUE)
+omega2(fit.wf.long)
+
+fit.sf.long <- cfa(long.sf,data=dat, estimator="mlr")
+getFit(fit.sf.long)
+summary(fit.sf.long, standardized =TRUE, fit.measures=TRUE)
+omega2(fit.sf.long)
+```
+
+So, the longitudinal model is invariant on the scalar level. Now I will specify and test a latent change score model.
+
+## Latent change score model
+```{r}
+lcsm <- "
+#Building parts
+pre.t0=~a*ant_t0+b*sexT_t0+c*homo_t0+d*PreUK_t0
+pre.t1=~a*ant_t1+b*sexT_t1+c*homo_t1+d*PreUK_t1
+
+ant_t0~~ant_t1
+sexT_t0~~sexT_t1
+homo_t0~~homo_t1
+PreUK_t0~~PreUK_t1
+
+ant_t0 ~ ai*1
+sexT_t0 ~ bi*1
+homo_t0 ~ ci*1
+PreUK_t0 ~ di*1
+
+ant_t1 ~ ai*1
+sexT_t1 ~ bi*1
+homo_t1 ~ ci*1
+PreUK_t1 ~ di*1
+
+#Actual model
+
+pre.t1~1*pre.t0
+pre.t1~~0*pre.t1
+
+delta=~1*pre.t1
+
+delta~pre.t0
+
+delta~NA*1
+"
+
+
+```
+
+## LCSM test
+```{r}
+fit.lcsm <- cfa(lcsm,data=dat, estimator="mlr")
+getFit(fit.lcsm)
+summary(fit.lcsm, standardized =TRUE, fit.measures=TRUE, rsquare=TRUE)
+
+```
+
+So, that model works nicely. Now, I will not split into a multiple group model (too few cases). Instead, I will regress the change score (delta) on the group variable (like a t test).
+
+## Group differences
+### Model
+```{r}
+lcsm.group <- paste(lcsm, "delta~group", sep="\n")
+cat(lcsm.group)
+```
+
+### Model test
+```{r}
+fit.lcsm.group <- cfa(lcsm.group,data=dat, estimator="mlr")
+getFit(fit.lcsm.group)
+summary(fit.lcsm.group, standardized =TRUE, fit.measures=TRUE, rsquare=TRUE)
+```
+
+The regression weight is significant and negative. This would mean that group 1 has a significantly lower score than group 0. 
+
+Now, I will also include narcissism.
+
+## Role of narcissism
+First I will define a moderator term.
+
+```{r}
+dat$CNbyGroup <- scale(dat$CN_t0, center=TRUE, scale = FALSE)*scale(dat$group, center=TRUE, scale = FALSE)
+```
+
+
+### Model
+```{r}
+lcsm.group.n <- paste(lcsm.group, "delta~CN_t0", "delta~CNbyGroup", "CN_t0~~pre.t0", sep="\n")
+cat(lcsm.group.n)
+```
+
+### Model test
+```{r}
+fit.lcsm.group.n <- cfa(lcsm.group.n,data=dat, estimator="mlr")
+getFit(fit.lcsm.group.n)
+summary(fit.lcsm.group.n, standardized =TRUE, fit.measures=TRUE, rsquare=TRUE)
+
+```
+
+# Moderation figure
+```{r}
+
+fs <- lavPredict(fit.lcsm.group.n)
+
+datfs <- cbind(dat, fs)
+
+hist(datfs$delta)
+
+means <- psych::describeBy(datfs$CN_t0, group=datfs$group)
+lo0 <- means$`0`$mean-means$`0`$sd
+up0 <- means$`0`$mean+means$`0`$sd
+
+
+lo1 <- means$`1`$mean-means$`1`$sd
+up1 <- means$`1`$mean+means$`1`$sd
+
+group0 <- subset(datfs, datfs$group==0)
+group1 <- subset(datfs, datfs$group==01)
+
+group0$CN_level <- cut(group0$CN_t0, breaks=c(-Inf, lo0, up0, Inf))
+table(group0$CN_level)
+levels(group0$CN_level) <- c("bav", "av", "aav")
+group1$CN_level <- cut(group1$CN_t0, breaks=c(-Inf, lo1, up1, Inf))
+table(group1$CN_level)
+levels(group1$CN_level) <- c("bav", "av", "aav")
+
+g0t0bav <- mean(subset(group0, group0$CN_level=="bav")$"pre.t0")
+g0t0av <- mean(subset(group0, group0$CN_level=="av")$"pre.t0")
+g0t0aav <- mean(subset(group0, group0$CN_level=="aav")$"pre.t0")
+
+g1t0bav <- mean(subset(group1, group1$CN_level=="bav")$"pre.t0")
+g1t0av <- mean(subset(group1, group1$CN_level=="av")$"pre.t0")
+g1t0aav <- mean(subset(group1, group1$CN_level=="aav")$"pre.t0")
+
+g0t1bav <- mean(subset(group0, group0$CN_level=="bav")$"pre.t0")+mean(subset(group0, group0$CN_level=="bav")$"delta")
+g0t1av <- mean(subset(group0, group0$CN_level=="av")$"pre.t0")+mean(subset(group0, group0$CN_level=="av")$"delta")
+g0t1aav <- mean(subset(group0, group0$CN_level=="aav")$"pre.t0")+mean(subset(group0, group0$CN_level=="aav")$"delta")
+
+g1t1bav <- mean(subset(group1, group1$CN_level=="bav")$"pre.t0")+mean(subset(group1, group1$CN_level=="bav")$"delta")
+g1t1av <- mean(subset(group1, group1$CN_level=="av")$"pre.t0")+mean(subset(group1, group1$CN_level=="av")$"delta")
+g1t1aav <- mean(subset(group1, group1$CN_level=="aav")$"pre.t0")+mean(subset(group1, group1$CN_level=="aav")$"delta")
+
+all <- matrix(data=c(g0t0bav, g0t1bav, g0t0av, g0t1av, g0t0aav, g0t1aav,
+       g1t0bav, g1t1bav, g1t0av, g1t1av, g1t0aav, g1t1aav), nrow = 2, ncol=6, byrow = TRUE)
+
+barplot(all, beside=TRUE)
+barplot(all[2,], beside=TRUE)
+#Graphs
+x1 <- rep(1, 6)
+x2 <- rep(2,6)
+y <- c(g0t0bav, g0t1bav, g0t0av, g0t1av, g0t0aav, g0t1aav,
+       g1t0bav, g1t1bav, g1t0av, g1t1av, g1t0aav, g1t1aav)
+
+plot(c(x1,x2), y, ylab="Model implied prejudice", xlab="Time points", xaxt="n", pch=19, col= c("blue", "blue", "blue", "red", "red", "red"))
+axis(1, at=c(1,2), labels = c(1,2))
+segments(x1, y[1:6], x2, y[7:12], col= c("blue", "blue", "blue", "red", "red", "red"), lty=c(2,1,3,2,1,3))
+legend(x=1.2, y=.65, legend=c("CG below average CN", "CG average CN","CG above average CN", 
+                       "EG below average CN", "EG average CN","EG above average CN"), 
+       col=c("blue", "blue", "blue", "red", "red", "red"), lty=c(2,1,3,2,1,3), ncol=2, bty="n")
+
+
+```
+
+So, there is a significant main effect of CN (the higher CN, the more change). 
+
+# Change in correlation
+```{r}
+
+r00 <- cor(group0$CN_t0, group0$pre.t0)
+r01 <- cor(group0$CN_t1, group0$pre.t1)
+
+r10 <- cor(group1$CN_t0, group1$pre.t0)
+r11 <- cor(group1$CN_t1, group1$pre.t1)
+
+```
+

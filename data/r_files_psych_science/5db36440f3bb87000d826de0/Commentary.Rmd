@@ -1,0 +1,345 @@
+---
+title             : "Apparent evidence for unconscious sound symbolism is probably artifactual: Commentary on Heyman, Maerten, Vankrunkelsven, Voorspoels and Moors (in press)"
+shorttitle        : "No unconscious sound symbolism"
+
+author: 
+  - name          : "Hugh Rabagliati"
+    affiliation   : "1"
+    corresponding : yes    # Define only one corresponding author
+    address       : "7 George Square, Edinburgh, EH8 9JZ"
+    email         : "hugh.rabagliati@ed.ac.uk"
+
+affiliation:
+  - id            : "1"
+    institution   : "School of Philosophy, Psychology & Language Sciences, University of Edinburgh"
+    
+    
+date: "23/10/2019"
+
+
+bibliography      : ["HeymanMoors.bib"]
+
+floatsintext      : yes
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+linenumbers       : yes
+mask              : no
+draft             : no
+
+documentclass     : "apa6"
+classoption       : "man"
+output            : papaja::apa6_pdf 
+---
+<!--apa6_pdf-->
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(cowplot)
+library(papaja)
+library(lme4)
+library(ggthemes)
+library(lmerTest)
+library(knitr)
+
+## for bootstrapping 95% confidence intervals -- from Mike Frank https://github.com/langcog/KTE/blob/master/mcf.useful.R
+library(bootstrap)
+theta <- function(x,xdata,na.rm=T) {mean(xdata[x],na.rm=na.rm)}
+ci.low <- function(x,na.rm=T) {
+  quantile(bootstrap(1:length(x),1000,theta,x,na.rm=na.rm)$thetastar,.025,na.rm=na.rm)} #  mean(x,na.rm=na.rm) -
+ci.high <- function(x,na.rm=T) {
+  quantile(bootstrap(1:length(x),1000,theta,x,na.rm=na.rm)$thetastar,.975,na.rm=na.rm) } #- mean(x,na.rm=na.rm)}
+```
+
+```{r code_from_Heyman_et_al, include = FALSE}
+
+pilot=FALSE #set to FALSE for the actual experiment
+
+temp=list.files(path="./data",pattern="*main.csv",full.names=TRUE) #all filenames with data from the main experiment
+dataMain=lapply(temp, read.csv, sep=";")
+dataMain=do.call(rbind, dataMain) #creates dataframe
+ppInfo=read.csv("./data/InfoParticipants.csv",sep=";") #reads in participant info file
+dataMain=left_join(dataMain,ppInfo,by=c("pp"="ppNumber")) #combines participant info with the rest of the data
+tempControl=list.files(path="./data",pattern="*control.csv",full.names=TRUE) #all filenames with data from the control experiment
+dataControl=lapply(tempControl, read.csv, sep=";")
+dataControl=do.call(rbind, dataControl) #creates dataframe
+
+t=c(2.12, 2.29, 2.16) #respective t-values (in the original these were all negative) 
+n=c(20, 20, 20) #respective sample sizes
+nIterations=10000 #number of iterations used to sample from the posterior distribution and in the sequential testing simulations (see below)
+#bfMeta=meta.ttestBF(t=t, n1=n, nullInterval=c(0,Inf)) #use a directional test, so set nullInterval to c(0,Inf)
+#samples=posterior(bfMeta[1], iterations=nIterations) #the idea is to get an estimate of the standardized effect size by sampling from the posterior distribution
+probability=0.95 #probability content of the intervals used throughout the manuscript
+percentage=paste(probability*100,"%",sep="") #convert probability to percentage to be used in the manuscript itself
+#lowerBound=HPDinterval(samples[,"delta"], prob=probability)[,"lower"] #gives the highest posterior density interval, and saves the lowerbound to be used later
+
+#second step: use Bayes Factor design analysis to determine sample size; we will follow more or less the approach outlined in Sch?nbrodt and Wagenmakers (2018, henceforth S&W)
+threshold=6 #if this Bayes factor or its reciprocal is reached, data collection will terminate, value derived from S&W
+nRepInitStart=40 #initial sample size required before optional stopping is started; we set this value to 40 as in S&W's example, though they did a Bayesian independent samples t-test with 20 participants per group, whereas we will do a paired samples t-test
+nRepInit=nRepInitStart #this variable will contain the eventual value for the experiment
+nRepMaxStart=1000 #sets maximal sample size
+nRepMax=nRepMaxStart #this variable will contain the eventual maximal sample size; note that this might not be equal to the total number of participants because some participants might not meet the inclusion criterion (described below), hence additional participants may need to be tested
+nIncrement=10 #number of participants that will be added each time until the Bayes factor threshold or nRepMax is reached; this value is set based on practical considerations (scheduling participants)
+probBoundary=0.80 #probability that a boundary will be reached (see below)
+percBoundary=paste(probBoundary*100,"%",sep="") #convert probability to percentage to be used in the manuscript itself
+maxFalseNegative=.05 #maximum rate of false negative evidence we are willing to accept 
+maxFalsePositive=.05 #maximum rate of false positive evidence we are willing to accept
+#maxRate=f_num(maxFalseNegative,2) #removing leading zero following APA rules to be used in the manuscript (this assumes both rates are equal) 
+
+pp=sort(unique(dataMain$pp)) #all participant numbers
+totalPp=length(pp) #total number of participants
+nWomen=totalPp*sum(dataMain$gender=="Female")/nrow(dataMain) #number of female participants
+nMen=totalPp-nWomen #number of male participants
+nWomen=ifelse(nWomen<10,as.character(english(nWomen)),nWomen) #converts nWomen to a word if number of participants is less than 10 to follow APA rules
+nMen=ifelse(nMen<10,as.character(english(nMen)),nMen) #converts nMen to a word if number of participants is less than 10 to follow APA rules
+meanAge=mean(dataMain$age)
+nIncrementAPA=ifelse(nIncrement<10, as.character(english(nIncrement)),nIncrement) #converts nIncrement to a word if number of participants is less than 10 to follow APA rules; note that we do know this figure in advance at the time of pre-registration, so this is technically not necessary here
+#couple of lines to show "XX" in the participant information section when only pilot data are gathered in order to avoid confusion at the registration stadium (i.e., before the actual data are gathered) 
+totalPp=ifelse(pilot,"XX",totalPp)
+nWomen=ifelse(pilot,"XX",nWomen)
+nMen=ifelse(pilot,"XX",nMen)
+meanAge=ifelse(pilot,"XX",meanAge)
+dataMainKnow=dataMain[dataMain$knowledge=="yes",] #only include participants with prior knowledge of the bouba-kiki effect
+nKnow=length(unique(dataMainKnow$pp)) #number of participants who reported having knowledge about the effect or the research hypothesis
+#the variable sentenceKnow will be printed in the output document, and describes the analysis carried out on the data of participants who reported having knowledge about the effect or the research hypothesis (if any)
+if (nrow(dataMainKnow)==0){
+  sentenceKnow="" #if no participant indicated having knowledge about the effect or the hyopthesis, then no additional analysis can be carried out
+} else if (nKnow==1){
+  sentenceKnow="Finally, we also computed the conditional mean from the participant-specific average suppression times of those participants who reported having knowledge about the *bouba*-*kiki* effect or the research hypothesis." #if one participant indicated having knowledge about the effect or the hyopthesis, we will calculate conditional means (but no standard deviations)
+} else {
+  sentenceKnow="Finally, we also computed the conditional mean and standard deviation from the participant-specific average suppression times of those participants who reported having knowledge about the *bouba*-*kiki* effect or the research hypothesis." #if more than one participant indicated having knowledge about the effect or the hyopthesis, we will calculate conditional means and standard deviations
+}
+
+nPpRequired=seq(nRepInit,nRepMax,nIncrement) #potential number of required participants
+#terminate=0 #variable that indicates whether the for loop below needs to be terminated
+
+#the following code first initializes a number of variables
+meanCong=NULL #intialize variable that will contain the average RT in the congruent condition (i.e., averaging across by-participant means)
+meanIncong=NULL #intialize variable that will contain the average RT in the incongruent condition (i.e., averaging across by-participant means)
+sdCong=NULL #intialize variable that will contain the sd of RT in the congruent condition
+sdIncong=NULL #intialize variable that will contain the sd of RT in the incongruent condition
+tTests=list() #initialize list that will contain the outcome of one sample t-test(s) (see main text for details)
+JZSBF=NULL #initialize variable that will contain the Bayes factor(s), which will determine whether there is sufficient evidence for one hypothesis over the other 
+REPBF=NULL #initialize variable that will contain the replication Bayes factor(s)
+#similar variables containing information about the control experiment:
+meanUpr=NULL #intialize variable that will contain the average RT in the upright condition of the control experiment (i.e., averaging across by-participant means)
+meanInv=NULL #intialize variable that will contain the average RT in the inverted condition of the control experiment (i.e., averaging across by-participant means)
+sdUpr=NULL #intialize variable that will contain the sd of RT in the upright condition
+sdInv=NULL #intialize variable that will contain the sd of RT in the inverted condition
+tTestsControl=list() #initialize list that will contain the outcome of one sample t-test(s) for the control experiment (see main text for details)
+JZSBFControl=NULL #initialize variable that will contain the Bayes factor(s), which will determine whether there is sufficient evidence for one hypothesis over the other for the control experiment 
+REPBFControl=NULL #initialize variable that will contain the replication Bayes factor(s) for the control experiment
+
+dataMain=dataMain[dataMain$knowledge=="no",] #only include participants who had no prior knowledge of the bouba-kiki effect
+pp=sort(unique(dataMain$pp)) #participant numbers of those who had no prior knowledge of the bouba-kiki effect
+message="No termination." #message to be displayed in a footnote at the beginning of the results section, but not in the final report
+
+acc=aggregate(Accuracy~pp, data=dataMain, FUN=mean) #calculates proportion correct per participant
+cutoffAcc=mean(acc$Accuracy[1:nRepInit])-3*sd(acc$Accuracy[1:nRepInit]) #cutoff calculated after initial batch of participants who had no prior knowledge
+ppExclude=acc$pp[acc$Accuracy<=cutoffAcc] #participants who will be excluded from the analyses because they don't meet the accuracy criterion
+pp=pp[!pp %in% ppExclude] #remove participant numbers of those that do not meet the inclusion criterion from the variable pp
+
+
+ppInclude=pp[1:200]
+
+correctData=dataMain[dataMain$pp %in% ppInclude & dataMain$Accuracy==1 & dataMain$rt>=0.5 & dataMain$rt<=9.5,] #removing trials in which participants responded incorrectly, prematurely (defined as rt<0.5s), towards the end of the trial, or not before the 10s deadline (both defined as rt>9.5s as the latter are coded as 999) 
+  
+  correctData$zrt=ave(correctData$rt,correctData$pp,correctData$Congruent,FUN=scale) #calculating z-RTs per participant and condition, the latter indicated by the variable Congruent with values 0 (=incongruent) and 1 (=congruent)
+  
+  analysedData=correctData[abs(correctData$zrt)<=3,] #removing trials for which suppression time was more than 3 SDs above or below participants' conditional mean (=z-scores larger than 3 or smaller than -3)
+  
+  congruent=aggregate(rt~pp,data=analysedData[analysedData$Congruent==1,],FUN=mean)$rt #calculate mean for each participant in the congruent condition
+  incongruent=aggregate(rt~pp,data=analysedData[analysedData$Congruent==0,],FUN=mean)$rt #calculate mean for each participant in the incongruent condition
+  
+  difScores=incongruent-congruent #calculate the difference between average rt in the incongruent condition and average rt in the congruent condition for each participant
+  
+ omnibus_t = t.test(difScores,alternative="greater", conf.level=probability) #one sample t-test on the difference scores
+ 
+ cohen_d = mean(difScores)/((sd(congruent) + sd(incongruent))/2)
+  
+```
+
+```{r hugh_analyses, include = FALSE}
+
+
+column_names = c("B","SE","df","t","p")
+mixed_model_full = lmer(rt ~Congruent + (1+Congruent||pp) + (1+Congruent||Kiki),
+                        data = analysedData) # Strangely, the model fails to converge if 
+# shape rather than word is used as the Ran EF grouper, but the results are the same
+
+mixed_model_no_item = lmer(rt ~Congruent + (1+Congruent||pp) ,
+                        data = analysedData)
+
+
+mixed_model_puffy = lmer(rt ~ Kiki+ (1+Kiki||pp) ,
+                        data = subset(analysedData, Spikes ==0))
+
+mixed_model_spiky = lmer(rt ~ Kiki+ (1+Kiki||pp) ,
+                        data = subset(analysedData, Spikes ==1))
+
+
+
+dodge <- position_dodge(width=0.9)
+
+heyman_graph_means = analysedData %>%
+  mutate(Condition = ifelse(Congruent == 1, "Congruent\nCondition","Incongruent\nCondition")) %>%
+  group_by(Condition,pp) %>%
+  summarise(rt = mean(rt)) %>%
+  group_by(Condition) %>%
+  summarise(rt.m = mean(rt),
+            rt.high = ci.high(rt),
+            rt.low = ci.low(rt)) %>%
+  ggplot(aes(x = Condition, y = rt.m, color= Condition))+
+  geom_errorbar(aes(ymax = rt.high, ymin = rt.low),width=0, 
+                position = dodge, color = "darkgrey")+
+  geom_point(stat = "identity",  position = dodge, size = 4) + 
+  ylab("Breakthrough\ntime (s)") +
+  xlab("")+
+  ylim(c(3,4))+
+  guides(fill=FALSE,color=FALSE) +
+  scale_colour_brewer(palette = "Set1")+
+  theme_cowplot()
+
+
+heyman_graph_diffs = analysedData %>%
+  mutate(Condition = ifelse(Congruent == 1, "Congruent","Incongruent")) %>%
+  group_by(Condition,pp) %>%
+  summarise(rt = mean(rt)) %>%
+  pivot_wider(names_from = Condition,values_from = rt) %>%
+  mutate(rt = Congruent - Incongruent,
+         DifferenceScore = "Congruency Effect") %>%
+  group_by(DifferenceScore) %>%
+  summarise(rt.m = mean(rt),
+            rt.high = ci.high(rt),
+            rt.low = ci.low(rt)) %>%
+  ggplot(aes(y = rt.m, x = DifferenceScore))+
+  geom_errorbar(aes(ymax = rt.high, ymin = rt.low),width=0, 
+                position = dodge, color = "darkgrey")+
+  geom_point(stat = "identity",  position = dodge, size = 4)+
+  xlab("")+
+  ylab("Difference\nScore (s)") +
+  ylim(c(-0.10,0.05)) +
+  geom_hline(yintercept = 0, lty = 2)+
+  theme_cowplot()
+
+
+hugh_graph_data = analysedData %>%
+  mutate(Word = case_when(Kiki == 1 & Spikes == 1 ~ "Kiki",
+                          Kiki == 1 & Spikes == 0 ~ "Kiki",
+                          Kiki == 0 & Spikes == 1 ~ "Bubu",
+                          Kiki == 0 & Spikes == 0 ~ "Bubu",
+                          TRUE ~ NA_character_),
+         Shape = ifelse(Spikes == 1, "Spiky Shape","Puffy Shape")) %>%
+  group_by(Word,Shape,pp) %>%
+  summarise(rt = mean(rt)) %>%
+  group_by(Word,Shape) %>%
+  summarise(rt.m = mean(rt),
+            rt.sd = sd(rt),
+            rt.high = ci.high(rt),
+            rt.low = ci.low(rt))
+
+hugh_graph_data_congruent = analysedData %>%
+  mutate(Shape = case_when(Spikes == 1  ~ "Spiky Shape",
+                          Spikes == 0 ~ "Puffy Shape",
+                          TRUE ~ NA_character_),
+         Congruent = ifelse(Congruent == 1, "Congruent\nWord",
+                        "Incongruent\nWord")) %>%
+  group_by(Shape,Congruent,pp) %>%
+  summarise(rt = mean(rt)) %>%
+  group_by(Shape,Congruent) %>%
+  summarise(rt.m = mean(rt),
+            rt.sd = sd(rt),
+            rt.high = ci.high(rt),
+            rt.low = ci.low(rt)) 
+
+cohens_puffy  = (subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Kiki")$rt.m - 
+                  subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Bubu")$rt.m )/((
+                    (subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Kiki")$rt.sd + 
+                  subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Bubu")$rt.sd )
+                  )/2)
+
+cohens_spiky  = (subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Kiki")$rt.m - 
+                  subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Bubu")$rt.m )/((
+                    (subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Kiki")$rt.sd + 
+                  subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Bubu")$rt.sd )
+                  )/2)
+
+
+hugh_graph =  ggplot(hugh_graph_data,aes(x = Word, y = rt.m, fill = Word, color= Word))+
+  geom_errorbar(aes(ymax = rt.high, ymin = rt.low),width=0, 
+                position = dodge, color = "darkgrey")+
+  geom_point(stat = "identity",  position = dodge, size = 4) + 
+  facet_wrap(~Shape)+
+  ylab("Breakthrough\ntime (s)") +
+  xlab("")+
+  ylim(c(3,4))+
+  guides(fill=FALSE,color=FALSE) +
+  scale_colour_brewer(palette = "Set1")+
+  theme_cowplot()
+
+
+hugh_graph_congruent =  ggplot(hugh_graph_data_congruent,
+                               aes(x = Congruent, y = rt.m, 
+                                   fill = Shape, 
+                                   color= Shape,
+                                   pch = Shape,
+                                   group = Shape))+
+  geom_errorbar(aes(ymax = rt.high, ymin = rt.low),width=0, 
+                 color = "darkgrey")+
+  geom_path(lty = 2, color = "black")+
+  #facet_wrap(~Shape)+
+  geom_point(stat = "identity", size = 4) + 
+  ylab("Breakthrough\ntime (s)") +
+  xlab("")+
+  ylim(c(3,4))+
+  guides() +
+  scale_colour_brewer(palette = "Set1") +
+  theme_cowplot()+
+  theme(legend.position = c(0.25, 0.18), legend.title = element_blank())
+
+
+
+#hugh_graph = ggdraw(hugh_graph)+
+#  draw_text( c("[Congruent]"), y = 0.06, x = 0.23, size = 12) + 
+#  draw_text( c("[Incongruent]"), y = 0.06, x = 0.425, size = 12) +
+#  draw_text( c("[Incongruent]"), y = 0.06, x = 0.67, size = 12) + 
+#  draw_text( c("[Congruent]"), y = 0.06, x = 0.87, size = 12)
+
+
+
+heyman = plot_grid(heyman_graph_means,heyman_graph_diffs,nrow = 1,labels = c('A','B'))
+item_graphs = plot_grid(hugh_graph_congruent,hugh_graph,nrow =1,rel_widths = c(1,1.1),labels = c('C','D'))
+overall = plot_grid(heyman, item_graphs, nrow = 2,rel_heights = c(1,1.35))
+```
+
+
+Sound symbolism refers to the intuition that a word's sound should match the characteristics of its referents -- e.g., *kiki* should label something spiky -- and its prevalence and systematicity provide compelling evidence for an intuitive mapping between linguistic form and meaning. Striking recent work [@Hung_2017aa] suggests that these mappings may have an unconscious basis, such that participants can compute the fit between a word's sound and an object's shape when both are masked from awareness. This surprising finding replicated in the pre-registered report by Heyman, Maerten, Vankrunkelsven, Voorspoels and Moors [-@Heyman_2019aa], with potentially far-reaching implications for the role of awareness in language processing [@Hassin_2013aa; @Rabagliati_2018aa]. However, as I demonstrate, it is an artifact of the stimuli used. Once item effects are accounted for, these data provide no evidence that sound symbolism, and language more generally, can be processed without awareness.
+
+The papers by Hung, Heyman, and their colleagues used a technique called breaking Continuous Flash Suppression (CFS), which builds on binocular rivalry. One eye is shown a rapidly changing pattern which dominates awaresss, and can mask the stimulus that is shown to the other eye, which in this case was either a puffy or a spiky shape with either the words *kiki* or *bubu* printed inside. When the pronunciation of the word mismatched the shape of the image, both groups found that stimuli were suppressed from awareness for longer, i.e., breakthrough times were longer for incongruent stimuli.
+
+Breakthrough from CFS has been used to make a number of strong claims about what can be processed without awareness, from facial emotions [@Yang_2007aa] to sentence meanings [@Sklar19614], but not every claim has generalized. For instance, Rabagliati et al. [-@Rabagliati_2018aa] consistently failed to replicate findings that the meanings of words and phrases affected breakthrough, but did find that breakthrough was affected by low-level visual features of the stimuli (like the length of a word, or familiarity of the orthography). They thus concluded that there was no evidence for language processing under CFS. 
+
+If sound-symbolism has a replicable effect on breakthrough times, then it presents a strong challenge to that conclusion. Figures 1A and 1B display the effect of sound symbolism reported by Heyman and colleagues, which followed the analyses in Hung, Styles and Hsieh [-@Hung_2017aa] by computing a difference score, subtracting mean incongruent breakthrough times from mean congruent breakthrough times. Congruent trials refer to a puffy shape containing the word *bubu* or a spiky shape containing the word *kiki*, while incongruent trials are a puffy shape containing *kiki* or a spiky shape containing *bubu*. Using the open data and code provided by Heyman and colleagues at [https://osf.io/kwytv/files/](https://osf.io/kwytv/files/), I confirmed their finding that there was a significant but small effect of congruency on breakthrough times (M~difference~=`r round(mean(difScores),2)`s(95% C.I.=[`r round(ci.low(difScores),2)`,`r round(ci.high(difScores),2)`]), *t*(178) =2.75 *p*=.003), with a Cohen's *d* of `r round(cohen_d,2)`.
+
+```{r, echo = FALSE,fig.height = 5.5,fig.cap="A. Omnibus breakthrough times. B. Breakthrough difference score. C. Effect of congruency on breakthrough split by shape. D. Breakthrough times by shape, with word on the abscissa. All error bars are bootstrapped 95% confidence intervals."}
+overall
+a=0
+```
+
+However, Figures 1C and 1D shows that the reported effect of congruency does not in fact provide strong evidence for sound symbolism. Participants in these studies only saw the four stimuli described above, and when the data are broken down by stimulus, a different pattern emerges. There was not a systematic congruency effect; rather, for the puffy shape, seeing the congruent word (*bubu* rather than *kiki*) caused shorter breakthrough times, while for the spiky shape it did the reverse. More specificially, no matter whether the shape was puffy or spiky, the label *bubu* always led to faster breakthrough times than the label *kiki*. Mixed effect regressions confirmed that responses to *bubu* were significantly faster than responses to *kiki* not only for the puffy shape (M~bubu~ = `r subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Bubu")$rt.m`s([`r signif(subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Bubu")$rt.low,3)`,`r signif(subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Bubu")$rt.high,3)`]), M~kiki~ = `r subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Kiki")$rt.m`s([`r signif(subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Kiki")$rt.low,3)`,`r signif(subset(hugh_graph_data, Shape == "Puffy Shape" & Word == "Kiki")$rt.high,3)`]),  $\beta$=0.34(SE=0.03), *t*(173.4)=12.6, *p*<.001, *d* = `r round(cohens_puffy,2)`) but also for the spiky shape (M~bubu~ = `r subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Bubu")$rt.m`s([`r signif(subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Bubu")$rt.low,3)`,`r signif(subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Bubu")$rt.high,3)`]), M~kiki~ = `r subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Kiki")$rt.m`s([`r signif(subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Kiki")$rt.low,3)`,`r signif(subset(hugh_graph_data, Shape == "Spiky Shape" & Word == "Kiki")$rt.high,3)`]), $\beta$=0.23(0.03), *t*(174.6)=9.1, *p*<.001, *d* = `r round(cohens_spiky,2)`, see supplement for full analyses and [https://osf.io/tva8j/](https://osf.io/tva8j/) for code). These effect sizes were 6 and 4.5 times larger than the omnibus congruence effect size (and it is the slightly larger effect for the puffy shape that caused the original omnibus result).
+
+From these re-analyses, it is hard to see any support for claims of unconscious sound symbolism. The key issue is generalization across items. If sound symbolism is processed unconsciously, then its effects should be reasonably consistent across stimuli, but in fact the opposite is true: Seeing an incongruent word increased breakthrough times for the puffy shape, and decreased them for the spiky shape. This suggests that breakthrough times are driven by idiosyncracies of the particular images used, rather than sound symbolism.
+
+Because the original omnibus analysis did not account for differences across items, it committed what Clark [-@Clark_1973aa] called "the language-as-fixed-effect fallacy". The impact of this can be appreciated by noting that the original statistical procedure would have produced the same result whether those data had been generated in response to two stimulus pairs or two hundred, but the latter design would clearly constitute stronger, more generalizable evidence for unconscious sound symbolism. A statistical solution to the fallacy is to instead model the data through a mixed-effects regression that treats items as random effects. I regressed breakthrough time against congruency, along with a random effect intercept for each participant and each item, and by-participant and by-item effects of congruency (see supplement for full details). The resulting model showed no significant fixed effect of congruency ($\beta$=-0.05(0.1), *t*(1)=0.57, *p*=.67). By contrast, without the item random effects, congruency did significantly affect breakthrough, matching the original analysis, $\beta$=-0.05(0.02), *t*(166)=3.16, *p*=.002. Thus, accounting for item variance, the statistical evidence for a generalized sound symbolism effect dissipates. Note, however, that estimates of random effects will be uncertain here, because it is hard to draw conclusions about variability from only two stimuli. An alternative is to incorporate the two items as a fixed effect. That analysis finds item to interact with congruency: Incongruent words reliably increase response times for the puffy shape, and reliably decrease them for the spiky shape (see supplement). 
+
+In summary, the congruency effect was directionally inconsistent even between the only two pairs of stimuli tested, and disappeared once item variance was accounted for. This suggests that there is no overall effect of sound symbolism, and that the originally observed omnibus difference is most likely driven by diosyncratic discrepencies between the items. These potential idiosyncracies could take many forms, from differences in pixel density to differences in familiarity (e.g., one stimulus may more closely resemble a prominent brand or logo). For future studies, the only way to correct for these important concerns is to use a larger range of items, and conduct analyses that account for that range. More broadly, the impact of idiosyncratic item differences in the present case ought to raise worries about the validity and generalizability of other studies of unconscious cognition, as these also often use only a handful of items, and rarely incorporate by-item analyses. Clarifying the impact of these concerns, whether through re-analysis or replication-with-extension, should be an important goal for the field.
+
+The methods and analyses in Heyman and colleagues' admirably conducted study made sense in the context of a registered replication report, as they closely mimicked the original procedure. However the present finding, that the apparent unconscious sound-symbolism effect is not even consistent between the two stimuli used, highlights how replications and pre-registered analyses still need careful interpretation. A finding may reliably replicate, but this does not guarantee its validity and generality. Moreover, while pre-registration is important, it needs to be complemented with analyses that assess consistency and validity. Such exploratory work can provide strong manipulation checks, and constrain theory testing and theory building. In this case, the exploratory analyses reverse the message of the pre-registered report, and critically bolster the claim that there is no sound symbolism, and no language processing, without awareness (Rabagliati et al., 2018).
+
+
+# Acknowledgements
+
+Thank you to David Carmel, Tom Heyman, Falk Huettig and Stephen Lindsay for comments. All code can be found at [https://osf.io/tva8j/](https://osf.io/tva8j/).
+
+# References
+

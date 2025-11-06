@@ -1,0 +1,559 @@
+---
+title: "main_data_processing"
+author: "Lilia Rissman"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    
+    highlight: tango
+    toc: true
+    number_sections: false
+    theme: cerulean
+    toc_float: false
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, message = F, warning = F}
+
+library(knitr)
+
+opts_chunk$set(echo = T, message = F, warning = F, 
+               error = F, cache = F, tidy = F)
+
+library(plyr)
+library(tidyverse)
+library(ggthemes)
+library(ggrepel)
+library(reshape2)
+library(randomcoloR)
+library(useful)
+library(lme4)
+library(binom)
+library(corrplot)
+library(Hmisc)
+library(qualtRics)
+library(Rmisc)
+library(scales)
+library(mgsub)
+library(psych)
+library(patchwork)
+
+theme_set(theme_bw(base_size = 14))
+
+# functions
+binomCIs<- function (x,n) {
+ binom.confint(round(x*n,0),n,methods="wilson")[5:6]
+}
+center_scale <- function(x) {
+    scale(x, scale = FALSE)
+}
+```
+
+
+```{r read-datasets}
+
+# cleaned copy of "ScarryExport10-5-16.xlsx"
+signs_all <- read.delim("data_files/scarry_homesigners_all.txt")
+
+# sign IDs that need substituting
+id_substitutions <- read.csv("data_files/id_substitutions.csv")
+
+eng_descrips_actions <- read.delim("data_files/eng_descrips_actions.txt", encoding = "UTF-8")
+eng_descrips_objects <- read.delim("data_files/eng_descrips_objects.txt", encoding = "UTF-8")
+
+# copy of "Spanish descriptions.xlsx" sheet "coding"
+span_descrips_all <- read.csv("data_files/span_descrips_all.csv", encoding = "UTF-8")
+
+# prev called "mand_coded.txt"
+mand_descrips_all <- read.csv("data_files/mand_descrips_all_edit.csv", encoding = "UTF-8")
+
+# copy of "SCAR.TF.E.01-42.xlsx" sheet "data_include" - seed fails are excluded
+eng_judgment <- read.delim("data_files/eng_judgments_include.txt")
+
+# copy of "Scarry_Span_tool_focus_seeds_March 22, 2019_04.02.xlsx" sheet "Scarry_Span_tool_focus_seeds" - no one failed
+span_judgment <- read.csv("data_files/span_tool_focus_seeds.csv", encoding = "UTF-8")
+
+# copy of "Mandarin tool focus w seeds_March 8, 2021_11.11" w no-data rows deleted
+mand_judgment <- read.csv("data_files/mand_tool_focus_seeds.csv", encoding = "UTF-8")
+
+# seed verbs
+eng_seed_verb_list <- scan("data_files/eng_seed_verbs.txt", what = "list")
+span_seed_verb_list <- scan("data_files/span_seed_verbs.txt", what = "list")
+mand_seed_verb_list <- scan("data_files/mand_seed_verbs.txt", what = "list")
+
+# area ratio & handshape ratings for each pic ID
+area_ratio <- read.delim("data_files/area_calculations.txt")
+area_ratio$ID <- as.factor(area_ratio$ID)
+
+handshape_rating <- read.delim("data_files/handshape_rating_data.txt") 
+handshape_rating$ID <- as.factor(handshape_rating$ID)
+
+# ids & colors for figures
+ids_colors <- read.delim("data_files/ids_figure_color.txt")
+ids_colors$ID <- as.factor(ids_colors$ID)
+
+object_ids <- read.delim("data_files/object_ID_glosses.txt")
+
+ids_glosses <- read.delim("data_files/ids_glosses.txt")
+ids_glosses$ID <- as.factor(ids_glosses$ID)
+ids_glosses$gloss <- as.factor(ids_glosses$gloss)
+
+```
+
+```{r clean-hs-data}
+
+# remove blank columns, trimws, and convert to factors
+
+colnames(id_substitutions)[1] <- "original"
+
+signs_all <- signs_all[,-7:-8]
+
+signs_all$handshape <- trimws(signs_all$handshape, "both")
+signs_all$scarry_id <- trimws(signs_all$scarry_id, "both")
+signs_all$referent <- trimws(signs_all$referent, "both")
+
+# clean responses
+## match entire cell
+id_substitutions$orig_regex <- paste("^",id_substitutions$original,"$", sep = "")
+## do substitution
+signs_all$ID <- mgsub(signs_all$scarry_id,id_substitutions$orig_regex,id_substitutions$substitution)
+
+signs_all <- signs_all %>% mutate_if(is.character,as.factor)
+
+# we either don't have norms for these or they are machines
+## some of these are 'non-instrumental objects' - tool use is depicted in the gesture but not in the book image 
+ids_exclude <- c("226","256","91","234","235","236","237","244","204","210","207","221","230","233","253")
+
+signs_all_main <- filter(signs_all, !(ID %in% ids_exclude))
+```
+
+
+```{r clean-spoken-data}
+
+eng_descrips_all <- rbind(eng_descrips_actions, eng_descrips_objects[-6])
+
+# trim whitespace
+eng_descrips_all$verb <- trimws(eng_descrips_all$verb, "both")
+
+## change 'verb_pinyin' to 'verb'
+colnames(mand_descrips_all)[6] <- "verb"
+
+## clean punctuation
+mand_descrips_all$verb <- gsub("-", ".", mand_descrips_all$verb)
+
+eng_descrips_all <- eng_descrips_all %>% mutate_if(is.character,as.factor)
+
+span_descrips_all <- span_descrips_all %>% mutate_if(is.character,as.factor)
+
+mand_descrips_all <- mand_descrips_all %>% mutate_if(is.character,as.factor)
+
+# assign binary value to 'instrument' column
+
+eng_descrips_all$has_instrument <- if_else(eng_descrips_all$instrument == "",0,1)
+
+span_descrips_all$has_instrument <- if_else(span_descrips_all$instrument == "",0,1)
+
+# convert qualtrics files to long format
+
+## english
+eng_judgment_long <- eng_judgment[,-2:-4] %>% pivot_longer(.,cols= !subj,names_to="verb",values_to = "response")
+
+eng_judgment_long$verb <- gsub("break.","break", eng_judgment_long$verb)
+
+eng_judgment_long <- eng_judgment_long %>% mutate_if(is.character,as.factor)
+
+eng_judgment_main <- filter(eng_judgment_long, !(verb %in% eng_seed_verb_list)) %>% droplevels()
+
+## spanish
+span_judgment_clean <- span_judgment[-1:-2,] %>% .[,-1:-17]
+span_judgment_clean_long <- span_judgment_clean[,-2:-4] %>% pivot_longer(.,cols= !subject,names_to="verb",values_to = "response")
+
+span_judgment_clean_long <- span_judgment_clean_long %>% mutate_if(is.character,as.factor)
+
+span_judgment_main <- filter(span_judgment_clean_long, !(verb %in% span_seed_verb_list)) %>% droplevels()
+
+### change response value
+span_judgment_main$score <- ifelse(span_judgment_main$response == 1,1,0)
+
+## chinese
+mand_judgment_clean <- mand_judgment[-1:-2,] %>% .[,-1:-19]
+
+## remove speakers where MAND == 'no'
+mand_judgment_clean <- filter(mand_judgment_clean, !(MAND == "否" | MAND == "No"))
+
+mand_judgment_clean_long <- mand_judgment_clean[,-2:-3] %>% select(.,-mTurkCode) %>% pivot_longer(.,cols= !ID, names_to="verb",values_to = "response")
+
+mand_judgment_clean_long$response_code <- ifelse(mand_judgment_clean_long$response == "是",1,0)
+
+```
+
+```{r mand-seed-trials}
+
+mand_seed_strong <- c("kun3","cheng1.zhong4", "chou1.da3",	"dan3", "feng2", "nian3",	"pai1.she4",	"ti4",	"zha1")
+mand_seed_weak <- c("fan1",	"sa3",	"tuo1",	"chui1",	"xian1",	"xiu1.gai3",	"zhen3.duan4",	"an4",	"pai2.lie4")
+
+mand_judgment_seeds <- filter(mand_judgment_clean_long, grepl("seed", mand_judgment_clean_long$verb) | grepl("instr_", mand_judgment_clean_long$verb))
+
+mand_judgment_seeds$score <- ifelse((grepl("kun3|cheng1.zhong4|chou1.da3|dan3|feng2|nian3|pai1.she4|ti4|zha1", mand_judgment_seeds$verb) & mand_judgment_seeds$response_code == 1) | (grepl("fan1|sa3|tuo1|chui1|xian1|xiu1.gai3|zhen3.duan4|an4|pai2.lie4", mand_judgment_seeds$verb) & mand_judgment_seeds$response_code == 0),1,0)
+
+# make wide
+mand_judgment_seeds_subj <- filter(mand_judgment_seeds, grepl("seed", mand_judgment_seeds$verb)) %>% pivot_wider(., id_cols= ID, names_from = "verb", values_from = "score")
+
+# sum seed trials by subj
+mand_judgment_seeds_subj <- mutate(mand_judgment_seeds_subj, score_mean = rowMeans(select_if(mand_judgment_seeds_subj, is.numeric)))
+
+# remove 'seed_xian1' - had 41% accuracy
+mand_judgment_seeds_subj <- select(mand_judgment_seeds_subj, !seed_xian1) %>% mutate(., score_mean = rowMeans(select_if(., is.numeric)))
+
+# ppl who passed seed trials
+mand_subj_succeed <- filter(mand_judgment_seeds_subj, score_mean > .7) %>% pull(.,ID)
+
+# filter out seed fails
+mand_judgment_main <- filter(mand_judgment_clean_long, !(verb %in% mand_seed_verb_list) & ID %in% mand_subj_succeed) %>% droplevels()
+```
+
+
+```{r spoken-data-description}
+
+# of scenes
+filter(eng_descrips_all, type == "action") %>% group_by(ID) %>% summarise(N=length(ID)) %>% nrow()
+filter(eng_descrips_all, type == "object") %>% group_by(ID) %>% summarise(N=length(ID)) %>% nrow()
+
+# frequency of verbs in descrip task
+eng_verbs_counts <- summary(eng_descrips_all$verb, maxsum = 1000) %>% as.data.frame()
+colnames(eng_verbs_counts)[1] <- "count"
+
+span_verbs_counts <- summary(span_descrips_all$verb, maxsum = 1000) %>% as.data.frame() 
+colnames(span_verbs_counts)[1] <- "count"
+
+mand_verbs_counts <- summary(mand_descrips_all$verb_character, maxsum = 1000) %>% as.data.frame()
+colnames(mand_verbs_counts)[1] <- "count"
+
+# % of total descrip tokens that were tested in judgment studies
+## 'push' wasn't tested bc we didn't have descrips for 229 yet
+filter(eng_verbs_counts, count > 3) %>% summarise(sum=sum(count))/ nrow(eng_descrips_all)
+
+filter(span_verbs_counts, count > 3) %>% summarise(sum=sum(count))/ nrow(span_descrips_all)
+
+filter(mand_verbs_counts, count > 2) %>% summarise(sum=sum(count))/ nrow(mand_descrips_all)
+
+# of verbs (includes value '0')
+summary(span_judgment_main$verb, maxsum = 150) %>% as.data.frame(.) %>% nrow(.)
+
+```
+
+```{r judgments-by-verb}
+
+## create judgment summaries by verb
+eng_judgment_by_verb <- eng_judgment_main %>% group_by(verb) %>% summarise(mean_judgment = mean(response), N_judgment = length(response))
+
+span_judgment_by_verb <- span_judgment_main %>% group_by(verb) %>% summarise(mean_judgment = mean(score), N_judgment = length(score))
+
+mand_judgment_by_verb <- mand_judgment_main %>% group_by(verb) %>% summarise(mean_judgment = mean(response_code), N_judgment = length(response_code))
+```
+
+```{r join-descrips-judgments}
+
+eng_descrips_all <- left_join(eng_descrips_all, eng_judgment_by_verb)
+
+span_descrips_all <- left_join(span_descrips_all, span_judgment_by_verb)
+
+mand_descrips_all <- left_join(mand_descrips_all, mand_judgment_by_verb)
+
+# summarise by ID
+
+images_summary <- eng_descrips_all %>% group_by(type, ID) %>% summarise(eng_judgment_mean = mean(mean_judgment, na.rm = T)) 
+
+images_summary <- span_descrips_all %>% group_by(type, ID) %>% summarise(span_judgment_mean = mean(mean_judgment, na.rm = T)) %>%  left_join(images_summary, .)
+
+images_summary <- mand_descrips_all %>% group_by(ID) %>% summarise(mand_judgment_mean = mean(mean_judgment, na.rm = T)) %>%  left_join(images_summary, .)
+
+images_summary <- images_summary %>% ungroup() %>% mutate(all_judgment_mean = rowMeans(select(.,eng_judgment_mean,span_judgment_mean, mand_judgment_mean), na.rm = T))
+
+# join area ratio & handshape ratings
+
+images_summary <- left_join(images_summary, select(area_ratio, ID, instr_agent_ratio))
+
+handshape_rating_by_id <- handshape_rating %>% group_by(ID) %>% summarise(rating_mean = mean(response), rating_sd = sd(response))
+
+images_summary <- left_join(images_summary, select(handshape_rating_by_id, ID, rating_mean))
+
+images_summary <- left_join(images_summary, ids_colors)
+
+```
+
+```{r analysis-graphs-spoken-lang}
+
+# verb strength across languages
+## English versus Spanish
+
+images_summary$figure_color <- gsub("none","",images_summary$figure_color)
+
+colors <- c("black","blue2","darkmagenta","darkorange3","deeppink2","firebrick3","forestgreen","goldenrod3","mediumpurple2", "saddlebrown")
+
+options(ggrepel.max.overlaps = Inf)
+
+p <- ggplot(filter(images_summary, type=="action"),aes(x=eng_judgment_mean, y=span_judgment_mean, color=figure_color)) + 
+  geom_point(stat = "identity", size = 1) + 
+  scale_color_manual(values = colors) + 
+  geom_text_repel(aes(label=figure_color), min.segment.length = 0, size = 2.5, box.padding = .5) +
+  theme_clean(base_size = 10) + 
+  scale_x_continuous(limits = c(0,1.15), breaks = c(0,.25,.5,.75,1)) +
+  scale_y_continuous(limits = c(0,1.15), breaks = c(0,.25,.5,.75,1)) +
+  labs(x="English tool prominence", y="Spanish tool prominence") +  
+  guides(color="none")
+
+q <- ggplot(filter(images_summary, type=="action"),aes(x=eng_judgment_mean, y=mand_judgment_mean, color=figure_color)) + 
+  geom_point(stat = "identity", size = 1) + 
+  scale_color_manual(values = colors) + 
+  geom_text_repel(aes(label=figure_color), min.segment.length = 0, size = 2.5, box.padding = .5) +
+  theme_clean(base_size = 10) + 
+ scale_x_continuous(limits = c(0,1.15), breaks = c(0,.25,.5,.75,1)) +
+  scale_y_continuous(limits = c(0,1.15), breaks = c(0,.25,.5,.75,1)) +
+  labs(x="English tool prominence", y="Chinese tool prominence") +  
+  guides(color="none")
+
+r <- ggplot(filter(images_summary, type=="action"),aes(x=span_judgment_mean, y=mand_judgment_mean, color=figure_color)) + 
+  geom_point(stat = "identity", size = 1) + 
+  scale_color_manual(values = colors) + 
+  geom_text_repel(aes(label=figure_color), min.segment.length = 0, size = 2.5, box.padding = .5) +
+  theme_clean(base_size = 10) + 
+ scale_x_continuous(limits = c(0,1.15), breaks = c(0,.25,.5,.75,1)) +
+  scale_y_continuous(limits = c(0,1.15), breaks = c(0,.25,.5,.75,1)) +
+  labs(x="Spanish tool prominence", y="Chinese tool prominence") +  
+  guides(color="none")
+
+
+p/q/ r
+
+# events
+# no homesigner data for these pictures
+ids_no_homesign <- c("37", "54_2")
+
+# judgments vs. instr-agent ratio
+filter(images_summary, type=="action" & !(ID %in% ids_no_homesign)) %>% with(cor.test(.$eng_judgment_mean, .$instr_agent_ratio))
+
+filter(images_summary, type=="action" & !(ID %in% ids_no_homesign)) %>% with(cor.test(.$span_judgment_mean, .$instr_agent_ratio))
+
+filter(images_summary, type=="action" & !(ID %in% ids_no_homesign)) %>% with(cor.test(.$mand_judgment_mean, .$instr_agent_ratio))
+
+# objects
+
+ids_obj_no_homesign <- c("123","172","176","177","195","199","206","240","241","265","282","290")
+
+filter(images_summary, type=="object" & !(ID %in% ids_obj_no_homesign)) %>% with(cor.test(.$eng_judgment_mean, .$span_judgment_mean))
+
+filter(images_summary, type=="object" & !(ID %in% ids_obj_no_homesign)) %>% with(cor.test(.$eng_judgment_mean, .$mand_judgment_mean))
+
+filter(images_summary, type=="object" & !(ID %in% ids_obj_no_homesign)) %>% with(cor.test(.$mand_judgment_mean, .$span_judgment_mean))
+```
+
+
+```{r homesign-summary-stats}
+
+signs_all_main$code <- if_else(signs_all_main$handshape == "handling", 0, if_else(signs_all_main$handshape == "object", 1, NULL))
+
+# join w images_summary (no 'type' column)
+signs_all_main <- left_join(signs_all_main, images_summary[,-1])
+
+non_homesigners <- c("NCHS022","NASL(cs)394")
+
+hs_paper <- c("GCHS01", "GCHS02","GCHS03","GCHS05","GCHS07","GCHS09","NCHS003","RCHS010","UCHS003", "TCHS109")
+
+# by ID
+hs_action_by_id <- signs_all_main %>% filter(., subject %in% hs_paper) %>% filter(., referent == "action") %>% group_by(ID) %>% summarise(mean_object_hs = mean(code,  na.rm = T), N = length(code))
+
+hs_object_by_id <- signs_all_main %>% filter(., subject %in% hs_paper) %>% filter(., referent == "object") %>% group_by(ID) %>% summarise(mean_object_hs = mean(code,  na.rm = T), N = length(code))
+
+hs_action_by_id <- left_join(hs_action_by_id, images_summary[,-1])
+hs_object_by_id <- left_join(hs_object_by_id, images_summary[,-1])
+
+# by handshape
+signs_all_main %>% filter(., subject %in% hs_paper) %>% filter(., referent == "action") %>% group_by(handshape) %>% summarise(N = length(handshape))
+
+signs_all_main %>% filter(., subject %in% hs_paper) %>% filter(., referent == "object") %>% group_by(handshape) %>% summarise(N = length(handshape))
+```
+
+```{r homesign-by-subj}
+
+hs_action_by_subj <- signs_all_main %>% filter(., subject %in% hs_paper) %>% filter(., referent == "action") %>% droplevels(.) %>% group_by(subject, cut(all_judgment_mean, breaks = 2) ,.drop = F) %>% summarise(mean_object_hs = mean(code,  na.rm = T), N = length(code))
+
+hs_action_by_subj$all_mean_bin <- "high"
+hs_action_by_subj[grepl(".0945", hs_action_by_subj$`cut(all_judgment_mean, breaks = 2)`),]$all_mean_bin <- "low"
+
+hs_object_by_subj <- signs_all_main %>% filter(., subject %in% hs_paper) %>% filter(., referent == "object") %>% group_by(subject, cut(all_judgment_mean, breaks = 2) ) %>% summarise(mean_object_hs = mean(code,  na.rm = T), N = length(code))
+
+hs_object_by_subj <- hs_object_by_subj[!is.na(hs_object_by_subj$`cut(all_judgment_mean, breaks = 2)`),] %>% droplevels()
+
+hs_object_by_subj$all_mean_bin <- "high"
+hs_object_by_subj[grepl(".187", hs_object_by_subj$`cut(all_judgment_mean, breaks = 2)`),]$all_mean_bin <- "low"
+hs_object_by_subj$all_mean_bin<- as.factor(hs_object_by_subj$all_mean_bin)
+
+
+Guat2 <- signs_all_main %>% filter(., subject == "GCHS02") %>% filter(., referent == "action") %>% droplevels(.) %>% group_by(cut(all_judgment_mean, breaks = 2) ,.drop = F) %>% summarise(mean_object_hs = mean(code,  na.rm = T), N = length(code))
+```
+
+
+```{r homesigner-clean-for-graphs}
+
+hs_action_by_subj$subject_clean <- hs_action_by_subj$subject
+hs_action_by_subj$subject_clean <- gsub("GCHS01", "Guatemala 1", hs_action_by_subj$subject_clean)
+hs_action_by_subj$subject_clean <- gsub("GCHS02", "Guatemala 2", hs_action_by_subj$subject_clean)
+hs_action_by_subj$subject_clean <- gsub("GCHS03", "Guatemala 3", hs_action_by_subj$subject_clean)
+hs_action_by_subj$subject_clean <- gsub("GCHS05", "Guatemala 4", hs_action_by_subj$subject_clean)
+hs_action_by_subj$subject_clean <- gsub("GCHS07", "Guatemala 5", hs_action_by_subj$subject_clean)
+hs_action_by_subj$subject_clean <- gsub("GCHS09", "Guatemala 6", hs_action_by_subj$subject_clean)
+hs_action_by_subj$subject_clean <- gsub("NCHS003", "Nicaragua 1", hs_action_by_subj$subject_clean)
+hs_action_by_subj$subject_clean <- gsub("RCHS010", "Taiwan 1", hs_action_by_subj$subject_clean)
+hs_action_by_subj$subject_clean <- gsub("TCHS109", "Turkey 1", hs_action_by_subj$subject_clean)
+hs_action_by_subj$subject_clean <- gsub("UCHS003", "USA 1", hs_action_by_subj$subject_clean)
+
+hs_object_by_subj$subject_clean <- hs_object_by_subj$subject
+hs_object_by_subj$subject_clean <- gsub("GCHS01", "Guatemala 1", hs_object_by_subj$subject_clean)
+hs_object_by_subj$subject_clean <- gsub("GCHS02", "Guatemala 2", hs_object_by_subj$subject_clean)
+hs_object_by_subj$subject_clean <- gsub("GCHS03", "Guatemala 3", hs_object_by_subj$subject_clean)
+hs_object_by_subj$subject_clean <- gsub("GCHS05", "Guatemala 4", hs_object_by_subj$subject_clean)
+hs_object_by_subj$subject_clean <- gsub("GCHS07", "Guatemala 5", hs_object_by_subj$subject_clean)
+hs_object_by_subj$subject_clean <- gsub("GCHS09", "Guatemala 6", hs_object_by_subj$subject_clean)
+hs_object_by_subj$subject_clean <- gsub("NCHS003", "Nicaragua 1", hs_object_by_subj$subject_clean)
+hs_object_by_subj$subject_clean <- gsub("RCHS010", "Taiwan 1", hs_object_by_subj$subject_clean)
+hs_object_by_subj$subject_clean <- gsub("TCHS109", "Turkey 1", hs_object_by_subj$subject_clean)
+hs_object_by_subj$subject_clean <- gsub("UCHS003", "USA 1", hs_object_by_subj$subject_clean)
+
+# add object glosses
+object_ids$ID <- as.factor(object_ids$ID)
+hs_object_by_id <- left_join(hs_object_by_id, object_ids)
+hs_object_by_id <- left_join(hs_object_by_id, select(images_summary, ID, all_judgment_mean))
+
+# add action glosses
+hs_action_by_id <- left_join(hs_action_by_id, ids_glosses)
+
+```
+
+```{r correlations}
+
+cor.test(hs_action_by_id$mean_object_hs, hs_action_by_id$all_judgment_mean)
+
+cor.test(hs_object_by_id$mean_object_hs, hs_object_by_id$all_judgment_mean)
+
+cor.test(hs_action_by_id$mean_object_hs, hs_action_by_id$rating_mean)
+
+cor.test(hs_action_by_id$mean_object_hs, hs_action_by_id$instr_agent_ratio)
+```
+
+
+```{r homesigner-graphs}
+
+# bargraph of hs data by vid
+ggplot(filter(hs_action_by_id, mean_object_hs >= 0), aes(x = reorder(ID, mean_object_hs), y=mean_object_hs, fill = N)) + 
+  geom_bar(stat="identity", position = "dodge", color = "black") +
+  scale_x_discrete(breaks=hs_action_by_id$ID, labels=hs_action_by_id$gloss) + 
+  scale_fill_continuous(high = "#303030", low = "#E0E0E0", guide=guide_legend(reverse = F, title.theme = element_text(size = 12)), name="number\nof tokens") + 
+  theme_clean(base_size = 14) + 
+  theme(axis.text.y = element_text(size=6)) +
+  xlab(" \n \n") + 
+  ylab("homesigner instrumental handshape rate") + 
+  coord_flip()
+
+## Instrumental handshape versus spoken language norms
+### actions
+hs_action_by_id$figure_color <- gsub("none","",hs_action_by_id$figure_color)
+
+options(ggrepel.force_pull = .1)
+
+ggplot(filter(hs_action_by_id, N > 0),aes(x=all_judgment_mean, y=mean_object_hs, color = figure_color, size=N)) + 
+  geom_point(stat = "identity") + 
+  geom_text_repel(aes(label=figure_color), min.segment.length = 0, size = 5, box.padding = .5) +
+  scale_color_manual(values = colors, guide="none") + 
+  theme_clean(base_size = 14) + 
+  xlab("spoken language tool prominence (actions)") + ylab("homesigner instrumental handshape rate") + 
+  labs(size="number\nof tokens")
+
+
+p <- ggplot(filter(hs_action_by_id, N > 0),aes(x=all_judgment_mean, y=mean_object_hs, size=N, color = instr.patient.interleave)) + geom_point(stat = "identity")
+
+
+### objects
+ggplot(filter(hs_object_by_id, N > 0),aes(x=all_judgment_mean, y=mean_object_hs, size=N)) + 
+  geom_point(stat = "identity")  + 
+  geom_text(aes(label=gloss), size = 3, vjust = 2) + 
+  theme_clean(base_size = 14) + 
+  xlab("spoken language tool prominence (objects)") + ylab("homesigner instrumental handshape rate") + 
+  xlim(0,1)
+
+
+## instrumental handshape vs. handshape rating
+ggplot(filter(hs_action_by_id, N > 0),aes(x=rating_mean, y=mean_object_hs, size=N, color=figure_color)) + 
+  geom_point(stat = "identity") + 
+  geom_text_repel(aes(label=figure_color), min.segment.length = 0, size = 5, box.padding = .5) + 
+  scale_color_manual(values = colors, guide="none") + 
+  labs(y = "homesigner instrumental handshape rate", x = "shape match rating") + 
+  theme_clean(base_size = 14) + xlim(1,5)
+
+
+## instrumental handshape vs. area ratio
+p <- ggplot(filter(hs_action_by_id, N > 0),aes(x=instr_agent_ratio, y=mean_object_hs, size=N)) + geom_point(stat = "identity")
+
+p <- p + labs(y = "proportion of signs with instrumental handshape", x = "instrument/agent ratio") + theme_bw(base_size = 14) + theme(axis.text = element_text(colour = "black"))
+
+
+## Individual subject plots
+### actions
+ggplot(hs_action_by_subj, aes(x=all_mean_bin, y = mean_object_hs, fill=all_mean_bin)) + 
+  geom_bar(aes(alpha=N), stat = "identity", colour = "black") +
+  geom_text(aes(label = N, vjust = -.3), size = 3) +
+  scale_fill_viridis_d() + scale_alpha_continuous() +
+  facet_wrap(~subject_clean, ncol=6) + theme_few() +
+  theme(legend.position = "none", axis.text = element_text(colour = "black")) + 
+  ylim(0,1) + 
+  labs(y = "proportion of signs with instrumental handshape\n", x = "\nspoken language tool prominence (events)")
+            
+### objects
+ggplot(hs_object_by_subj, aes(x=all_mean_bin, y = mean_object_hs, fill=all_mean_bin)) +
+  geom_bar(aes(alpha=N), stat = "identity", colour = "black") + 
+  geom_text(aes(label = N, vjust = -.3), size = 3) +
+  scale_fill_viridis_d(begin = .25, end=.75) +
+  scale_alpha_continuous() + 
+  facet_wrap(~subject_clean, ncol=6) + theme_few() +
+  theme(legend.position = "none", axis.text = element_text(colour = "black")) + 
+  ylim(0,1) + 
+  labs(y = "proportion of signs with instrumental handshape\n", x = "\nspoken language tool prominence (objects)")
+
+```
+
+```{r models}
+
+# actions
+## instr_agent_ratio n.s.
+glmer(code ~ (1|subject) + (1|ID) + scale(instr_agent_ratio), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "action") ) %>% summary
+
+## handshape_rating n.s.
+glmer(code ~ (rating_mean|subject) + (1|ID) + scale(rating_mean), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "action") ) %>% summary
+
+## all mean sig.
+glmer(code ~ (all_judgment_mean|subject) + (1|ID) + scale(all_judgment_mean), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "action") ) %>% summary
+
+## english sig.
+glmer(code ~ (eng_judgment_mean|subject) + (1|ID) + scale(eng_judgment_mean), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "action") ) %>% summary
+
+## spanish sig.
+glmer(code ~ (span_judgment_mean|subject) + (1|ID) + scale(span_judgment_mean), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "action") ) %>% summary
+
+## chinese sig.
+glmer(code ~ (mand_judgment_mean|subject) + (1|ID) + scale(mand_judgment_mean), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "action") ) %>% summary
+
+
+# objects
+glmer(code ~ (1|subject) + (1|ID) + scale(all_judgment_mean), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "object") ) %>% summary
+
+glmer(code ~ (1|subject) + (1|ID) + scale(eng_judgment_mean), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "object") ) %>% summary
+
+glmer(code ~ (1|subject) + (1|ID) + scale(span_judgment_mean), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "object") ) %>% summary
+
+glmer(code ~ (1|subject) + (1|ID) + scale(mand_judgment_mean), family = "binomial", data = filter(signs_all_main, subject %in% hs_paper & referent == "object") ) %>% summary
+
+
+```
+

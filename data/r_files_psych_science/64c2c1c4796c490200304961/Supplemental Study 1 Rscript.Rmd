@@ -1,0 +1,82 @@
+---
+title: "Supplemental Study 1"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#loading packages
+library('dplyr')
+library(haven)
+library(psych)
+library(ggplot2)
+library(jtools)
+library('interactions')
+library(ltm)
+library(car)
+
+#loading data
+S1 <- read.csv("~/Supplemental Study 1 Data.csv")
+```
+
+# Demographics
+```{r}
+S1$gender <- factor(S1$gender)
+levels(S1$gender) <- c('female', 'non-binary', 'male')
+S1  %>% count(gender)
+describe(S1[, c("age", "Clicks")], range=TRUE)
+```
+
+#Reliability
+```{r}
+#Incentive salience items
+RS <- as.data.frame(cbind(S1$RS1,S1$RS2, S1$RS3))
+cronbach.alpha(RS, CI=FALSE)
+#Prosocial motivation items
+Cause <- as.data.frame(cbind(S1$Cause1,S1$Cause2, S1$Cause3))
+cronbach.alpha(Cause, CI=FALSE)
+```
+
+# Preregistered regression analysis
+```{r, echo=FALSE}
+#Standardizing PM and RS
+S1$Cause <- scale(S1$Cause, scale = T)
+S1$RS <- scale(S1$RS, scale = T)
+
+##Interaction
+r1 <- glm((Clicks)~RS*Cause, data=S1)
+summ(r1, digit=3)
+
+#JN point
+sim_slopes(r1, pred=RS, modx = Cause, johnson_neyman = TRUE, jnplot = FALSE)
+
+```
+```{r}
+#loading PROCESS script
+source("C:\\Users\\yy878\\Dropbox\\Cornell PhD\\Research\\Toolbox\\process.R")
+```
+```{r}
+process(data=S1, model=1, x="RS",y="Clicks",w="Cause", boot=5000, seed=1234, jn=1)
+```
+
+#Power
+```{r}
+library('sensemakr')
+partial_f2(r1)
+library(pwr)
+pwr.f2.test(u = 3, f2 = 0.03828869 , sig.level = 0.05, power=0.8)
+```
+
+
+# Regression analysis using log-transformed click counts
+```{r, echo=FALSE}
+#Regression using log-transformed click counts as the DV
+rl <- glm(log(Clicks)~Cause*RS, data=S1)
+summ(rl, digit=3)
+#JN point
+sim_slopes(rl, pred=RS, modx = Cause, johnson_neyman = TRUE, jnplot = FALSE)
+```

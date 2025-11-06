@@ -1,0 +1,472 @@
+---
+title: "Study 3"
+author: "Anonymous"
+date: "2023-01-04"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+## Load packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+library(ggplot2)
+library(stringr)
+library(lme4)
+library(lmerTest)
+library(viridisLite)
+```
+
+
+```{r}
+
+#Create a function to set the condition based on the number in q name
+set_cond <- function(x) switch(x, 'control', 'e_9pp', 'e_7pp', 'e_5pp')
+
+create_wide_vars = function(raw_df){
+  #dummies for performance on comprehension checks
+  raw_df$pass_med_comp = ifelse(raw_df$comp_medical_pat_b == "80%", 1, 0)
+  raw_df$pass_gig_comp = ifelse(raw_df$gig_comp_goal_b == "80%", 1, 0)
+  
+  #dummy for exclusions (excluded if they fail both comprehension checks)
+  raw_df$pass_all_comps = ifelse(raw_df$pass_med_comp == 1 & raw_df$pass_gig_comp == 1, 1, 0)
+  
+  #participant id variable for later on
+  raw_df$pid = 1:nrow(raw_df)
+
+  return(raw_df)
+
+}
+
+#Create variables for the long version of the data
+create_long_vars = function(long){
+  #Create more specific labels for stuff
+  long$scenario = substr(long$q_text, 4, nchar(long$q_text) - 4)
+  #Ifscenario says this, delete it
+  #allotBoxStuf
+  #ernalRefer
+  long = long[long$scenario != "allotBoxStuf",]
+  long = long[long$scenario != "ernalRefer",]
+  
+  #fix scenario names for public health
+  long$scenario = ifelse(long$scenario == "ph_rever", "ph", long$scenario)
+  long$scenario = ifelse(long$scenario == "ph_rev", "ph", long$scenario)
+  
+  
+  long$condition_num = extract_numeric(substr(long$q_text, 1, 2))
+  
+  long$condition = sapply(long$condition_num, set_cond)
+  
+  #Add counterbalance condition, fix error in pub health naming
+  #These counterbalance conditions must be recoded
+  #rse -> alo
+  #e.1 -> ahi
+  long$counterbalance = substr(long$q_text, nchar(long$q_text) - 2, nchar(long$q_text))
+  long$counterbalance = ifelse(long$counterbalance == "rse", "alo", long$counterbalance)
+  long$counterbalance = ifelse(long$counterbalance == "e.1", "ahi", long$counterbalance)
+  
+  
+  #Get the choice that they make - field 2->3 is usually either the higher av option
+  #(in control), or else it is the higher prop decrease option (in other conditions)
+  long$choice_num = parse_number(long$q_value)
+  
+  #Make some other names for it for convenience
+  long$choice = ifelse(long$choice_num == 2, "Higher Absolute Value", NA)
+  long$choice = ifelse(long$choice_num == 4, "Lower Absolute Value", long$choice)
+  
+  long$choose_high_av = ifelse(long$choice_num == 2, 1, NA)
+  long$choose_high_av = ifelse(long$choice_num == 4, 0, long$choose_high_av)
+  
+  long$choose_low_av = ifelse(long$choose_high_av == 1, 0,1)
+  
+  long$choose_low_av_cc = ifelse(long$choose_high_av == 1, -1,1)
+    
+  #Get rid of all the empty counterbalance conditions
+  long = long[!is.na(long$choice_num),]
+  
+  #Variable for performance in control condition, to use later
+  long$pass_control = NA
+  long$pass_control = ifelse(long$condition == "control" & long$choose_high_av==1,1,long$pass_control)
+  long$pass_control = ifelse(long$condition == "control" & long$choose_high_av==0,0,long$pass_control)
+  
+  pass_by_id = long %>% group_by(long$pid) %>% summarize(m_pass_control = mean(pass_control, na.rm=T))
+  pass_by_id = data.frame(pass_by_id)
+  names(pass_by_id) = c("pid", "m_pass_control")
+  
+  long = merge(long, pass_by_id)
+  
+  long$pass_all_controls = ifelse(long$m_pass_control == 1, 1, 0)
+
+  return(long)
+}
+
+
+
+```
+
+## Load data
+
+Loading data in
+```{r}
+raw_medicine = read.csv(here('Data/Final/medicine.csv'))
+raw_lay = read.csv(here('Data/Final/lay.csv'))
+#TODO - replace with the final stuff
+raw_gig = read.csv(here('Data/Final/gig.csv'))
+
+#Cut out qualtrics scrubbed workers (gc = 1 for all good workers)
+raw_medicine = raw_medicine[raw_medicine$gc =="1",]
+raw_gig = raw_gig[raw_gig$gc =="1",]
+
+#Get rid of header rows, get types converted
+raw_medicine = raw_medicine[4:nrow(raw_medicine),]
+raw_lay = raw_lay[3:nrow(raw_lay),]
+raw_gig = raw_lay[4:nrow(raw_gig),]
+
+raw_medicine = type.convert(raw_medicine, as.is=T)
+raw_lay = type.convert(raw_lay, as.is=T)
+raw_gig = type.convert(raw_gig, as.is=T)
+
+```
+
+## Clean data
+Cleaning up the data
+```{r, results='hide'}
+#names(raw_medicine)[22:77]
+#names(raw_lay)[20:75]
+
+#22 - #77
+
+#20 - 75
+
+#condition
+#1 - control
+#2- hi pp
+#3 - mid pp
+#4 - lo pp
+
+#scemario type
+#student
+#medical
+#ph
+#law
+#biz
+#raffle
+#gig
+
+#Counterbalance condition
+#alo
+#ahi
+
+```
+
+
+Go wide to long, make variables
+```{r, results='hide'}
+#Add in some variables for exclusions
+temp_med = create_wide_vars(raw_medicine)
+temp_lay = create_wide_vars(raw_lay)
+temp_gig = create_wide_vars(raw_gig)
+
+long_med = temp_med %>% pivot_longer(cols = contains("X"), names_to = "q_text", values_to = "q_value")
+long_lay = temp_lay %>% pivot_longer(cols = contains("X"), names_to = "q_text", values_to = "q_value")
+long_gig = temp_gig %>% pivot_longer(cols = contains("X"), names_to = "q_text", values_to = "q_value")
+
+long_med = create_long_vars(long_med)
+long_lay = create_long_vars(long_lay)
+long_gig = create_long_vars(long_gig)
+
+```
+Next, we need to make a combined super long dataset, which will let us run our preregistered analysis. It should basically combine all three existing long datasets.
+```{r}
+
+#long_med
+#long_lay
+#long_gig
+
+#Create new variables recording which sample they were from
+long_med$sample = "med"
+long_lay$sample = "lay"
+long_gig$sample = "gig"
+
+#Variables to keep for combined analysis:
+keeps = c('pid','pass_med_comp','pass_gig_comp','pass_all_comps','q_text','q_value','scenario','condition_num','condition','counterbalance','choice_num','choice','choose_high_av', 'choose_low_av', 'pass_control','pass_all_controls','m_pass_control', 'sample')
+
+long_med_cut = long_med[,names(long_med) %in% keeps]
+long_lay_cut = long_lay[,names(long_lay) %in% keeps]
+long_gig_cut = long_gig[,names(long_gig) %in% keeps]
+
+
+long_merged = rbind(long_med_cut, long_lay_cut)
+long_merged = rbind(long_merged, long_gig_cut)
+
+long_merged$merge_pids = paste0(long_merged$pid, long_merged$sample)
+
+long_merged_nox = long_merged
+long_merged = long_merged[long_merged$pass_all_comps==1,]
+
+```
+
+
+#Get numbers for main findings
+
+Get the demographics, number of exclusions etc
+```{r}
+nrow(temp_med)
+nrow(temp_lay)
+nrow(temp_gig)
+
+
+mean(temp_med, na.rm=T)
+mean(temp_med, na.rm=T)
+mean(temp_med, na.rm=T)
+
+
+table(temp_med$pass_all_comps)
+table(temp_lay$pass_all_comps)
+table(temp_gig$pass_all_comps)
+
+```
+
+
+# Visualize data
+
+
+## Main Figure creation
+
+
+### Create figure showing overall pooled effect of control vs experimental conditions
+```{r}
+names(long_merged)
+
+overall_data = long_merged %>% group_by(condition) %>% summarize(m_choice = mean(choose_low_av, na.rm=TRUE))
+
+ggplot(aes(x = condition, y = m_choice, fill = condition), data = overall_data) + geom_col(position = "dodge", width = .5) + scale_y_continuous(limits = c(0,1), breaks = seq(0,1, by = .25), labels = scales::percent_format())+ scale_x_discrete(labels = c("Control", "Five p.p.", "Seven p.p.", "Nine p.p.")) +
+	ylab("% choosing smaller improvement") + xlab("Condition") + ggtitle("Pooled choice study 3") + 
+	theme(axis.line = element_line(size = 1, color = "black")) + 
+	theme(panel.background = element_rect(fill='white')) + theme(text = element_text(size = 15))
+
+```
+
+
+### Create 3 figures, showing all data for all samples and all conditions 
+```{r}
+full_data = long_merged %>% group_by(sample, scenario, condition) %>% summarize(m_choice = mean(choose_low_av, na.rm=TRUE))
+
+full_data$sample = factor(full_data$sample)
+levels(full_data$sample) = c("Gig Workers", "Laypeople", "Medical Professionals")
+
+full_data$condition = factor(full_data$condition)
+levels(full_data$condition) = c("Control", "Five p.p.", "Seven p.p.", "Nine p.p.")
+
+full_data$scenario = factor(full_data$scenario)
+levels(full_data$scenario) = c("Business", "Gig work", "Law", "Medical", "Public Health", "Financial", "Education")
+
+full_data$Condition = full_data$condition
+full_data$Sample = full_data$sample
+
+full_data$sample_cond = paste0(full_data$condition, full_data$sample)
+
+ggplot(data = full_data, aes(x = scenario, y = m_choice, fill = Condition)) + geom_col(position = "dodge") + ggtitle("") + scale_y_continuous(limits = c(0,1), breaks = seq(0,1, by = .25), labels = scales::percent_format())  +
+    ylab("% choosing smaller improvement over 10 p.p. improvement") + xlab("Condition") + theme(axis.line = element_line(size = 1, color = "black")) + theme(panel.background = element_rect(fill='white')) + theme(text = element_text(size = 15)) + facet_wrap( ~ sample, nrow = 3, scales = "free") + viridis::scale_fill_viridis(discrete=T)+  
+    theme_light() +
+    theme(axis.line = element_line(size = 1, color = "#333333")) + 
+    theme(panel.background = element_rect(fill='white')) + theme(text = element_text(size = 15))+
+    theme(
+        panel.grid.major = element_line(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(color="black", size = 20)
+    ) +
+    geom_text(aes( y= m_choice+.05, label = scales::percent(round(m_choice,2))), position = position_dodge(width = 1))
+
+```
+
+### Create 3 figures, showing all data for all samples and all conditions, with no exclusions
+```{r}
+full_data = long_merged_nox %>% group_by(sample, scenario, condition) %>% summarize(m_choice = mean(choose_low_av, na.rm=TRUE))
+
+full_data$sample = factor(full_data$sample)
+levels(full_data$sample) = c("Gig Workers", "Laypeople", "Medical Professionals")
+
+full_data$condition = factor(full_data$condition)
+levels(full_data$condition) = c("Control", "Five p.p.", "Seven p.p.", "Nine p.p.")
+
+full_data$scenario = factor(full_data$scenario)
+levels(full_data$scenario) = c("Business", "Gig work", "Law", "Medical", "Public Health", "Financial", "Education")
+
+full_data$Condition = full_data$condition
+full_data$Sample = full_data$sample
+
+full_data$sample_cond = paste0(full_data$condition, full_data$sample)
+
+ggplot(data = full_data, aes(x = scenario, y = m_choice, fill = Condition)) + geom_col(position = "dodge") + ggtitle("") + scale_y_continuous(limits = c(0,1), breaks = seq(0,1, by = .25), labels = scales::percent_format())  +
+    ylab("% choosing smaller improvement over 10 p.p. improvement") + xlab("Condition") + theme(axis.line = element_line(size = 1, color = "black")) + theme(panel.background = element_rect(fill='white')) + theme(text = element_text(size = 15)) + facet_wrap( ~ sample, nrow = 3, scales = "free") + viridis::scale_fill_viridis(discrete=T)+  
+    theme_light() +
+    theme(axis.line = element_line(size = 1, color = "#333333")) + 
+    theme(panel.background = element_rect(fill='white')) + theme(text = element_text(size = 15))+
+    theme(
+        panel.grid.major = element_line(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(color="black", size = 20)
+    ) +
+    geom_text(aes( y= m_choice+.05, label = scales::percent(round(m_choice,2))), position = position_dodge(width = 1))
+
+```
+
+### Create 2 figures, showing specifically the effect for medical and gig domains for all three samples
+
+```{r}
+ggplot(data = full_data[full_data$scenario == "Medical",], aes(x = Condition, y = m_choice, alpha=Sample, fill = Condition)) + geom_col(position = "dodge") + ggtitle("Choices in the medical scenario by sample") + scale_y_continuous(limits = c(0,1), breaks = seq(0,1, by = .25), labels = scales::percent_format())  +    ylab("% choosing smaller improvement over 10 p.p. improvement") + xlab("Condition") + theme(axis.line = element_line(size = 1, color = "black")) + theme(panel.background = element_rect(fill='white')) + theme(text = element_text(size = 25)) + scale_fill_viridis_d() + scale_alpha_discrete(range = c(.4,1)) +
+    geom_text(aes( y= m_choice+.05, label = scales::percent(round(m_choice,2))), position = position_dodge(width = 1))
+
+
+ggplot(data = full_data[full_data$scenario == "Gig work",], aes(x = Condition, y = m_choice, alpha=Sample, fill = Condition)) + geom_col(position = "dodge") + ggtitle("Choices in the gig work scenario by sample") + scale_y_continuous(limits = c(0,1), breaks = seq(0,1, by = .25), labels = scales::percent_format())  +    ylab("% choosing smaller improvement over 10 p.p. improvement") + xlab("Condition") + theme(axis.line = element_line(size = 1, color = "black")) + theme(panel.background = element_rect(fill='white')) + theme(text = element_text(size = 25)) + scale_fill_viridis_d() + scale_alpha_discrete(range = c(.4,1)) +
+    geom_text(aes( y= m_choice+.05, alpha = 1, label = scales::percent(round(m_choice,2))), position = position_dodge(width = 1))
+
+```
+
+### Create 2 figures, showing specifically the effect for medical and gig domains for all three samples, with no exclusions
+```{r}
+ggplot(data = full_data[full_data$scenario == "Medical",], aes(x = Condition, y = m_choice, alpha=Sample, fill = Condition)) + geom_col(position = "dodge") + ggtitle("Choices in the medical scenario by sample") + scale_y_continuous(limits = c(0,1), breaks = seq(0,1, by = .25), labels = scales::percent_format())  +    ylab("% choosing smaller improvement over 10 p.p. improvement") + xlab("Condition") + theme(axis.line = element_line(size = 1, color = "black")) + theme(panel.background = element_rect(fill='white')) + theme(text = element_text(size = 25)) + scale_fill_viridis_d() + scale_alpha_discrete(range = c(.4,1)) +
+    geom_text(aes( y= m_choice+.05, label = scales::percent(round(m_choice,2))), position = position_dodge(width = 1))
+
+
+ggplot(data = full_data[full_data$scenario == "Gig work",], aes(x = Condition, y = m_choice, alpha=Sample, fill = Condition)) + geom_col(position = "dodge") + ggtitle("Choices in the gig work scenario by sample") + scale_y_continuous(limits = c(0,1), breaks = seq(0,1, by = .25), labels = scales::percent_format())  +    ylab("% choosing smaller improvement over 10 p.p. improvement") + xlab("Condition") + theme(axis.line = element_line(size = 1, color = "black")) + theme(panel.background = element_rect(fill='white')) + theme(text = element_text(size = 25)) + scale_fill_viridis_d() + scale_alpha_discrete(range = c(.4,1)) +
+    geom_text(aes( y= m_choice+.05, alpha = 1, label = scales::percent(round(m_choice,2))), position = position_dodge(width = 1))
+
+```
+
+
+
+
+
+Another way to look at this is to get rid of everyone who didn't choose the right thing for the control
+
+```{r}
+
+lay_pass_c = long_lay[long_lay$pass_all_comps==1 & long_lay$pass_all_controls==1,] %>% group_by(scenario, condition) %>% summarize(per_choose_hi_av = mean(choose_high_av, na.rm=T))
+med_pass_c = long_med[long_med$pass_all_comps==1 & long_med$pass_all_controls==1,] %>% group_by(scenario, condition) %>% summarize(per_choose_hi_av = mean(choose_high_av, na.rm=T))
+
+
+
+ggplot(data = lay_pass_c, aes(x = scenario, y = (1-per_choose_hi_av), fill = condition)) + geom_col(position = "dodge") + ggtitle("Lay sample (% choosing prop decrease)") + scale_y_continuous(limits = c(0,1))
+
+ggplot(data = med_pass_c, aes(x = scenario, y = (1-per_choose_hi_av), fill = condition)) + geom_col(position = "dodge") + ggtitle("Medical sample (% choosing prop decrease)") + scale_y_continuous(limits = c(0,1))
+
+
+```
+
+
+## Main statistical test
+
+"To determine if behavior matches the predictions of our theory, our main confirmatory analysis will be a mixed effects linear regression of choice of the lower absolute value option onto a dummy variable indicating if the trial was the control (0) or 9 percentage point experimental trial (1), with a random intercept by participant, with data subset to just the control and 9 percentage point experimental trial. A significant positive coefficient on the trial variable will indicate that participant's actions are in line with our predictions, such that they are more likely to prefer a lower absolute value option if it gives a higher proportional decrease in bad outcomes."
+
+
+```{r}
+
+#with exclusions
+long_merged_c_v_9 = long_merged[long_merged$condition == "control" | long_merged$condition == "e_9pp",]
+
+long_merged_c_v_9$condition_is_9pp = ifelse(long_merged_c_v_9$condition == "e_9pp", 1, 0)
+
+long_merged_c_v_9$condition_is_9pp_cc = ifelse(long_merged_c_v_9$condition == "e_9pp", 1, -1)
+
+main_mod = lmer(choose_low_av ~ condition_is_9pp + (1 | merge_pids), data = long_merged_c_v_9)
+
+summary(main_mod)
+
+
+
+#without exclusions
+long_merged_c_v_9nx = long_merged_nox[long_merged_nox$condition == "control" | long_merged_nox$condition == "e_9pp",]
+
+long_merged_c_v_9nx$condition_is_9pp = ifelse(long_merged_c_v_9nx$condition == "e_9pp", 1, 0)
+
+long_merged_c_v_9nx$condition_is_9pp_cc = ifelse(long_merged_c_v_9nx$condition == "e_9pp", 1, -1)
+
+main_modnx = lmer(choose_low_av ~ condition_is_9pp + (1 | merge_pids), data = long_merged_c_v_9nx)
+
+summary(main_modnx)
+
+
+```
+
+
+##  Statistical Tests of Expertise
+
+Test for differences in choice likelihood between expert domain vs. not
+```{r}
+
+#with exclusions, medical
+expert_mod_med = lm(choose_low_av ~ sample=="med", data = long_merged_c_v_9[long_merged_c_v_9$condition_is_9pp==1 & long_merged_c_v_9$scenario=="medical",])
+summary(expert_mod_med)
+
+expert_mod_med_binom = glm(choose_low_av ~ sample=="med", data = long_merged_c_v_9[long_merged_c_v_9$condition_is_9pp==1 & long_merged_c_v_9$scenario=="medical",], family = "binomial")
+summary(expert_mod_med_binom)
+
+#with exclusions, gig
+expert_mod_gig = lm(choose_low_av ~ sample=="gig", data = long_merged_c_v_9[long_merged_c_v_9$condition_is_9pp==1 & long_merged_c_v_9$scenario=="gig",])
+summary(expert_mod_gig)
+
+expert_mod_gig_binom = glm(choose_low_av ~ sample=="gig", data = long_merged_c_v_9[long_merged_c_v_9$condition_is_9pp==1 & long_merged_c_v_9$scenario=="gig",], family = "binomial")
+summary(expert_mod_gig_binom)
+
+
+
+#without exclusions, medical
+expert_mod_mednx = lm(choose_low_av ~ sample=="med", data = long_merged_c_v_9nx[long_merged_c_v_9nx$condition_is_9pp==1 & long_merged_c_v_9nx$scenario=="medical",])
+summary(expert_mod_mednx)
+
+expert_mod_med_binomnx = glm(choose_low_av ~ sample=="med", data = long_merged_c_v_9nx[long_merged_c_v_9nx$condition_is_9pp==1 & long_merged_c_v_9nx$scenario=="medical",], family = "binomial")
+summary(expert_mod_med_binomnx)
+
+#without exclusions, gig
+expert_mod_gignx = lm(choose_low_av ~ sample=="gig", data = long_merged_c_v_9nx[long_merged_c_v_9nx$condition_is_9pp==1 & long_merged_c_v_9nx$scenario=="gig",])
+summary(expert_mod_gignx)
+
+expert_mod_gig_binomnx = glm(choose_low_av ~ sample=="gig", data = long_merged_c_v_9nx[long_merged_c_v_9nx$condition_is_9pp==1 & long_merged_c_v_9nx$scenario=="gig",], family = "binomial")
+summary(expert_mod_gig_binomnx)
+```
+
+
+Subset to only those who got the control correct, then redo medical test
+```{r}
+#Drop everyone who "failed" a control question
+drops = unique(long_merged_c_v_9$pid[long_merged_c_v_9$pass_control==0])
+
+cut_long_merged = long_merged_c_v_9[!(long_merged_c_v_9$pid %in% drops),]
+
+
+#Redo the main test
+main_modcc = lmer(choose_low_av ~ condition_is_9pp + (1 | merge_pids), data = cut_long_merged)
+
+summary(main_modcc)
+
+
+
+
+#Check medical results
+expert_mod_medcc = lm(choose_low_av ~ sample=="med", data = cut_long_merged[cut_long_merged$condition_is_9pp==1 & cut_long_merged$scenario=="medical",])
+summary(expert_mod_medcc)
+
+expert_mod_med_binomcc = glm(choose_low_av ~ sample=="med", data = cut_long_merged[cut_long_merged$condition_is_9pp==1 & cut_long_merged$scenario=="medical",], family = "binomial")
+summary(expert_mod_med_binomcc)
+
+
+#check gig results
+expert_mod_gigcc = lm(choose_low_av ~ sample=="gig", data = cut_long_merged[cut_long_merged$condition_is_9pp==1 & cut_long_merged$scenario=="gig",])
+summary(expert_mod_gig)
+
+expert_mod_gig_binomcc = glm(choose_low_av ~ sample=="gig", data = cut_long_merged[cut_long_merged$condition_is_9pp==1 & cut_long_merged$scenario=="gig",], family = "binomial")
+summary(expert_mod_gig_binomcc)
+
+```
+

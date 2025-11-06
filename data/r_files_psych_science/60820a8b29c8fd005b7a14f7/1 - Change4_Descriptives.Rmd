@@ -1,0 +1,547 @@
+---
+title: "Change4_Descriptives"
+output:
+  word_document: default
+  pdf_document: default
+date: "January 26th, 2022"
+---
+
+
+```{r, setup, include=FALSE}
+## Set wd to data location
+# knitr::opts_knit$set(root.dir = **)
+
+```
+
+
+```{r loading, echo = FALSE, message=FALSE}
+
+# Load data 
+load("timeseries_NEWDATA.RData")
+load("timeseries_OLDDATA.RData")
+
+# Load packages
+if (!require(car)) {install.packages("car", dependencies = TRUE); require(car)}
+if (!require(lsr)) {install.packages("lsr", dependencies = TRUE); require(lsr)}
+
+
+
+```
+
+
+
+## Table SM: Sample demographics across attitudes (2017-2020 data only)
+
+```{r codeSampledemogs_NEW, include=FALSE}
+## ALL NEW DATA ----
+## AGE ----
+age.n <- dim(timeseriesAge_NEW)[1]
+age.meanage <- mean(timeseriesAge_NEW$age.new)
+age.sdage <- sd(timeseriesAge_NEW$age.new)
+age.pfem <- as.numeric(table(timeseriesAge_NEW$genderidentity_simp)["female"]/dim(timeseriesAge_NEW)[1])
+age.pmal <- as.numeric(table(timeseriesAge_NEW$genderidentity_simp)["male"]/dim(timeseriesAge_NEW)[1])
+age.poth <- as.numeric(table(timeseriesAge_NEW$genderidentity_simp)["other"]/dim(timeseriesAge_NEW)[1])
+age.pW <- as.numeric(table(timeseriesAge_NEW$racesimple)["White"]/dim(timeseriesAge_NEW)[1])
+age.pB <- as.numeric(table(timeseriesAge_NEW$racesimple)["Black"]/dim(timeseriesAge_NEW)[1])
+age.pA <- as.numeric(table(timeseriesAge_NEW$racesimple)["Asian"]/dim(timeseriesAge_NEW)[1])
+age.pH <- as.numeric(table(timeseriesAge_NEW$ethnicity.new)["Hispanic or Latino"]/dim(timeseriesAge_NEW)[1])
+age.pnotH <- as.numeric(table(timeseriesAge_NEW$ethnicity.new)["Not Hispanic or Latino"]/dim(timeseriesAge_NEW)[1])
+age.pColl <- as.numeric(table(timeseriesAge_NEW$edu.grp)["col"]/dim(timeseriesAge_NEW)[1])
+age.pLib <- as.numeric(table(timeseriesAge_NEW$pol.grp)["lib"]/dim(timeseriesAge_NEW)[1])
+age.pNeu <- as.numeric(table(timeseriesAge_NEW$pol.grp)["neutral"]/dim(timeseriesAge_NEW)[1])
+age.pCons <- as.numeric(table(timeseriesAge_NEW$pol.grp)["cons"]/dim(timeseriesAge_NEW)[1])
+age.pChri <- as.numeric(table(timeseriesAge_NEW$rel.collapse)["christian"]/sum(table(timeseriesAge_NEW$rel.collapse)))
+age.pJew <- as.numeric(table(timeseriesAge_NEW$rel.collapse)["jewish"]/sum(table(timeseriesAge_NEW$rel.collapse)))
+age.pOth <- as.numeric(table(timeseriesAge_NEW$rel.collapse)["other"]/sum(table(timeseriesAge_NEW$rel.collapse)))
+age.pNon <- as.numeric(table(timeseriesAge_NEW$rel.collapse)["non"]/sum(table(timeseriesAge_NEW$rel.collapse)))
+
+
+## DISABILITY ----
+dis.n <- dim(timeseriesDis_NEW)[1]
+dis.meanage <- mean(timeseriesDis_NEW$age.new)
+dis.sdage <- sd(timeseriesDis_NEW$age.new)
+dis.pfem <- as.numeric(table(timeseriesDis_NEW$genderidentity_simp)["female"]/dim(timeseriesDis_NEW)[1])
+dis.pmal <- as.numeric(table(timeseriesDis_NEW$genderidentity_simp)["male"]/dim(timeseriesDis_NEW)[1])
+dis.poth <- as.numeric(table(timeseriesDis_NEW$genderidentity_simp)["other"]/dim(timeseriesDis_NEW)[1])
+dis.pW <- as.numeric(table(timeseriesDis_NEW$racesimple)["White"]/dim(timeseriesDis_NEW)[1])
+dis.pB <- as.numeric(table(timeseriesDis_NEW$racesimple)["Black"]/dim(timeseriesDis_NEW)[1])
+dis.pA <- as.numeric(table(timeseriesDis_NEW$racesimple)["Asian"]/dim(timeseriesDis_NEW)[1])
+dis.pH <- as.numeric(table(timeseriesDis_NEW$ethnicity.new)["Hispanic or Latino"]/dim(timeseriesDis_NEW)[1])
+dis.pnotH <- as.numeric(table(timeseriesDis_NEW$ethnicity.new)["Not Hispanic or Latino"]/dim(timeseriesDis_NEW)[1])
+dis.pColl <- as.numeric(table(timeseriesDis_NEW$edu.grp)["col"]/dim(timeseriesDis_NEW)[1])
+dis.pLib <- as.numeric(table(timeseriesDis_NEW$pol.grp)["lib"]/dim(timeseriesDis_NEW)[1])
+dis.pNeu <- as.numeric(table(timeseriesDis_NEW$pol.grp)["neutral"]/dim(timeseriesDis_NEW)[1])
+dis.pCons <- as.numeric(table(timeseriesDis_NEW$pol.grp)["cons"]/dim(timeseriesDis_NEW)[1])
+dis.pChri <- as.numeric(table(timeseriesDis_NEW$rel.collapse)["christian"]/sum(table(timeseriesDis_NEW$rel.collapse)))
+dis.pJew <- as.numeric(table(timeseriesDis_NEW$rel.collapse)["jewish"]/sum(table(timeseriesDis_NEW$rel.collapse)))
+dis.pOth <- as.numeric(table(timeseriesDis_NEW$rel.collapse)["other"]/sum(table(timeseriesDis_NEW$rel.collapse)))
+dis.pNon <- as.numeric(table(timeseriesDis_NEW$rel.collapse)["non"]/sum(table(timeseriesDis_NEW$rel.collapse)))
+
+## SKIN-TONE ----
+skin.n <- dim(timeseriesSkin_NEW)[1]
+skin.meanage <- mean(timeseriesSkin_NEW$age.new)
+skin.sdage <- sd(timeseriesSkin_NEW$age.new)
+skin.pfem <- as.numeric(table(timeseriesSkin_NEW$genderidentity_simp)["female"]/dim(timeseriesSkin_NEW)[1])
+skin.pmal <- as.numeric(table(timeseriesSkin_NEW$genderidentity_simp)["male"]/dim(timeseriesSkin_NEW)[1])
+skin.poth <- as.numeric(table(timeseriesSkin_NEW$genderidentity_simp)["other"]/dim(timeseriesSkin_NEW)[1])
+skin.pW <- as.numeric(table(timeseriesSkin_NEW$racesimple)["White"]/dim(timeseriesSkin_NEW)[1])
+skin.pB <- as.numeric(table(timeseriesSkin_NEW$racesimple)["Black"]/dim(timeseriesSkin_NEW)[1])
+skin.pA <- as.numeric(table(timeseriesSkin_NEW$racesimple)["Asian"]/dim(timeseriesSkin_NEW)[1])
+skin.pH <- as.numeric(table(timeseriesSkin_NEW$ethnicity.new)["Hispanic or Latino"]/dim(timeseriesSkin_NEW)[1])
+skin.pnotH <- as.numeric(table(timeseriesSkin_NEW$ethnicity.new)["Not Hispanic or Latino"]/dim(timeseriesSkin_NEW)[1])
+skin.pColl <- as.numeric(table(timeseriesSkin_NEW$edu.grp)["col"]/dim(timeseriesSkin_NEW)[1])
+skin.pLib <- as.numeric(table(timeseriesSkin_NEW$pol.grp)["lib"]/dim(timeseriesSkin_NEW)[1])
+skin.pNeu <- as.numeric(table(timeseriesSkin_NEW$pol.grp)["neutral"]/dim(timeseriesSkin_NEW)[1])
+skin.pCons <- as.numeric(table(timeseriesSkin_NEW$pol.grp)["cons"]/dim(timeseriesSkin_NEW)[1])
+skin.pChri <- as.numeric(table(timeseriesSkin_NEW$rel.collapse)["christian"]/sum(table(timeseriesSkin_NEW$rel.collapse)))
+skin.pJew <- as.numeric(table(timeseriesSkin_NEW$rel.collapse)["jewish"]/sum(table(timeseriesSkin_NEW$rel.collapse)))
+skin.pOth <- as.numeric(table(timeseriesSkin_NEW$rel.collapse)["other"]/sum(table(timeseriesSkin_NEW$rel.collapse)))
+skin.pNon <- as.numeric(table(timeseriesSkin_NEW$rel.collapse)["non"]/sum(table(timeseriesSkin_NEW$rel.collapse)))
+
+## RACE ----
+race.n <- dim(timeseriesRace_NEW)[1]
+race.meanage <- mean(timeseriesRace_NEW$age.new)
+race.sdage <- sd(timeseriesRace_NEW$age.new)
+race.pfem <- as.numeric(table(timeseriesRace_NEW$genderidentity_simp)["female"]/dim(timeseriesRace_NEW)[1])
+race.pmal <- as.numeric(table(timeseriesRace_NEW$genderidentity_simp)["male"]/dim(timeseriesRace_NEW)[1])
+race.poth <- as.numeric(table(timeseriesRace_NEW$genderidentity_simp)["other"]/dim(timeseriesRace_NEW)[1])
+race.pW <- as.numeric(table(timeseriesRace_NEW$racesimple)["White"]/dim(timeseriesRace_NEW)[1])
+race.pB <- as.numeric(table(timeseriesRace_NEW$racesimple)["Black"]/dim(timeseriesRace_NEW)[1])
+race.pA <- as.numeric(table(timeseriesRace_NEW$racesimple)["Asian"]/dim(timeseriesRace_NEW)[1])
+race.pH <- as.numeric(table(timeseriesRace_NEW$ethnicity.new)["Hispanic or Latino"]/dim(timeseriesRace_NEW)[1])
+race.pnotH <- as.numeric(table(timeseriesRace_NEW$ethnicity.new)["Not Hispanic or Latino"]/dim(timeseriesRace_NEW)[1])
+race.pColl <- as.numeric(table(timeseriesRace_NEW$edu.grp)["col"]/dim(timeseriesRace_NEW)[1])
+race.pLib <- as.numeric(table(timeseriesRace_NEW$pol.grp)["lib"]/dim(timeseriesRace_NEW)[1])
+race.pNeu <- as.numeric(table(timeseriesRace_NEW$pol.grp)["neutral"]/dim(timeseriesRace_NEW)[1])
+race.pCons <- as.numeric(table(timeseriesRace_NEW$pol.grp)["cons"]/dim(timeseriesRace_NEW)[1])
+race.pChri <- as.numeric(table(timeseriesRace_NEW$rel.collapse)["christian"]/sum(table(timeseriesRace_NEW$rel.collapse)))
+race.pJew <- as.numeric(table(timeseriesRace_NEW$rel.collapse)["jewish"]/sum(table(timeseriesRace_NEW$rel.collapse)))
+race.pOth <- as.numeric(table(timeseriesRace_NEW$rel.collapse)["other"]/sum(table(timeseriesRace_NEW$rel.collapse)))
+race.pNon <- as.numeric(table(timeseriesRace_NEW$rel.collapse)["non"]/sum(table(timeseriesRace_NEW$rel.collapse)))
+
+## SEXUALITY ----
+sex.n <- dim(timeseriesSex_NEW)[1]
+sex.meanage <- mean(timeseriesSex_NEW$age.new)
+sex.sdage <- sd(timeseriesSex_NEW$age.new)
+sex.pfem <- as.numeric(table(timeseriesSex_NEW$genderidentity_simp)["female"]/dim(timeseriesSex_NEW)[1])
+sex.pmal <- as.numeric(table(timeseriesSex_NEW$genderidentity_simp)["male"]/dim(timeseriesSex_NEW)[1])
+sex.poth <- as.numeric(table(timeseriesSex_NEW$genderidentity_simp)["other"]/dim(timeseriesSex_NEW)[1])
+sex.pW <- as.numeric(table(timeseriesSex_NEW$racesimple)["White"]/dim(timeseriesSex_NEW)[1])
+sex.pB <- as.numeric(table(timeseriesSex_NEW$racesimple)["Black"]/dim(timeseriesSex_NEW)[1])
+sex.pA <- as.numeric(table(timeseriesSex_NEW$racesimple)["Asian"]/dim(timeseriesSex_NEW)[1])
+sex.pH <- as.numeric(table(timeseriesSex_NEW$ethnicity.new)["Hispanic or Latino"]/dim(timeseriesSex_NEW)[1])
+sex.pnotH <- as.numeric(table(timeseriesSex_NEW$ethnicity.new)["Not Hispanic or Latino"]/dim(timeseriesSex_NEW)[1])
+sex.pColl <- as.numeric(table(timeseriesSex_NEW$edu.grp)["col"]/dim(timeseriesSex_NEW)[1])
+sex.pLib <- as.numeric(table(timeseriesSex_NEW$pol.grp)["lib"]/dim(timeseriesSex_NEW)[1])
+sex.pNeu <- as.numeric(table(timeseriesSex_NEW$pol.grp)["neutral"]/dim(timeseriesSex_NEW)[1])
+sex.pCons <- as.numeric(table(timeseriesSex_NEW$pol.grp)["cons"]/dim(timeseriesSex_NEW)[1])
+sex.pChri <- as.numeric(table(timeseriesSex_NEW$rel.collapse)["christian"]/sum(table(timeseriesSex_NEW$rel.collapse)))
+sex.pJew <- as.numeric(table(timeseriesSex_NEW$rel.collapse)["jewish"]/sum(table(timeseriesSex_NEW$rel.collapse)))
+sex.pOth <- as.numeric(table(timeseriesSex_NEW$rel.collapse)["other"]/sum(table(timeseriesSex_NEW$rel.collapse)))
+sex.pNon <- as.numeric(table(timeseriesSex_NEW$rel.collapse)["non"]/sum(table(timeseriesSex_NEW$rel.collapse)))
+
+## WEIGHT ----
+weight.n <- dim(timeseriesWeight_NEW)[1]
+weight.meanage <- mean(timeseriesWeight_NEW$age.new)
+weight.sdage <- sd(timeseriesWeight_NEW$age.new)
+weight.pfem <- as.numeric(table(timeseriesWeight_NEW$genderidentity_simp)["female"]/dim(timeseriesWeight_NEW)[1])
+weight.pmal <- as.numeric(table(timeseriesWeight_NEW$genderidentity_simp)["male"]/dim(timeseriesWeight_NEW)[1])
+weight.poth <- as.numeric(table(timeseriesWeight_NEW$genderidentity_simp)["other"]/dim(timeseriesWeight_NEW)[1])
+weight.pW <- as.numeric(table(timeseriesWeight_NEW$racesimple)["White"]/dim(timeseriesWeight_NEW)[1])
+weight.pB <- as.numeric(table(timeseriesWeight_NEW$racesimple)["Black"]/dim(timeseriesWeight_NEW)[1])
+weight.pA <- as.numeric(table(timeseriesWeight_NEW$racesimple)["Asian"]/dim(timeseriesWeight_NEW)[1])
+weight.pH <- as.numeric(table(timeseriesWeight_NEW$ethnicity.new)["Hispanic or Latino"]/dim(timeseriesWeight_NEW)[1])
+weight.pnotH <- as.numeric(table(timeseriesWeight_NEW$ethnicity.new)["Not Hispanic or Latino"]/dim(timeseriesWeight_NEW)[1])
+weight.pColl <- as.numeric(table(timeseriesWeight_NEW$edu.grp)["col"]/dim(timeseriesWeight_NEW)[1])
+weight.pLib <- as.numeric(table(timeseriesWeight_NEW$pol.grp)["lib"]/dim(timeseriesWeight_NEW)[1])
+weight.pNeu <- as.numeric(table(timeseriesWeight_NEW$pol.grp)["neutral"]/dim(timeseriesWeight_NEW)[1])
+weight.pCons <- as.numeric(table(timeseriesWeight_NEW$pol.grp)["cons"]/dim(timeseriesWeight_NEW)[1])
+weight.pChri <- as.numeric(table(timeseriesWeight_NEW$rel.collapse)["christian"]/sum(table(timeseriesWeight_NEW$rel.collapse)))
+weight.pJew <- as.numeric(table(timeseriesWeight_NEW$rel.collapse)["jewish"]/sum(table(timeseriesWeight_NEW$rel.collapse)))
+weight.pOth <- as.numeric(table(timeseriesWeight_NEW$rel.collapse)["other"]/sum(table(timeseriesWeight_NEW$rel.collapse)))
+weight.pNon <- as.numeric(table(timeseriesWeight_NEW$rel.collapse)["non"]/sum(table(timeseriesWeight_NEW$rel.collapse)))
+
+
+## ALL ----
+datcomb_age <- timeseriesAge_NEW[c("session_id", "age.new", "genderidentity_simp", "racesimple", "ethnicity.new", "edu.grp",  "pol.grp")]
+datcomb_dis <- timeseriesDis_NEW[c("session_id", "age.new", "genderidentity_simp", "racesimple", "ethnicity.new", "edu.grp",  "pol.grp")]
+datcomb_skin <- timeseriesSkin_NEW[c("session_id", "age.new", "genderidentity_simp", "racesimple", "ethnicity.new", "edu.grp",  "pol.grp")]
+datcomb_race <- timeseriesRace_NEW[c("session_id", "age.new", "genderidentity_simp", "racesimple", "ethnicity.new", "edu.grp",  "pol.grp")]
+datcomb_sex <- timeseriesSex_NEW[c("session_id", "age.new", "genderidentity_simp", "racesimple", "ethnicity.new", "edu.grp",  "pol.grp")]
+datcomb_weight <- timeseriesWeight_NEW[c("session_id", "age.new", "genderidentity_simp", "racesimple", "ethnicity.new", "edu.grp",  "pol.grp")]
+datcomb <- rbind(datcomb_age, datcomb_dis, datcomb_skin, datcomb_race, datcomb_sex, datcomb_weight)
+
+all.n <- dim(datcomb)[1]
+all.meanage <- mean(datcomb$age.new)
+all.sdage <- sd(datcomb$age.new)
+all.pfem <- as.numeric(table(datcomb$genderidentity_simp)["female"]/dim(datcomb)[1])
+all.pmal <- as.numeric(table(datcomb$genderidentity_simp)["male"]/dim(datcomb)[1])
+all.poth <- as.numeric(table(datcomb$genderidentity_simp)["other"]/dim(datcomb)[1])
+all.pW <- as.numeric(table(datcomb$racesimple)["White"]/dim(datcomb)[1])
+all.pB <- as.numeric(table(datcomb$racesimple)["Black"]/dim(datcomb)[1])
+all.pA <- as.numeric(table(datcomb$racesimple)["Asian"]/dim(datcomb)[1])
+all.pH <- as.numeric(table(datcomb$ethnicity.new)["Hispanic or Latino"]/dim(datcomb)[1])
+all.pnotH <- as.numeric(table(datcomb$ethnicity.new)["Not Hispanic or Latino"]/dim(datcomb)[1])
+all.pColl <- as.numeric(table(datcomb$edu.grp)["col"]/dim(datcomb)[1])
+all.pLib <- as.numeric(table(datcomb$pol.grp)["lib"]/dim(datcomb)[1])
+all.pNeu <- as.numeric(table(datcomb$pol.grp)["neutral"]/dim(datcomb)[1])
+all.pCons <- as.numeric(table(datcomb$pol.grp)["cons"]/dim(datcomb)[1])
+all.pChri <- as.numeric(table(datcomb$rel.collapse)["christian"]/sum(table(datcomb$rel.collapse)))
+all.pJew <- as.numeric(table(datcomb$rel.collapse)["jewish"]/sum(table(datcomb$rel.collapse)))
+all.pOth <- as.numeric(table(datcomb$rel.collapse)["other"]/sum(table(datcomb$rel.collapse)))
+all.pNon <- as.numeric(table(datcomb$rel.collapse)["non"]/sum(table(datcomb$rel.collapse)))
+
+
+## Monthly frequencies
+age.minN <- as.numeric(min(table(timeseriesAge_NEW$month.cent)))
+age.maxN <- as.numeric(max(table(timeseriesAge_NEW$month.cent)))
+age.meannN <- as.numeric(round(mean(table(timeseriesAge_NEW$month.cent)), 0))
+dis.minN <- as.numeric(min(table(timeseriesDis_NEW$month.cent)))
+dis.maxN <- as.numeric(max(table(timeseriesDis_NEW$month.cent)))
+dis.meannN <- as.numeric(round(mean(table(timeseriesDis_NEW$month.cent)), 0))
+skin.minN <- as.numeric(min(table(timeseriesSkin_NEW$month.cent)))
+skin.maxN <- as.numeric(max(table(timeseriesSkin_NEW$month.cent)))
+skin.meannN <- as.numeric(round(mean(table(timeseriesSkin_NEW$month.cent)), 0))
+race.minN <- as.numeric(min(table(timeseriesRace_NEW$month.cent)))
+race.maxN <- as.numeric(max(table(timeseriesRace_NEW$month.cent)))
+race.meannN <- as.numeric(round(mean(table(timeseriesRace_NEW$month.cent)), 0))
+sex.minN <- as.numeric(min(table(timeseriesSex_NEW$month.cent)))
+sex.maxN <- as.numeric(max(table(timeseriesSex_NEW$month.cent)))
+sex.meannN <- as.numeric(round(mean(table(timeseriesSex_NEW$month.cent)), 0))
+weight.minN <- as.numeric(min(table(timeseriesWeight_NEW$month.cent)))
+weight.maxN <- as.numeric(max(table(timeseriesWeight_NEW$month.cent)))
+weight.meannN <- as.numeric(round(mean(table(timeseriesWeight_NEW$month.cent)), 0))
+
+## Save all in a table
+monthNs.table <- as.data.frame(matrix(nrow = 6, ncol = 4))
+colnames(monthNs.table) <- c("att", "Nmin", "Nmax", "Nmean")
+monthNs.table$att <- c("Age", "Disability", "Skin-tone", "Race", "Sexuality", "Weight")
+monthNs.table$Nmin <- c(age.minN, dis.minN, skin.minN, race.minN, sex.minN, weight.minN)
+monthNs.table$Nmax <- c(age.maxN, dis.maxN, skin.maxN, race.maxN, sex.maxN, weight.maxN)
+monthNs.table$Nmean <- c(age.meannN, dis.meannN, skin.meannN, race.meannN, sex.meannN, weight.meannN)
+
+## Save all in a table
+sample.dems.table <- as.data.frame(matrix(nrow = 7, ncol = 16))
+colnames(sample.dems.table) <- c("att", "N", "mage", "sdage", "pfem", "pmal", "poth",
+                                 "pW", "pB", "pA", "pH", "pnotH",
+                                 "pColl", "pLib", "pNeu", "pCons")
+
+sample.dems.table$att <- c("Age", "Disability", "Skin-tone", "Race", "Sexuality", "Weight", "Total")
+sample.dems.table$N <- c(age.n, dis.n, skin.n, race.n, sex.n, weight.n, all.n)
+sample.dems.table$mage <- round(c(age.meanage, dis.meanage, skin.meanage, 
+                                  race.meanage, sex.meanage, weight.meanage, all.meanage), 2)
+sample.dems.table$sdage <- round(c(age.sdage, dis.sdage, skin.sdage, 
+                                  race.sdage, sex.sdage, weight.sdage, all.sdage), 2)
+sample.dems.table$pfem <- round(c(age.pfem, dis.pfem, skin.pfem, 
+                                  race.pfem, sex.pfem, weight.pfem, all.pfem)*100, 2)
+sample.dems.table$pmal <- round(c(age.pmal, dis.pmal, skin.pmal, 
+                                  race.pmal, sex.pmal, weight.pmal, all.pmal)*100, 2)
+sample.dems.table$poth <- round(c(age.poth, dis.poth, skin.poth, 
+                                  race.poth, sex.poth, weight.poth, all.poth)*100, 2)
+sample.dems.table$pW <- round(c(age.pW, dis.pW, skin.pW, 
+                                  race.pW, sex.pW, weight.pW, all.pW)*100, 2)
+sample.dems.table$pB <- round(c(age.pB, dis.pB, skin.pB, 
+                                  race.pB, sex.pB, weight.pB, all.pB)*100, 2)
+sample.dems.table$pA <- round(c(age.pA, dis.pA, skin.pA, 
+                                  race.pA, sex.pA, weight.pA, all.pA)*100, 2)
+sample.dems.table$pH <- round(c(age.pH, dis.pH, skin.pH, 
+                                  race.pH, sex.pH, weight.pH, all.pH)*100, 2)
+sample.dems.table$pnotH <- round(c(age.pnotH, dis.pnotH, skin.pnotH, 
+                                  race.pnotH, sex.pnotH, weight.pnotH, all.pnotH)*100, 2)
+sample.dems.table$pColl <- round(c(age.pColl, dis.pColl, skin.pColl, 
+                                  race.pColl, sex.pColl, weight.pColl, all.pColl)*100, 2)
+sample.dems.table$pLib <- round(c(age.pLib, dis.pLib, skin.pLib, 
+                                  race.pLib, sex.pLib, weight.pLib, all.pLib)*100, 2)
+sample.dems.table$pNeu <- round(c(age.pNeu, dis.pNeu, skin.pNeu, 
+                                  race.pNeu, sex.pNeu, weight.pNeu, all.pNeu)*100, 2)
+sample.dems.table$pCons <- round(c(age.pCons, dis.pCons, skin.pCons, 
+                                  race.pCons, sex.pCons, weight.pCons, all.pCons)*100, 2)
+
+
+```
+
+```{r tableSampledems, echo=FALSE}
+knitr::kable(sample.dems.table, digits = 2,
+             col.names = c("Attitude", "N", "Mean Age", "SD Age", "% Female", "% Male", "% Other Gender", 
+                           "% White", "% Black", "% Asian", "% Hispanic", "% Non-Hispanic",
+                           "% > College", "% Liberal", "% Neutral", "% Conservative"))
+
+knitr::kable(monthNs.table, digits = 2,
+             col.names = c("Attitude", "Min N", "Max N", "Mean N"))
+
+```
+
+
+
+## Table 1: Sample demographics across attitudes (combining old and new data)
+
+```{r codeSampledemogs_ALL, include=FALSE}
+## ALL NEW+OLD DATA ----
+
+## AGE ----
+timeseriesAge$edu.grp <- ifelse(as.numeric(timeseriesAge$edu.new)<5, "ncol", "col")
+timeseriesAge$pol.grp <- ifelse(as.numeric(timeseriesAge$politicalid)<4, "cons",
+                                ifelse(as.numeric(timeseriesAge$politicalid)>4, "lib", "neutral"))
+
+age.n_ALL <- dim(timeseriesAge_NEW)[1]+dim(timeseriesAge)[1]
+age.meanage_ALL <- mean(c(timeseriesAge_NEW$age.new, timeseriesAge$age.new))
+age.sdage_ALL <- sd(c(timeseriesAge_NEW$age.new, timeseriesAge$age.new))
+age.pfem_ALL <- as.numeric((table(timeseriesAge_NEW$genderidentity_simp)["female"]+table(timeseriesAge$sex.new)["female"])/age.n_ALL)
+age.pmal_ALL <- as.numeric((table(timeseriesAge_NEW$genderidentity_simp)["male"]+table(timeseriesAge$sex.new)["male"])/age.n_ALL)
+age.pW_ALL <- as.numeric((table(timeseriesAge_NEW$racesimple)["White"]+table(timeseriesAge$ethnic.race.new)["White"])/age.n_ALL)
+age.pB_ALL <- as.numeric((table(timeseriesAge_NEW$racesimple)["Black"]+table(timeseriesAge$ethnic.race.new)["Black or African American"])/age.n_ALL)
+age.pA_ALL <- as.numeric((table(timeseriesAge_NEW$racesimple)["Asian"]+table(timeseriesAge$ethnic.race.new)["Asian"])/age.n_ALL)
+age.pColl_ALL <- as.numeric((table(timeseriesAge_NEW$edu.grp)["col"]+table(timeseriesAge$edu.grp)["col"])/age.n_ALL)
+age.pLib_ALL <- as.numeric((table(timeseriesAge_NEW$pol.grp)["lib"]+table(timeseriesAge$pol.grp)["lib"])/age.n_ALL)
+age.pCons_ALL <- as.numeric((table(timeseriesAge_NEW$pol.grp)["cons"]+table(timeseriesAge$pol.grp)["cons"])/age.n_ALL)
+age.pNeu_ALL <- as.numeric((table(timeseriesAge_NEW$pol.grp)["neutral"]+table(timeseriesAge$pol.grp)["neutral"])/age.n_ALL)
+
+
+## DISABILITY ----
+timeseriesDis$edu.grp <- ifelse(as.numeric(timeseriesDis$edu.new)<5, "ncol", "col")
+timeseriesDis$pol.grp <- ifelse(as.numeric(timeseriesDis$politicalid)<4, "cons",
+                                ifelse(as.numeric(timeseriesDis$politicalid)>4, "lib", "neutral"))
+
+dis.n_ALL <- dim(timeseriesDis_NEW)[1]+dim(timeseriesDis)[1]
+dis.meanage_ALL <- mean(c(timeseriesDis_NEW$age.new, timeseriesDis$age.new))
+dis.sdage_ALL <- sd(c(timeseriesDis_NEW$age.new, timeseriesDis$age.new))
+dis.pfem_ALL <- as.numeric((table(timeseriesDis_NEW$genderidentity_simp)["female"]+table(timeseriesDis$sex.new)["female"])/dis.n_ALL)
+dis.pmal_ALL <- as.numeric((table(timeseriesDis_NEW$genderidentity_simp)["male"]+table(timeseriesDis$sex.new)["male"])/dis.n_ALL)
+dis.pW_ALL <- as.numeric((table(timeseriesDis_NEW$racesimple)["White"]+table(timeseriesDis$ethnic.race.new)["White"])/dis.n_ALL)
+dis.pB_ALL <- as.numeric((table(timeseriesDis_NEW$racesimple)["Black"]+table(timeseriesDis$ethnic.race.new)["Black or African American"])/dis.n_ALL)
+dis.pA_ALL <- as.numeric((table(timeseriesDis_NEW$racesimple)["Asian"]+table(timeseriesDis$ethnic.race.new)["Asian"])/dis.n_ALL)
+dis.pColl_ALL <- as.numeric((table(timeseriesDis_NEW$edu.grp)["col"]+table(timeseriesDis$edu.grp)["col"])/dis.n_ALL)
+dis.pLib_ALL <- as.numeric((table(timeseriesDis_NEW$pol.grp)["lib"]+table(timeseriesDis$pol.grp)["lib"])/dis.n_ALL)
+dis.pCons_ALL <- as.numeric((table(timeseriesDis_NEW$pol.grp)["cons"]+table(timeseriesDis$pol.grp)["cons"])/dis.n_ALL)
+dis.pNeu_ALL <- as.numeric((table(timeseriesDis_NEW$pol.grp)["neutral"]+table(timeseriesDis$pol.grp)["neutral"])/dis.n_ALL)
+
+
+
+## SKIN-TONE ----
+timeseriesSkin$edu.grp <- ifelse(as.numeric(timeseriesSkin$edu.new)<5, "ncol", "col")
+timeseriesSkin$pol.grp <- ifelse(as.numeric(timeseriesSkin$politicalid)<4, "cons",
+                                ifelse(as.numeric(timeseriesSkin$politicalid)>4, "lib", "neutral"))
+timeseriesSkin$sex.new <- recode(timeseriesSkin$sex.new, "'Female' = 'female'; 'Male' = 'male'")
+
+skin.n_ALL <- dim(timeseriesSkin_NEW)[1]+dim(timeseriesSkin)[1]
+skin.meanage_ALL <- mean(c(timeseriesSkin_NEW$age.new, timeseriesSkin$age.new))
+skin.sdage_ALL <- sd(c(timeseriesSkin_NEW$age.new, timeseriesSkin$age.new))
+skin.pfem_ALL <- as.numeric((table(timeseriesSkin_NEW$genderidentity_simp)["female"]+table(timeseriesSkin$sex.new)["female"])/skin.n_ALL)
+skin.pmal_ALL <- as.numeric((table(timeseriesSkin_NEW$genderidentity_simp)["male"]+table(timeseriesSkin$sex.new)["male"])/skin.n_ALL)
+skin.pW_ALL <- as.numeric((table(timeseriesSkin_NEW$racesimple)["White"]+table(timeseriesSkin$ethnic.race.new)["White"])/skin.n_ALL)
+skin.pB_ALL <- as.numeric((table(timeseriesSkin_NEW$racesimple)["Black"]+table(timeseriesSkin$ethnic.race.new)["Black or African American"])/skin.n_ALL)
+skin.pA_ALL <- as.numeric((table(timeseriesSkin_NEW$racesimple)["Asian"]+table(timeseriesSkin$ethnic.race.new)["Asian"])/skin.n_ALL)
+skin.pColl_ALL <- as.numeric((table(timeseriesSkin_NEW$edu.grp)["col"]+table(timeseriesSkin$edu.grp)["col"])/skin.n_ALL)
+skin.pLib_ALL <- as.numeric((table(timeseriesSkin_NEW$pol.grp)["lib"]+table(timeseriesSkin$pol.grp)["lib"])/skin.n_ALL)
+skin.pCons_ALL <- as.numeric((table(timeseriesSkin_NEW$pol.grp)["cons"]+table(timeseriesSkin$pol.grp)["cons"])/skin.n_ALL)
+skin.pNeu_ALL <- as.numeric((table(timeseriesSkin_NEW$pol.grp)["neutral"]+table(timeseriesSkin$pol.grp)["neutral"])/skin.n_ALL)
+
+
+## RACE ----
+timeseriesRace$edu.grp <- ifelse(as.numeric(timeseriesRace$edu.new)<5, "ncol", "col")
+timeseriesRace$pol.grp <- ifelse(as.numeric(timeseriesRace$politicalid)<4, "cons",
+                                ifelse(as.numeric(timeseriesRace$politicalid)>4, "lib", "neutral"))
+
+race.n_ALL <- dim(timeseriesRace_NEW)[1]+dim(timeseriesRace)[1]
+race.meanage_ALL <- mean(c(timeseriesRace_NEW$age.new, timeseriesRace$age.new))
+race.sdage_ALL <- sd(c(timeseriesRace_NEW$age.new, timeseriesRace$age.new))
+race.pfem_ALL <- as.numeric((table(timeseriesRace_NEW$genderidentity_simp)["female"]+table(timeseriesRace$sex.new)["female"])/race.n_ALL)
+race.pmal_ALL <- as.numeric((table(timeseriesRace_NEW$genderidentity_simp)["male"]+table(timeseriesRace$sex.new)["male"])/race.n_ALL)
+race.pW_ALL <- as.numeric((table(timeseriesRace_NEW$racesimple)["White"]+table(timeseriesRace$ethnic.race.new)["White"])/race.n_ALL)
+race.pB_ALL <- as.numeric((table(timeseriesRace_NEW$racesimple)["Black"]+table(timeseriesRace$ethnic.race.new)["Black or African American"])/race.n_ALL)
+race.pA_ALL <- as.numeric((table(timeseriesRace_NEW$racesimple)["Asian"]+table(timeseriesRace$ethnic.race.new)["Asian"])/race.n_ALL)
+race.pColl_ALL <- as.numeric((table(timeseriesRace_NEW$edu.grp)["col"]+table(timeseriesRace$edu.grp)["col"])/race.n_ALL)
+race.pLib_ALL <- as.numeric((table(timeseriesRace_NEW$pol.grp)["lib"]+table(timeseriesRace$pol.grp)["lib"])/race.n_ALL)
+race.pCons_ALL <- as.numeric((table(timeseriesRace_NEW$pol.grp)["cons"]+table(timeseriesRace$pol.grp)["cons"])/race.n_ALL)
+race.pNeu_ALL <- as.numeric((table(timeseriesRace_NEW$pol.grp)["neutral"]+table(timeseriesRace$pol.grp)["neutral"])/race.n_ALL)
+
+## SEXUALITY ----
+timeseriesSex$edu.grp <- ifelse(as.numeric(timeseriesSex$edu.new)<5, "ncol", "col")
+timeseriesSex$pol.grp <- ifelse(as.numeric(timeseriesSex$politicalid)<4, "cons",
+                                ifelse(as.numeric(timeseriesSex$politicalid)>4, "lib", "neutral"))
+timeseriesSex$sex.new <- recode(timeseriesSex$sex.new, "'Female' = 'female'; 'Male' = 'male'")
+table(timeseriesSex$sex.new)
+
+sex.n_ALL <- dim(timeseriesSex_NEW)[1]+dim(timeseriesSex)[1]
+sex.meanage_ALL <- mean(c(timeseriesSex_NEW$age.new, timeseriesSex$age.new))
+sex.sdage_ALL <- sd(c(timeseriesSex_NEW$age.new, timeseriesSex$age.new))
+sex.pfem_ALL <- as.numeric((table(timeseriesSex_NEW$genderidentity_simp)["female"]+table(timeseriesSex$sex.new)["female"])/sex.n_ALL)
+sex.pmal_ALL <- as.numeric((table(timeseriesSex_NEW$genderidentity_simp)["male"]+table(timeseriesSex$sex.new)["male"])/sex.n_ALL)
+sex.pW_ALL <- as.numeric((table(timeseriesSex_NEW$racesimple)["White"]+table(timeseriesSex$ethnic.race.new)["White"])/sex.n_ALL)
+sex.pB_ALL <- as.numeric((table(timeseriesSex_NEW$racesimple)["Black"]+table(timeseriesSex$ethnic.race.new)["Black or African American"])/sex.n_ALL)
+sex.pA_ALL <- as.numeric((table(timeseriesSex_NEW$racesimple)["Asian"]+table(timeseriesSex$ethnic.race.new)["Asian"])/sex.n_ALL)
+sex.pColl_ALL <- as.numeric((table(timeseriesSex_NEW$edu.grp)["col"]+table(timeseriesSex$edu.grp)["col"])/sex.n_ALL)
+sex.pLib_ALL <- as.numeric((table(timeseriesSex_NEW$pol.grp)["lib"]+table(timeseriesSex$pol.grp)["lib"])/sex.n_ALL)
+sex.pCons_ALL <- as.numeric((table(timeseriesSex_NEW$pol.grp)["cons"]+table(timeseriesSex$pol.grp)["cons"])/sex.n_ALL)
+sex.pNeu_ALL <- as.numeric((table(timeseriesSex_NEW$pol.grp)["neutral"]+table(timeseriesSex$pol.grp)["neutral"])/sex.n_ALL)
+
+## WEIGHT ----
+timeseriesWeight <- rbind(timeseriesWeightFace, timeseriesWeightBody)
+timeseriesWeight$edu.grp <- ifelse(as.numeric(timeseriesWeight$edu.new)<5, "ncol", "col")
+timeseriesWeight$pol.grp <- ifelse(as.numeric(timeseriesWeight$politicalid)<4, "cons",
+                                ifelse(as.numeric(timeseriesWeight$politicalid)>4, "lib", "neutral"))
+
+weight.n_ALL <- dim(timeseriesWeight_NEW)[1]+dim(timeseriesWeight)[1]
+weight.meanage_ALL <- mean(c(timeseriesWeight_NEW$age.new, timeseriesWeight$age.new))
+weight.sdage_ALL <- sd(c(timeseriesWeight_NEW$age.new, timeseriesWeight$age.new))
+weight.pfem_ALL <- as.numeric((table(timeseriesWeight_NEW$genderidentity_simp)["female"]+table(timeseriesWeight$sex.new)["female"])/weight.n_ALL)
+weight.pmal_ALL <- as.numeric((table(timeseriesWeight_NEW$genderidentity_simp)["male"]+table(timeseriesWeight$sex.new)["male"])/weight.n_ALL)
+weight.pW_ALL <- as.numeric((table(timeseriesWeight_NEW$racesimple)["White"]+table(timeseriesWeight$ethnic.race.new)["White"])/weight.n_ALL)
+weight.pB_ALL <- as.numeric((table(timeseriesWeight_NEW$racesimple)["Black"]+table(timeseriesWeight$ethnic.race.new)["Black or African American"])/weight.n_ALL)
+weight.pA_ALL <- as.numeric((table(timeseriesWeight_NEW$racesimple)["Asian"]+table(timeseriesWeight$ethnic.race.new)["Asian"])/weight.n_ALL)
+weight.pColl_ALL <- as.numeric((table(timeseriesWeight_NEW$edu.grp)["col"]+table(timeseriesWeight$edu.grp)["col"])/weight.n_ALL)
+weight.pLib_ALL <- as.numeric((table(timeseriesWeight_NEW$pol.grp)["lib"]+table(timeseriesWeight$pol.grp)["lib"])/weight.n_ALL)
+weight.pCons_ALL <- as.numeric((table(timeseriesWeight_NEW$pol.grp)["cons"]+table(timeseriesWeight$pol.grp)["cons"])/weight.n_ALL)
+weight.pNeu_ALL <- as.numeric((table(timeseriesWeight_NEW$pol.grp)["neutral"]+table(timeseriesWeight$pol.grp)["neutral"])/weight.n_ALL)
+
+
+## ALL ----
+datcomb_age_old <- timeseriesAge[c("session_id", "age.new", "sex.new", "ethnic.race.new", "edu.grp",  "pol.grp")]
+datcomb_dis_old <- timeseriesDis[c("session_id", "age.new", "sex.new", "ethnic.race.new", "edu.grp",  "pol.grp")]
+datcomb_skin_old <- timeseriesSkin[c("session_id", "age.new", "sex.new", "ethnic.race.new", "edu.grp",  "pol.grp")]
+datcomb_race_old <- timeseriesRace[c("session_id", "age.new", "sex.new", "ethnic.race.new", "edu.grp",  "pol.grp")]
+datcomb_sex_old <- timeseriesSex[c("session_id", "age.new", "sex.new", "ethnic.race.new", "edu.grp",  "pol.grp")]
+datcomb_weight_old <- timeseriesWeight[c("session_id", "age.new", "sex.new", "ethnic.race.new", "edu.grp",  "pol.grp")]
+
+datcomb_old <- rbind(datcomb_age_old, datcomb_dis_old, datcomb_skin_old, 
+                     datcomb_race_old, datcomb_sex_old, datcomb_weight_old)
+datcomb <- datcomb[c("session_id", "age.new", "genderidentity_simp", 
+                     "racesimple", "edu.grp",  "pol.grp")]
+colnames(datcomb_old) <- colnames(datcomb)
+
+datcomb_old$racesimple <- recode(datcomb_old$racesimple, "'White' = 'White';
+                                 'Asian' = 'Asian'; 'Black or African American' = 'Black';
+                                 'More than one race - Black/White' = 'Multiracial';
+                                 'More than one race - Other' = 'Multiracial'; else = NA")
+
+datcomb_both <- rbind(datcomb_old, datcomb)
+
+all.n_ALL <- dim(datcomb_both)[1]
+all.meanage_ALL <- mean(datcomb_both$age.new)
+all.sdage_ALL <- sd(datcomb_both$age.new)
+all.pfem_ALL <- as.numeric(table(datcomb_both$genderidentity_simp)["female"]/dim(datcomb_both)[1])
+all.pmal_ALL <- as.numeric(table(datcomb_both$genderidentity_simp)["male"]/dim(datcomb_both)[1])
+all.poth_ALL <- as.numeric(table(datcomb_both$genderidentity_simp)["other"]/dim(datcomb_both)[1])
+all.pW_ALL <- as.numeric(table(datcomb_both$racesimple)["White"]/dim(datcomb_both)[1])
+all.pB_ALL <- as.numeric(table(datcomb_both$racesimple)["Black"]/dim(datcomb_both)[1])
+all.pA_ALL <- as.numeric(table(datcomb_both$racesimple)["Asian"]/dim(datcomb_both)[1])
+all.pColl_ALL <- as.numeric(table(datcomb_both$edu.grp)["col"]/dim(datcomb_both)[1])
+all.pLib_ALL <- as.numeric(table(datcomb_both$pol.grp)["lib"]/dim(datcomb_both)[1])
+all.pNeu_ALL <- as.numeric(table(datcomb_both$pol.grp)["neutral"]/dim(datcomb_both)[1])
+all.pCons_ALL <- as.numeric(table(datcomb_both$pol.grp)["cons"]/dim(datcomb_both)[1])
+
+
+## Save all in a table
+sample.dems.table2 <- as.data.frame(matrix(nrow = 7, ncol = 13))
+colnames(sample.dems.table2) <- c("att", "N", "mage", "sdage", 
+                                 "pfem", "pmal", 
+                                 "pW", "pB", "pA",
+                                 "pColl", "pLib", "pNeu", "pCons")
+
+sample.dems.table2$att <- c("Age", "Disability", "Skin-tone", "Race", "Sexuality", "Weight", "Total")
+sample.dems.table2$N <- c(age.n_ALL, dis.n_ALL, skin.n_ALL, race.n_ALL, sex.n_ALL, weight.n_ALL, all.n_ALL)
+sample.dems.table2$mage <- round(c(age.meanage_ALL, dis.meanage_ALL, skin.meanage_ALL, 
+                                  race.meanage_ALL, sex.meanage_ALL, weight.meanage_ALL, all.meanage_ALL), 2)
+sample.dems.table2$sdage <- round(c(age.sdage_ALL, dis.sdage_ALL, skin.sdage_ALL, 
+                                  race.sdage_ALL, sex.sdage_ALL, weight.sdage_ALL, all.sdage_ALL), 2)
+sample.dems.table2$pfem <- round(c(age.pfem_ALL, dis.pfem_ALL, skin.pfem_ALL, 
+                                  race.pfem_ALL, sex.pfem_ALL, weight.pfem_ALL, all.pfem_ALL)*100, 2)
+sample.dems.table2$pmal <- round(c(age.pmal_ALL, dis.pmal_ALL, skin.pmal_ALL, 
+                                  race.pmal_ALL, sex.pmal_ALL, weight.pmal_ALL, all.pmal_ALL)*100, 2)
+sample.dems.table2$pW <- round(c(age.pW_ALL, dis.pW_ALL, skin.pW_ALL, 
+                                  race.pW_ALL, sex.pW_ALL, weight.pW_ALL, all.pW_ALL)*100, 2)
+sample.dems.table2$pB <- round(c(age.pB_ALL, dis.pB_ALL, skin.pB_ALL, 
+                                  race.pB_ALL, sex.pB_ALL, weight.pB_ALL, all.pB_ALL)*100, 2)
+sample.dems.table2$pA <- round(c(age.pA_ALL, dis.pA_ALL, skin.pA_ALL, 
+                                  race.pA_ALL, sex.pA_ALL, weight.pA_ALL, all.pA_ALL)*100, 2)
+sample.dems.table2$pColl <- round(c(age.pColl_ALL, dis.pColl_ALL, skin.pColl_ALL, 
+                                  race.pColl_ALL, sex.pColl_ALL, weight.pColl_ALL, all.pColl_ALL)*100, 2)
+sample.dems.table2$pLib <- round(c(age.pLib_ALL, dis.pLib_ALL, skin.pLib_ALL, 
+                                  race.pLib_ALL, sex.pLib_ALL, weight.pLib_ALL, all.pLib_ALL)*100, 2)
+sample.dems.table2$pNeu <- round(c(age.pNeu_ALL, dis.pNeu_ALL, skin.pNeu_ALL, 
+                                  race.pNeu_ALL, sex.pNeu_ALL, weight.pNeu_ALL, all.pNeu_ALL)*100, 2)
+sample.dems.table2$pCons <- round(c(age.pCons_ALL, dis.pCons_ALL, skin.pCons_ALL, 
+                                  race.pCons_ALL, sex.pCons_ALL, weight.pCons_ALL, all.pCons_ALL)*100, 2)
+
+
+```
+
+
+```{r tableSampledems_ALL, echo=FALSE}
+knitr::kable(sample.dems.table2, digits = 2,
+             col.names = c("Attitude", "N", "Mean Age", "SD Age", "% Female", "% Male", 
+                           "% White", "% Black", "% Asian",
+                           "% > College", "% Liberal", "% Neutral", "% Conservative"))
+
+
+```
+
+
+
+## Table 2: Overall means and correlations of implicit and explicit attitudes
+
+```{r codeMeans, include=FALSE}
+
+data_new <- list(timeseriesAge_NEW, timeseriesDis_NEW, timeseriesRace_NEW,
+                 timeseriesSkin_NEW, timeseriesSex_NEW, timeseriesWeight_NEW)
+data_old <- list(timeseriesAge, timeseriesDis, timeseriesRace,
+                 timeseriesSkin, timeseriesSex, timeseriesWeightBody)
+
+
+combined_table_summary <- as.data.frame(matrix(nrow = 6, ncol = 31))
+colnames(combined_table_summary) <- c("attitude",
+                                      "meanI_new", "sdI_new", "low95I_new", "high95I_new", "tI_new", "dI_new",
+                                      "meanI_all", "sdI_all", "low95I_all", "high95I_all", "tI_all", "dI_all",
+                                      "meanE_new", "sdE_new", "low95E_new", "high95E_new", "tE_new", "dE_new",
+                                      "meanE_all", "sdE_all", "low95E_all", "high95E_all", "tE_all", "dE_all",
+                                      "rIE_new", "rIElow_new", "rIEhigh_new",
+                                      "rIE_all", "rIElow_all", "rIEhigh_all")
+combined_table_summary$attitude <- c("age", "disability", "race", "skin", "sexuality", "body")
+
+for (i in 1:length(data_new)){
+  combined_table_summary$meanI_new[i] <- mean(data_new[[i]]$dscore)
+  combined_table_summary$meanI_all[i] <- mean(c(data_new[[i]]$dscore, data_old[[i]]$dscore))
+  combined_table_summary$sdI_new[i] <- sd(data_new[[i]]$dscore)
+  combined_table_summary$sdI_all[i] <- sd(c(data_new[[i]]$dscore, data_old[[i]]$dscore))
+  combined_table_summary$low95I_new[i] <- round(t.test(data_new[[i]]$dscore, mu = 0)$conf.int[1], 2)
+  combined_table_summary$high95I_new[i] <- round(t.test(data_new[[i]]$dscore, mu = 0)$conf.int[2], 2)
+  combined_table_summary$tI_new[i] <- t.test(data_new[[i]]$dscore, mu = 0)$statistic
+  combined_table_summary$dI_new[i] <- cohensD(data_new[[i]]$dscore, mu = 0)
+  combined_table_summary$low95I_all[i] <- round(t.test(c(data_new[[i]]$dscore, data_old[[i]]$dscore), mu = 0)$conf.int[1], 2)
+  combined_table_summary$high95I_all[i] <- round(t.test(c(data_new[[i]]$dscore, data_old[[i]]$dscore), mu = 0)$conf.int[2], 2)
+  combined_table_summary$tI_all[i] <- t.test(c(data_new[[i]]$dscore, data_old[[i]]$dscore), mu = 0)$statistic
+  combined_table_summary$dI_all[i] <- cohensD(c(data_new[[i]]$dscore, data_old[[i]]$dscore), mu = 0)
+  
+  combined_table_summary$meanE_new[i] <- mean(data_new[[i]]$attnumeric)
+  combined_table_summary$meanE_all[i] <- mean(c(data_new[[i]]$attnumeric, data_old[[i]]$att.center1))
+  combined_table_summary$sdE_new[i] <- sd(data_new[[i]]$attnumeric)
+  combined_table_summary$sdE_all[i] <- sd(c(data_new[[i]]$attnumeric, data_old[[i]]$att.center1))
+  combined_table_summary$low95E_new[i] <- round(t.test(data_new[[i]]$attnumeric, mu = 0)$conf.int[1], 2)
+  combined_table_summary$high95E_new[i] <- round(t.test(data_new[[i]]$attnumeric, mu = 0)$conf.int[2], 2)
+  combined_table_summary$tE_new[i] <- t.test(data_new[[i]]$attnumeric, mu = 0)$statistic
+  combined_table_summary$dE_new[i] <- cohensD(data_new[[i]]$attnumeric, mu = 0)
+  combined_table_summary$low95E_all[i] <- round(t.test(c(data_new[[i]]$attnumeric, data_old[[i]]$att.center1), mu = 0)$conf.int[1], 2)
+  combined_table_summary$high95E_all[i] <- round(t.test(c(data_new[[i]]$attnumeric, data_old[[i]]$att.center1), mu = 0)$conf.int[2], 2)
+  combined_table_summary$tE_all[i] <- t.test(c(data_new[[i]]$attnumeric, data_old[[i]]$att.center1), mu = 0)$statistic
+  combined_table_summary$dE_all[i] <- cohensD(c(data_new[[i]]$attnumeric, data_old[[i]]$att.center1), mu = 0)
+  
+  combined_table_summary$rIE_new[i] <- cor.test(data_new[[i]]$dscore, data_new[[i]]$attnumeric)$estimate
+  combined_table_summary$rIElow_new[i] <- round(cor.test(data_new[[i]]$dscore, data_new[[i]]$attnumeric)$conf.int[1], 2)
+  combined_table_summary$rIEhigh_new[i] <- round(cor.test(data_new[[i]]$dscore, data_new[[i]]$attnumeric)$conf.int[2], 2)
+  combined_table_summary$rIE_all[i] <- cor.test(c(data_new[[i]]$dscore, data_old[[i]]$dscore), 
+                                                c(data_new[[i]]$attnumeric, data_old[[i]]$att.center1))$estimate
+  combined_table_summary$rIElow_all[i] <- round(cor.test(c(data_new[[i]]$dscore, data_old[[i]]$dscore), 
+                                                c(data_new[[i]]$attnumeric, data_old[[i]]$att.center1))$conf.int[1], 2)
+  combined_table_summary$rIEhigh_all[i] <- round(cor.test(c(data_new[[i]]$dscore, data_old[[i]]$dscore), 
+                                                c(data_new[[i]]$attnumeric, data_old[[i]]$att.center1))$conf.int[2], 2)
+}
+
+
+
+```
+
+```{r tableMeans, echo=FALSE}
+knitr::kable(combined_table_summary, digits = 2)
+```
+
+

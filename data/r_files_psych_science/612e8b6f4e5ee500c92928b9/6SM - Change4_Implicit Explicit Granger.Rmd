@@ -1,0 +1,105 @@
+---
+  title: "Change4_SM for Implicit-Explicit relationships"
+output:
+  word_document: default
+pdf_document: default
+date: "September 1st, 2021"
+---
+
+
+```{r, setup, include=FALSE}
+## Set wd to data location
+# knitr::opts_knit$set(root.dir = **)
+
+```
+
+
+
+```{r loading, echo = FALSE, message=FALSE}
+
+# Load data 
+load("TSvectors_NEWDATA.RData")
+load("TSvectors_OLDDATA.RData")
+
+
+# Load packages
+if (!require(forecast)) {install.packages("forecast", dependencies = TRUE); require(forecast)}
+if (!require(tseries)) {install.packages("tseries", dependencies = TRUE); require(tseries)}
+if (!require(lmtest)) {install.packages("lmtest", dependencies = TRUE); require(lmtest)}
+
+
+```
+
+
+```{r codeGranger, include=FALSE}
+## Combine all data
+race.WtsALL <- ts(c(race.Wts, race.WtsNEW), start = c(2007, 1), frequency = 12)
+age.WtsALL <- ts(c(age.Wts, age.WtsNEW), start = c(2007, 1), frequency = 12)
+dis.WtsALL <- ts(c(dis.Wts, dis.WtsNEW), start = c(2007, 1), frequency = 12)
+skin.WtsALL <- ts(c(skin.Wts, skin.WtsNEW), start = c(2007, 1), frequency = 12)
+sex.WtsALL <- ts(c(sex.Wts, sex.WtsNEW), start = c(2007, 1), frequency = 12)
+weight.WtsALL <- ts(c(weight.Wts, weight.WtsNEW), start = c(2010, 4), frequency = 12)
+
+race.WEtsALL <- ts(c(race.WEts, race.WEtsNEW), start = c(2007, 1), frequency = 12)
+age.WEtsALL <- ts(c(age.WEts, age.WEtsNEW), start = c(2007, 1), frequency = 12)
+dis.WEtsALL <- ts(c(dis.WEts, dis.WEtsNEW), start = c(2007, 1), frequency = 12)
+skin.WEtsALL <- ts(c(skin.WEts, skin.WEtsNEW), start = c(2007, 1), frequency = 12)
+sex.WEtsALL <- ts(c(sex.WEts, sex.WEtsNEW), start = c(2007, 1), frequency = 12)
+weight.WEtsALL <- ts(c(weight.WEts, weight.WEtsNEW), start = c(2007, 1), frequency = 12)
+# subset weight explicit to match the length of implicit
+weight.WEtsALLshort <- window(weight.WEtsALL, start = c(2010, 4))
+
+
+## Granger tests ----
+# create output for 6 orders x 2 directions (implicit, explicit) x 6 attitudes = 72
+grangerout <- as.data.frame(matrix(ncol = 7, nrow = 72))
+colnames(grangerout) <- c("att", "direction", "order", "resdf", "df", "F", "p")
+grangerout$att <- rep(rep(c("Race", "Skin-tone", "Sexuality", "Age", "Disability", "Weight"), each = 6), times = 2)
+grangerout$direction <- rep(c("IE", "EI"), each = 36)
+grangerout$order <- rep(1:6, times = 12)
+
+grangerresult_I <- list()
+grangerresult_E <- list()
+Iatt <- list(race.WtsALL, skin.WtsALL, sex.WtsALL, age.WtsALL, dis.WtsALL, weight.WtsALL)
+Eatt <- list(race.WEtsALL, skin.WEtsALL, sex.WEtsALL, age.WEtsALL, dis.WEtsALL, weight.WEtsALLshort)
+
+# Implicit -> Explicit
+for (i in 1:6){
+  for (j in 1:6){
+    k <- j + rep(6 * (i-1), each = 6)[j] # create successive index for storing in output
+    grangerresult_I[[k]] <- grangertest(Iatt[[i]] ~ Eatt[[i]], order = j)
+}}
+
+for (i in 1:36){
+  grangerout[i, c("resdf", "df", "F", "p")] <- as.numeric(grangerresult_I[[i]][2,])
+}
+
+# Explicit -> Implicit
+for (i in 1:6){
+  for (j in 1:6){
+    k <- j + rep(6 * (i-1), each = 6)[j] # create successive index for storing in output
+    grangerresult_E[[k]] <- grangertest(Eatt[[i]] ~ Iatt[[i]], order = j)
+}}
+
+for (i in 1:36){
+  k <- i + 36
+  grangerout[k, c("resdf", "df", "F", "p")] <- as.numeric(grangerresult_E[[i]][2,])
+}
+
+## Examine whether one direction is significant (and the other is not)
+grangerout_wide <- reshape(grangerout, v.names = c("F", "p"), timevar = "direction", 
+                           idvar = c("att", "order"), direction = "wide")
+
+grangerout_wide$conclusion <- ifelse(grangerout_wide$p.IE < .05 & grangerout_wide$p.EI > .05, "I->E",
+                                     ifelse(grangerout_wide$p.IE > .05 & grangerout_wide$p.EI < .05, "E->I",
+                                            ifelse(grangerout_wide$p.IE < .05 & grangerout_wide$p.EI < .05, "both", "none")))
+
+```
+
+## Table of Output
+```{r tablGrangerout, echo=FALSE}
+knitr::kable(grangerout_wide,
+             digits = 2,
+             col.names = c("Attitude", "Order", "Residual DF", "Num DF", "F (Implicit->Explicit)", "p (Implicit->Explicit)",
+                           "F (Explicit->Implicit)", "p (Explicit->Implicit)", "Inference"))
+```

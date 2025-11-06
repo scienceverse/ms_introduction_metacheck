@@ -1,0 +1,1028 @@
+---
+title: "Semantic inconsistency analyses"
+
+author: "Maarten Leemans, Claudia Damiano, Johan Wagemans"
+date: "`r Sys.Date()`"
+output:
+  bookdown::word_document2:
+    number_sections: FALSE
+    fig_caption: TRUE
+    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r import libraries, include = FALSE}
+### Packages
+list.of.packages <- c("readr", "readxl", "ggplot2", "ggpubr", "ggsignif", "extrafont", "cocor", "papaja", "car", "MuMIn", "caret", "DescTools")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, repos = "http://cran.us.r-project.org")
+lapply(list.of.packages, require, character.only = TRUE)
+```
+
+```{r import data, include=FALSE}
+#Change the Data variable to the place where you store the Datafolder.
+Data = "C:/Users/u0154823/OneDrive - KU Leuven/Desktop/MM/Semantic inconsistency paper/Analyses/Data/"
+IA_fixationVariables_semanticSimilarity <- read_excel(paste(Data, "IA_fixationVariables_semanticSimilarity.xlsx", sep = ""))
+
+#Add consistency identifier to the dataset
+IA_fixationVariables_semanticSimilarity$scene_consistency = ifelse(seq(1, 44, 1) %% 2,1,0)
+IA_fixationVariables_semanticSimilarity$scene_consistency = as.factor(IA_fixationVariables_semanticSimilarity$scene_consistency)
+```
+# Visual attention to and linguistic similarity scores of (in)consistent objects
+```{r overall visual attention, include=FALSE}
+#conduct the tests
+t1 = t.test(IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted)
+t2 = t.test(IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted)
+
+t3 = t.test(IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted[IA_fixationVariables_semanticSimilarity$scene_consistency == 1],
+            IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted[IA_fixationVariables_semanticSimilarity$scene_consistency == 0], 
+            paired = T, alternative = "less")
+t4 = t.test(IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted[IA_fixationVariables_semanticSimilarity$scene_consistency == 1],
+            IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted[IA_fixationVariables_semanticSimilarity$scene_consistency == 0], 
+            paired = T, alternative = "less")
+```
+The goal of this study was to explore whether linguistic consistency can be used as a proxy for visual consistency. Thus, as a first step, visual attention to the consistent object was compared with that to the inconsistent object. As can bee seen from Figure \@ref(fig:EyetrackingFig), viewers fixated more (`r apa_print(t3)$statistic`) and for longer durations (`r apa_print(t4)$statistic`) upon semantically inconsistent objects than on semantically consistent objects. These findings replicate the well-established semantic inconsistency effect on visual attention.\par
+```{r eyetrackingdataplot preparation, echo=FALSE}
+plotdata = as.data.frame(cbind(IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted,
+                               IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted,
+                               IA_fixationVariables_semanticSimilarity$scene_consistency))
+
+names(plotdata)[names(plotdata) == "V1"] <- "proportion"
+names(plotdata)[names(plotdata) == "V2"] <- "duration"
+names(plotdata)[names(plotdata) == "V3"] <- "consistency"
+
+plotdata$consistency = as.factor(plotdata$consistency)
+```
+```{r EyetrackingFig, echo = FALSE, fig.width = 18, fig.height = 10, fig.align='center', fig.cap = "Violin plots of the adjusted proportion of fixations on and duration to an (in)consistent object", out.width = "\\textwidth"}
+vp1 = ggplot(plotdata, 
+       aes(x = consistency,
+           y = proportion,
+           fill = consistency)) +
+  geom_violin(trim = F,
+              alpha = 0.8) +
+  geom_boxplot(aes(x = consistency,
+                   y = proportion),
+               width = 0.05, 
+               fill = "white",
+               outlier.colour = "NA",
+               position = position_dodge(width = 0.9)) +
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.05,
+                                                dodge.width = 0.9),
+              size = 1.5,
+              aes(color = consistency)) +
+  scale_color_manual(values = c("orange",
+                                "lightblue")) +
+  guides(color = FALSE) +
+  scale_fill_manual(values = c("orange", 
+                               "lightblue"),
+                    labels = c("Inconsistent",
+                               "Consistent")) +
+  geom_signif(comparisons = list(c("1", "2")),
+              y_position = 2.7e-05,
+              na.rm = T,
+              test = "t.test",
+              textsize = 16,
+              test.args = c(alternative = "greater"),
+              map_signif_level = T) +
+    labs(title = "",
+         x = "Visual consistency",
+         y = "Fixation proportion") +
+    theme_classic() +
+    theme(text = element_text(size = 24, family = "serif"),
+          axis.text = element_text(size = 20),
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank()) +
+  coord_cartesian(ylim = c(-0.1e-5, 3e-5))
+
+vp2 = ggplot(plotdata, 
+       aes(x = consistency,
+           y = duration,
+           fill = consistency)) +
+  geom_violin(trim = F,
+              alpha = 0.8) +
+  geom_boxplot(aes(x = consistency,
+                   y = duration),
+               width = 0.05, 
+               fill = "white",
+               outlier.colour = "NA",
+               position = position_dodge(width = 0.9)) +
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.05,
+                                                dodge.width = 0.9),
+              size = 1.5,
+              aes(color = consistency)) +
+  scale_color_manual(values = c("orange",
+                                "lightblue")) +
+  guides(color = FALSE) +
+  scale_fill_manual(values = c("orange", 
+                               "lightblue"),
+                    labels = c("Inconsistent",
+                               "Consistent")) +
+  geom_signif(comparisons = list(c("1", "2")),
+              y_position = 0.09,
+              na.rm = T,
+              test = "t.test",
+              textsize = 16,
+              test.args = c(alternative = "greater"),
+              map_signif_level = T) +
+    labs(title = "",
+         x = "Visual consistency",
+         y = "Fixation duration (ms)") +
+    theme_classic() +
+    theme(text = element_text(size = 24, family = "serif"),
+          axis.text = element_text(size = 20),
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank()) +
+  coord_cartesian(ylim = c(-0.01, 0.10))
+
+scatterplots <- ggarrange(vp1, vp2,
+                    labels = c("A", "B"), font.label = list(size = 20, color = "black"),
+                    ncol = 2, nrow = 1, common.legend = T, legend = "right")
+
+rm(vp1, vp2)
+
+scatterplots
+```
+```{r Overall linguistic similarity, include=FALSE}
+t1 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreOriginal)
+t2 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory)
+t3 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreObjects)
+
+
+t4 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreOriginal[IA_fixationVariables_semanticSimilarity$scene_consistency == 1])
+t5 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreOriginal[IA_fixationVariables_semanticSimilarity$scene_consistency == 0])
+t6 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreOriginal ~ IA_fixationVariables_semanticSimilarity$scene_consistency, 
+            paired = TRUE, alternative = "less", mu = 0)
+
+t7 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory[IA_fixationVariables_semanticSimilarity$scene_consistency == 1])
+t8 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory[IA_fixationVariables_semanticSimilarity$scene_consistency == 0])
+t9 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory ~ IA_fixationVariables_semanticSimilarity$scene_consistency,
+            paired = TRUE, alternative = "less", mu = 0)
+
+t10 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreObjects[IA_fixationVariables_semanticSimilarity$scene_consistency == 1])
+t11 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreObjects[IA_fixationVariables_semanticSimilarity$scene_consistency == 0])
+t12 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreObjects ~ IA_fixationVariables_semanticSimilarity$scene_consistency, 
+             paired = TRUE, alternative = "less", mu = 0)
+```
+Subsequently, we examined whether linguistic similarity can be used as a proxy for visual similarity. If so, one would expect lower linguistic similarity scores in visually inconsistent objects compared to visually consistent objects. To this end, the linguistic similarity of consistent object was compared with that of inconsistent objects. This was done using the scene-category label and the labels of all other objects in the scene, with only the scene-category label, and with only object-labels. The mean linguistic similarity between the (in)consistent objects and the scene category label as well as the other objects in the scene was `r apa_print(t1)$estimate`. The mean linguistic similarity between the (in)consistent objects and the scene category label was `r apa_print(t2)$estimate` The mean linguistic similarity between the (in)consistent objects and the other objects in the scene was `r apa_print(t3)$estimate`. One sided t-tests compared the linguistic similarity scores of the consistent and inconsistent objects. First, linguistic similarity to the scene category label and other objects in the scene was significantly higher for the consistent object (`r apa_print(t4)$estimate`) than for the inconsistent object (`r apa_print(t5)$estimate`, `r apa_print(t6)$statistic`). Second, linguistic similarity to the scene category label was significantly higher for the consistent object (`r apa_print(t7)$estimate`) than for the inconsistent object (`r apa_print(t8)$estimate`, `r apa_print(t9)$statistic`). Third, linguistic similarity to the other objects in the scene was significantly higher for the consistent object (`r apa_print(t10)$estimate`) than for the inconsistent object (`r apa_print(t11)$estimate`, `r apa_print(t12)$statistic`). This provides preliminary support linguistic similarity can capture the visual inconsistency effect.\par 
+```{r tests 3 hypothesis 1, include=FALSE, eval=TRUE}
+###linguistic similarity 
+# --scene-category
+t1 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory[IA_fixationVariables_semanticSimilarity$scene_consistency == 1])
+t2 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory[IA_fixationVariables_semanticSimilarity$scene_consistency == 0])
+t3 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory[IA_fixationVariables_semanticSimilarity$scene_consistency == 1],
+            IA_fixationVariables_semanticSimilarity$semSim_scoreCategory[IA_fixationVariables_semanticSimilarity$scene_consistency == 0], 
+            paired = TRUE)
+
+# --object-category
+t4 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreObjects[IA_fixationVariables_semanticSimilarity$scene_consistency == 1])
+t5 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreObjects[IA_fixationVariables_semanticSimilarity$scene_consistency == 0])
+t6 = t.test(IA_fixationVariables_semanticSimilarity$semSim_scoreObjects[IA_fixationVariables_semanticSimilarity$scene_consistency == 1],
+            IA_fixationVariables_semanticSimilarity$semSim_scoreObjects[IA_fixationVariables_semanticSimilarity$scene_consistency == 0], 
+            paired = TRUE)
+```
+Finally, the differences between the consistent and inconsistent linguistic similarity scores was compared. This difference was computed based on the linguistic similarity of the (in)consistent object to the scene category-label and to the other object-labels. First, when using linguistic similarity to the scene-category label, the linguistic similarity to the consistent objects (`r apa_print(t1)$estimate`) was significantly higher than the linguistic similarity to the inconsistent objects (`r apa_print(t2)$estimate`, `r apa_print(t3)$statistic`; Figure \@ref(fig:LinguisticSimilarityFigure), left). Second, when using linguistic similarity to the other object-labels in the scene, the linguistic similarity to the consistent objects (`r apa_print(t4)$estimate`) was significantly higher than the linguistic similarity to the inconsistent objects (`r apa_print(t5)$estimate`, `r apa_print(t6)$statistic`; Figure \@ref(fig:LinguisticSimilarityFigure), right).\par
+
+```{r Hypothesis 1 plot data preparation, include=FALSE}
+plotdata = as.data.frame(cbind(c(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory,
+                               IA_fixationVariables_semanticSimilarity$semSim_scoreObjects),
+                         c(IA_fixationVariables_semanticSimilarity$scene_consistency,
+                               IA_fixationVariables_semanticSimilarity$scene_consistency)))
+plotdata$category <- ifelse(seq(1, length(plotdata$V1), 1) < (length(plotdata$V1)/2 + 1), "Object-category", "Object-object")
+
+names(plotdata)[names(plotdata) == "V1"] <- "linguistic_consistency_score"
+names(plotdata)[names(plotdata) == "V2"] <- "visual_consistency_category"
+
+plotdata$category = as.factor(plotdata$category)
+plotdata$visual_consistency_category = as.factor(plotdata$visual_consistency_category)
+```
+```{r LinguisticSimilarityFigure, echo = FALSE, fig.width = 18, fig.height = 10, fig.cap = "Violin plots of linguistic similarity of the (in)consistent objects to the scene-category label (left) and remaining object-labels (right).", out.width = "\\textwidth"}
+vp1 = ggplot(plotdata, 
+       aes(x = category,
+           y = linguistic_consistency_score,
+           fill = visual_consistency_category)) +
+    geom_violin(trim = F,
+                alpha = 0.8) +
+    geom_boxplot(aes(x = category,
+                     y = linguistic_consistency_score,
+                     group = interaction(visual_consistency_category,category)),
+                 width = 0.05, 
+                 fill = "white",
+                 outlier.colour = "NA",
+                 position = position_dodge(width = 0.9)) +
+    geom_jitter(position = position_jitterdodge(jitter.width = 0.05,
+                                                dodge.width = 0.9),
+                size = 1.5,
+                aes(color = visual_consistency_category)) +
+    scale_color_manual(values = c("orange", 
+                                           "lightblue")) +
+                                               guides(color = FALSE) +
+    scale_fill_manual(values = c("orange", 
+                                          "lightblue"),
+                                          labels = c("Inconsistent",
+                                                     "Consistent")) +
+    geom_signif(y_position = c(0.75,0.75), 
+                xmin = c(0.8,1.8), 
+                xmax = c(1.2,2.2), 
+                annotation = c("*","*"),
+                textsize = 16,
+                tip_length = 0)+
+    scale_y_continuous(limits = c(-0.2, 1)) +
+    labs(x = "Visual consistency",
+         y = "Linguistic similarity value (cos)") +
+    theme_classic() +
+    theme(text = element_text(size = 30, family = "serif"),
+          axis.text = element_text(size = 30),
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.ticks.x = element_blank())
+
+vp1
+```
+```{r cleanup part 1, include=FALSE}
+rm(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, plotdata)
+```
+\newpage
+# Correlate linguistic semantic inconsistency scores with visual semantic inconsistency effect
+
+```{r Correlations computation, include=FALSE}
+#Scale the data
+#IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted =
+#  scale(IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted)[ ,1]
+#IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted =
+#  scale(IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted)[ ,1]
+
+#Compute correlations
+# --Scene category label and object label
+cor_Fix_Ori = cor.test(IA_fixationVariables_semanticSimilarity$semSim_scoreOriginal,
+                       IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted, 
+                       "less")
+cor_Dur_Ori = cor.test(IA_fixationVariables_semanticSimilarity$semSim_scoreOriginal,
+                       IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted,
+                       "less")
+
+# --Scene category label
+cor_Fix_Cat = cor.test(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory,
+                       IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted,
+                       "less")
+cor_Dur_Cat = cor.test(IA_fixationVariables_semanticSimilarity$semSim_scoreCategory,
+                       IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted,
+                       "less")
+
+# --Object labels
+cor_Fix_Obj = cor.test(IA_fixationVariables_semanticSimilarity$semSim_scoreObjects,
+                       IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted,
+                       "less")
+cor_Dur_Obj = cor.test(IA_fixationVariables_semanticSimilarity$semSim_scoreObjects,
+                       IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted,
+                       "less")
+```
+One sided t-tests were used to test whether the visual attention to the (in)consistent object correlated with the linguistic similarity score of the object. First, a one-sided t-test indicated that the overall similarity score was correlated negatively with fixation proportion (`r apa_print(cor_Fix_Ori)$estimate`, `r apa_print(cor_Fix_Ori)$statistic`; Figure \@ref(fig:LinguisticVisualConsistencyPlots), A) and fixation duration (`r apa_print(cor_Dur_Ori)$estimate`, `r apa_print(cor_Dur_Ori)$statistic`; Figure \@ref(fig:LinguisticVisualConsistencyPlots), B). Second, a one-sided t-test indicated that the overall similarity score was correlated negatively with fixation proportion (`r apa_print(cor_Fix_Cat)$estimate`, `r apa_print(cor_Fix_Cat)$statistic`; Figure \@ref(fig:LinguisticVisualConsistencyPlots), C) and fixation duration (`r apa_print(cor_Dur_Cat)$estimate`, `r apa_print(cor_Dur_Cat)$statistic`; Figure \@ref(fig:LinguisticVisualConsistencyPlots), D). Third, a one-sided t-test indicated that the object-category similarity score was correlated negatively with fixation proportion (`r apa_print(cor_Fix_Obj)$estimate`, `r apa_print(cor_Fix_Obj)$statistic`; Figure \@ref(fig:LinguisticVisualConsistencyPlots), E) and fixation duration (`r apa_print(cor_Dur_Obj)$estimate`, `r apa_print(cor_Dur_Obj)$statistic`; Figure \@ref(fig:LinguisticVisualConsistencyPlots), F). This supports our expectation that the magnitude of the semantic inconsistency effect that an object elicits correlates with the linguistic similarity of that object.\par
+```{r LinguisticVisualConsistencyPlots, echo = FALSE, fig.width = 18, fig.height = 10, fig.cap = "Scatterplots of the visual attention and linguistic similarity indices with fitted regression lines.", eval=TRUE}
+#clean up
+rm(cor_Fix_Ori, cor_Dur_Ori, cor_Fix_Cat, cor_Dur_Cat, cor_Fix_Obj, cor_Dur_Obj)
+
+#prepare plotting
+sp1 = ggplot(IA_fixationVariables_semanticSimilarity, aes(x = semSim_scoreOriginal, 
+                                                    y = proportionFixations_adjusted)) + 
+      geom_point(alpha=.8) +
+      stat_smooth(method="glm", se=T, fullrange = T) +
+      labs(x = "Overall similarity (cos)", 
+           y = "Fixation proportion") +
+      theme_bw() +
+      theme(text = element_text(size = 20, family = "serif"),
+            axis.text = element_text(size = 18))
+
+sp2 = ggplot(IA_fixationVariables_semanticSimilarity, aes(x = semSim_scoreCategory, 
+                                                    y = proportionFixations_adjusted)) + 
+      geom_point(alpha=.8) +
+      stat_smooth(method="glm", se=T, fullrange = T) +
+      labs(x = "Object-category similarity (cos)", 
+           y = "Fixation proportion") +
+      theme_bw() +
+      theme(text = element_text(size = 20, family = "serif"),
+            axis.text = element_text(size = 18))
+
+sp3 = ggplot(IA_fixationVariables_semanticSimilarity, aes(x = semSim_scoreObjects, 
+                                                    y = proportionFixations_adjusted)) + 
+      geom_point(alpha=.8) +
+      stat_smooth(method="glm", se=T, fullrange = T) +
+      labs(x = "Object-object similarity (cos)", 
+           y = "Fixation proportion") +
+      theme_bw() +
+      theme(text = element_text(size = 20, family = "serif"),
+            axis.text = element_text(size = 18))
+
+sp4 = ggplot(IA_fixationVariables_semanticSimilarity, aes(x = semSim_scoreOriginal, 
+                                                    y = fixationDuration_adjusted)) + 
+      geom_point(alpha=.8) +
+      stat_smooth(method="glm", se=T, fullrange = T) +
+      labs(x = "Overall similarity (cos)", 
+           y = "Fixation duration (ms)") +
+      theme_bw() +
+      theme(text = element_text(size = 20, family = "serif"),
+            axis.text = element_text(size = 18))
+sp5 = ggplot(IA_fixationVariables_semanticSimilarity, aes(x = semSim_scoreCategory, 
+                                                    y = fixationDuration_adjusted)) + 
+      geom_point(alpha=.8) +
+      stat_smooth(method="glm", se=TRUE, fullrange = T) +
+      labs(x = "Object-category similarity (cos)", 
+           y = "Fixation duration (ms)") +
+      theme_bw() +
+      theme(text = element_text(size = 20, family = "serif"),
+            axis.text = element_text(size = 18))
+
+sp6 = ggplot(IA_fixationVariables_semanticSimilarity, aes(x = semSim_scoreObjects, 
+                                                    y = fixationDuration_adjusted)) + 
+      geom_point(alpha=.8) +
+      stat_smooth(method="glm", se=TRUE, fullrange = T) +
+      labs(x = "Object-object similarity (cos)", 
+           y = "Fixation duration (ms)") +
+      theme_bw() +
+      theme(text = element_text(size = 20, family = "serif"),
+            axis.text = element_text(size = 18))
+
+scatterplots <- ggarrange(sp2, sp3, sp5, sp6, 
+                    labels = c("A", "B", "C", "D"), font.label = list(size = 20, color = "black"), 
+                    ncol = 2, nrow = 2, align = "v")
+
+rm(sp2, sp3, sp5, sp6)
+
+scatterplots
+```
+```{r Correlations analysis data preparation, include=FALSE}
+#adjusted fixation number
+FixProp_con = IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted[seq(1, 44, 2)]
+FixProp_inc = IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted[seq(2, 44, 2)]
+
+#adjusted fixation duration
+FixDur_con = IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted[seq(1, 44, 2)]
+FixDur_inc = IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted[seq(2, 44, 2)]
+
+#overall linguistic similarity scores
+LOriSim_con = IA_fixationVariables_semanticSimilarity$semSim_scoreOriginal[seq(1, 44, 2)]
+LOriSim_inc = IA_fixationVariables_semanticSimilarity$semSim_scoreOriginal[seq(2, 44, 2)]
+
+#linguistic category similarity scores 
+LCatSim_con = IA_fixationVariables_semanticSimilarity$semSim_scoreCategory[seq(1, 44, 2)]
+LCatSim_inc = IA_fixationVariables_semanticSimilarity$semSim_scoreCategory[seq(2, 44, 2)]
+
+#linguistic object similarity scores 
+LObjSim_con = IA_fixationVariables_semanticSimilarity$semSim_scoreObjects[seq(1, 44, 2)]
+LObjSim_inc = IA_fixationVariables_semanticSimilarity$semSim_scoreObjects[seq(2, 44, 2)]
+
+Lin_Sim_data = as.data.frame(cbind(FixProp_con, FixProp_inc, FixDur_con, FixDur_inc, 
+                                   LCatSim_con, LCatSim_inc, LObjSim_con, LObjSim_inc, LOriSim_con, LOriSim_inc))
+```
+```{r Differences between correlations of con and incon, include=FALSE}
+#No longer convinced why differentiating the correlations would be useful?
+# --rather, the other way around: we would expect no difference between the two, since both should be captured in the same way
+# --
+c1 = cocor(~FixProp_con + LOriSim_con|
+       FixProp_inc + LCatSim_inc,
+       Lin_Sim_data)
+
+c2 = cocor(~FixProp_con + LOriSim_inc|
+       FixProp_inc + LCatSim_inc,
+       Lin_Sim_data)
+  
+c3 = cocor(~FixProp_con + LCatSim_con|
+       FixProp_inc + LCatSim_inc,
+       Lin_Sim_data)
+
+c4 = cocor(~FixDur_con + LCatSim_con|
+       FixDur_inc + LCatSim_inc,
+       Lin_Sim_data)
+
+c5 = cocor(~FixProp_con + LObjSim_con|
+       FixProp_inc + LObjSim_inc,
+       Lin_Sim_data)
+
+c6 = cocor(~FixDur_con + LObjSim_con|
+       FixDur_inc + LObjSim_inc,
+       Lin_Sim_data)
+```
+If linguistic similarity can be used as a proxy for visual similarity, consistent and inconsistent objects should lie on continuum. The correlations between visual and linguistic similarity should then be similar for scenes containing consistent and inconsistent objects. Indeed, a Fisher z-tests indicated that the correlations between fixation variables and linguistic similarity scores did not differ significantly between objects labelled as consistent and inconsistent.
+First, a Fisher z-test indicated that the correlations between fixation proportion and linguistic similarity to the scene category-labels did not differ significantly between objects labelled as consistent and inconsistent (`r c3@pearson1898`; figure \@ref(fig:MergedConsistencyPlot), A). Second, a Fisher z-test indicated that the correlations between fixation duration and linguistic similarity to the scene category-labels did not differ significantly between objects labelled as consistent and inconsistent (`r c4@pearson1898`; figure \@ref(fig:MergedConsistencyPlot), C). Third, a Fisher z-test indicated that the correlations between fixation proportion and linguistic similarity to the other object-labels did not differ significantly between objects labelled as consistent and inconsistent (`r c3@pearson1898`; figure \@ref(fig:MergedConsistencyPlot), B). Fourth, a Fisher z-test indicated that the correlations between fixation duration and linguistic similarity to the other object-labels did not differ significantly between objects labelled as consistent and inconsistent (`r c4@pearson1898`; figure \@ref(fig:MergedConsistencyPlot), D). These findings support our hypothesis that semantically consistent and inconsistent objects can be placed on one continuum by using psycho linguistics as a proxy.\par
+```{r MergedConsistencyPlot, echo = FALSE, fig.width = 18, fig.height = 10, fig.cap= "Scatterplots of the correlations"}
+### Prop fixations
+# --overall similarity
+sp1 = ggplot() +
+  geom_point(data = IA_fixationVariables_semanticSimilarity, 
+             aes(x = semSim_scoreOriginal, y = proportionFixations_adjusted, color = scene_consistency), size = 2) +
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreOriginal, y = proportionFixations_adjusted),
+              method = "loess") + 
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreOriginal, y = proportionFixations_adjusted, color = scene_consistency),
+              method = "glm", se = F, alpha = 0.8) +
+  labs(title = "",
+       x = "Linguistic similarity (cos)",
+       y = "Proportion fixations",
+       color = "Consistency") + 
+  scale_color_manual(values = c("darkred", "darkgreen", "darkblue"),
+                     labels = c("inconsistent",
+                                "consistent")) +
+  scale_x_continuous(limits = c(0, 0.06)) +
+  theme_bw() +
+  theme(text = element_text(size = 30, family = "serif"),
+        axis.text.x = element_text(size = 20),
+        plot.title = element_text(hjust = 0.5),
+        axis.ticks.x = element_blank())
+
+# --Category similarity
+sp2 = ggplot() +
+  geom_point(data = IA_fixationVariables_semanticSimilarity, 
+             aes(x = semSim_scoreCategory, y = proportionFixations_adjusted, color = scene_consistency), size = 2) +
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreCategory, y = proportionFixations_adjusted),
+              method = "loess") + 
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreCategory, y = proportionFixations_adjusted, color = scene_consistency),
+              method = "glm", se = F, alpha = 0.8) +
+  labs(title = "",
+       x = "Linguistic similarity (cos)",
+       y = "Proportion fixations",
+       color = "Consistency") + 
+  scale_color_manual(values = c("darkred", "darkgreen", "darkblue"),
+                     labels = c("inconsistent",
+                                "consistent")) +
+  scale_x_continuous(limits = c(0, 0.4)) +
+  theme_bw() +
+  theme(text = element_text(size = 30, family = "serif"),
+        axis.text.x = element_text(size = 20),
+        plot.title = element_text(hjust = 0.5),
+        axis.ticks.x = element_blank())
+
+# --Object similarity
+sp3 = ggplot() +
+  geom_point(data = IA_fixationVariables_semanticSimilarity, 
+             aes(x = semSim_scoreObjects, y = proportionFixations_adjusted, color = scene_consistency), size = 2) +
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreObjects, y = proportionFixations_adjusted),
+              method = "loess") + 
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreObjects, y = proportionFixations_adjusted, color = scene_consistency),
+              method = "glm", se = F, alpha = 0.8) +
+  labs(title = "",
+       x = "Linguistic similarity (cos)",
+       y = "Proportion fixations",
+       color = "Consistency") + 
+  scale_color_manual(values = c("darkred", "darkgreen", "darkblue"),
+                     labels = c("inconsistent",
+                                "consistent")) +
+  scale_x_continuous(limits = c(0, 0.3)) +
+  theme_bw() +
+  theme(text = element_text(size = 30, family = "serif"),
+        axis.text.x = element_text(size = 20),
+        plot.title = element_text(hjust = 0.5),
+        axis.ticks.x = element_blank())
+
+### Fixation duration
+# --Overall similarity
+sp4 = ggplot() +
+  geom_point(data = IA_fixationVariables_semanticSimilarity, 
+             aes(x = semSim_scoreOriginal, y = fixationDuration_adjusted, color = scene_consistency), size = 2) +
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreOriginal, y = fixationDuration_adjusted),
+              method = "loess") + 
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreOriginal, y = fixationDuration_adjusted, color = scene_consistency),
+              method = "glm", se = F, alpha = 0.8) +
+  labs(title = "",
+       x = "Linguistic similarity (cos)",
+       y = "Proportion fixations",
+       color = "Consistency") + 
+  scale_color_manual(values = c("darkred", "darkgreen", "darkblue"),
+                     labels = c("inconsistent",
+                                "consistent")) +
+  scale_x_continuous(limits = c(0, 0.3)) +
+  theme_bw() +
+  theme(text = element_text(size = 30, family = "serif"),
+        axis.text.x = element_text(size = 20),
+        plot.title = element_text(hjust = 0.5),
+        axis.ticks.x = element_blank())
+
+# --Category similarity
+sp5 = ggplot() +
+  geom_point(data = IA_fixationVariables_semanticSimilarity, 
+             aes(x = semSim_scoreCategory, y = fixationDuration_adjusted, color = scene_consistency), size = 2) +
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreCategory, y = fixationDuration_adjusted),
+              method = "loess") + 
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreCategory, y = fixationDuration_adjusted, color = scene_consistency),
+              method = "glm", se = F, alpha = 0.8) +
+  labs(title = "",
+       x = "Linguistic similarity (cos)",
+       y = "Proportion fixations",
+       color = "Consistency") + 
+  scale_color_manual(values = c("darkred", "darkgreen", "darkblue"),
+                     labels = c("inconsistent",
+                                "consistent")) +
+  scale_y_continuous(limits = c(0, 0.06)) +
+  scale_x_continuous(limits = c(0, 0.4)) +
+  theme_bw() +
+  theme(text = element_text(size = 30, family = "serif"),
+        axis.text.x = element_text(size = 20),
+        plot.title = element_text(hjust = 0.5),
+        axis.ticks.x = element_blank())
+
+sp6 = ggplot() +
+  geom_point(data = IA_fixationVariables_semanticSimilarity, 
+             aes(x = semSim_scoreObjects, y = fixationDuration_adjusted, color = scene_consistency), size = 2) +
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreObjects, y = fixationDuration_adjusted),
+              method = "loess") + 
+  stat_smooth(data = IA_fixationVariables_semanticSimilarity, 
+              aes(x = semSim_scoreObjects, y = fixationDuration_adjusted, color = scene_consistency),
+              method = "glm", se = F, alpha = 0.8) +
+  labs(title = "",
+       x = "Linguistic similarity (cos)",
+       y = "Proportion fixations",
+       color = "Consistency") + 
+  scale_color_manual(values = c("darkred", "darkgreen", "darkblue"),
+                     labels = c("inconsistent",
+                                "consistent")) +
+  scale_y_continuous(limits = c(0, 0.06)) +
+  scale_x_continuous(limits = c(0, 0.3)) +
+  theme_bw() +
+  theme(text = element_text(size = 30, family = "serif"),
+        axis.text.x = element_text(size = 20),
+        plot.title = element_text(hjust = 0.5),
+        axis.ticks.x = element_blank())
+
+scatterplots <- ggarrange(sp2, sp3, sp5, sp6,
+                    labels = c("A", "B", "C", "D"), 
+                    ncol = 2, nrow = 2, common.legend = T, legend = "right", align = "v")
+
+annotate_figure(scatterplots, top =  text_grob("Conditional regression lines of linguistic similarity and fixation metrics",
+                                           face = "bold", size = 30, family = "serif"))
+```
+```{r Cat-obj correlations analysis data preparation, include=FALSE}
+#adjusted fixation number
+FixProp = IA_fixationVariables_semanticSimilarity$proportionFixations_adjusted
+
+#adjusted fixation duration
+FixDur = IA_fixationVariables_semanticSimilarity$fixationDuration_adjusted
+
+#linguistic category similarity scores 
+LCatSim = IA_fixationVariables_semanticSimilarity$semSim_scoreCategory
+
+#linguistic object similarity scores 
+LObjSim = IA_fixationVariables_semanticSimilarity$semSim_scoreObjects
+
+Lin_Sim_data = as.data.frame(cbind(FixProp, FixDur, LCatSim, LObjSim))
+```
+```{r Differences between correlations with the cat and obj scores, include=FALSE}
+c1 = cocor(~FixProp + LCatSim|
+       FixProp + LObjSim,
+       alternative = "greater",
+       Lin_Sim_data)
+
+c2 = cocor(~FixDur + LCatSim|
+       FixDur + LObjSim,
+       alternative = "greater",
+       Lin_Sim_data)
+```
+It was expected that the linguistic similarity of the (in)consistent object to the scene-category label predicts visual attention to the (in)consistent object better than the linguistic similarity of the (in)consistent object to the object labels of the remaining objects. First, a one-sided Fisher z-test indicated that the correlations between fixation proportion and linguistic similarity to the scene category-labels did not differ significantly between objects labelled as consistent and inconsistent (*z* = `r round(c1@pearson1898$statistic, 2)`, *p =* `r round(c1@pearson1898$p.value, 3)`). Second, a one-sided Fisher z-test indicated that the correlations between fixation proportion and linguistic similarity to the scene category-labels did not differ significantly between objects labelled as consistent and inconsistent (*z* = `r round(c2@pearson1898$statistic, 2)`, *p =* `r round(c2@pearson1898$p.value, 3)`).\newpage
+```{r clean-up, include=FALSE, eval=TRUE}
+rm(apa_lm, c1, c2, c3, c4, c5, c6, IA_fixationVariables_semanticSimilarity, l1, l2, l3, Lin_Sim_data, ls1, ls2, ls3, mydata, p, scatterplots, sp1, sp2, sp3, sp4, sp5, sp6, vifplot)
+```
+```{r Import quadratic analysis data, include=FALSE}
+### Import packages
+list.of.packages <- c("readr", "readxl", "ggplot2", "ggpubr", "ggsignif", "extrafont", "papaja", "ppcor", "car", "MuMIn", "caret", "DescTools", "olsrr", "car", "performance")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, repos = "http://cran.us.r-project.org")
+lapply(list.of.packages, require, character.only = TRUE)
+
+#Change Data variable to the place where you store the Datafolder.
+Data = "C:/Users/u0154823/OneDrive - KU Leuven/Desktop/MM/Semantic inconsistency paper/Analyses/Data/"
+
+#import data
+allObjects_fixationVariables_semanticSimilarity = read_excel(paste(Data, "allObjects_fixationVariables_semanticSimilarity.xlsx", sep = ""))
+```
+```{r check model assumptions, include=FALSE}
+### Fixation proportion
+#generate linear model
+score = allObjects_fixationVariables_semanticSimilarity$semSim_scoreOriginal
+fix = allObjects_fixationVariables_semanticSimilarity$proportionFixations_adjusted
+linearModel <- lm(fix ~ score)
+
+# check model assumptions
+ols_plot_resid_hist(linearModel)
+ols_test_normality(linearModel)
+qqPlot(linearModel)
+# residuals are NOT normally distributed
+
+# linear model on square-root transformed data
+fix_sqrt <- sqrt(allObjects_fixationVariables_semanticSimilarity$proportionFixations_adjusted)
+linearModel_sqrt <- lm(fix_sqrt ~ score)
+
+ols_plot_resid_hist(linearModel_sqrt)
+ols_test_normality(linearModel_sqrt)
+qqPlot(linearModel_sqrt)
+# residuals ARE normally distributed
+
+### Fixation duration
+#generate linear model
+score = allObjects_fixationVariables_semanticSimilarity$semSim_scoreOriginal
+fix = allObjects_fixationVariables_semanticSimilarity$fixationDuration_adjusted
+linearModel <- lm(fix ~ score)
+
+# check model assumptions
+ols_plot_resid_hist(linearModel)
+ols_test_normality(linearModel)
+qqPlot(linearModel)
+# residuals are NOT normally distributed
+
+# linear model on square-root transformed data
+fix_sqrt <- sqrt(allObjects_fixationVariables_semanticSimilarity$proportionFixations_adjusted)
+linearModel_sqrt <- lm(fix_sqrt ~ score)
+
+ols_plot_resid_hist(linearModel_sqrt)
+ols_test_normality(linearModel_sqrt)
+qqPlot(linearModel_sqrt)
+# residuals ARE normally distributed
+
+# linear model on square-root transformed data
+score = allObjects_fixationVariables_semanticSimilarity$semSim_scoreCategory
+fix_sqrt <- sqrt(allObjects_fixationVariables_semanticSimilarity$proportionFixations_adjusted)
+linearModel_sqrt <- lm(fix_sqrt ~ score)
+
+ols_plot_resid_hist(linearModel_sqrt)
+ols_test_normality(linearModel_sqrt)
+qqPlot(linearModel_sqrt)
+# residuals ARE normally distributed
+rm(linearModel, quadraticModel)
+```
+
+# Quadtratic model
+One interesting question is how object consistency values influence visual guidance. On the one hand, previous work established that viewers utilize neighboring objects as cues for exploring a scene further (see the introduction). This indicates that viewers direct attention to objects that are similar to the currently fixated one. On the other hand, previous work also established that inconsistent objects can draw attention. This indicates that viewers allocate attention to objects that are highly dissimilar to the currently fixated one. Operationalizing semantic inconsistencies as continuous places these findings on a continuum. On this view, semantic similarity guides visual attention in a parabolic way, forming an inverted U-shape. Objects with either low (i.e., semantically inconsistent objects) or high linguistic similarity scores will be fixated upon more frequently.\par
+To test this possibility empirically, we compared the fit of a linear and a quadratic model when predicting visual attention based on linguistic similarity. We fit four models to test this possibility. The first two models predicted the adjusted fixation proportion on an object based on the linguistic similarity of that object to the rest of the scene. The latter two models predicted the adjusted fixation duration on an object based on the linguistic similarity of that object to the rest of the scene. The two linguistic similarity predictors were the linguistic similarity of the (in)consistent object to the scene category-label, and the linguistic similarity of the (in)consistent object to the remaining objects in the scene.\par
+A square root transformation was applied to the adjusted proportion of fixations and to the adjusted fixation duration to address non-normality. Two models were fitted to the transformed data: a linear model and a quadratic model. The models were compared based on their goodness-of-fit statistics, including the adjusted R-squared, root mean square error (RMSE), and Akaike information criterion (AIC). AIC is a measure of model fit that penalizes for the number of parameters in the model. Lower AIC values indicate a better fit of the model to the data.\par
+
+```{r Fixationproportion_linear_category_score, include=FALSE}
+#generate linear model
+Linsim_category = score = allObjects_fixationVariables_semanticSimilarity$semSim_scoreCategory
+fix_sqrt <- sqrt(allObjects_fixationVariables_semanticSimilarity$proportionFixations_adjusted)
+linearModel <- lm(fix_sqrt ~ Linsim_category)
+
+anova_linear = aov(linearModel)
+aov_linearModel_sqrt = aov(linearModel)
+radj_lin = summary(linearModel)$adj.r.squared
+RMSE_lin = sqrt(mean(linearModel$residuals^2))
+
+#generate quadratic model
+Linsim_catgory2 = score2 <- Linsim_category^2
+quadraticModel <- lm(fix_sqrt ~ Linsim_category + Linsim_catgory2)
+radj_qua = summary(quadraticModel)$adj.r.squared
+RMSE_qua = sqrt(mean(quadraticModel$residuals^2))
+```
+```{r Fixationproportion_comparison_category_score, include=FALSE}
+anova_linear = aov(linearModel)
+anova_quadratic = aov(quadraticModel)
+
+# compare models
+anova = anova(linearModel,quadraticModel)
+```
+
+## Fixation proportion
+A linear and a quadratic model were fit to predict fixation proportion based on linguistic similarity to the scene category label. The quadratic model showed a significant effect of the quadratic predictor (`r apa_print(anova_quadratic)$statistic$polyscore_2`), indicating a significant deviation from linearity. Indeed, the quadratic model fit the data better than the linear model (*F(`r anova[2,3]`,`r anova[2,1]`*) =`r round(anova[2, 5], 2)`, *p* `r ifelse(anova[2,6]< 0.001, "< 0.001", paste0("= ", round(anova[2,6], 3)))`). The linear model had an adjusted R-squared value of `r apa_print(linearModel)$estimate$modelfit$r2_adj`, while the quadratic model had an adjusted R-squared of `r apa_print(quadraticModel)$estimate$modelfit$r2_adj`, indicating that both models had a comparable fit to the data. In line with this interpretation, the linear model had an RMSE value of `r round(RMSE_lin, 2)` and the quadratic model had a RMSE value of `r round(RMSE_qua, 2)`. However, the linear model had an AIC value of `r apa_print(linearModel)$estimate$modelfit$aic`, while the quadratic model had an AIC value of `r apa_print(quadraticModel)$estimate$modelfit$aic`, indicating that the quadratic model fits the data better. Figure \@ref(fig:ModelPlots) shows the scatter plot of the data with the fitted lines for both the linear and quadratic models. \par
+
+```{r Fixationproportion_object_score, include=FALSE}
+rm(linearModel, quadraticModel, anova)
+#generate linear model
+Linsim_objects = score = allObjects_fixationVariables_semanticSimilarity$semSim_scoreObjects
+fix_prop_sqrt <- sqrt(allObjects_fixationVariables_semanticSimilarity$proportionFixations_adjusted)
+linearModel <- lm(fix_prop_sqrt ~ Linsim_objects)
+
+radj_lin = summary(linearModel)$adj.r.squared
+RMSE_lin = sqrt(mean(linearModel$residuals^2))
+
+# generate quadratic model
+Linsim_objects2 = score2 <- score^2
+quadraticModel <- lm(fix_prop_sqrt ~ Linsim_objects + Linsim_objects2)
+
+radj_sq = summary(quadraticModel)$adj.r.squared
+RMSE_sq = sqrt(mean(quadraticModel$residuals^2))
+```
+```{r Fixationproportion_plotprep_category_score, include=FALSE}
+# create a data frame with the score and fix variables
+plot_data2 = data.frame(Linsim_objects2, fix_prop_sqrt)
+
+# create a sequence of values from the minimum to maximum score
+scoreValues <- seq(min(score), max(score), length.out = 100)
+
+
+# create a linear model
+linearModel <- lm(fix_sqrt ~ score, plot_data2)
+
+# create a quadratic model
+quadraticModel <- lm(fix_sqrt ~ poly(score, 2), plot_data2)
+
+# create a data frame with the predicted values from the linear model
+linearPredictions2 <- data.frame(scoreValues, predict(linearModel, newdata = data.frame(score = scoreValues)))
+
+# create a data frame with the predicted values from the quadratic model
+quadraticPredictions2 <- data.frame(scoreValues, predict(quadraticModel, newdata = data.frame(score = scoreValues)))
+```
+```{r Fixationproportion_comparison_object_score, include=FALSE}
+anova_linear = aov(linearModel)
+anova_quadratic = aov(quadraticModel)
+
+# compare models
+anova = anova(linearModel,quadraticModel)
+```
+A linear and a quadratic model were fit to predict fixation proportion based on linguistic similarity to the other objects in the scene. The quadratic model showed a significant effect of the quadratic predictor (`r apa_print(anova_quadratic)$statistic$polyscore_2`), indicating a significant deviation from linearity. Overall, the quadratic model fit the data better than the linear model (*F(`r anova[2,3]`,`r anova[2,1]`*) =`r round(anova[2, 5], 2)`, *p* `r ifelse(anova[2,6]< 0.001, "< 0.001", paste0("= ", round(anova[2,6], 3)))`). The linear model had an adjusted R-squared value of `r apa_print(linearModel)$estimate$modelfit$r2_adj`, while the quadratic model had an adjusted R-squared of `r apa_print(quadraticModel)$estimate$modelfit$r2_adj`, indicating that both models had a comparable fit to the data. In line with this interpretation, the linear model had an RMSE value of `r round(RMSE_lin, 2)` and the quadratic model had a RMSE value of `r round(RMSE_qua, 2)`. However, the linear model had an AIC value of `r apa_print(linearModel)$estimate$modelfit$aic`, while the quadratic model had an AIC value of `r apa_print(quadraticModel)$estimate$modelfit$aic`, indicating that the quadratic model fits the data better. Figure \@ref(fig:ModelPlots) shows the scatter plot of the data with the fitted lines for both the linear and quadratic models. \par
+```{r Fixationduration_linear_Category_score, include=FALSE}
+rm(linearModel, quadraticModel, anova)
+#generate linear model
+Linsim_Category = score = allObjects_fixationVariables_semanticSimilarity$semSim_scoreCategory
+fix_dur = fix_sqrt = sqrt(allObjects_fixationVariables_semanticSimilarity$fixationDuration_adjusted)
+linearModel_sqrt = lm(fix_sqrt ~ score)
+
+apa_linearModel_sqrt = apa_print(linearModel_sqrt)
+radj_lin = summary(linearModel_sqrt)$adj.r.squared
+RMSE_lin = sqrt(mean(linearModel_sqrt$residuals^2))
+
+# generate quadratic model
+score2 <- score^2
+quadraticModel_sqrt <- lm(fix_sqrt ~ score + score2)
+
+apa_quadraticModel_sqrt = apa_print(quadraticModel_sqrt)
+radj_sq = summary(quadraticModel_sqrt)$adj.r.squared
+RMSE_sq = sqrt(mean(quadraticModel_sqrt$residuals^2))
+```
+```{r Fixationduration_plotprep_Category_score, include=FALSE}
+# create a data frame with the score and fix variables
+data = data.frame(score, fix)
+
+# create a sequence of values from the minimum to maximum score
+scoreValues <- seq(min(score), max(score), length.out = 100)
+
+
+# create a linear model
+linearModel <- lm(fix_sqrt ~ score, data)
+
+# create a quadratic model
+quadraticModel <- lm(fix_sqrt ~ poly(score, 2), data)
+
+# create a data frame with the predicted values from the linear model
+linearPredictions <- data.frame(scoreValues, predict(linearModel, newdata = data.frame(score = scoreValues)))
+
+# create a data frame with the predicted values from the quadratic model
+quadraticPredictions <- data.frame(scoreValues, predict(quadraticModel, newdata = data.frame(score = scoreValues)))
+```
+```{r Fixationduration_comparison_category_score, include=FALSE}
+anova_linear = aov(linearModel)
+anova_quadratic = aov(quadraticModel)
+
+# compare models
+anova = anova(linearModel_sqrt,quadraticModel_sqrt)
+```
+## Fixation Duration
+A linear and a quadratic model were fit to predict fixation duration based on linguistic similarity to the other objects in the scene. The quadratic model showed a significant effect of the quadratic predictor (`r apa_print(anova_quadratic)$statistic$polyscore_2`), indicating a significant deviation from linearity. Overall, the quadratic model fit the data better than the linear model (*F(`r anova[2,3]`,`r anova[2,1]`*) =`r round(anova[2, 5], 2)`, *p* `r ifelse(anova[2,6]< 0.001, "< 0.001", paste0("= ", round(anova[2,6], 3)))`). The linear model had an adjusted R-squared value of `r apa_print(linearModel)$estimate$modelfit$r2_adj`, while the quadratic model had an adjusted R-squared of `r apa_print(quadraticModel)$estimate$modelfit$r2_adj`, indicating that both models had a comparable fit to the data. In line with this interpretation, the linear model had an RMSE value of `r round(RMSE_lin, 2)` and the quadratic model had a RMSE value of `r round(RMSE_qua, 2)`. However, the linear model had an AIC value of `r apa_print(linearModel)$estimate$modelfit$aic`, while the quadratic model had an AIC value of `r apa_print(quadraticModel)$estimate$modelfit$aic`, indicating that the quadratic model fits the data better. Figure \@ref(fig:ModelPlots) shows the scatter plot of the data with the fitted lines for both the linear and quadratic models. \par
+```{r Fixationduration_linear_object_score, include=FALSE}
+#generate linear model
+Linsim_object = score = allObjects_fixationVariables_semanticSimilarity$semSim_scoreObjects
+fix_sqrt <- sqrt(allObjects_fixationVariables_semanticSimilarity$fixationDuration_adjusted)
+linearModel_sqrt <- lm(fix_sqrt ~ score)
+
+radj_lin = summary(linearModel_sqrt)$adj.r.squared
+RMSE_lin = sqrt(mean(linearModel_sqrt$residuals^2))
+
+# generate quadratic model
+score2 <- score^2
+quadraticModel <- lm(fix ~ score + score2)
+
+quadraticModel_sqrt <- lm(fix_sqrt ~ score + score2)
+
+radj_sq = summary(quadraticModel_sqrt)$adj.r.squared
+RMSE_sq = sqrt(mean(quadraticModel_sqrt$residuals^2))
+``` 
+```{r Fixationduration_plotprep_object_score, include=FALSE}
+# create a data frame with the score and fix variables
+data = data.frame(score, fix)
+
+# create a sequence of values from the minimum to maximum score
+scoreValues <- seq(min(score), max(score), length.out = 100)
+
+
+# create a linear model
+linearModel <- lm(fix_sqrt ~ score, data)
+
+# create a quadratic model
+quadraticModel <- lm(fix_sqrt ~ poly(score, 2), data)
+
+# create a data frame with the predicted values from the linear model
+linearPredictions <- data.frame(scoreValues, predict(linearModel, newdata = data.frame(score = scoreValues)))
+
+# create a data frame with the predicted values from the quadratic model
+quadraticPredictions <- data.frame(scoreValues, predict(quadraticModel, newdata = data.frame(score = scoreValues)))
+```
+```{r Fixationduration_comparison_object_score, include=FALSE}
+anova_linear = aov(linearModel)
+anova_quadratic = aov(quadraticModel)
+
+# compare models
+anova = anova(linearModel_sqrt,quadraticModel_sqrt)
+```
+A linear and a quadratic model were fit to predict fixation proportion based on linguistic similarity to the other objects in the scene. The quadratic model showed a significant effect of the quadratic predictor (`r apa_print(anova_quadratic)$statistic$polyscore_2`), indicating a significant deviation from linearity. Overall, the quadratic model fit the data better than the linear model (*F(`r anova[2,3]`,`r anova[2,1]`*) =`r round(anova[2, 5], 2)`, *p* `r ifelse(anova[2,6]< 0.001, "< 0.001", paste0("= ", round(anova[2,6], 3)))`). The linear model had an adjusted R-squared value of `r apa_print(linearModel)$estimate$modelfit$r2_adj`, while the quadratic model had an adjusted R-squared of `r apa_print(quadraticModel)$estimate$modelfit$r2_adj`, indicating that both models had a comparable fit to the data. In line with this interpretation, the linear model had an RMSE value of `r round(RMSE_lin, 2)` and the quadratic model had a RMSE value of `r round(RMSE_qua, 2)`. However, the linear model had an AIC value of `r apa_print(linearModel)$estimate$modelfit$aic`, while the quadratic model had an AIC value of `r apa_print(quadraticModel)$estimate$modelfit$aic`, indicating that the quadratic model fits the data better. Figure \@ref(fig:ModelPlots) shows the scatter plot of the data with the fitted lines for both the linear and quadratic models. \par
+
+```{r Fixationproportion_plotprep_overall_object_score, include=FALSE}
+##### PROPORTION FIXATIONS ######
+### Object-category scores ###
+score_1 <- allObjects_fixationVariables_semanticSimilarity$semSim_scoreCategory
+fix_sqrt_1 <- sqrt(allObjects_fixationVariables_semanticSimilarity$proportionFixations_adjusted)
+score2 <- score_1^2
+
+# linear model on square-root transformed data
+linearModel_sqrt <- lm(fix_sqrt_1 ~ score_1)
+quadraticModel_sqrt <- lm(fix_sqrt_1 ~ score_1 + score2)
+
+scoreValues_sqrt_1 <- seq(0, .8, 0.05)
+fixPredict_sqrt_1 <- predict(linearModel_sqrt,list(score_1=scoreValues_sqrt_1))
+fixPredict2_sqrt_1 <- predict(quadraticModel_sqrt,list(score_1=scoreValues_sqrt_1,
+                                                       score2=scoreValues_sqrt_1^2))
+
+
+### Object-Object scores ###
+score_2 <- allObjects_fixationVariables_semanticSimilarity$semSim_scoreObjects
+fix_sqrt_2 <- sqrt(allObjects_fixationVariables_semanticSimilarity$proportionFixations_adjusted)
+score2 <- score_2^2
+
+# linear model on square-root transformed data
+linearModel_sqrt <- lm(fix_sqrt_2 ~ score_2)
+quadraticModel_sqrt <- lm(fix_sqrt_2 ~ score_2 + score2)
+
+# plot data with best fit lines
+scoreValues_sqrt_2 <- seq(0, .8, 0.05)
+fixPredict_sqrt_2 <- predict(linearModel_sqrt,list(score_2=scoreValues_sqrt_2))
+fixPredict2_sqrt_2 <- predict(quadraticModel_sqrt,list(score_2=scoreValues_sqrt_2,
+                                                       score2=scoreValues_sqrt_2^2))
+
+
+##### FIXATION DURATION ######
+### do the same analyses with Category score ###
+score_3 <- allObjects_fixationVariables_semanticSimilarity$semSim_scoreCategory
+fix_sqrt_3 <- sqrt(allObjects_fixationVariables_semanticSimilarity$fixationDuration_adjusted)
+score2 <- score_3^2
+
+# linear model on square-root transformed data
+linearModel_sqrt <- lm(fix_sqrt_3 ~ score_3)
+quadraticModel_sqrt <- lm(fix_sqrt_3 ~ score_3 + score2)
+
+scoreValues_sqrt_3 <- seq(0, .8, 0.05)
+fixPredict_sqrt_3 <- predict(linearModel_sqrt,list(score_3=scoreValues_sqrt_3))
+fixPredict2_sqrt_3 <- predict(quadraticModel_sqrt,list(score_3=scoreValues_sqrt_3,
+                                                       score2=scoreValues_sqrt_3^2))
+
+
+## object-object scores ##
+score_4 <- allObjects_fixationVariables_semanticSimilarity$semSim_scoreObjects
+fix_sqrt_4 <- sqrt(allObjects_fixationVariables_semanticSimilarity$fixationDuration_adjusted)
+score2 <- score_4^2
+
+# linear model on square-root transformed data
+linearModel_sqrt <- lm(fix_sqrt_4 ~ score_4)
+quadraticModel_sqrt <- lm(fix_sqrt_4 ~ score_4 + score2)
+
+scoreValues_sqrt_4 <- seq(0, .5, 0.05)
+fixPredict_sqrt_4 <- predict(linearModel_sqrt,list(score_4=scoreValues_sqrt_4))
+fixPredict2_sqrt_4 <- predict(quadraticModel_sqrt,list(score_4=scoreValues_sqrt_4,
+                                                       score2=scoreValues_sqrt_4^2))
+# Create a data frame for each plot
+df_1 <- data.frame(score = score_1, fix_sqrt = fix_sqrt_1)
+df_2 <- data.frame(score = score_2, fix_sqrt = fix_sqrt_2)
+df_3 <- data.frame(score = score_3, fix_sqrt = fix_sqrt_3)
+df_4 <- data.frame(score = score_4, fix_sqrt = fix_sqrt_4)
+```
+```{r ModelPlots, echo = FALSE, fig.width = 18, fig.height = 10, fig.align='center', fig.cap = "Scatterplots of the visual attention and linguistic similarity scores of the (in)consistent objects.", out.width = "\\textwidth"}
+par(mfrow = c(2,2))
+## Fixation proportion ##
+## Category-Object similarity ##
+plot(score_1,fix_sqrt_1,
+                  xlab = "Object-category similarity (cos)",
+                  ylab = "Proportion fixations",
+                  main = "",
+                  pch = 20) +
+  lines(scoreValues_sqrt_1,fixPredict_sqrt_1,col='darkred') +
+  lines(scoreValues_sqrt_1,fixPredict2_sqrt_1,col='darkblue')
+
+## Object-Object similarity ##
+plot(score_2,fix_sqrt_2,
+     xlab = "Object-object similarity (cos)",
+     ylab = "Proportion fixations",
+     main = "",
+     pch = 20) +
+  lines(scoreValues_sqrt_2,fixPredict_sqrt_2,col='darkred') + 
+  lines(scoreValues_sqrt_2,fixPredict2_sqrt_2,col='darkblue')
+
+## Fixation Duration ##
+## Category-Object similarity ##
+plot(score_3,fix_sqrt_3,
+     xlab = "Linguistic similarity (cos)",
+     ylab = "Fixation duration (ms)",
+     main = "",
+     pch = 20) + 
+  lines(scoreValues_sqrt_3,fixPredict_sqrt_3,col='darkred') +
+  lines(scoreValues_sqrt_3,fixPredict2_sqrt_3,col='darkblue')
+
+## Object-object similarity ##
+plot(score_4,fix_sqrt_4,
+     xlab = "Linguistic similarity (cos)",
+     ylab = "Fixation duration (ms)",
+     main = "",
+     pch = 20) +
+  lines(scoreValues_sqrt_4,fixPredict_sqrt_4,col='darkred') +
+  lines(scoreValues_sqrt_4,fixPredict2_sqrt_4,col='darkblue')
+
+par(mfrow = c(1,1))
+title("title")
+legend(x = "topright",         # Position
+        legend = c("Linear", "Quadratic"), # Legend texts
+        lty = c(1, 2),          # Line types
+        col = c("darkred", "darkblue"),          # Line colors
+        lwd = 2)
+
+# Create the plots using ggplot2
+p1 <- ggplot(df_1, aes(x = score, y = fix_sqrt)) +
+  geom_point(shape = 20, size = 2) +
+  geom_line(data = data.frame(score = scoreValues_sqrt_1, fix_sqrt = fixPredict_sqrt_1),
+            aes(x = score, y = fix_sqrt), 
+            color = "darkred", size = 1.2) +
+  geom_line(data = data.frame(score = scoreValues_sqrt_1, fix_sqrt = fixPredict2_sqrt_1),
+            aes(x = score, y = fix_sqrt), 
+            color = "darkblue", size = 1.2) +
+  labs(x = "Object-category similarity (cos)", y = "Proportion fixations") +
+  scale_y_continuous(limits = c(0, 0.006)) +
+  scale_x_continuous(limits = c(0, 0.85)) +
+  scale_color_manual(values = c("darkred" = "Linear", "darkblue" = "Quadratic")) +
+  theme_bw() +
+  theme(text = element_text(size = 20, family = "serif"),
+        axis.text = element_text(size = 18))
+
+p2 <- ggplot(df_2, aes(x = score, y = fix_sqrt)) +
+  geom_point(shape = 20, size = 2) +
+  geom_line(data = data.frame(score = scoreValues_sqrt_2, fix_sqrt = fixPredict_sqrt_2), 
+            aes(x = score, y = fix_sqrt), 
+            color = "darkred", size = 1.2) +
+  geom_line(data = data.frame(score = scoreValues_sqrt_2, fix_sqrt = fixPredict2_sqrt_2), 
+            aes(x = score, y = fix_sqrt), 
+            color = "darkblue", size = 1.2) +
+  labs(x = "Object-object similarity (cos)", y = "Proportion fixations") +
+  scale_y_continuous(limits = c(0, 0.006)) +
+  scale_x_continuous(limits = c(0, 0.5)) +
+  scale_color_manual(values = c("darkred" = "Linear", "darkblue" = "Quadratic")) +
+  theme_bw() +
+  theme(text = element_text(size = 20, family = "serif"),
+        axis.text = element_text(size = 18))
+
+p3 <- ggplot(df_3, aes(x = score, y = fix_sqrt)) +
+  geom_point(shape = 20, size = 2) +
+  geom_line(data = data.frame(score = scoreValues_sqrt_3, fix_sqrt = fixPredict_sqrt_3), 
+            aes(x = score, y = fix_sqrt), 
+            color = "darkred", size = 1.2) +
+  geom_line(data = data.frame(score = scoreValues_sqrt_3, fix_sqrt = fixPredict2_sqrt_3), 
+            aes(x = score, y = fix_sqrt),
+            color = "darkblue", size = 1.2) +
+  labs(x = "Object-category similarity (cos)", y = "Fixation duration (ms)") +
+  scale_y_continuous(limits = c(0, 0.45)) +
+  scale_x_continuous(limits = c(0, 0.85)) +
+  scale_color_manual(values = c("darkred" = "Linear", "darkblue" = "Quadratic")) +
+  theme_bw() +
+  theme(text = element_text(size = 20, family = "serif"),
+        axis.text = element_text(size = 18))
+
+p4 <- ggplot(df_4, aes(x = score, y = fix_sqrt)) +
+  geom_point(shape = 20, size = 2) +
+  geom_line(data = data.frame(score = scoreValues_sqrt_4, fix_sqrt = fixPredict_sqrt_4), 
+            aes(x = score, y = fix_sqrt), 
+            color = "darkred", size = 1.2) +
+  geom_line(data = data.frame(score = scoreValues_sqrt_4, fix_sqrt = fixPredict2_sqrt_4), 
+            aes(x = score, y = fix_sqrt), 
+            color = "darkblue", size = 1.2) +
+  labs(x = "Object-object similarity (cos)", y = "Fixation duration (ms)") +
+  scale_y_continuous(limits = c(0, 0.45)) +
+  scale_x_continuous(limits = c(0, 0.5)) +
+  scale_color_manual(values = c("darkred" = "Linear", "darkblue" = "Quadratic")) +
+  theme_bw() +
+  theme(text = element_text(size = 20, family = "serif"),
+        axis.text = element_text(size = 18))
+
+# Arrange the plots in a grid
+scatterplots <- ggarrange(p1, p2, p3, p4,
+                    labels = c("A", "B", "C", "D"),  font.label = list(size = 20, color = "black"),
+                    ncol = 2, nrow =2, common.legend = T, legend = "right", align = "v")
+
+annotate_figure(scatterplots, top =  text_grob("",
+                                               family = "serif", face = "bold", size = 30))
+
+```

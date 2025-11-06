@@ -1,0 +1,116 @@
+---
+title: "AdCollab_SupPlots_Sep152023"
+output: html_document
+date: "2023-09-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load data & libraries.
+```{r, echo=FALSE}
+#set working directory here:
+setwd("~/Desktop")
+Sys.setlocale("LC_ALL", "C")
+library(tidyverse)
+
+repfalse <- read_csv("rep_false_coefsSE.csv")
+demfalse <- read_csv("dem_false_coeffsSE.csv")
+
+setwd("~/Desktop")
+Sys.setlocale("LC_ALL", "C")
+
+reptrue <- read_csv("rep_true_coeffsSE.csv")
+demtrue <- read_csv("dem_true_coeffsSE.csv")
+
+setwd("~/Desktop")
+Sys.setlocale("LC_ALL", "C")
+simple <- read_csv("simpdiscern_coefs_FULL.csv")
+
+# load libraries
+library(dplyr)
+library(lubridate)
+library(lme4)
+library(MASS)
+library(ggeffects)
+library(lmerTest)
+library(mediation)
+library(readr)
+library(tidyr)
+library(corrr)
+library(corrplot)
+library(ggplot2)
+library(nlme)
+library(afex)
+library(lmerTest)
+library(MuMIn)
+library(sjstats)
+library(psych)
+library(sandwich)
+library(lmtest)
+library(car)
+library(fixest)
+library(tm)
+library(vader)
+library(pscl)
+library(ggpubr)
+```
+
+# Cleaning
+```{r}
+demfalse <- demfalse %>% rename(DemFalseCoef=DemCoeffs, DemFalseSE=DemSEs) %>% dplyr::select(DemFalseCoef, DemFalseSE)
+
+demtrue <- demtrue %>% rename(DemTrueCoef=Coeffs, DemTrueSE=SEs) %>% dplyr::select(DemTrueCoef, DemTrueSE)
+
+repfalse <- repfalse %>% rename(RepFalseCoef=estimate, RepFalseSE=std.error) %>% dplyr::select(RepFalseCoef, RepFalseSE)
+
+reptrue <- reptrue %>% rename(RepTrueCoef=Coeffs, RepTrueSE=SEs) %>% dplyr::select(RepTrueCoef, RepTrueSE)
+
+x <- simple %>% dplyr::select(Exclude_NonPoliticalNewsSharers:Partisanship)
+
+x <- cbind(x, repfalse, demfalse, reptrue, demtrue)
+```
+
+```{r}
+x$Treatment[x$Treatment=="Evaluation + Importance"] <- "Evaluation or Importance"
+
+x$Treatment <- factor(x$Treatment, levels=c("Multiple Interventions", "Evaluation or Importance", "Evaluation", "No Norms or Tips", "No Tips", "No Norms", "All"))
+
+x$RepFalseCI <- x$RepFalseSE*qnorm(0.975)
+x$DemFalseCI <- x$DemFalseSE*qnorm(0.975)
+x$RepTrueCI <- x$RepTrueSE*qnorm(0.975)
+x$DemTrueCI <- x$DemTrueSE*qnorm(0.975)
+```
+
+Plots.
+```{r}
+RepFalse <- ggplot(x, aes(x=RepFalseCoef, y=Treatment, color=Partisanship, group=Partisanship, shape=Exclude_NonPoliticalNewsSharers))+
+  geom_pointrange(aes(xmin=RepFalseCoef-RepFalseCI, xmax=RepFalseCoef+RepFalseCI), position=position_dodge2(width = 0.5, padding=0.5))+scale_color_manual(values=c("red", "orange", "green", "blue", "purple"))+xlim(-0.1, 0.1)+geom_vline(aes(xintercept=0), color="black", linetype="dashed", size=1)+theme_classic()+xlab("Acc Prompt on Republican False News Sharing")
+```
+
+```{r}
+DemFalse <- ggplot(x, aes(x=DemFalseCoef, y=Treatment, color=Partisanship, group=Partisanship, shape=Exclude_NonPoliticalNewsSharers))+
+  geom_pointrange(aes(xmin=DemFalseCoef-DemFalseCI, xmax=DemFalseCoef+DemFalseCI), position=position_dodge2(width = 0.5, padding=0.5))+scale_color_manual(values=c("red", "orange", "green", "blue", "purple"))+xlim(-0.1, 0.1)+geom_vline(aes(xintercept=0), color="black", linetype="dashed", size=1)+theme_classic()+xlab("Acc Prompt on Democrat False News Sharing")
+```
+
+```{r}
+RepTrue <- ggplot(x, aes(x=RepTrueCoef, y=Treatment, color=Partisanship, group=Partisanship, shape=Exclude_NonPoliticalNewsSharers))+
+  geom_pointrange(aes(xmin=RepTrueCoef-RepTrueCI, xmax=RepTrueCoef+RepTrueCI), position=position_dodge2(width = 0.5, padding=0.5))+scale_color_manual(values=c("red", "orange", "green", "blue", "purple"))+xlim(-0.1, 0.1)+geom_vline(aes(xintercept=0), color="black", linetype="dashed", size=1)+theme_classic()+xlab("Acc Prompt on Republican True News Sharing")
+```
+
+```{r}
+DemTrue <- ggplot(x, aes(x=DemTrueCoef, y=Treatment, color=Partisanship, group=Partisanship, shape=Exclude_NonPoliticalNewsSharers))+
+  geom_pointrange(aes(xmin=DemTrueCoef-DemTrueCI, xmax=DemTrueCoef+DemTrueCI), position=position_dodge2(width = 0.5, padding=0.5))+scale_color_manual(values=c("red", "orange", "green", "blue", "purple"))+xlim(-0.1, 0.1)+geom_vline(aes(xintercept=0), color="black", linetype="dashed", size=1)+theme_classic()+xlab("Acc Prompt on Democrat True News Sharing")
+```
+
+```{r}
+ggarrange(RepFalse, RepTrue, DemFalse, DemTrue, ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+```
+
+
+
+
+
+
+

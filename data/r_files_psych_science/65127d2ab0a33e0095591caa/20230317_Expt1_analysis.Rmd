@@ -1,0 +1,608 @@
+---
+title: "Miller et al. (2023) Experiment 1 - replication & confidence extension"
+author: "Elizabeth J. Miller, Ben A. Steward, & Amy Dawel"
+date: '2022-10-17'
+output: 
+  html_document: 
+    toc: TRUE #add a table of contents
+    toc_depth: 2 #number of heading levels in toc (default = 3)
+    toc_float: TRUE #float toc to the left of document content
+    number_sections: TRUE
+    fig_caption: TRUE
+    theme: cerulean #markdown theme from Bootswatch theme library
+    highlight: tango #specifieds syntax highlighting style
+    code_folding: "hide" #includes code but hides it
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+R code for: Miller, E. J., Steward, B. A., Witkower, Z., Sutherland, C. A. M., Krumhuber, E. G., & Dawel, A. (2023). AI hyper-realism: Why AI faces are perceived as More real than human ones. *Psychological Science.*
+Contact details: amy.dawel@anu.edu.au
+
+The analyses herein are for Miller et al.'s (2023) Experiment 1 - replication & confidence extension of Nightingale, S. J., & Farid, H. (2022). AI-synthesized faces are indistinguishable from real faces and more trustworthy. *Proceedings of the National Academy of Sciences, 119*(8), e2120481119.
+
+# Load R packages
+
+Here, we load the required R packages.
+
+```{r, setup, message = FALSE, warning=FALSE}
+
+#clear workspace
+rm(list = ls())
+
+#list packages 
+lib <- (c("rmarkdown", #RStudio markdown
+          "knitr", #generating RStudio output
+          "readr", #read in data
+          "kableExtra", #extra tools for styling kable tables in R markdown knit
+          "tidyverse", #also loads ggplot2, dplyr, tidyr, readr, purrr, tibble
+          "Hmisc", #miscellaneous          
+          "psych", #core psychology functions e.g. ANOVA
+          "psycho", #for signal detection analyses
+          "apaTables", #for APA table output
+          "lme4", #linear modelling
+          "rstatix", #for checking outliers
+          "ggpubr", #for publishable plots
+          "ggpmisc", #stat_fit_glance function
+          "pander" #for outputing correlation matrices
+          ))
+
+#load packages
+for (i in 1:length(lib)){
+  pkg <- lib[i]
+library(pkg, character.only = TRUE)
+}
+
+#turn off scientific notation
+#options(scipen = 999)
+
+#set date for file saving
+dt <- Sys.Date()
+
+```
+
+# Load & organise datasets
+
+Here, we load the datasets for male and female participants separately, from Miller et al.'s replication of Nightingale & Farid (2022) Expt 1.
+
+Variable labels are generally formatted as follows:
+
+-   Letter 1 = real or synthetic (r or s)
+
+-   Letter 2 = black or east asian or south asian or white (b or e or s or w)
+
+-   Letter 3 = male or female (m or f) 
+
+-   Number = stimulus number from 1-50
+
+-   Suffix .acc or .conf = CG/human accuracy or confidence rating
+
+```{r, load-data}
+
+#import raw data separately from male and female participants
+df.malePs <- read.csv("../data/LM_Expt1_malePs.csv", na.strings = "")
+df.malePs <- as.data.frame(df.malePs)
+df.malePs$ProlificGender <- "Male"
+df.femalePs <- read.csv("../data/LM_Expt1_femalePs.csv", na.strings = "")
+df.femalePs <- as.data.frame(df.femalePs)
+df.femalePs$ProlificGender <- "Female"
+
+```
+
+Here, we bind the male and female participant data together and set-up the data for further analyses.
+
+```{r, data-wrangling}
+
+#bind female and male data together 
+df.allPs <- rbind(df.femalePs, df.malePs)
+
+#remove cases that never started study
+df.allPs <- filter(df.allPs, !is.na(prolificId))
+
+#remove superfluous variables
+df.allPs <- select(df.allPs, -contains(c("firstclick", "lastclick", "clickcount", "prac")))
+
+#code condition participants were assigned to
+df.allPs <- df.allPs %>% 
+  mutate(across(matches("cond"), ~recode(.x,"FL_106" = "mc1",
+                                         "FL_107" = "mc2", 
+                                         "FL_108" = "fc1", 
+                                         "FL_109" = "fc2" ))) #conditions are: mc1 = male faces, CG response button left, mc2 = male faces, CG response button right, fc1 = female faces, CG response button left, fc2 = female faces, CG response button right
+
+#select columns with participant info for matching later
+partinfo <- select(df.allPs, contains(c("Duration", "age", "gender", "liveInUS", "yearsOutside", "state", "confirmWhite", "exclusion", "attentionCheck", "decisionQ", "overallConfidence", "ResponseId", "progress", "operateSys", "resolution", "InfoUsed", "prolific", "StartDate", "incNoCond", "ProlificGender")) & -contains("Language"))
+
+#select variables needed for analysis + id for matching later
+df.allPs <- select(df.allPs, ends_with(c("ResponseId", "cond", "mc1", "mc2", "fc1", "fc2")))
+
+#separate data by conditions #NB. This also removes rows for people who opened experiment but did not start it, i.e., were never assigned to a condition.
+mc1 <- select(df.allPs, "ResponseId", "cond", ends_with(c(".mc1"))) %>%
+  filter(cond == "mc1")
+mc2 <- select(df.allPs, "ResponseId", "cond", ends_with(c(".mc2"))) %>%
+  filter(cond == "mc2")
+fc1 <- select(df.allPs, "ResponseId", "cond", ends_with(c(".fc1"))) %>%
+  filter(cond == "fc1")
+fc2 <- select(df.allPs, "ResponseId", "cond", ends_with(c(".fc2"))) %>%
+  filter(cond == "fc2")
+
+#drop condition names from column headers
+colnames(mc1) <- gsub(".mc1", "", colnames(mc1))
+colnames(mc2) <- gsub(".mc2", "", colnames(mc2))
+colnames(fc1) <- gsub(".fc1", "", colnames(fc1))
+colnames(fc2) <- gsub(".fc2", "", colnames(fc2))
+
+#recombine data with participant info
+df.allPs <- bind_rows(mc1, mc2, fc1, fc2)
+df.allPs <- full_join(partinfo, df.allPs, by = NULL)
+
+#convert to tibble
+df.allPs <- as_tibble(df.allPs)
+
+#cleanup: remove dfs that are no longer needed
+rm(df.malePs, df.femalePs, partinfo, mc1, mc2, fc1, fc2)
+
+```
+
+# Recode data
+
+Here, we recode participant CG/human accuracy responses so that 1 = correct and 0 = incorrect.
+
+```{r, recode-data}
+
+#recode experimental trials
+df.allPs <- df.allPs %>% 
+  mutate(across(starts_with("rw") & ends_with(".acc"), ~recode(.x,"${lm://Field/5}" = 0, "${lm://Field/6}" = 1))) %>%
+  mutate(across(starts_with("sw") & ends_with(".acc"), ~recode(.x,"${lm://Field/5}" = 1, "${lm://Field/6}" = 0)))
+
+#recode catch trials
+df.allPs <- df.allPs %>% 
+  mutate(across(contains("under50") & ends_with(".acc"), ~recode(.x,"${lm://Field/5}" = 0, "${lm://Field/6}" = 1))) %>% 
+  mutate(across(contains("over50") & ends_with(".acc"), ~recode(.x,"${lm://Field/5}" = 1, "${lm://Field/6}" = 0)))
+
+```
+
+# Data corrections
+
+Here, we correct responses where participants messaged via Prolific that they had made a mistake or experienced problems with the experiment. The chunk provides each participant message in full and if/how their data was managed.
+
+```{r, data-corrections}
+
+#ResponseId: R_3ffcAXXZMQX2kzZ
+#Hello I am not sure how much it matters in for the survey I just took for you but there was one face that was obviously older than 50 but I clicked the wrong option. To make up for this I rated my confidence as zero. Intuitively I would have thought the older option would be on the right so I clicked the option on the right which was "under 50". There was no option to go back to change your answer and if you click it auto advances so mis-clicks cannot be fixed as far as I could tell.
+
+#relevant trial recoded
+df.allPs$catch4m.over50.acc[df.allPs$ResponseId == "R_3ffcAXXZMQX2kzZ"] <- 1
+df.allPs$catch4m.over50.conf[df.allPs$ResponseId == "R_3ffcAXXZMQX2kzZ"] <- 100
+
+#ResponseId: R_3FJxZ5SxmyEZ5Dr
+#I messed up an image; there was an old woman and it asked if she was under or over 50. I thought I clicked the 'over 50' but I was right in the middle of the two buttons, and it clicked the left (under 50) and because you decided to abuse us workers [common behavior by educational institutions] by making it auto-advance after selection of an option (causing this page to open after EVERY single selection -  I was not able to correct it therefore, I put 0% confidence that I chose the correct option
+
+#relevant trial recoded 
+df.allPs$catch4f.over50.acc[df.allPs$ResponseId == "R_3FJxZ5SxmyEZ5Dr"] <- 1
+df.allPs$catch4f.over50.conf[df.allPs$ResponseId == "R_3FJxZ5SxmyEZ5Dr"] <- 100
+
+#ResponseId: R_2pPrgfsTC2I5GhS
+#Hello! I completed this survey but the last 5 or so minutes I keep having an issue with it being able to connect to your surveys. I was able to finish/they were connecting again but they were very slow to do so, which took longer than it said it would do. Just thought I'd let you know about the server message/being disconnected here and there but only the last few minutes, so hopefully it's not an ongoing thing for you.
+  
+#Participant data is complete with no missing responses. No corrections required. 
+  
+#ResponseId: R_21ijIOsQJoDIiBp
+#Hi there. I just completed your study. In the beginning, before starting, it told me that I'd occasionally be asked whether a face appeared to be 50 years of age or so, but that prompt never came up even once. Just letting you know, in case there is an error there.
+  
+#No error; participant performed poorly on catch trials (accuracy 2/5) and was therefore excluded based on data exclusion criteria. 
+
+#ResponseId: R_1LjsyHjBrTnn6CG
+#Hello, At about the half way mark I began running into some technical issues. Occasionally the pages would time out or I'd see the question about human/AI before the photo itself showed up.
+
+#Participant excluded. See data-included chunk.
+
+```
+
+# Data screening
+
+Here, we take a look at the distribution of RTs for CG/human trials and delete CG/human accuracy responses for individual participant trials with RTs <300 ms, indicative of pre-emptive responses.
+
+NB. We did not analyse RTs because the experiment was administered using Qualtrics on participants own hardware and therefore factors other than participant performance may have contributed to RTs (e.g., internet speed).
+
+```{r, screen-RTs, message=FALSE, warning = FALSE}
+
+#reshape into wide data for RT distribution plot
+df.allPs.RTs <- df.allPs %>%
+  select(!starts_with("catch") & ends_with(".submitacc")) %>%
+  gather("var", "RTs", convert = TRUE)
+
+#distribution plot
+ggplot(df.allPs.RTs) +
+  geom_histogram(aes(x = RTs)) + 
+  scale_y_continuous(expand=expansion(mult=c(0,.1))) +
+  xlim(0, 1) + #adjust xlim to zoom in on an RT range
+  theme_bw()
+
+#count RTs <500ms for CG/human responses, recalling that rwm = real white male, swm = synthetic (CG) white male, rwf = real white female, swf = synthetic (CG) white female
+df.allPs <- df.allPs %>%
+  rowwise() %>%
+  mutate(RT.Nlow = sum(c_across(!starts_with("catch") & ends_with(".submitacc")) < 0.3, na.rm = TRUE)) #this variable used to report trials excluded due to pre-emptive responding
+
+#recode pre-emptive CG/human responses as missing 
+
+#Thanks to Edward Carney on Stackoverflow for the following code, which was edited from their reply: https://stackoverflow.com/questions/48600340/change-column-value-to-na-based-on-other-column-condition
+
+#identify relevant columns
+acc.cols <- grep(".acc", fixed = TRUE, names(df.allPs)) #NB. fixed forces exact match; otherwise pulls both .acc & .submitacc
+rt.cols <- grep(".submitacc", names(df.allPs))
+
+#for each rt column with response <300 ms, delete the corresponding .acc response (i.e., make missing)   
+for (i in 1:length(rt.cols)) {
+  #get indexes of < 500ms entries in .rt cols
+  rt.index <- df.allPs[,rt.cols[i]] < 0.3
+  #change the corresponding entries in .acc cols
+  df.allPs[,acc.cols[i]][rt.index] = NA 
+  df.allPs[,rt.cols[i]][rt.index] = NA
+}
+
+#sum correct catch trials
+df.allPs <- df.allPs %>%
+  rowwise() %>%
+    mutate(catch.acc = rowSums(across(contains("catch") & ends_with(".acc")), na.rm = TRUE))
+
+#cleanup: remove dfs that are no longer needed
+rm(df.allPs.RTs, rt.index)
+
+```
+
+Here, we compute total missing data for CG/human accuracy and confidence ratings.
+
+```{r, missing-data}
+
+#compute missing data
+df.allPs <- df.allPs %>%
+  rowwise() %>%
+  #compute N CG/human trials missing for each face type, recalling that rwm = real white male, swm = synthetic (CG) white male, rwf = real white female, swf = synthetic (CG) white female
+    mutate(rwm.acc.miss = rowSums(is.na(across(starts_with("rwm0") & ends_with(".acc"))))) %>%
+    mutate(rwm.acc.miss = case_when(str_detect(cond, "mc") ~ rwm.acc.miss, str_detect(cond, "fc") ~ NA_real_)) %>%
+    mutate(swm.acc.miss = rowSums(is.na(across(starts_with("swm0") & ends_with(".acc"))))) %>%
+    mutate(swm.acc.miss = case_when(str_detect(cond, "mc") ~ swm.acc.miss, str_detect(cond, "fc") ~ NA_real_)) %>%
+    mutate(rwf.acc.miss = rowSums(is.na(across(starts_with("rwf0") & ends_with(".acc"))))) %>%
+    mutate(rwf.acc.miss = case_when(str_detect(cond, "fc") ~ rwf.acc.miss, str_detect(cond, "mc") ~ NA_real_)) %>%
+    mutate(swf.acc.miss = rowSums(is.na(across(starts_with("swf0") & ends_with(".acc"))))) %>%
+    mutate(swf.acc.miss = case_when(str_detect(cond, "fc") ~ swf.acc.miss, str_detect(cond, "mc") ~ NA_real_)) %>%
+  #compute N confidence ratings missing for each face type
+    mutate(rwm.conf.miss = rowSums(is.na(across(starts_with("rwm0") & ends_with(".conf"))))) %>%
+    mutate(rwm.conf.miss = case_when(str_detect(cond, "mc") ~ rwm.conf.miss, str_detect(cond, "fc") ~ NA_real_)) %>%
+    mutate(swm.conf.miss = rowSums(is.na(across(starts_with("swm0") & ends_with(".conf"))))) %>%
+    mutate(swm.conf.miss = case_when(str_detect(cond, "mc") ~ swm.conf.miss, str_detect(cond, "fc") ~ NA_real_)) %>%
+    mutate(rwf.conf.miss = rowSums(is.na(across(starts_with("rwf0") & ends_with(".conf"))))) %>%
+    mutate(rwf.conf.miss = case_when(str_detect(cond, "fc") ~ rwf.conf.miss, str_detect(cond, "mc") ~ NA_real_)) %>%
+    mutate(swf.conf.miss = rowSums(is.na(across(starts_with("swf0") & ends_with(".conf"))))) %>%
+    mutate(swf.conf.miss = case_when(str_detect(cond, "fc") ~ swf.conf.miss, str_detect(cond, "mc") ~ NA_real_))
+
+#combine N missing into single variable for each type of face (human or CG)
+df.allPs$rw.acc.miss <- coalesce(df.allPs$rwm.acc.miss, df.allPs$rwf.acc.miss)
+df.allPs$sw.acc.miss <- coalesce(df.allPs$swm.acc.miss, df.allPs$swf.acc.miss)
+df.allPs$rw.conf.miss <- coalesce(df.allPs$rwm.conf.miss, df.allPs$rwf.conf.miss)
+df.allPs$sw.conf.miss <- coalesce(df.allPs$swm.conf.miss, df.allPs$swf.conf.miss)
+
+```
+
+# Select included sample
+
+Here, we screen the sample to select participants who meet inclusion/exclusion criteria and also code the reasons for participant exclusions.
+
+```{r, data-included}
+
+#identify cases to exclude
+df.allPs <- df.allPs %>%
+  rowwise() %>%
+      mutate(exclude = case_when(
+        ResponseId == "R_1LjsyHjBrTnn6CG" ~ "exclude", #participant reported technical difficulties; see data-corrections chunk
+        Progress < 98 ~ "exclude", #exclude if <98% complete
+        str_detect(operateSys, "Android") ~ "exclude", #exclude if used phone
+        operateSys == "iPhone" ~ "exclude", #exclude if used phone
+        confirmWhite != "Yes, my ethnicity is White/European/Caucasian" ~ "exclude", #exclude if not White
+        USstate == "I do not reside in the United States" ~ "exclude", #exclude if not resident in US
+        yearsOutsideUS > 2 ~ "exclude", #exclude if >2 years outside US prior to 18
+        incNoCond != "No, none of these statements apply to me" ~ "exclude", #exclude if reported condition likely to affect face processing
+        catch.acc < 4 ~ "exclude", #exclude if more than 1 catch trial incorrect
+        attentionCheck != "Whether faces were real humans or computer-generated" ~ "exclude", #exclude if failed attention check
+        rwm.acc.miss > 5 ~ "exclude", #exclude if >10% trials missing for any condition
+        swm.acc.miss > 5 ~ "exclude",
+        rwf.acc.miss > 5 ~ "exclude",
+        swf.acc.miss > 5 ~ "exclude",
+        rwm.conf.miss > 5 ~ "exclude",
+        swm.conf.miss > 5 ~ "exclude",
+        rwf.conf.miss > 5 ~ "exclude",
+        swf.conf.miss > 5 ~ "exclude"
+        )) 
+
+#code reasons for exclusions
+df.allPs <- df.allPs %>%
+  rowwise() %>%
+    mutate(excReason.tech = case_when(
+      ResponseId == "R_1LjsyHjBrTnn6CG" ~ "self-reported tech error")) %>%
+    mutate(excReason.incomplete = case_when(
+      Progress < 98 ~ "incomplete")) %>%
+    mutate(excReason.phone = case_when(
+      str_detect(operateSys, "Android") ~ "used phone", operateSys == "iPhone" ~ "used phone")) %>% 
+    mutate(excReason.white = case_when(
+      confirmWhite != "Yes, my ethnicity is White/European/Caucasian" ~ "not White")) %>%
+    mutate(excReason.notUS = case_when(
+      USstate == "I do not reside in the United States" ~ "not living in US")) %>%
+    mutate(excReason.yrsOutUS = case_when(
+      yearsOutsideUS > 2 ~ ">2 yrs outside US pre-18")) %>%
+    mutate(excReason.condFP = case_when(
+      incNoCond != "No, none of these statements apply to me" ~ "condition affecting face processing",)) %>%
+    mutate(excReason.catch = case_when(
+      catch.acc < 4 ~ ">1 error on catch trials",)) %>%
+    mutate(excReason.attCheck = case_when(
+      attentionCheck != "Whether faces were real humans or computer-generated" ~ "failed attention check")) %>%
+    mutate(excReason.miss = case_when(
+      rwm.acc.miss > 5 ~ ">10% missing in 1 or more conditions",
+      swm.acc.miss > 5 ~ ">10% missing in 1 or more conditions",
+      rwf.acc.miss > 5 ~ ">10% missing in 1 or more conditions",
+      swf.acc.miss > 5 ~ ">10% missing in 1 or more conditions",
+      rwm.conf.miss > 5 ~ ">10% missing in 1 or more conditions",
+      swm.conf.miss > 5 ~ ">10% missing in 1 or more conditions",
+      rwf.conf.miss > 5 ~ ">10% missing in 1 or more conditions",
+      swf.conf.miss > 5 ~ ">10% missing in 1 or more conditions"
+  )) 
+
+#concatenate reasons for exclusions into a single variable
+df.allPs <- df.allPs %>%
+  mutate(excReason = paste(excReason.incomplete, excReason.phone, excReason.white, excReason.notUS, excReason.yrsOutUS, excReason.condFP, excReason.catch, excReason.attCheck, excReason.miss, sep = "; ")) %>%
+  mutate(excReason = gsub("NA; ", "", excReason)) %>%
+  mutate(excReason = gsub("NA", "", excReason))
+
+#generate dataset for included Ps
+df.incPs <- df.allPs %>%
+  filter(is.na(exclude))
+
+#generate dataset for excluded Ps
+df.excPs <- df.allPs %>%
+  filter(exclude == "exclude") 
+
+#save data
+write.csv(df.incPs, paste("../data/LM_Expt1_includedPs.csv"))
+write.csv(df.excPs, paste("../data/LM_Expt1_excludedPs.csv"))
+
+#table showing Ns for male vs female Ps across conditions for included Ps
+table(df.incPs$cond, df.incPs$gender)
+x <- table(df.incPs$cond)
+sum(x)
+
+#cleanup: remove dfs that are no longer needed
+rm(df.excPs)
+
+```
+
+# Compute scores
+
+Here, we compute scores for each of the face types.
+
+```{r, compute-scores}
+
+#compute all scores 
+df.incPs <- df.incPs %>%
+  rowwise() %>%
+  #compute total accuracy for CG vs human
+    mutate(rwm.acc = rowSums(across(starts_with("rwm0") & ends_with(".acc")), na.rm = TRUE)) %>%
+    mutate(rwm.acc = case_when(str_detect(cond, "mc") ~ rwm.acc, str_detect(cond, "fc") ~ NA_real_)) %>%
+    mutate(swm.acc = rowSums(across(starts_with("swm0") & ends_with(".acc")), na.rm = TRUE)) %>%
+    mutate(swm.acc = case_when(str_detect(cond, "mc") ~ swm.acc, str_detect(cond, "fc") ~ NA_real_)) %>%
+    mutate(rwf.acc = rowSums(across(starts_with("rwf0") & ends_with(".acc")), na.rm = TRUE)) %>%
+    mutate(rwf.acc = case_when(str_detect(cond, "fc") ~ rwf.acc, str_detect(cond, "mc") ~ NA_real_)) %>%
+    mutate(swf.acc = rowSums(across(starts_with("swf0") & ends_with(".acc")), na.rm = TRUE)) %>%
+    mutate(swf.acc = case_when(str_detect(cond, "fc") ~ swf.acc, str_detect(cond, "mc") ~ NA_real_)) %>%
+    mutate(wm.acc = rowSums(across((starts_with("rwm0") & ends_with(".acc"))|(starts_with("swm0") & ends_with(".acc"))), na.rm = TRUE)) %>%
+    mutate(wm.acc = case_when(str_detect(cond, "mc") ~ wm.acc, str_detect(cond, "fc") ~ NA_real_)) %>%
+    mutate(wf.acc = rowSums(across((starts_with("rwf0") & ends_with(".acc"))|(starts_with("swf0") & ends_with(".acc"))), na.rm = TRUE)) %>%
+    mutate(wf.acc = case_when(str_detect(cond, "fc") ~ wf.acc, str_detect(cond, "mc") ~ NA_real_)) %>%
+  #compute pc accuracy for each condition/combination of conditions of interest
+    mutate(rwm.accPc = (rwm.acc/50)*100) %>% 
+    mutate(swm.accPc = (swm.acc/50)*100) %>%
+    mutate(rwf.accPc = (rwf.acc/50)*100) %>% 
+    mutate(swf.accPc = (swf.acc/50)*100) %>%
+    mutate(wm.accPc = (wm.acc/100)*100) %>% 
+    mutate(wf.accPc = (wf.acc/100)*100) %>%
+  #compute percent human responses                
+    mutate(rwf.HumPc = rwf.accPc, 
+           swf.HumPc = 100-swf.accPc, 
+           rwm.HumPc = rwm.accPc, 
+           swm.HumPc = 100-swm.accPc) %>%
+  #compute mean RT for each condition 
+    mutate(rwm.RTacc = rowMeans(across(starts_with("rwm0") & ends_with(".submitacc")), na.rm = TRUE)) %>% 
+    mutate(swm.RTacc = rowMeans(across(starts_with("swm0") & ends_with(".submitacc")), na.rm = TRUE)) %>%
+    mutate(rwf.RTacc = rowMeans(across(starts_with("rwf0") & ends_with(".submitacc")), na.rm = TRUE)) %>% 
+    mutate(swf.RTacc = rowMeans(across(starts_with("swf0") & ends_with(".submitacc")), na.rm = TRUE)) %>%
+  #compute mean confidence ratings for each condition
+    mutate(rwm.conf = rowMeans(across(starts_with("rwm0") & ends_with(".conf")), na.rm = TRUE)) %>% 
+    mutate(swm.conf = rowMeans(across(starts_with("swm0") & ends_with(".conf")), na.rm = TRUE)) %>%
+    mutate(rwf.conf = rowMeans(across(starts_with("rwf0") & ends_with(".conf")), na.rm = TRUE)) %>% 
+    mutate(swf.conf = rowMeans(across(starts_with("swf0") & ends_with(".conf")), na.rm = TRUE)) %>%
+    mutate(rw.conf = rowMeans(across(starts_with("rw") & contains("0") & ends_with(".conf")), na.rm = TRUE)) %>% 
+    mutate(sw.conf = rowMeans(across(starts_with("sw") & contains("0") & ends_with(".conf")), na.rm = TRUE)) %>% 
+    mutate(w.conf = rowMeans(across((starts_with("rw") | starts_with("sw")) & contains("0") & ends_with(".conf")), na.rm = TRUE)) %>% 
+  #compute mean RT for confidence ratings for each condition
+    mutate(rwm.RTconf = rowMeans(across(starts_with("rwm0") & ends_with(".submitconf")), na.rm = TRUE)) %>% 
+    mutate(swm.RTconf = rowMeans(across(starts_with("swm0") & ends_with(".submitconf")), na.rm = TRUE)) %>%
+    mutate(rwf.RTconf = rowMeans(across(starts_with("rwf0") & ends_with(".submitconf")), na.rm = TRUE)) %>% 
+    mutate(swf.RTconf = rowMeans(across(starts_with("swf0") & ends_with(".submitconf")), na.rm = TRUE))
+
+#replace NaN's with NA's
+df.incPs[df.incPs == "NaN"] <- NA
+
+#combine pc accuracy into single variable for each type of face (human or CG)
+df.incPs$rw.accPc <- coalesce(df.incPs$rwm.accPc, df.incPs$rwf.accPc)
+df.incPs$sw.accPc <- coalesce(df.incPs$swm.accPc, df.incPs$swf.accPc)
+df.incPs$w.accPc <- coalesce(df.incPs$wm.accPc, df.incPs$wf.accPc)
+df.incPs$rw.HumPc = df.incPs$rw.accPc 
+df.incPs$sw.HumPc = 100-df.incPs$sw.accPc
+
+#combine RTs into single variable for each type of face (human or CG)
+df.incPs$rw.RTacc <- coalesce(df.incPs$rwf.RTacc, df.incPs$rwm.RTacc)
+df.incPs$sw.RTacc <- coalesce(df.incPs$swf.RTacc, df.incPs$swm.RTacc)
+df.incPs$rw.RTconf <- coalesce(df.incPs$rwf.RTconf, df.incPs$rwm.RTconf)
+df.incPs$sw.RTconf <- coalesce(df.incPs$swf.RTconf, df.incPs$swm.RTconf)
+
+```
+
+Here, we compute our signal detection measures.
+
+```{r, compute-sdt}
+
+#from: https://www.r-bloggers.com/2018/03/compute-signal-detection-theory-indices-with-r/
+#also see: https://people.brandeis.edu/~sekuler/stanislawTodorov1999.pdf
+
+#compute misses by face gender and then combine into one variable
+df.incPs$m.misses <- (100-df.incPs$rwm.accPc) #for male faces
+df.incPs$f.misses <- (100-df.incPs$rwf.accPc) #for female faces
+df.incPs$all.misses <- coalesce(df.incPs$m.misses, df.incPs$f.misses)
+
+#compute FAs by face gender and then combine into one variable
+df.incPs$m.FAs <- (100-df.incPs$swm.accPc) #for male faces
+df.incPs$f.FAs <- (100-df.incPs$swf.accPc) #for female faces
+df.incPs$all.FAs <- coalesce(df.incPs$m.FAs, df.incPs$f.FAs)
+
+#compute SDT variables and combine into main df
+sdt <- psycho::dprime(n_hit = df.incPs$rw.accPc, n_fa = df.incPs$all.FAs, n_miss = df.incPs$all.misses, n_cr = df.incPs$sw.accPc)
+df.incPs <- cbind(df.incPs, sdt)
+
+#save scored data
+write.csv(df.incPs, paste("../data/LM_Expt1_includedPs_scored.csv"))
+
+```
+
+# Descriptives
+
+Here, we get key descriptives for our selected sample.
+
+```{r, describe, warning = FALSE}
+
+#describe and view included data
+descript.incPs <- describe(df.incPs)
+view(descript.incPs)
+
+#save descriptives
+write.csv(descript.incPs, paste("../output/LM_Expt1_descriptives_includedPs.csv"))
+
+```
+
+# Test d prime, b, and c
+
+Here, we compare dprime and c to 0 and b to 1.
+
+```{r, sdt-analysis}
+
+qqnorm(df.incPs$dprime)
+qqline(df.incPs$dprime)
+t.test(df.incPs$dprime, mu = 0)
+
+qqnorm(df.incPs$beta)
+qqline(df.incPs$beta)
+t.test(df.incPs$beta, mu = 1) #bias > 1 = towards saying "yes" is human
+
+qqnorm(df.incPs$c)
+qqline(df.incPs$c)
+t.test(df.incPs$c, mu = 0) #negative c = false alarms > misses
+
+```
+
+# Correlations
+
+Here, we analyse correlations between key variables of interest.
+
+```{r, correlations}
+
+df.incPs.corrs <- df.incPs %>%
+  select('rw.accPc', 'sw.accPc', 'w.accPc', 'rw.conf', 'sw.conf', 'w.conf', 'beta')
+
+incPs.corrs <- corr.test(df.incPs.corrs, use = "pairwise", method = "pearson", adjust = "none", 
+    alpha = .05, ci = TRUE, minlength = 5, normal = TRUE)
+
+incPs.corrs$r %>%
+  pander()
+incPs.corrs$p %>%
+  pander()
+
+```
+
+# Reshape wide data into long format
+
+Here, we reshape our data into long format.
+
+```{r, reshape-w2l}
+
+#subset data
+dfl.incPs <- df.incPs %>%
+  select('ResponseId', 'rwm.accPc':'swf.accPc')
+
+dfl.incPs <- dfl.incPs %>%  
+  gather("var", "mean.accPc", c(rwm.accPc, swm.accPc, rwf.accPc, swf.accPc), convert = TRUE) %>%
+  mutate(face.sex = substr(var, 3, 3)) %>%
+  mutate(face.format = substr(var, 1, 1))
+
+dfl.incPs$face.sex <- as.factor(dfl.incPs$face.sex)
+dfl.incPs$face.format <- as.factor(dfl.incPs$face.format)
+  
+```
+
+# ANOVA
+
+Here, we test for differences in accuracy between human and CG
+faces (by face sex),
+following:<https://www.datanovia.com/en/lessons/mixed-anova-in-r/#three-way-bww-b>
+
+```{r, ANOVA, warning = FALSE}
+
+#check for outliers
+dfl.incPs %>%
+  group_by(face.sex, face.format) %>%
+  identify_outliers(mean.accPc) #no outliers
+
+#shapiro test for normality
+dfl.incPs %>%
+  group_by(face.sex, face.format) %>%
+  shapiro_test(mean.accPc) #does not meet assumption of normality
+
+#qqplots
+ggqqplot(dfl.incPs, "mean.accPc", ggtheme = theme_bw()) +
+  facet_grid(face.sex ~ face.format, labeller = "label_both") #visual = minor violations
+
+#homogeneity of variance
+dfl.incPs %>%
+  group_by(face.sex) %>%
+  levene_test(mean.accPc ~ face.format) #meets assumption of homogeneity of variance
+
+#ANOVA
+aov.res <- anova_test(
+  data = dfl.incPs, dv = mean.accPc, wid = ResponseId,
+  within = c(face.format), between = c(face.sex)
+  )
+aov.out <- as.data.frame(aov.res)
+print(aov.out)
+
+```
+
+# Pairwise comparisons
+
+Here, we include comparisons to chance.
+
+```{r, t-tests}
+
+#t-tests for CG vs human accuracy
+t.test(df.incPs$swm.accPc, df.incPs$rwm.accPc, paired = TRUE) 
+t.test(df.incPs$swf.accPc, df.incPs$rwf.accPc, paired = TRUE)
+t.test(df.incPs$sw.accPc, df.incPs$rw.accPc, paired = TRUE)
+
+#t-test for CG or human accuracy vs chance
+t.test(df.incPs$rwf.accPc, mu = 50)
+t.test(df.incPs$swf.accPc, mu = 50)
+t.test(df.incPs$rwm.accPc, mu = 50)
+t.test(df.incPs$swm.accPc, mu = 50)
+t.test(df.incPs$rw.accPc, mu = 50)
+t.test(df.incPs$sw.accPc, mu = 50)
+
+#t-test for CG vs human confidence ratings
+t.test(df.incPs$rw.conf, df.incPs$sw.conf, paired = TRUE)
+
+```

@@ -1,0 +1,120 @@
+---
+title: "sexuality IAT cleaning and aggregation by county"
+author: ""
+date: "5/03/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#load packages
+library(dplyr)
+library(readr)
+library(haven)
+```
+
+Use the chunk below to read in the data using your preferred method. The data file that goes along with this script is named "Sexuality.IAT.public.2004-2021.sav" and corresponds with the similarly named data file available on the Project Implicit OSF page (https://osf.io/t2m7c/). 
+```{r}
+setwd("D:/IAT_raw_data/project_implicit_OSF/sexuality_IAT")
+data <- read_sav("Sexuality.IAT.public.2004-2021.sav")
+```
+
+The chunk below filters the data based on our cleaning criteria
+```{r}
+#overwrite data
+data <- data %>%
+  #filter for only complete responses
+  filter(session_status == "C") %>% 
+  #select relevant variables
+  select(session_status, Mn_RT_all_3467, Mn_RT_all_3, Mn_RT_all_4,
+         Mn_RT_all_6, Mn_RT_all_7, PCT_error_3467, 
+         birthyear, sex, year, study_name, D_biep.Straight_Good_all, 
+         STATE, MSANo, CountyNo, tgaymen, tgayleswomen, tstraightmen, tstraightwomen)
+         
+
+#set variables as numeric instead of character
+data <- data %>% 
+  mutate_at(vars(Mn_RT_all_3, Mn_RT_all_4, Mn_RT_all_6, Mn_RT_all_7,
+                 Mn_RT_all_3467, PCT_error_3467, D_biep.Straight_Good_all, year, birthyear,
+                 tgaymen, tgayleswomen, tstraightmen, tstraightwomen), as.numeric)
+
+#filter according to cleaning criteria
+data_f <- data %>% 
+  #average response time to all blocks greater than 0 and less 1500 ms
+  filter(Mn_RT_all_3467 > 0 & Mn_RT_all_3467 <= 1500 & 
+        #average response time to individual blocks greater than 0 and less than 1800 ms
+         Mn_RT_all_3 > 0 & Mn_RT_all_3 <= 1800 & 
+           Mn_RT_all_4 > 0 & Mn_RT_all_4 <= 1800 & Mn_RT_all_6 > 0 & Mn_RT_all_6 <= 1800 & 
+           Mn_RT_all_7 > 0 & Mn_RT_all_7 <= 1800 & 
+          #error less than or equal to 25% across all trials
+          PCT_error_3467 <= 25)
+
+#remove people who incorrectly reported birth year
+data_f <- data_f %>% 
+  filter(is.na(birthyear) | birthyear >= 1910) %>% 
+  mutate(age = (year - birthyear))
+
+#keep only 2005 and beyond to match gender IAT
+data_f <- data_f %>% 
+  filter(year != 2004)
+
+#drop empty cells for State and County
+data_f <- data_f %>% 
+  filter(STATE != "" & CountyNo != "")
+
+#write the clean individual level data to a csv file
+write_csv(data_f, file = "sexuality_clean_IAT_individual.csv")
+```
+
+We now load in the clean individual-level data file that we just created
+```{r}
+#load clean individual-level data
+group_data <- read_delim(file = "sexuality_clean_IAT_individual.csv", col_names = T)
+
+#remove non-county rows (indicated by county number with fewer than 3 digits)
+group_data <- group_data %>% 
+  mutate(is.county = ifelse(nchar(CountyNo) == 3, "YES", "NO")) %>% 
+  filter(is.county == "YES")
+
+#replace -999 with NA for explicit bias variables
+group_data <- na_if(group_data, -999)
+
+#create county level variables (n sizes for each county and mean and SD for all relevant scale measures)
+group_data2 <- group_data %>% 
+  #need to group by state and county number because County numbers are not unique to each state
+  group_by(STATE, CountyNo) %>% 
+  summarise(n_sexuality_IAT = n(),
+            mean_age_sexuality = mean(age, na.rm = T),
+            sd_age_sexuality = sd(age, na.rm = T),
+            mean_imp_sexuality_bias = mean(D_biep.Straight_Good_all, na.rm = T),
+            sd_imp_sexuality_bias = sd(D_biep.Straight_Good_all, na.rm = T),
+            Mn_RT_all_3467_sexuality = mean(Mn_RT_all_3467, na.rm = T),
+            sd_RT_all_3467_sexuality = sd(Mn_RT_all_3467, na.rm = T),
+            Mn_RT_all_3_sexuality = mean(Mn_RT_all_3, na.rm = T),
+            sd_RT_all_3_sexuality = sd(Mn_RT_all_3, na.rm = T),
+            Mn_RT_all_4_sexuality = mean(Mn_RT_all_4, na.rm = T),
+            sd_RT_all_4_sexuality = sd(Mn_RT_all_4, na.rm = T),
+            Mn_RT_all_6_sexuality = mean(Mn_RT_all_6, na.rm = T),
+            sd_RT_all_6_sexuality = sd(Mn_RT_all_6, na.rm = T),
+            Mn_RT_all_7_sexuality = mean(Mn_RT_all_7, na.rm = T),
+            sd_RT_all_7_sexuality = sd(Mn_RT_all_7, na.rm = T),
+            PCT_error_3467_sexuality = mean(PCT_error_3467, na.rm = T),
+            sd_PCT_error_3467_sexuality = sd(PCT_error_3467, na.rm = T),
+            mean_exp_gaymen = mean(tgaymen, na.rm = T),
+            sd_exp_gaymen = sd(tgaymen, na.rm = T),
+            mean_exp_gayleswomen = mean(tgayleswomen, na.rm = T),
+            sd_exp_gayleswomen = sd(tgayleswomen, na.rm = T),
+            mean_exp_straightmen = mean(tstraightmen, na.rm = T),
+            sd_exp_straightmen = sd(tstraightmen, na.rm = T),
+            mean_exp_straightwomen = mean(tstraightwomen, na.rm = T),
+            sd_exp_straightwomen = sd(tstraightwomen, na.rm = T))
+
+#save county-level data to csv file for merging with other measures
+write_csv(group_data2, file = "sexuality_clean_IAT_county.csv")
+```
+

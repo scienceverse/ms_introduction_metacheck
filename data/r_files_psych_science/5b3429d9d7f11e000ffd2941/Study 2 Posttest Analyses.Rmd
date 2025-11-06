@@ -1,0 +1,412 @@
+---
+title: "Perspective Taking on Attitude Change - Study 2"
+output:
+  tufte::tufte_handout: default
+date: "Last revised June 27, 2018"
+---
+
+#Overview
+
+This document presents the analyses for the two Study 2 post-tests. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment=NA, warning=FALSE, message=FALSE, echo=FALSE)
+library(psych)
+library(knitr)
+library(tidyr)
+library(broom)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(dplyr)
+```
+
+#Part 1: Self Evaluation Data Cleaning and Merging
+
+##T1 Data
+
+We read in the data file that we finished our Study 2 analysis with, including all of our indices, and only the participants who passed the attention check, followed instructions, and didn't take the survey more than once. In this data file, I begin the analysis with the unanonymized data (non-public), for MID matching purposes. The merged anonymized file is available on OSF.
+
+```{r}
+d_T1 <- read.csv("Study 2 with indices nonanon.csv") #Includes only people who weren't excluded in Study 1
+d_T1$condition <- as.factor(d_T1$condition)
+```
+
+#T2 - Self evaluation
+
+In total, 948 people returned for the T2 survey. In our analysis, we only include those who passed the T1 attention check, followed instructions, etc., leaving 855 participants at T2.
+
+```{r}
+d_T2self <- read.csv("T2 self - full data.csv")
+d <- merge(d_T1, d_T2self, all=FALSE)
+
+returningMIDs <- d$MID
+didntreturn <- d_T1 %>%
+  filter(!(MID %in% returningMIDs))
+
+table(d$condition)
+table(didntreturn$condition)
+
+exclusion_table <- rbind(table(d$condition), table(didntreturn$condition))
+
+chisq.test(exclusion_table)
+```
+
+Theres no difference by condition in rate of return (p = .65).
+
+\newpage
+
+# Argument Strength
+
+At T2, participants see their original argument and judge the argument strength, without being reminded of their condition. The argument strength index participants answered at T2 consists of 6 questions:
+
+- How persuasive is this argument?
+
+- How convincing is this argument?
+
+- How reasonable is this argument?
+
+- How strong is this argument?
+
+- How thoughtful is this argument?
+
+- How well-formulated is this argument?
+
+#Creating an index for argument strength
+
+We begin by computing the alpha for argument strength:
+
+```{r}
+strengthItems <- dplyr::select(d, Q1.persuasive, Q2.convincing, Q3.reasonable, Q4.strong, Q5.thoughtful, Q6.wellformulated)
+alphaStrength <- psych::alpha(strengthItems)
+kable(alphaStrength$total)
+```
+
+Because our alpha is acceptable (alpha = 0.94), we then combine the 6 argument strength items into a single index.
+```{r}
+d$strengthIndex <- (d$Q1.persuasive + d$Q2.convincing + d$Q3.reasonable + d$Q4.strong + d$Q5.thoughtful + d$Q6.wellformulated)/6
+```
+
+
+\newpage
+
+# Effect of original condition on argument strength
+
+We use the same contrasts as in the main analysis of Study 2, first comparing PT - different to same and control, then comparing same and control to one another. 
+
+#Run the regression
+```{r}
+d$condition <- as.factor(d$condition)
+contrasts(d$condition) <- cbind(c(-1, 2, -1), c(+1, 0, -1))
+strengthmodel <- lm(strengthIndex ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(strengthmodel)$fstatistic)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(strengthmodel))
+```
+
+
+#Calculate F's from t's (t-statistics above)
+We also calculate the F statistics, in order to report the statistics in consistent way for those more familiar with SPSS outputs.
+
+Contrast 1:
+```{r}
+contrast1F = 6.79^2
+contrast1F
+```
+Contrast 2:
+```{r}
+contrast2F = 2.03^2
+contrast2F
+```
+
+
+As predicted, original condition affected quality ratings in the follow-up session, F(2, 852) = 24.87, p < .001. Participants in the control and perspective-taking/same ideology conditions viewed their arguments as higher quality than did participants in the perspective-taking/different ideology condition, F(1, 852) = 46.10, p < .001. Participants also saw their arguments as higher quality in the perspective-taking/same ideology rather than control condition, F(1, 852) = 4.12, p = .04
+
+```{r strength_graph}
+se_plus <- function(x) mean(x) + sqrt(var(x)/length(x))
+se_minus <- function(x) mean(x) - sqrt(var(x)/length(x))
+
+limits <- aes(ymax = se_u, ymin= se_l)
+dodge <- position_dodge(width=0.9)
+
+summary <- d %>%
+  dplyr::group_by(condition) %>%
+  dplyr::summarise("Argument_Strength_Self" = mean(strengthIndex, na.rm=TRUE), "se_u"=se_plus(strengthIndex), "se_l"=se_minus(strengthIndex))
+
+plot <- ggplot(data=summary, aes(x=condition, y=Argument_Strength_Self, fill=condition)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(limits, position=dodge, width=0.25) +
+  guides(fill=FALSE) +
+  labs(x="Condition", y="Argument Strength (Self)") +
+  theme_hc() + 
+  theme(text=element_text(family="Calibri", size=14)) +
+  scale_fill_manual(values = c("#ffad99", "#05C68A", "#17699E")) + 
+  scale_x_discrete(labels=c("Control", "Perspective Taking\nDifferent", "Perspective Taking\nSame"))
+  
+#GRAPH1
+#plot
+#ggsave("Study_2_StrengthSelf.png", scale=1, width=133, height=100, units="mm", dpi=1000)
+```
+\newpage
+
+# T2 - Value Congruence Judgements
+
+Value congruence is measured as in the main study.
+
+```{r}
+congruenceItems <- dplyr::select(d, Q7.congruent, Q8.worldview, Q9.morals)
+alphaCongruence <- psych::alpha(congruenceItems)
+kable(alphaCongruence$total)
+```
+
+Because of our high alpha (alpha = 0.96), we consider the value congruence items as an index
+```{r}
+d$congruenceIndex <- 8 - (d$Q7.congruent + d$Q8.worldview + d$Q9.morals)/3
+```
+
+#Effect of condition on T2 perceived value congruence
+
+```{r}
+contrasts(d$condition) <- cbind(c(-1, 2, -1), c(+1, 0, -1))
+congru_model <- lm(congruenceIndex ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(congru_model)$fstatistic)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(congru_model))
+```
+
+#Calculate F's from t's (t-statistics above)
+We also calculate the F statistics, in order to report the statistics in consistent way for those more familiar with SPSS outputs.
+
+Contrast 1:
+```{r}
+contrast1F = 7.31^2
+contrast1F
+```
+Contrast 2:
+```{r}
+contrast2F = 1.25^2
+contrast2F
+```
+
+
+As predicted, original condition affected value congruence ratings in the follow-up session, F(2, 852) = 27.29, p < .001. Participants in the control and perspective-taking/same ideology conditions viewed their arguments as more value congruent than did participants in the perspective-taking/different ideology condition, F(1, 852) = 53.43, p < .001. Participants did not see their arguments as significantly different from the perspective-taking/same ideology in the control condition, F(1, 852) = 1.56, p = .21
+
+```{r value_graph}
+se_plus <- function(x) mean(x) + sqrt(var(x)/length(x))
+se_minus <- function(x) mean(x) - sqrt(var(x)/length(x))
+
+limits <- aes(ymax = se_u, ymin= se_l)
+dodge <- position_dodge(width=0.9)
+
+summary <- d %>%
+  dplyr::group_by(condition) %>%
+  dplyr::summarise("Value_Congruence" = mean(congruenceIndex, na.rm=TRUE), "se_u"=se_plus(congruenceIndex), "se_l"=se_minus(congruenceIndex))
+
+plot <- ggplot(data=summary, aes(x=condition, y=Value_Congruence, fill=condition)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(limits, position=dodge, width=0.25) +
+  guides(fill=FALSE) +
+  labs(x="Condition", y="Value Congruence") +
+  theme_hc() + 
+  theme(text=element_text(family="Calibri", size=14)) +
+  scale_fill_manual(values = c("#ffad99", "#05C68A", "#17699E")) + 
+  scale_x_discrete(labels=c("Control", "Perspective Taking\nDifferent", "Perspective Taking\nSame"))
+  
+#GRAPH2
+#plot
+#ggsave("Study_2_ValueCongruence.png", scale=1, width=133, height=100, units="mm", dpi=1000)
+```
+
+\newpage
+
+#Mediation Analysis
+
+Does value congruence mediate the effect of condition on perceived argument strength? We use the same mediation analysis strategy as in the main study. 
+
+```{r, warning=FALSE, message=FALSE, comment=NA}
+library(mediation)
+
+d$strength_s <- scale(d$strengthIndex, center=FALSE, scale=TRUE)
+d$congruence_s <- as.numeric(scale(d$congruenceIndex))
+```
+
+```{r}
+d$H1 <- 1
+d$H1 <- ifelse(d$condition == "PT-same", 1, d$H1)
+d$H1 <- ifelse(d$condition == "control", 1, d$H1)
+d$H1 <- ifelse(d$condition == "PT-different", -2, d$H1)
+
+d$H2 <- 0
+d$H2 <- ifelse(d$condition == "PT-same", 1, d$H2)
+d$H2 <- ifelse(d$condition == "control", -1, d$H2)
+```
+
+
+# Mediation Model: Condition -> Value Congruence -> Strength
+
+## Contrast 1: Control and PT-Same verus PT-Different
+```{r, cache=TRUE}
+modelm <- lm(congruence_s ~ H1 + H2, data=d)
+
+modely <- lm(strengthIndex ~ H1 + congruence_s + H2, data=d)
+
+med_model <- mediation::mediate(modelm, modely, treat="H1",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+The effect of condition on the difference between control and PT-same versus PT-different was mediated by value-congruence (ab = 0.09, 95% CI = .06 to .11). 
+
+## Contrast 2: Control versus PT-Same
+
+```{r, cache=TRUE}
+med_model <- mediation::mediate(modelm, modely, treat="H2",
+                                sims=5000,
+                                boot=TRUE,
+                   mediator="congruence_s")
+
+summary(med_model)
+```
+
+However the difference between PT-same and control effect was not mediated by value-congruence (ab = .02, 95% CI = -.01 to .07).
+
+#Save Data Set
+```{r}
+write.csv(d, "Study 2 Posttest Other Evaluation Merged Data.csv")
+```
+
+\newpage
+
+#Post-test Part 2: Objective 3rd party argument analysis
+
+#Read in T2 - Objective Ratings
+
+```{r}
+#Read in evaluations
+d_objeval <- read.csv("T2 objective evaluations clean.csv")
+
+#Evaluations for any argument that was evaluated in original set
+d_evaluations <- merge(d_T1, d_objeval, by = "MID", all=FALSE)
+d_evaluations2 <- d_evaluations %>%
+  filter(Exclude..y != "Y")
+
+#Anything that was evaluated twice, remove the second
+d_evaluations3 <- d_evaluations2[!duplicated(d_evaluations2$MID),] %>%
+  filter(!is.na(condition)) %>%
+  filter(!is.na(evaluator_MID))
+```
+
+```{r}
+d <- d_evaluations3
+
+d$condition <- as.factor(d$condition)
+contrasts(d$condition) <- cbind(c(-1, 2, -1), c(+1, 0, -1))
+```
+
+
+# Argument Strength Index
+
+Argument strength is measured using the same 6 items as for the self-evaluations. As always, we begin by computing alpha.
+
+```{r}
+strengthItems <- dplyr::select(d, persuasive, convincing, reasonable, strong, thoughtful, wellformulated)
+alphaStrength <- psych::alpha(strengthItems)
+kable(alphaStrength$total)
+```
+
+Because they load together (alpha = 0.95), we consider them as an index.
+
+```{r}
+d$strengthIndex <- (d$persuasive + d$convincing + d$reasonable + d$strong + d$thoughtful + d$wellformulated)/6
+```
+
+# Effect of condition on objective strength
+
+```{r}
+d <- d %>%
+  filter(is.na(d$strengthIndex) == FALSE)
+```
+
+```{r}
+strength_model <- lm(strengthIndex ~ condition, d)
+```
+
+##Omnibus Anova
+```{r}
+kable(summary(strength_model)$fstatistic)
+```
+
+##Testing for significance of contrasts
+Contrast 1 is PT - different versus control and PT - same; Contrast 2 is control versus PT - same
+```{r, fig.margin=TRUE}
+kable(tidy(strength_model))
+```
+
+#Calculate F's from t's (t-statistics above)
+We also calculate the F statistics, in order to report the statistics in consistent way for those more familiar with SPSS outputs.
+
+Contrast 1:
+```{r}
+contrast1F = 1.10^2
+contrast1F
+```
+Contrast 2:
+```{r}
+contrast2F = 0.79^2
+contrast2F
+```
+
+
+Original condition did not affect value congruence ratings in the follow-up session, F(2, 1205) = 0.93, p = .39. Participants in the control and perspective-taking/same ideology conditions did not differ in strength evaluations from participants in the perspective-taking/different ideology condition, F(1, 1205) = 1.21, p =.27. Participants also did not see their arguments as significantly different from the perspective-taking/same ideology in the control condition, F(1, 1205) = .62, p = .43.
+
+
+```{r strength_other_graph}
+se_plus <- function(x) mean(x) + sqrt(var(x)/length(x))
+se_minus <- function(x) mean(x) - sqrt(var(x)/length(x))
+
+limits <- aes(ymax = se_u, ymin= se_l)
+dodge <- position_dodge(width=0.9)
+
+summary <- d %>%
+  dplyr::group_by(condition) %>%
+  dplyr::summarise("Argument_Strength_Other" = mean(strengthIndex, na.rm=TRUE), "se_u"=se_plus(strengthIndex), "se_l"=se_minus(strengthIndex))
+
+plot <- ggplot(data=summary, aes(x=condition, y=Argument_Strength_Other, fill=condition)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(limits, position=dodge, width=0.25) +
+  guides(fill=FALSE) +
+  labs(x="Condition", y="Argument Strength (Other)") +
+  theme_hc() + 
+  theme(text=element_text(family="Calibri", size=14)) +
+  scale_fill_manual(values = c("#ffad99", "#05C68A", "#17699E")) + 
+  scale_x_discrete(labels=c("Control", "Perspective Taking\nDifferent", "Perspective Taking\nSame"))
+  
+#GRAPH1
+#plot
+#ggsave("Study_2_StrengthOther.png", scale=1, width=133, height=100, units="mm", dpi=1000)
+```
+
+#Write Data
+
+```{r}
+write.csv(d, "Study 2 Posttest Self Evaluation Merged Data.csv")
+```

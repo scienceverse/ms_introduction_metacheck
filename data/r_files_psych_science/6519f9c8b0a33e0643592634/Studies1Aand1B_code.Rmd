@@ -1,0 +1,374 @@
+---
+title: "Powerful People Analysis"
+author: "USERNAME"
+date: "8/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = TRUE)
+
+library(readxl)
+library("readr")
+library("data.table")
+library(dplyr)
+library(interactions)
+library(irr)
+library(jtools)
+library(overlap)
+library(lme4)
+library(lmerTest)
+library(ltm)
+library(sjPlot)
+library(ggplot2)
+library(lmerTest)
+library(reghelper)
+library(overlapping)
+library(psych) 
+library(haven)
+library(simr)
+library(table1)
+```
+
+
+```{r, echo=FALSE}
+## call data file
+setwd('/Users/USERNAME/Downloads/')
+dfresult5 <- read.csv("/Users/USERNAME/Downloads/Study1A_1B_data.csv") 
+```
+
+```{r, echo=FALSE}
+# filtering and recoding
+df.final <- dplyr::filter(dfresult5, Remove == 0, Finished == 1, Status == 0)
+
+df.final$List <- 0
+df.final$List[grepl("PW",df.final$Target)]<-"PW"
+df.final$List[grepl("PP",df.final$Target)]<-"PP"
+
+df.1 <- dplyr::filter(df.final, df.final$List == "PP" & df.final$Order_PPList_Seen_First == 1)
+df.2 <- dplyr::filter(df.final, df.final$List == "PW" & df.final$Order_PWList_Seen_First == 1)
+df.3 <- dplyr::filter(df.final, df.final$List == "PP" & df.final$Order_PPList_Seen_First == 2)
+df.4 <- dplyr::filter(df.final, df.final$List == "PW" & df.final$Order_PWList_Seen_First == 2)
+
+df.1$Order_seen <- df.1$Order_Seen_First
+df.2$Order_seen <- df.2$Order_Seen_First
+df.3$Order_seen <- df.3$Order_Seen_First + 26
+df.4$Order_seen <- df.4$Order_Seen_First + 18
+
+df.final <- rbind(df.1, df.2, df.3, df.4)
+
+df.final$List[grepl("PW",df.final$Target)]<-"PW" # move women from PP list to PW
+df.final$List[df.final$Target == "PP14"]<-"PW"
+
+df.final$RCorrect_recode <- 0
+df.final$RCorrect_recode[df.final$RecallJob_coded == 1 | df.final$RecallName_coded == 1] <- 1
+
+df.final$Power_centered <- df.final$Power_Composite - mean(df.final$Power_Composite)
+df.final$Status_centered <- df.final$Status_Composite - mean(df.final$Status_Composite)
+df.final$Power.Status.Scale_centered <- df.final$Power.Status.Scale - mean(df.final$Power.Status.Scale)
+
+df.final$log.Rank <- log(df.final$Rank)
+df.final$logMM <- log(df.final$Total.Media.Mentions)
+df.final$logTF <- log(df.final$Number.of.twitter.followers)
+df.final$logIF <- log(df.final$Number.of.followers)
+df.final$List <- as.factor(df.final$List)
+
+df.final$List <- recode_factor(df.final$List, `PP` = "Men", `PW` = "Women")
+```
+
+# Means Tables
+```{r echo=FALSE}
+label(df.final$Power_Composite)     <- "Perceived Power Composite"
+label(df.final$Status_Composite)     <- "Perceived Status Composite"
+label(df.final$Correct_Coded)       <- "Correct Responses (Coded by RAs)"
+
+table1(~ Power_Composite + Status_Composite + Correct_Coded | List, data=df.final, overall="Total")
+```
+
+```{r}
+df.final$Name <- as.factor(df.final$Name)
+df.summary <- df.final %>%
+  dplyr::group_by(Name, List) %>%
+  dplyr::summarise(mean_power = mean(Power_Composite), mean_status = mean(Status_Composite))
+
+df.summary$List <- recode_factor(df.summary$List, `PP` = "Men", `PW` = "Women")
+
+ggplot(df.summary, aes(mean_status, mean_power, label = Name, color = List)) +    # ggplot2 plot with labels
+  geom_point() +
+  geom_text(aes(label = Name), hjust = - 0.2) + theme_apa() + ylab("Average Power Rating") +
+  xlab("Average Status Rating") 
+```
+# KEY ANALYSES
+
+# Multilevel models predicting Status Composite, Power Composite, and Power-Status Item
+```{r, echo=FALSE}
+m1 <- lmer(Status_Composite ~ List + (1 | idnum), data = df.final)
+m2 <- lmer(Power_Composite ~ List  + (1 | idnum), data = df.final)
+m4 <- lmer(Status_Composite ~ List + Order_seen + log.Rank + List*Order_seen + List*log.Rank + (1 | idnum), data = df.final)
+m5 <- lmer(Power_Composite ~ List + Order_seen + log.Rank + List*Order_seen + List*log.Rank + (1 | idnum), data = df.final)
+```
+
+# Table 1
+```{r}
+tab_model(m1, m2, m4, m5, show.df = TRUE, show.stat = TRUE)
+```
+
+# Table 2
+```{r}
+m3aC <- glmer(Correct_Coded ~ List + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa")) # list significantly predicts (less likely to recall list)
+
+m10 <- glmer(Correct_Coded ~ List + Power_centered + Status_centered + List*Power_centered + List*Status_centered + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m10b <- glmer(Correct_Coded ~ List + List*Power_centered + List*Status_centered + Power_centered + Status_centered + Order_seen + List*Order_seen + log.Rank + log.Rank*List  + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+tab_model(m3aC, m10, m10b, show.stat = TRUE, col.order = c("est", "ci", "stat", "p"), transform = NULL)
+```
+
+# Correct Recognition Estimates
+```{r}
+summary(glmer(Correct_Coded ~ List + Power_centered + Status_centered + List*Power_centered + List*Status_centered + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa")))
+
+sim_slopes(m10, pred = Power_centered, modx = List, confint = TRUE, ci.width = .95, digits = getOption("jtools-digits", default = 3), cluster = idnum)
+sim_slopes(m10, pred = Status_centered, modx = List, confint = TRUE, ci.width = .95, digits = getOption("jtools-digits", default = 3), cluster = idnum)
+```
+
+# Table 3
+```{r}
+mMM1 <- lmer(logMM ~ List + Status_centered + Power_centered + Status_centered:List + Power_centered:List + (1 | idnum), data = df.final)
+mTF1 <- lmer(logTF ~  List + Status_centered + Power_centered + Status_centered:List + Power_centered:List + (1 | idnum), data = df.final)
+mIF1 <- lmer(logIF ~  List + Status_centered + Power_centered + Status_centered:List + Power_centered:List + (1 | idnum), data = df.final)
+
+mMM2 <- lmer(logMM ~ List + Status_centered + Power_centered + Status_centered:List + Power_centered:List + log.Rank + log.Rank:List + (1 | idnum), data = df.final)
+mTF2 <- lmer(logTF ~  List + Status_centered + Power_centered + Status_centered:List + Power_centered:List + log.Rank + log.Rank:List + (1 | idnum), data = df.final)
+mIF2 <- lmer(logIF ~  List + Status_centered + Power_centered + Status_centered:List + Power_centered:List + log.Rank + log.Rank:List + (1 | idnum), data = df.final)
+
+tab_model(mMM1, mTF1, mIF1, mMM2, mTF2, mIF2, show.df = TRUE, show.stat = TRUE)
+
+tab_model(mMM1, mTF1, mIF1, show.stat = TRUE, col.order = c("est", "ci", "stat", "p"))
+tab_model(mMM2, mTF2, mIF2, show.stat = TRUE, col.order = c("est", "ci", "stat", "p"))
+```
+
+```{r, echo = FALSE}
+sim_slopes(mMM1, pred = Power_centered, modx = List, confint = TRUE, ci.width = .95, digits = getOption("jtools-digits", default = 3), cluster = idnum)
+sim_slopes(mMM1, pred = Status_centered, modx = List, confint = TRUE, ci.width = .95, digits = getOption("jtools-digits", default = 3), cluster = idnum)
+
+sim_slopes(mTF1, pred = Power_centered, modx = List, confint = TRUE, ci.width = .95, digits = getOption("jtools-digits", default = 3), cluster = idnum)
+sim_slopes(mTF1, pred = Status_centered, modx = List, confint = TRUE, ci.width = .95, digits = getOption("jtools-digits", default = 3), cluster = idnum)
+
+sim_slopes(mIF1, pred = Power_centered, modx = List, confint = TRUE, ci.width = .95, digits = getOption("jtools-digits", default = 3), cluster = idnum)
+sim_slopes(mIF1, pred = Status_centered, modx = List, confint = TRUE, ci.width = .95, digits = getOption("jtools-digits", default = 3), cluster = idnum)
+```
+
+# Graphs for Binomial Regressions of Recognition by Power Ratings and by Status Ratings
+```{r,echo=FALSE} 
+ggplot(data = df.final) + geom_smooth(aes(x = Power_centered, y = Correct_Coded, linetype = List), method = "glm", method.args = list(family = "binomial"), se = TRUE, color = "black")+ theme_classic() + xlab("Power Composite Centered") + ylab("Recognition") + theme(legend.position="top", text=element_text(family="Helvetica", size=9), panel.background = element_blank())
+
+ggplot(data = df.final) + geom_smooth(aes(x = Status_centered, y = Correct_Coded, linetype = List), method = "glm", method.args = list(family = "binomial"), se = TRUE, color = "black")+ theme_classic() + xlab("Status Composite Centered") + ylab("Recognition")+ theme(legend.position="top", text=element_text(family="Helvetica", size=9), panel.background = element_blank())
+```
+
+
+# ADDITIONAL ANALYSES
+
+# Gender difference controlling for recognition
+```{r}
+m1_rec <- lmer(Status_Composite ~ List + Correct_Coded + (1 | idnum), data = df.final)
+m2_rec <- lmer(Power_Composite ~ List  + Correct_Coded + (1 | idnum), data = df.final)
+tab_model(m1_rec, m2_rec, show.stat = TRUE, col.order = c("est", "ci", "stat", "p"))
+```
+
+# Multilevel models predicting Status Composite, Power Composite, and Power-Status Item with GENDER
+```{r, echo=FALSE}
+m1b <- lmer(Status_Composite ~ List + Correct_Coded + gender + (1  | idnum), data = df.final)
+m2b <- lmer(Power_Composite ~ List + Correct_Coded + gender + (1 | idnum), data = df.final)
+m4b <- lmer(Status_Composite ~ List + Correct_Coded + log.Rank + List*log.Rank + List*gender + (1 | idnum), data = df.final) # men rating PW list rated less status
+m5b <- lmer(Power_Composite ~ List + Correct_Coded + log.Rank + List*log.Rank + List*gender + (1 | idnum), data = df.final)
+
+tab_model(m1b, m2b, m4b, m5b, show.df = TRUE, show.stat = TRUE)
+
+```
+
+```{r, echo = FALSE}
+# summary function for graphing
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  library(plyr)
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  datac <- rename(datac, c("mean" = measurevar))
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
+```
+
+# Summary Table
+```{r eval=FALSE, include=FALSE}
+rec_percentage <- dplyr::group_by(df.final, List, Name) %>%
+  dplyr::summarise(percentage_recognized = mean(Recognition, na.rm = TRUE), percentage_correct = mean(Correct_Coded, na.rm = TRUE), power = mean(Power_Composite, na.rm = TRUE), status = mean(Status_Composite, na.rm = TRUE))
+
+rec_percentage <- as.data.frame(rec_percentage)
+rec_percentage <- rec_percentage[order(rec_percentage$percentage_correct, decreasing = TRUE),]
+write.csv(rec_percentage, "Recognition by Target.csv")
+```
+
+# Binomial regression repeated measures for Recognition (first time seeing stimuli)
+```{r, echo=FALSE}
+m3bC <- glmer(Correct_Coded ~ List  + Order_seen + List*Order_seen + log.Rank + log.Rank*List + gender + gender*List + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m10a0 <- glmer(Correct_Coded ~ List + Power_centered + Status_centered + Order_seen + log.Rank  + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m10a <- glmer(Correct_Coded ~ List + List*Power_centered + List*Status_centered + Power_centered + Status_centered + Order_seen + log.Rank  + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m10a1 <- glmer(Correct_Coded ~ List + List*Power_centered + List*Status_centered + Power_centered + Status_centered  + Order_seen + log.Rank + gender + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa")) 
+
+m10b1 <- glmer(Correct_Coded ~ List + List*Power_centered + List*Status_centered + Power_centered + Status_centered + Order_seen + List*Order_seen + log.Rank + log.Rank*List + gender + gender*List + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m10b1s <- glmer(Correct_Coded ~ List + List*Status_centered+ List*Power_centered  + Power_centered + Status_centered + Order_seen + List*Order_seen + log.Rank + log.Rank*List + gender + gender*List + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+# interaction with power to status scale item
+m12 <- glmer(Correct_Coded ~ List + List*Power.Status.Scale_centered + Order_seen + List*Order_seen + log.Rank + log.Rank*List  + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+# output
+tab_model(m10a, m10a0, m10a1, m10b, m10b1, m12, show.df = TRUE, show.stat = TRUE)
+
+# Table 2
+tab_model(m10, m10b, show.df = TRUE, show.stat = TRUE)
+tab_model(m10, m10b, show.std = TRUE, show.stat = TRUE, col.order = c("std.est", "std.ci", "stat", "p"))
+tab_model(m10, m10b, show.stat = TRUE, col.order = c("est", "ci", "stat", "p"), transform = NULL)
+
+tab_model(m3aC, m3bC, show.stat = TRUE, col.order = c("est", "ci", "stat", "p"), transform = NULL)
+```
+
+# Graph of Recognition by Target Gender
+```{r, echo = FALSE} 
+ggplot(data=df.final, aes(x=List, y=Correct_Coded)) +
+  geom_bar( position = "dodge", stat = "summary", fun.y = "mean", color="blue", fill="white") + theme_classic()
+```
+
+# Power and Status Predicting Recognition
+```{r, echo = FALSE}
+# With RCorrect_recode
+m10a0 <- glmer(RCorrect_recode ~ List + Power_centered + Status_centered + Correct_Coded + Order_seen + log.Rank  + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m10a <- glmer(RCorrect_recode ~ List + List*Power_centered + List*Status_centered + Power_centered + Status_centered + Correct_Coded + Order_seen + log.Rank  + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m10a1 <- glmer(RCorrect_recode ~ List + List*Power_centered + List*Status_centered + Power_centered + Status_centered + Correct_Coded + Order_seen + log.Rank + gender + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa")) # gender marginal, men marginally better?
+
+m10b <- glmer(RCorrect_recode ~ List + List*Power_centered + List*Status_centered + Power_centered + Status_centered + Correct_Coded + List*Correct_Coded + Order_seen + List*Order_seen + log.Rank + log.Rank*List  + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m10b1 <- glmer(RCorrect_recode ~ List + List*Power_centered + List*Status_centered + Power_centered + Status_centered + Correct_Coded + List*Correct_Coded + Order_seen + List*Order_seen + log.Rank + log.Rank*List + gender + gender*List + (1  | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+# interaction with power to status scale item
+m12 <- glmer(RCorrect_recode ~ List + List*Power.Status.Scale_centered + Correct_Coded + List*Correct_Coded + Order_seen + List*Order_seen + log.Rank + log.Rank*List  + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+# output
+tab_model(m10a, m10a0, m10a1, m10b, m10b1, m12, show.df = TRUE, show.stat = TRUE)
+```
+
+```{r eval=FALSE, include=FALSE}
+write.csv(df.final, "/Users/USERNAME/Downloads/data-final.csv")
+```
+
+Supplemental Materials
+
+# Means Tables SM
+```{r echo=FALSE}
+label(df.final$RCorrect_recode)       <- "Recall Responses (Coded by RAs)"
+label(df.final$Power.Status.Scale)     <- "Perceived Power/Status Composite"
+
+table1(~ Power.Status.Scale + RCorrect_recode | List, data=df.final, overall="Total")
+```
+
+# Power Status Item
+```{r}
+m3 <- lmer(Power.Status.Scale ~ List + (1 | idnum), data = df.final)
+m6 <- lmer(Power.Status.Scale ~ List + Order_seen + log.Rank  + List*Order_seen + List*log.Rank  + (1 | idnum), data = df.final)
+
+tab_model(m3, m6, show.df = TRUE, show.stat = TRUE)
+```
+
+# Valenced Media Mentions
+```{r, echo = FALSE}
+df.final$logNegMM <- log(df.final$Number.of.negative.media.mentions.in.last.5.years)
+df.final$logPosMM <- log(df.final$Number.of.positive.media.mentions.in.last.5.years)
+
+mNMM1 <- lmer(logNegMM ~ List + Status_centered + Power_centered + Status_centered:List + Power_centered:List + (1 | idnum), data = df.final)
+mPMM1 <- lmer(logPosMM ~ List + Status_centered + Power_centered + Status_centered:List + Power_centered:List + (1 | idnum), data = df.final)
+
+tab_model(mMM1, mNMM1, mPMM1, show.std = TRUE, show.stat = TRUE, col.order = c("std.est", "std.ci", "stat", "p"))
+
+tab_model(mMM1, mNMM1, mPMM1, show.stat = TRUE, col.order = c("est", "ci", "stat", "p"))
+```
+
+# Valenced Media Mentions Simple Slopes
+```{r}
+m1b <- lmer(logNegMM ~ List + gender + log.Rank + Status_centered + Power_centered + Status_centered:List + Power_centered:List + gender:List + log.Rank:List + (1 | idnum), data = df.final)
+m2b <- lmer(logPosMM ~ List + gender + log.Rank + Status_centered + Power_centered + Status_centered:List + Power_centered:List + gender:List + log.Rank:List + (1 | idnum), data = df.final)
+
+m1bP <- lmer(logNegMM ~ List + gender + log.Rank + Status_centered + Power_centered + Power_centered:List + Status_centered:List + gender:List + log.Rank:List + (1 | idnum), data = df.final)
+m2bP <- lmer(logPosMM ~ List + gender + log.Rank + Status_centered + Power_centered + Power_centered:List + Status_centered:List + gender:List + log.Rank:List + (1 | idnum), data = df.final)
+
+
+simple_slopes(m1bP, confint = TRUE, ci.width = 0.95)
+simple_slopes(m1b, confint = TRUE, ci.width = 0.95)
+simple_slopes(m2bP, confint = TRUE, ci.width = 0.95)
+simple_slopes(m2b, confint = TRUE, ci.width = 0.95)
+```
+
+# Binomial regression repeated measures for REPEAT Recognition (second time seeing stimuli)
+```{r, echo = FALSE}
+m6 <- glmer(RCorrect ~ List + Correct + gender + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m6b <- glmer(RCorrect_recode ~ List + Correct_Coded + gender +(1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m7 <- glmer(RCorrect_recode ~ List + Correct_Coded + Order_seen + log.Rank + gender + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+m8 <- glmer(RCorrect_recode ~ List + Correct_Coded + List*Correct + Order_seen + List*Order_seen + log.Rank + log.Rank*List + gender + List*gender + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+tab_model(m6, m6b, m7, m8, show.df = TRUE, show.stat = TRUE)
+
+
+m3aCR <- glmer(RCorrect_recode ~ List + List*Power_centered + List*Status_centered + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa")) # list significantly predicts (less likely to recall list)
+
+m3bCR <- glmer(RCorrect_recode ~ List + List*Power_centered + List*Status_centered + Order_seen + List*Order_seen + log.Rank + log.Rank*List + Correct_Coded + Correct_Coded*List + (1 | idnum), data = df.final, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+
+tab_model(m3aCR, m3bCR, show.stat = TRUE, col.order = c("est", "ci", "stat", "p"), transform = NULL)
+```
+
+# Status, Power, and Power-Status Scale Predicting Social Media  
+```{r, echo = FALSE}
+m1b <- lmer(logMM ~ List + gender + log.Rank + Status_centered + Power_centered + Power.Status.Scale_centered + Status_centered:List + Power_centered:List + gender:List + log.Rank:List + Power.Status.Scale_centered:List + (1 | idnum), data = df.final)
+m2b <- lmer(logTF ~ List + gender + log.Rank + Status_centered + Power_centered + Power.Status.Scale_centered + Status_centered:List + Power_centered:List + gender:List + log.Rank:List + Power.Status.Scale_centered:List + (1 | idnum), data = df.final)
+m3b <- lmer(logIF ~ List + gender + log.Rank + Status_centered + Power_centered + Power.Status.Scale_centered + Status_centered:List + Power_centered:List + gender:List + log.Rank:List + Power.Status.Scale_centered:List + (1 | idnum), data = df.final)
+
+m1bP <- lmer(logMM ~ List + gender + log.Rank + Status_centered + Power_centered + Power.Status.Scale_centered + Power_centered:List + Status_centered:List + gender:List + log.Rank:List + Power.Status.Scale_centered:List + (1 | idnum), data = df.final)
+m2bP <- lmer(logTF ~ List + gender + log.Rank + Status_centered + Power_centered + Power.Status.Scale_centered + Power_centered:List + Status_centered:List + gender:List + log.Rank:List + Power.Status.Scale_centered:List + (1 | idnum), data = df.final)
+m3bP <- lmer(logIF ~ List + gender + log.Rank + Status_centered + Power_centered + Power.Status.Scale_centered + Power_centered:List + Status_centered:List + gender:List + log.Rank:List + Power.Status.Scale_centered:List + (1 | idnum), data = df.final)
+
+tab_model(m1b, m2b, m3b, show.df = TRUE, show.stat = TRUE)
+```

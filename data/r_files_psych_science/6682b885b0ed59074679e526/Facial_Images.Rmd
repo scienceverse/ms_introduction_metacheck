@@ -1,0 +1,299 @@
+---
+title: "FacialImages"
+output: html_document
+---
+
+# Load Libraries
+
+```{r libraries, message=FALSE}
+options(contrasts = c("contr.sum", "contr.poly"))
+options(digits = 10)
+
+library(readxl)
+library(dplyr)
+library(tidyverse)
+library(rstatix)
+library(ggpubr)
+library(here)
+library(dplyr)
+library(openxlsx)
+library(tidyr)
+library(apaTables)
+```
+
+# Data Wrangling
+```{r data wrangling}
+
+df_name <- read_excel("./12-5-22+Facial+Image+Ratings+for+Twitter+experiment+%23115446_December+7%2C+2022_13.40 Qualtrics.xlsx", n_max = 0) %>%
+            names()
+
+df_name <- str_replace(df_name, "_6_TEXT" , "TEXT")
+
+# Read the Excel file
+df_Qualtrics <- read_excel("./12-5-22+Facial+Image+Ratings+for+Twitter+experiment+%23115446_December+7%2C+2022_13.40 Qualtrics.xlsx",
+                            skip = 2,
+                            col_names = df_name) 
+
+df_name2 <- read_excel("12-5-22%282%29+Facial+Image+Ratings+for+Twitter+experiment+Part2_December+8%2C+2022_20.54 Qualtrics2.xlsx", n_max = 0) %>%
+            names()
+
+df_name2 <- str_replace(df_name2, "_6_TEXT" , "TEXT")
+
+df_Qualtrics2 <- read_excel("12-5-22%282%29+Facial+Image+Ratings+for+Twitter+experiment+Part2_December+8%2C+2022_20.54 Qualtrics2.xlsx",
+                            skip = 2,
+                            col_names = df_name2) %>%
+  select(!contains("Filter")) %>%  
+  select(!contains("_url")) %>%  
+  select(!contains("_DO_"))  
+
+
+df_name3 <- read_excel(list.files(".", "Qualtrics3.xlsx"),
+                      n_max = 0) %>%
+  names()
+df_name3 <- str_replace(df_name3, "_6_TEXT" , "TEXT")
+
+df_Qualtrics3 <- read_excel(list.files(".", "Qualtrics3.xlsx"),
+                              skip = 2,
+                              col_names = df_name3) %>%
+  select(!contains("Filter")) %>%
+  select(!contains("_url")) %>%
+  select(!contains("_DO_"))
+
+df_Qualtrics <- bind_rows(df_Qualtrics, df_Qualtrics2, df_Qualtrics3)
+
+df_Qualtrics_long <- df_Qualtrics %>%
+  mutate(across(`1_age`:`10_Humanness`, as.character)) %>%
+  pivot_longer(cols = `1_age`:`10_Humanness`, 
+               names_to = c("ImageNo", "Attributes"),
+               names_pattern = "(.*)_(.*)",
+               values_to = "Value")
+
+df_Qualtrics_long$ImageNo <- gsub("_race_6.*", "", df_Qualtrics_long$ImageNo)
+unique(df_Qualtrics_long$ImageNo)
+
+df_Qualtrics_l2w <- df_Qualtrics_long %>%
+  pivot_wider(names_from = "Attributes",
+              values_from = "Value")
+
+df_Qualtrics_l2w$ImageNo_Names <- NA
+
+for (i in 1:nrow(df_Qualtrics_l2w)) {
+  if (df_Qualtrics_l2w$ImageNo[i] == "9"){
+    df_Qualtrics_l2w$ImageNo_Names[i] <- df_Qualtrics_l2w$CFD_1[i]
+  } else if (df_Qualtrics_l2w$ImageNo[i] == "10") {
+    df_Qualtrics_l2w$ImageNo_Names[i] <- df_Qualtrics_l2w$CFD_2[i]
+  } else {
+    df_Qualtrics_l2w$ImageNo_Names[i] <- df_Qualtrics_l2w[i, paste0("AI_", df_Qualtrics_l2w$ImageNo[i])]
+  }
+
+}
+
+df_Qualtrics_l2w <- df_Qualtrics_l2w %>% 
+  mutate(Label = case_when(
+    str_detect(ImageNo_Names, "^B") ~ "B",
+    str_detect(ImageNo_Names, "^W") ~ "W",
+    str_detect(ImageNo_Names, "^C") ~ "C"))
+
+na_counts <- colSums(is.na(df_Qualtrics_l2w))
+print("Number of NA values in each column:")
+print(na_counts)
+df_Qualtrics_l2w <- df_Qualtrics_l2w[complete.cases(df_Qualtrics_l2w$attractive), ]
+
+df_Qualtrics_l2w$age <- as.numeric(df_Qualtrics_l2w$age)
+df_Qualtrics_l2w$ImageNo <- as.numeric(df_Qualtrics_l2w$ImageNo)
+df_Qualtrics_l2w$gender <- as.numeric(df_Qualtrics_l2w$gender)
+df_Qualtrics_l2w$race <- as.numeric(df_Qualtrics_l2w$race)
+df_Qualtrics_l2w$attractive <- as.numeric(df_Qualtrics_l2w$attractive)
+df_Qualtrics_l2w$prototypical <- as.numeric(df_Qualtrics_l2w$prototypical)
+df_Qualtrics_l2w$emotion <- as.numeric(df_Qualtrics_l2w$emotion)
+df_Qualtrics_l2w$Humanness <- as.numeric(df_Qualtrics_l2w$Humanness)
+
+```
+
+
+# Get summary statitstics
+Age group:
+
+1. 1 = Under 18
+
+2. 2 = 18-24
+
+3. 3 = 25-34
+
+4. 4 = 35-44
+
+5. 5 = 45-54
+
+6. 6 = 55-64
+
+Race group:
+
+1. 1 = White
+
+2. 2 = Black or African American
+
+3. 3 = American Indian or Alaska Native
+
+4. 4 = Asian
+
+5. 5 = Native Hawaiian or Pacific Islander
+
+6. 6 = Other
+
+Gender Group: 
+1. 1 = Male 
+
+2. 2 = Female 
+
+3. 3 = Unsure 
+
+Attractive Group: 
+1. Not at all attractive1  (1) 
+2. 2  
+3. 3  
+4. 4  
+5. 5  
+6. 6  
+7. Extremely attractive7  (7) 
+
+
+Humanness Group: 
+
+```{r}
+
+# Summary Stats 
+gender <- table(df_Qualtrics_l2w$gender[!is.na(df_Qualtrics_l2w$gender)])
+print(gender)
+race <- table(df_Qualtrics_l2w$race[!is.na(df_Qualtrics_l2w$race)])
+print(race)
+psych::describe(df_Qualtrics_l2w$emotion) 
+humanness_cols <- c("1_Humanness", "2_Humanness", "9_Humanness",
+                    "3_Humanness", "4_Humanness", "5_Humanness", 
+                    "6_Humanness", "7_Humanness", "8_Humanness", "10_Humanness")
+
+df_Qualtrics$RowMeans_Humanness <- rowMeans(df_Qualtrics[humanness_cols], na.rm = TRUE)
+psych::describe(df_Qualtrics$RowMeans_Humanness)
+
+psych::describe(df_Qualtrics_l2w$attractive)
+psych::describe(df_Qualtrics_l2w$prototypical) 
+
+# Age - Distribution
+temp_age <- df_Qualtrics_l2w %>%
+  group_by(ImageNo_Names, age) %>%
+  summarise(Age_Count = n(), .groups = 'drop') %>%
+  mutate(ImageNo_Names = as.character(ImageNo_Names)) %>%
+  group_by(ImageNo_Names) %>%
+  filter(Age_Count == max(Age_Count, na.rm = TRUE)) %>%
+  arrange(ImageNo_Names) %>%
+  rename("AgeGroup" = age,
+         "AgeGroup_MaxCount" = Age_Count)
+
+# Raters per Image
+temp_N <- df_Qualtrics_l2w %>%
+  group_by(ImageNo_Names) %>%
+  summarise(N_RaterCount = n(), .groups = 'drop') %>%
+  mutate(ImageNo_Names = as.character(ImageNo_Names)) 
+
+# Race - Distribution
+temp_race <- df_Qualtrics_l2w %>%
+  group_by(ImageNo_Names, race) %>%
+  summarise(race_Count = n(), .groups = 'drop') %>%
+  mutate(ImageNo_Names = as.character(ImageNo_Names)) %>%
+  group_by(ImageNo_Names) %>%
+  filter(race_Count == max(race_Count, na.rm = TRUE)) %>%
+  arrange(ImageNo_Names) %>%
+  rename("RaceGroup" = race,
+         "RaceGroup_MaxCount" = race_Count)
+
+# Gender - Distribution
+temp_gender <- df_Qualtrics_l2w %>%
+  group_by(ImageNo_Names, gender) %>%
+  summarise(gender_Count = n(), .groups = 'drop') %>%
+  mutate(ImageNo_Names = as.character(ImageNo_Names)) %>%
+  group_by(ImageNo_Names) %>%
+  filter(gender_Count == max(gender_Count, na.rm = TRUE)) %>%
+  arrange(ImageNo_Names) %>%
+  rename("GenderGroup" = gender,
+         "GenderGroup_MaxCount" = gender_Count)
+
+# Summary statistics
+df_summary_mean <- df_Qualtrics_l2w %>%
+  group_by(ImageNo_Names) %>%
+  get_summary_stats(age:Humanness, show = "mean") %>%
+  select(-n) %>%
+  pivot_wider(names_from = "variable", 
+              values_from = "mean") %>%
+  mutate(ImageNo_Names = as.character(ImageNo_Names)) %>%
+  arrange(ImageNo_Names) 
+
+# Display the results
+print(temp_age)
+print(temp_N)
+print(temp_race)
+print(temp_gender)
+print(df_summary_mean)
+
+df_summary_mean2 <- df_summary_mean %>%
+  left_join(., temp_N, by = "ImageNo_Names") %>%
+  left_join(., temp_age, by = "ImageNo_Names") %>%
+  left_join(., temp_gender, by = "ImageNo_Names") %>%
+  left_join(., temp_race, by = "ImageNo_Names") 
+
+df_summary_mean2 <- df_summary_mean2 %>%
+  mutate(AgeGroup_MaxCount_percent = AgeGroup_MaxCount / N_RaterCount,
+         GenderGroup_MaxCount_percent = GenderGroup_MaxCount / N_RaterCount,
+         RaceGroup_MaxCount_percent = RaceGroup_MaxCount / N_RaterCount
+  )
+
+temp_age <- temp_age %>% distinct(ImageNo_Names, .keep_all = TRUE)
+temp_race <- temp_race %>% distinct(ImageNo_Names, .keep_all = TRUE)
+df_summary_mean2 <- df_summary_mean %>%
+  left_join(temp_N, by = "ImageNo_Names") %>%
+  left_join(temp_age, by = "ImageNo_Names") %>%
+  left_join(temp_gender, by = "ImageNo_Names") %>%
+  left_join(temp_race, by = "ImageNo_Names")
+
+print(df_summary_mean2)
+
+
+t.test(Humanness ~ Label, df_Qualtrics_l2w %>% subset(Label != "C"))
+t.test(Humanness ~ Label, df_Qualtrics_l2w %>% subset(Label != "B"))
+t.test(Humanness ~ Label, df_Qualtrics_l2w %>% subset(Label != "W"))
+
+cor.test(df_Qualtrics_l2w$attractive, df_Qualtrics_l2w$Humanness)
+cor.test(df_Qualtrics_l2w$emotion, df_Qualtrics_l2w$Humanness)
+cor.test(df_Qualtrics_l2w$prototypical, df_Qualtrics_l2w$Humanness)
+
+ write.csv(df_summary_mean2, "Images_Means.csv")
+
+t.test(df_Qualtrics_l2w$attractive[df_Qualtrics_l2w$ImageNo_Names == "White05.jpg"],
+       df_Qualtrics_l2w$attractive[df_Qualtrics_l2w$ImageNo_Names == "White05.jpg"],
+       var.equal = TRUE)
+```
+
+
+```{r}
+
+# List of image filenames to include
+included_images <- c("Black02.jpg", "Black05.jpg", "Black21.jpg", "Black22.jpg", "Black24.jpg", 
+                     "Black25.jpg", "Black26.jpg", "Black27.jpg", "Black28.jpg", "White15.jpg", 
+                     "White16.jpg", "White31.jpg", "White32.jpg", "White33.jpg", "White34.jpg", 
+                     "White37.jpg", "White38.jpg", "White40.jpg")
+
+# Subset the data to only include the listed images
+subset_data <- df_Qualtrics_l2w %>%
+  filter(ImageNo_Names %in% included_images)
+
+t.test(subset_data$attractive[subset_data$Label == "W"],
+       subset_data$attractive[subset_data$Label == "B"],
+       var.equal = TRUE)
+apa.1way.table(iv = Label, dv = attractive, data = subset_data)
+t.test(subset_data$Humanness[subset_data$Label == "W"],
+       subset_data$Humanness[subset_data$Label == "B"],
+       var.equal = TRUE)
+apa.1way.table(iv = Label, dv = Humanness, data = subset_data)
+
+```
+
+
+

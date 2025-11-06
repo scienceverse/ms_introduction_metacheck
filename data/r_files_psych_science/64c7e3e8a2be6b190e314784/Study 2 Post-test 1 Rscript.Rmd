@@ -1,0 +1,81 @@
+---
+title: "S2 Post-test 1: Using a circle"
+output:  html_document: default
+---
+
+#Data
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#loading packages
+library('dplyr')
+library(psych)
+library(ggplot2)
+library(jtools)
+library('interactions')
+library(ltm)
+library(car)
+library(effectsize)
+library(MBESS)
+
+#loading data
+circle <- read.csv("~/Study 2 Post-test 1 Data.csv")
+```
+
+```{r}
+circle <- circle %>% filter(duplicate==0) # n=20
+circle <- circle %>% filter(Clicks>0) # n=34
+mean(circle$Clicks) + 3*sd(circle$Clicks)
+circle <- circle %>% filter(Clicks<1222.029) # n=0
+```
+
+#Key Variable Names
+ * IS = Incentive Salience manipulation condition (1 = high, -1 = low)
+ * Charity = Prosocial Motivation manipulation condition (1 = high, -1 = low)
+ * ISMC = Incentive Salience manipulation check (7-point scale)
+ * CharityMC = Prosocial Motivation manipulation check (7-point scale)
+ * Clicks = Prosocial effort investment, counted in keypress pairs
+ 
+#Demographics
+```{r}
+#Gender, age and click cound data distribution
+circle$gender <- factor(circle$gender)
+levels(circle$gender) <- c('male', 'female', 'non-binary')
+circle  %>% count(gender)
+describe(circle[, c("age", "Clicks")], range=TRUE) #Clicks for skewness and kurtosis
+```
+#Manpulation check
+```{r}
+#Incentive salience
+t.test(ISMC ~ IS, data=circle, var.equal=TRUE)
+tapply(circle$ISMC,circle$IS,sd) #SD
+circle  %>% count(IS)
+
+#Charity manipulation
+t.test(CharityMC ~ Charity, data=circle, var.equal=TRUE)
+tapply(circle$CharityMC,circle$Charity,sd) #SD
+circle  %>% count(Charity)
+```
+```{r}
+#Cohen's ds
+ci.smd(ncp= 5.5035, n.1=380, n.2=384, conf.level=.95) #ISMC
+ci.smd(ncp= 16.429, n.1=383, n.2=381, conf.level=.95) #CharityMC
+```
+
+
+#Regression
+```{r, echo=FALSE}
+#Means and SDs
+Means.Table<-circle %>%
+  group_by(IS,Charity) %>%
+  summarise(N=n(),
+            Means=mean(Clicks),
+            SD=sd(Clicks),
+            SE=SD/N^.5)
+print(Means.Table)
+```
+```{r}
+#Regression
+r1 <- lm(Clicks ~ IS * Charity, data = circle)
+summ(r1, digits=4)
+sim_slopes(r1, pred=IS, modx = Charity, johnson_neyman = TRUE, jnplot = FALSE, digits=3)
+```

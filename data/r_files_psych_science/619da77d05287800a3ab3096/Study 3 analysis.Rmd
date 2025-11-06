@@ -1,0 +1,714 @@
+---
+title: "Happy to have helped: Study 3"
+date: "11/21/2021"
+output:
+  html_document:
+    number_sections: no
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+theme: sandstone
+highlight: tango
+---
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+library(readr)
+library(ggplot2)
+library(ggpubr)
+library(gridExtra)
+library(ggExtra)
+library(tidyr)
+library(dplyr)
+library(ggExtra)
+library(psych)
+library(plyr)
+
+setwd("/Users/xuanzhao/Dropbox/Zhao Epley Happy to Help/OSF documents/Study 3 Take My Picture")
+data_folder <- "/Users/xuanzhao/Dropbox/Zhao Epley Happy to Help/OSF documents/Study 3 Take My Picture/"
+file <- "Study 3 data.csv"
+
+hhh3_data <- read_csv(paste0(data_folder,file))
+hhh3_data$Pair_ID <- as.factor(hhh3_data$Pair_ID)
+
+lower_ci <- function(mean, se, n, conf_level = 0.95){
+  lower_ci <- mean - qt(1 - ((1 - conf_level) / 2), n - 1) * se
+}
+
+hhh3_data_clean <- subset(hhh3_data, Pair_ID!=4)
+
+```
+
+# Method 
+
+**Participants**
+
+Over 4 sessions on 2/16, 2/23, 2/24, and 3/2, and with the help of 4 RAs, we have collected 50 pairs of participants after exclusion. One requester only finished their pre-request servey but did not have time to finish their post-request survey due to their scheduled departure; we nevertheless included data from this pair because all of the requester's prediction questions were in the pre-request survey.
+
+**Exclusion**
+
+We had to exclude 4 requesters who succesfully requested someone else to help them, but helpers later declined to fill out their survey. And 2 inattentive requesters were excluded due to failing to follow instructions — one clicked through the survey and filled out the post-request survey before asking another person for help, another didn't finish the pre-request survey before initiating their request. Finally, we excluded 1 pair because the requester did not ask the helper to help; instead, the helper spontaneously offered to help, likely because they saw the participant holding a camera and looking like they needed someone to take a picture for them.
+
+**Qualtrics survey links:**
+
+* Requester: [Qualtrics link redacted for anonymity]
+* Helper: [Qualtrics link redacted for anonymity]
+* Experimenter log: [redacted for anonymity]
+
+**Additional notes**
+
+1. During the early days running this study, 4 helpers declined to take our survey, so we added one question in the middle of data collection that asked the requesters to evaluate how their helpers seemed to feel after the interaction. This question was introduced to measure whether helpers who declined to fill out the survey versus agreed to fill out the survey might feel systemetically different about the interaction. However, all helpers actually filled out our survey since we added this question, so this question became uninformative.
+
+2. **It is possible that helpers were even happier after helping than they reported in our survey**, because after helping, helpers had to walk from the location where they helped the requester to our booth in order to fill out a survey on our tablet, which had to stay at our table due to wifi coverage. This distance varied from a few yards to tens of yards, and a helper commented that "having to walk away from my own experience of enjoyimg [enjoying] the conservatory and away from my family to take the survey drastically negated the positive experience taking the picture." (Although they still answered 3 to the positive/negative question on a scale from -5 to 5, and 10 to the pleased question on a scale from 0 to 10). So even with this potentially adversarial setup, requesters still underestimated how positive the helpers would feel!
+
+If I were to design this study again, I would have turned the helper survey into a paper-pen survey, so that the experimenter could have brought it with them right to the helper and ask the helper to fill out the survey immediately after the helping event, right at the photo-taking location.
+
+<br>
+
+# Miscalibration
+
+### Willing to help
+
+Correlation between "willing to help" and "interested in helping":
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_willing <- hhh3_data %>%
+  dplyr::select(Pair_ID, willing_A, willing_B) %>%
+  gather(Role, willing, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("willing_A", "willing_B"), labels = c("Requester", "Helper"))) 
+
+hhh3_interest <- hhh3_data %>%
+  dplyr::select(Pair_ID, interested_A, interested_B) %>%
+  gather(Role, interest, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("interested_A", "interested_B"), labels = c("Requester", "Helper"))) 
+
+hhh3_willing$interest <- hhh3_interest$interest
+
+cor.test(hhh3_willing$willing, hhh3_willing$interest)
+
+```
+
+**Composite score**:
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_willing$willingness <- (hhh3_willing$willing + hhh3_willing$interest)/2
+
+ddply(hhh3_willing, c("Role"), summarise,
+               N    = length(willingness),
+               mean = mean(willingness, na.rm = TRUE),
+               sd   = sd(willingness, na.rm = TRUE),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+t.test(willingness ~ Role, data = hhh3_willing, alternative = "two.sided", paired = TRUE)
+effsize::cohen.d(willingness ~ Role, paired=TRUE, data = hhh3_willing)
+
+```
+
+### Discomfort rejecting request
+
+Cronbach's alpha: 
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_difficult <- hhh3_data %>%
+  dplyr::select(Pair_ID, difficult_A, difficult_B) %>%
+  gather(Role, difficult, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("difficult_A", "difficult_B"), labels = c("Requester", "Helper"))) 
+
+hhh3_awkward <- hhh3_data %>%
+  dplyr::select(Pair_ID, awkward_A, awkward_B) %>%
+  gather(Role, awkward, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("awkward_A", "awkward_B"), labels = c("Requester", "Helper"))) 
+
+hhh3_embarrased <- hhh3_data %>%
+  dplyr::select(Pair_ID, embarrased_A, embarrased_B) %>%
+  gather(Role, embarrased, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("embarrased_A", "embarrased_B"), labels = c("Requester", "Helper"))) 
+
+hhh3_difficult$awkward <- hhh3_awkward$awkward
+hhh3_difficult$embarrased <- hhh3_embarrased$embarrased
+
+discomfort_alpha <- hhh3_difficult %>%
+  dplyr::select(difficult:embarrased)
+
+psych::alpha(discomfort_alpha)
+
+```
+
+
+**Composite score**:
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_difficult$discomfort <- (hhh3_difficult$difficult + hhh3_difficult$awkward + hhh3_difficult$embarrased)/3
+  
+ddply(hhh3_difficult, c("Role"), summarise,
+               N    = length(discomfort),
+               mean = mean(discomfort, na.rm = TRUE),
+               sd   = sd(discomfort, na.rm = TRUE),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+t.test(discomfort ~ Role, data = hhh3_difficult, alternative = "two.sided", paired = TRUE)
+
+effsize::cohen.d(discomfort ~ Role, paired=TRUE, data = hhh3_difficult)
+
+# Below is for calculating r in meta-analysis (within-subject design)
+# 
+# discomfort_help_seeker <- hhh3_difficult %>%
+#   filter(Role == "Requester")
+# 
+# discomfort_helper <- hhh3_difficult %>%
+#   filter(Role == "Helper")
+# 
+# cor.test(discomfort_help_seeker$discomfort, discomfort_helper$discomfort)
+
+```
+
+### Positive Mood 
+
+Correlation between feeling positive (-5 to 5) and feeling pleased (0 to 10):
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_pos <- hhh3_data %>%
+  dplyr::select(Pair_ID, positive_pre_A, positive_post_B) %>%
+  gather(Perspective, pos1, -Pair_ID) %>%
+  mutate(Perspective = factor(Perspective, levels = c("positive_pre_A", "positive_post_B"), labels = c("Requester", "Helper"))) 
+
+hhh3_pleasant <- hhh3_data %>%
+  dplyr::select(Pair_ID, pleased_pre_A, pleased_post_B) %>%
+  gather(Perspective, pos2, -Pair_ID) %>%
+  mutate(Perspective = factor(Perspective, levels = c("pleased_pre_A", "pleased_post_B"), labels = c("Requester", "Helper"))) 
+
+hhh3_posmood <- left_join(hhh3_pos, hhh3_pleasant, by = c("Pair_ID", "Perspective"))
+
+cor.test(hhh3_posmood$pos1, hhh3_posmood$pos2)
+
+```
+
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_posmood$posmood <- (hhh3_posmood$pos1 + hhh3_posmood$pos2 + 5)/2
+  
+ggbarplot(hhh3_posmood, x = "Perspective", y = "posmood", add = "mean_se", 
+          color = "black", fill = "Perspective", alpha = 0.75, palette = c("#767676","#181818"), 
+          position = position_dodge(0.8)) +
+  xlab("") + 
+  ylab("Positive Mood") + 
+  rremove("x.text") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  coord_cartesian(ylim = c(0,10))+
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12) +
+  scale_y_continuous(breaks=seq(0,10,2))
+
+# ggsave("hhh3_posmood.pdf", plot = last_plot(), device = "pdf", width = 3, height = 4, dpi = 300)
+
+ddply(hhh3_posmood, c("Perspective"), summarise,
+               N    = length(posmood),
+               mean = mean(posmood),
+               sd   = sd(posmood),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+t.test(posmood ~ Perspective, data = hhh3_posmood, alternative = "two.sided", paired = TRUE)
+
+effsize::cohen.d(posmood ~ Perspective, paired=TRUE, data = hhh3_posmood)
+
+```
+
+
+### Inconvenience Perception
+
+Correlation between feeling annoyed and perceiving inconvenience (0 to 10):
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_incon <- hhh3_data %>%
+  dplyr::select(Pair_ID, inconvenient_pre_A, inconvenient_B) %>%
+  gather(Perspective, inconvenient, -Pair_ID) %>%
+  mutate(Perspective = factor(Perspective, levels = c("inconvenient_pre_A", "inconvenient_B"), labels = c("Requester", "Helper"))) 
+
+hhh3_annoy <- hhh3_data %>%
+  dplyr::select(Pair_ID, annoyed_pre_A, annoyed_B) %>%
+  gather(Perspective, annoy, -Pair_ID) %>%
+  mutate(Perspective = factor(Perspective, levels = c("annoyed_pre_A", "annoyed_B"), labels = c("Requester", "Helper"))) 
+
+hhh3_inconperc <- left_join(hhh3_incon, hhh3_annoy, by = c("Pair_ID", "Perspective"))
+cor.test(hhh3_inconperc$inconvenient, hhh3_inconperc$annoy)
+
+```
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_inconperc$incper <- (hhh3_inconperc$inconvenient + hhh3_inconperc$annoy)/2
+
+ggbarplot(hhh3_inconperc, x = "Perspective", y = "incper", add = "mean_se", 
+          color = "black", fill = "Perspective", alpha = 0.75, palette = c("#767676","#181818"), 
+          position = position_dodge(0.8)) +
+  xlab("") + 
+  ylab("Inconvenience Perception") + 
+  rremove("x.text") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  coord_cartesian(ylim = c(0, 10))+
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12) +
+  scale_y_continuous(breaks=seq(0, 10, 2))
+
+# ggsave("hhh3_incperception.pdf", plot = last_plot(), device = "pdf", width = 3, height = 4, dpi = 300)
+
+
+ddply(hhh3_inconperc, c("Perspective"), summarise,
+               N    = length(incper),
+               mean = mean(incper),
+               sd   = sd(incper),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+t.test(incper ~ Perspective, data = hhh3_inconperc, alternative = "two.sided", paired = TRUE)
+
+effsize::cohen.d(incper ~ Perspective, paired=TRUE, data = hhh3_inconperc)
+
+```
+
+
+
+### Prosocial motivation 
+
+* This person wants to help me get my picture taken.
+* This person wants to do something nice for me.
+
+*[-3: Strongly disagree; 3: Strongly agree]*
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_pro1 <- hhh3_data %>%
+  dplyr::select(Pair_ID, motivation_A_1, motivation_B_1) %>%
+  gather(Role, pro1, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("motivation_A_1", "motivation_B_1"), labels = c("Requester", "Helper"))) 
+
+hhh3_pro2 <- hhh3_data %>%
+  dplyr::select(Pair_ID, motivation_A_2, motivation_B_2) %>%
+  gather(Role, pro2, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("motivation_A_2", "motivation_B_2"), labels = c("Requester", "Helper"))) 
+
+cor.test(hhh3_pro1$pro1, hhh3_pro2$pro2)
+
+```
+
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_data$prosocialmotive_A <- (hhh3_data$ motivation_A_1+ hhh3_data$motivation_A_2)/2
+hhh3_data$prosocialmotive_B <- (hhh3_data$ motivation_B_1+ hhh3_data$motivation_B_2)/2
+
+hhh3_prosocial <- hhh3_data %>%
+  dplyr::select(Pair_ID, prosocialmotive_A, prosocialmotive_B) %>%
+  gather(Perspective, prosocial, -Pair_ID) %>%
+  mutate(Perspective = factor(Perspective, levels = c("prosocialmotive_A", "prosocialmotive_B"), labels = c("Requester", "Helper"))) 
+
+ggbarplot(hhh3_prosocial, x = "Perspective", y = "prosocial", add = "mean_se", 
+          color = "black", fill = "Perspective", alpha = 0.75, palette = c("#767676","#181818"), 
+          position = position_dodge(0.8)) +
+  xlab("Perspective") + 
+  ylab("Prosocial Motivation") + 
+  rremove("x.text") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  coord_cartesian(ylim = c(-3, 3))+
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12) +
+  scale_y_continuous(breaks=seq(-3,3,1))
+
+# ggsave("hhh3_prosocialmotivation.pdf", plot = last_plot(), device = "pdf", width = 3, height = 4, dpi = 300)
+
+ddply(hhh3_prosocial, c("Perspective"), summarise,
+               N    = length(prosocial),
+               mean = mean(prosocial),
+               sd   = sd(prosocial),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+ddply(hhh3_prosocial, c("Perspective"), summarise,
+               N    = length(prosocial),
+               mean = mean(prosocial),
+               sd   = sd(prosocial),
+               se   = sd / sqrt(N))
+
+t.test(prosocial ~ Perspective, data = hhh3_prosocial, alternative = "two.sided", paired = TRUE)
+
+effsize::cohen.d(prosocial ~ Perspective, paired = TRUE, data = hhh3_prosocial)
+```
+
+
+### Compliance motivation
+
+* This person wants to avoid saying “no” to my request.
+* This person is forced to take a picture for me because I asked him/her to.
+
+*[-3: Strongly disagree; 3: Strongly agree]*
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_com1 <- hhh3_data %>%
+  dplyr::select(Pair_ID, motivation_A_3, motivation_B_3) %>%
+  gather(Role, com1, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("motivation_A_3", "motivation_B_3"), labels = c("Requester", "Helper")))
+
+hhh3_com2 <- hhh3_data %>%
+  dplyr::select(Pair_ID, motivation_A_4, motivation_B_4) %>%
+  gather(Role, com2, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("motivation_A_4", "motivation_B_4"), labels = c("Requester", "Helper"))) 
+
+cor.test(hhh3_com1$com1, hhh3_com2$com2)
+
+```
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_data$complymotive_A <- (hhh3_data$ motivation_A_3+ hhh3_data$motivation_A_4)/2
+hhh3_data$complymotive_B <- (hhh3_data$ motivation_B_3+ hhh3_data$motivation_B_4)/2
+
+hhh3_comply <- hhh3_data %>%
+  dplyr::select(Pair_ID, complymotive_A, complymotive_B) %>%
+  gather(Perspective, comply, -Pair_ID) %>%
+  mutate(Perspective = factor(Perspective, levels = c("complymotive_A", "complymotive_B"), labels = c("Requester", "Helper"))) 
+
+ggbarplot(hhh3_comply, x = "Perspective", y = "comply", add = "mean_se", 
+          color = "black", fill = "Perspective", alpha = 0.75, palette = c("#767676","#181818"), 
+          position = position_dodge(0.8)) +
+  xlab("") + 
+  ylab("Compliance Motivation") + 
+  rremove("x.text") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  coord_cartesian(ylim = c(-3, 3))+
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12) +
+  scale_y_continuous(breaks=seq(-3,3,1))
+
+# ggsave("hhh3_complymotivation.pdf", plot = last_plot(), device = "pdf", width = 3, height = 4, dpi = 300)
+
+ddply(hhh3_comply, c("Perspective"), summarise,
+               N    = length(comply),
+               mean = mean(comply),
+               sd   = sd(comply),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+t.test(comply ~ Perspective, data = hhh3_comply, alternative = "two.sided", paired = TRUE)
+
+effsize::cohen.d(comply ~ Perspective, paired = TRUE, data = hhh3_comply)
+
+```
+
+<br>
+
+### Mediation analysis
+
+Here I used SPSS to conduct simple effects test:
+
+    DATASET ACTIVATE DataSet3.
+    GLM prosocial_A prosocial_B compliance_A compliance_B
+      /WSFACTOR=motivation 2 Polynomial perspective 2 Polynomial
+      /METHOD=SSTYPE(3)
+      /EMMEANS=TABLES(motivation*perspective) COMPARE(motivation) ADJ(LSD)
+      /PRINT=DESCRIPTIVE ETASQ
+      /CRITERIA=ALPHA(.05)
+      /WSDESIGN=motivation perspective motivation*perspective.
+
+
+<br>
+
+<br>
+
+# Exploratory analysis
+
+## Requesters’ prosocial emotions
+
+### Grateful
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_grateful <- hhh3_data_clean %>%
+  dplyr::select(Pair_ID, grateful_A, grateful_B) %>%
+  gather(Role, grateful, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("grateful_A", "grateful_B"), labels = c("Requester Actual", "Helper Predicted"))) 
+
+ggbarplot(hhh3_grateful, x = "Role", y = "grateful", add = "mean_se",
+      color = "Role", fill = "Role", alpha = 0.7, palette = "uchicago", 
+      position = position_dodge(0.8)) +
+      ylab("Feeling Grateful") + 
+  stat_compare_means(method = "t.test", paired = TRUE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4)
+
+ddply(hhh3_grateful, c("Role"), summarise,
+               N    = length(grateful),
+               mean = mean(grateful),
+               sd   = sd(grateful),
+               se   = sd / sqrt(N))
+
+t.test(grateful ~ Role, data = hhh3_grateful, alternative = "two.sided", paired = TRUE)
+effsize::cohen.d(grateful ~ Role, paired = TRUE, data = hhh3_grateful)
+
+```
+
+
+### Indebted
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_indebted <- hhh3_data_clean %>%
+  dplyr::select(Pair_ID, indebted_A, indebted_B) %>%
+  gather(Role, indebt, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("indebted_A", "indebted_B"), labels = c("Requester Actual", "Helper Predicted"))) 
+
+ggbarplot(hhh3_indebted, x = "Role", y = "indebt", add = "mean_se",
+      color = "Role", fill = "Role", alpha = 0.7, palette = "uchicago", 
+      position = position_dodge(0.8)) +
+      ylab("Feeling Indebted") + 
+  stat_compare_means(method = "t.test", paired = TRUE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4)
+
+ddply(hhh3_indebted, c("Role"), summarise,
+               N    = length(indebt),
+               mean = mean(indebt),
+               sd   = sd(indebt),
+               se   = sd / sqrt(N))
+
+t.test(indebt ~ Role, data = hhh3_indebted, alternative = "two.sided", paired = TRUE)
+effsize::cohen.d(indebt ~ Role, paired = TRUE, data = hhh3_indebted)
+
+```
+
+### Means a lot
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_data_clean <- subset(hhh3_data, Pair_ID!=4)
+
+hhh3_means <- hhh3_data_clean %>%
+  dplyr::select(Pair_ID, means_A, means_B) %>%
+  gather(Role, means, -Pair_ID) %>%
+  mutate(Role = factor(Role, levels = c("means_A", "means_B"), labels = c("Requester Actual", "Helper Predicted"))) 
+
+ggbarplot(hhh3_means, x = "Role", y = "means", add = "mean_se",
+      color = "Role", fill = "Role", alpha = 0.7, palette = "uchicago", 
+      position = position_dodge(0.8)) +
+      ylab("Means a lot") + 
+  stat_compare_means(method = "t.test", paired = TRUE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4)
+
+
+ddply(hhh3_means, c("Role"), summarise,
+               N    = length(means),
+               mean = mean(means),
+               sd   = sd(means),
+               se   = sd / sqrt(N))
+
+t.test(means ~ Role, data = hhh3_means, alternative = "two.sided", paired = TRUE)
+effsize::cohen.d(means ~ Role, paired = TRUE, data = hhh3_means)
+
+
+```
+<br>
+
+## Help-seeking anxiety
+
+What predicts how anxious and uncomfortable requesters feel?
+
+It looks like the concern of imposing/bothering other peoples is a major barrier. Compared to the fact that predicted happiness of helper is not correlated with requester's level of anxiety/uncomfortableness, clearly, people are more prevention-focused (to avoid bothering helpers) rather than promotion-focused (to make helpers happy). 
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+cor.test(hhh3_data$uncomfortable_A, hhh3_data$anxious_A)
+
+hhh3_data$anxiety <- (hhh3_data$uncomfortable_A + hhh3_data$anxious_A)/2
+
+hhh3_data$willingness_A <- (hhh3_data$willing_A + hhh3_data$interested_A)/2
+hhh3_data$inc_A <- (hhh3_data$inconvenient_pre_A + hhh3_data$annoyed_pre_A)/2
+hhh3_data$posmood_A <- (hhh3_data$positive_pre_A + hhh3_data$pleased_pre_A)/2
+hhh3_data$discomfort_A <- (hhh3_data$difficult_A + hhh3_data$awkward_A + hhh3_data$embarrased_A)/3
+
+```
+
+### ~ Expected Willingness
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggplot(hhh3_data, aes(x = willingness_A, y = anxiety)) + 
+  geom_count(col="tomato3", show.legend=F) + 
+  xlab("Expected Willingness") + ylab("") +
+  xlim(c(0, 10)) + ylim(c(0,10)) +
+  theme_bw() +
+  geom_smooth(method = "lm") + 
+  scale_color_brewer(palette = "uchicago") + 
+  stat_cor(method = "pearson")
+
+cor.test(hhh3_data$willingness_A, hhh3_data$anxiety)
+
+```
+
+### ~ Expected Inconvenience
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggplot(hhh3_data, aes(x = inc_A, y = anxiety)) + 
+  geom_count(col="tomato3", show.legend=F) + 
+  xlab("Expected Inconvenience Perception") + ylab("") +
+  xlim(c(0, 10)) + ylim(c(0,10)) +
+  theme_bw() +
+  geom_smooth(method = "lm") + 
+  scale_color_brewer(palette = "uchicago") +
+  stat_cor(method = "pearson")
+
+cor.test(hhh3_data$inc_A, hhh3_data$anxiety)
+
+```
+
+
+### ~ Expected Positive Mood
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggplot(hhh3_data, aes(x = posmood_A, y = anxiety)) + 
+  geom_count(col="tomato3", show.legend=F) + 
+  xlab("Expected Positive Mood") + ylab("") +
+  xlim(c(0, 5)) + ylim(c(0,10)) +
+  theme_bw() +
+  geom_smooth(method = "lm") + 
+  scale_color_brewer(palette = "uchicago") +
+  stat_cor(method = "pearson")
+
+cor.test(hhh3_data$posmood_A, hhh3_data$anxiety)
+
+```
+
+
+### ~ Expected discomfort rejecting request
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggplot(hhh3_data, aes(x = discomfort_A, y = anxiety)) + 
+  geom_count(col="tomato3", show.legend=F) + 
+  xlab("Expected discomfort of rejecting compliance") + ylab("") +
+  xlim(c(0, 10)) + ylim(c(0,10)) +
+  theme_bw() +
+  geom_smooth(method = "lm") + 
+  scale_color_brewer(palette = "uchicago") +
+  stat_cor(method = "pearson")
+
+cor.test(hhh3_data$discomfort_A, hhh3_data$anxiety)
+
+```
+
+
+## Requesters' mood change
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_A_pos <- hhh3_data_clean %>%
+  dplyr::select(Pair_ID, self_positive_pre_A, self_positive_post_A) %>%
+  gather(Time, positive, -Pair_ID) %>%
+  mutate(Time = factor(Time, levels = c("self_positive_pre_A", "self_positive_post_A"), labels = c("Before", "After"))) 
+
+hhh3_A_plea <- hhh3_data_clean %>%
+  dplyr::select(Pair_ID, self_pleased_pre_A, self_pleased_post_A) %>%
+  gather(Time, pleasant, -Pair_ID) %>%
+  mutate(Time = factor(Time, levels = c("self_pleased_pre_A", "self_pleased_post_A"), labels = c("Before", "After"))) 
+
+hhh3_posmood_A <- left_join(hhh3_A_pos, hhh3_A_plea, by = c("Pair_ID", "Time"))
+
+cor.test(hhh3_posmood_A$positive, hhh3_posmood_A$pleasant)
+
+```
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_posmood_A$posmood <- (hhh3_posmood_A$positive + hhh3_posmood_A$pleasant + 5)/2
+  
+ggbarplot(hhh3_posmood_A, x = "Time", y = "posmood", add = "mean_se", 
+          color = "black", fill = "Time", alpha = 0.75, palette = c("#767676","#181818"), 
+          position = position_dodge(0.8)) +
+  xlab("") + 
+  ylab("Help-Seekers' Positive Mood") + 
+  rremove("x.text") + 
+  font("xlab", size = 12) +
+  font("x.text", size = 12) +
+  font("ylab", size = 12) + 
+  coord_cartesian(ylim = c(0,10))+
+  font("legend.title", size = 12) +
+  font("legend.text", size = 12) +
+  scale_y_continuous(breaks=seq(0,10,2))
+
+# ggsave("hhh3_requester_posmood.pdf", plot = last_plot(), device = "pdf", width = 3, height = 4, dpi = 300)
+
+ddply(hhh3_posmood_A, c("Time"), summarise,
+               N    = length(posmood),
+               mean = mean(posmood),
+               sd   = sd(posmood),
+               se   = sd / sqrt(N))
+
+
+t.test(posmood ~ Time, data = hhh3_posmood_A, alternative = "two.sided", paired = TRUE)
+effsize::cohen.d(posmood ~ Time, paired = TRUE, data = hhh3_posmood_A)
+
+```
+
+
+## Discriminative accuracy 
+
+Nothing very interesting.
+
+
+Willingness to help:
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_data$willingness_B <- (hhh3_data$willing_B + hhh3_data$interested_B)/2
+
+cor.test(hhh3_data$willingness_A, hhh3_data$willingness_B, method=c("pearson"))
+
+```
+
+Positive mood: 
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_data$posmood_A <- (hhh3_data$positive_pre_A + hhh3_data$pleased_pre_A + 5)/2
+hhh3_data$posmood_B <- (hhh3_data$positive_post_B + hhh3_data$pleased_post_B + 5)/2
+
+cor.test(hhh3_data$posmood_A, hhh3_data$posmood_B, method=c("pearson"))
+
+```
+
+Inconvenience perception:
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_data$inc_B <- (hhh3_data$inconvenient_B + hhh3_data$annoyed_B)/2
+
+cor.test(hhh3_data$inc_A, hhh3_data$inc_B, method=c("pearson"))
+
+```
+
+Discomfort of rejecting compliance:
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+hhh3_data$discomfort_B <- (hhh3_data$difficult_B + hhh3_data$awkward_B + hhh3_data$embarrased_B)/3
+
+cor.test(hhh3_data$discomfort_A, hhh3_data$discomfort_B, method=c("pearson"))
+
+```

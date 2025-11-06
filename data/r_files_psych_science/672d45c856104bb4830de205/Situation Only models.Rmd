@@ -1,0 +1,78 @@
+---
+title: "Situation Only Models"
+author: "Anonymous"
+date: "2024-04-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+require(interactions)
+library(sjPlot)
+
+mES_combinedAltValenceOnly <- lmer(ES_combined ~ valence_factorNeg + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+performance(mES_combinedAltValenceOnly)
+performance(mES_combinedAltValenceMain)
+
+
+mPT_combinedAltValenceOnly <- lmer(PT_combined ~ valence_factorNeg + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+performance(mPT_combinedAltValenceOnly)
+
+mComp_combinedAltValenceOnly <- lmer(comp_combined ~ valence_factorNeg + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+performance(mComp_combinedAltValenceOnly)
+
+
+mPDAltValenceOnly <- lmer(PD ~ valence_factorNeg + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+performance(mPDAltValenceOnly)
+
+
+mEfficacyAltValenceOnly <- lmer(Emp_Efficacy ~ valence_factorNeg + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+performance(mEfficacyAltValenceMain)
+
+mExtentAltValenceOnly <- lmer(CombinedAvg_score ~ valence_factorNeg + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+performance(mExtentAltValenceOnly)
+
+
+mEmpAltValenceOnly <- glmer(E ~ valence_factorNeg + (1|User_Id/Survey_Day), family = binomial, data = df, control=glmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+performance(mEmpAltValenceOnly)
+
+mDistressAltValenceOnly <- lmer(PD ~ valence_factorNeg + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+
+
+
+### VALENCE ONLY MODELS HAD HIGHER BIC THEN VALENCE MAIN MODELS WITH EXCEPTION OF WHETHER PTCPTS EMPATHIZED OR NOT.
+
+# Emo only
+
+mEfficacyAltEmoOnly <- lmer(Emp_Efficacy ~ what_emo_namedPainRef + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+performance(mEfficacyAltEmoOnly)
+performance(mEfficacyAltEmoMain)
+
+
+mPT_combinedAltEmoOnly <- lmer(PT_combined ~ what_emo_namedPainRef + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+tab_model(mPT_combinedAltEmoOnly)
+
+mComp_combinedAltEmoOnly <- lmer(comp_combined ~ what_emo_namedPainRef + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+tab_model(mComp_combinedAltEmoOnly)
+
+
+mExtentAltEmoOnly <- lmer(CombinedAvg_score ~ what_emo_namedPainRef + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+tab_model(mExtentAltEmoOnly)
+
+mPDAltEmoOnly <- lmer(PD ~ what_emo_namedPainRef + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+tab_model(mPDAltEmoOnly)
+
+mES_combinedAltEmotionOnly <- lmer(ES_combined ~ what_emo_namedPainRef + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+tab_model(mES_combinedAltEmotionOnly)
+
+mEmpAltEmoOnly <- glmer(E ~ what_emo_namedPainRef + (1|User_Id/Survey_Day), family = binomial, data = df, control=glmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+performance(mEAltEmoMain)
+
+mDistressAltEmoOnly <- lmer(PD ~ what_emo_namedPainRef + (1|User_Id/Survey_Day), data = df, control=lmerControl(optimizer= "bobyqa",optCtrl=list(maxfun=100000)))
+
+
+
+
+
+
+
+```

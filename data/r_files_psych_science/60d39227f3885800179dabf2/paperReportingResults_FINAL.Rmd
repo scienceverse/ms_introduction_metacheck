@@ -1,0 +1,879 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    toc: true
+    theme: united
+---
+
+```{r}
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(effects)
+library(ggeffects)
+library(corrr)
+library(dplyr)
+library(MuMIn)
+library(r2glmm)
+library(multicon)
+library(RVAideMemoire)
+library(effsize)
+library(ez)
+library(psychReport)
+library(jtools)
+library(compiler)
+library(ggpubr)
+Cconfint<-cmpfun(confint)
+```
+
+```{r}
+AsymLR.PlotDf <- read.csv("AsymLR_Dec.PlotDf.csv")
+AsymLR.ParamDf <- read.csv("AsymLR_Decay.ParamDf.csv")
+AIClist <- read.csv("AIClist.csv")
+posLR.corDf <- read.csv("posLR.corDf.csv")
+negLR.corDf <- read.csv("negLR.corDf.csv")
+decay.corDf <- read.csv("decay.corDf.csv")
+slope.corDf <- read.csv("slope.corDf.csv")
+fullTDdf <- read.csv("fullTDdf.csv")
+tBt_Df <- read.csv("trialBytrial.Df.csv")
+summaryAgChange <- read.csv("summaryAgChange.csv")
+AsymLR.corDf <- read.csv("AsymLR.corDf.csv")
+agDf <- read.csv("agDf.csv")
+agVDf <- read.csv("agVDf.csv")
+agTDf <- read.csv("agTDf.csv")
+fullTDdf$valFeed <- as.factor(fullTDdf$valFeed)
+fullTDdf$clustType <- as.factor(fullTDdf$clustType)
+tbtNeigh <- read.csv("tbtNeigh.csv")
+reEvalNeigh <- read.csv("reEvalNeigh.csv")
+```
+
+# Descriptives of Clusters/Cues
+
+```{r}
+describeBy(fullTDdf$valEst, fullTDdf$clustType)
+describe(fullTDdf$valEst)
+
+describeBy(fullTDdf$valEstF, fullTDdf$clustType)
+describe(fullTDdf$valEstF)
+```
+
+
+```{r}
+lineP <- ggplot(summaryAgChange, aes(x=ind, y=values, group=as.factor(cluster), color=as.factor(cluster), linetype=as.factor(cluster) )) +
+  geom_line() +
+  geom_point()+
+  geom_errorbar(aes(ymin=values-se, ymax=values+se), width=.2,
+                 position=position_dodge(0.05)) + labs(x="Time", y = "Self-Evaluation") + scale_x_discrete(labels= c("T1", "T2")) + scale_color_manual(labels = c("90%","70%","50%", "30%", "10%"), values=c("red","green","blue","orange","purple")) + scale_linetype_discrete(labels = c("90%","70%","50%", "30%", "10%")) +
+  theme(
+    legend.position = c(.01, .2),
+    legend.justification = c("left", "bottom"),
+    legend.box.just = "left",
+    legend.margin = margin(6, 6, 6, 6)
+    ) + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) + theme(legend.key = element_rect(fill = "white"))
+
+lineP
+
+ggsave("probLineP.jpg", units = "in", dpi = 600, width = 6, height = 4)
+
+rawLine <- lineP + geom_jitter(data=agTDf, width = .2, alpha = .25)
+rawLine
+
+ggsave("probLinePraw.jpg", units = "in", dpi = 600, width = 6, height = 4)
+```
+
+# Aggregate/Average Tests
+
+## Change Score T-Test
+
+```{r}
+# Paired T-Test of Change Scores
+agT <- t.test(Change ~ valFeed, paired = TRUE, alternative = "two.sided", data = agVDf)
+agT
+# Cohen's D
+lsr::cohensD(Change ~ valFeed, data= agVDf, method = "paired")
+
+t.test(changeScore ~ valFeed, data = fullTDdf)
+effsize::cohen.d(changeScore ~ valFeed, data = fullTDdf)
+sd(fullTDdf$changeScore[fullTDdf$valFeed == 1], na.rm = TRUE)
+sd(fullTDdf$changeScore[fullTDdf$valFeed == 2], na.rm = TRUE)
+```
+
+## ANOVA and Orthogonal Linear Contrast
+
+```{r}
+fullTDdf$ord<-as.factor(fullTDdf$clustType)
+fullTDdf$ord <- as.numeric(fullTDdf$ord)
+fullTDdf$ord <- 6-fullTDdf$ord
+fullTDdf$ord <- as.factor(fullTDdf$ord)
+contrasts(fullTDdf$ord) = contr.poly(5)
+
+agDf2 <- data.frame(agDf[1:2], stack(agDf[3:4]))
+names(agDf2)[3] <- "resp"
+names(agDf2)[4] <- "time"
+agDf2$cluster <- as.factor(agDf2$cluster)
+
+m3 <- ezANOVA(data = agDf2, dv = resp, wid = subID, within = .(cluster, time), type = 3, detailed = TRUE)
+#m3$ANOVA
+m3<-psychReport::aovEffectSize(m3, "pes")
+m3
+
+
+mean(fullTDdf$selfRespT1[fullTDdf$clustType==1], na.rm = TRUE)
+sd(fullTDdf$selfRespT1[fullTDdf$clustType==1], na.rm = TRUE)
+mean(fullTDdf$selfRespT1[fullTDdf$clustType==2], na.rm = TRUE)
+sd(fullTDdf$selfRespT1[fullTDdf$clustType==2], na.rm = TRUE)
+mean(fullTDdf$selfRespT1[fullTDdf$clustType==3], na.rm = TRUE)
+sd(fullTDdf$selfRespT1[fullTDdf$clustType==3], na.rm = TRUE)
+mean(fullTDdf$selfRespT1[fullTDdf$clustType==4], na.rm = TRUE)
+sd(fullTDdf$selfRespT1[fullTDdf$clustType==4], na.rm = TRUE)
+mean(fullTDdf$selfRespT1[fullTDdf$clustType==5], na.rm = TRUE)
+sd(fullTDdf$selfRespT1[fullTDdf$clustType==5], na.rm = TRUE)
+
+T1.postHoc <- lmer(scale(selfRespT1) ~ ord + ( ord | subID ) + ( 1 | Trait), data = fullTDdf, 
+            control = lmerControl(optimizer = "bobyqa",
+                                  optCtrl = list(maxfun=2e5)), REML = FALSE)
+summary(T1.postHoc)
+r2beta(T1.postHoc)
+
+r.squaredGLMM(T1.postHoc)
+
+
+mean(fullTDdf$selfRespT2[fullTDdf$clustType==1], na.rm = TRUE)
+sd(fullTDdf$selfRespT2[fullTDdf$clustType==1], na.rm = TRUE)
+mean(fullTDdf$selfRespT2[fullTDdf$clustType==2], na.rm = TRUE)
+sd(fullTDdf$selfRespT2[fullTDdf$clustType==2], na.rm = TRUE)
+mean(fullTDdf$selfRespT2[fullTDdf$clustType==3], na.rm = TRUE)
+sd(fullTDdf$selfRespT2[fullTDdf$clustType==3], na.rm = TRUE)
+mean(fullTDdf$selfRespT2[fullTDdf$clustType==4], na.rm = TRUE)
+sd(fullTDdf$selfRespT2[fullTDdf$clustType==4], na.rm = TRUE)
+mean(fullTDdf$selfRespT2[fullTDdf$clustType==5], na.rm = TRUE)
+sd(fullTDdf$selfRespT2[fullTDdf$clustType==5], na.rm = TRUE)
+
+T2.postHoc <- lmer(scale(selfRespT2) ~ ord + ( ord | subID ) + ( 1 | Trait), data = fullTDdf, 
+            control = lmerControl(optimizer = "bobyqa",
+                                  optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+summary(T2.postHoc)
+r2beta(T2.postHoc)
+r.squaredGLMM(T2.postHoc)
+
+
+```
+
+# Model Comparison
+
+```{r}
+AIClist
+AICdiff <- AIClist[1:7, 2] - AIClist[1, 2]
+AIClist$AICdiff <- AICdiff
+
+p<-ggplot(data=AIClist[2:7,], aes(x=Model, y=AICdiff)) +
+geom_bar(stat="identity", position=position_dodge()) + coord_flip() + theme(axis.text.x=element_text(angle = 90, hjust=1, vjust=0.5, size = 10)) + scale_y_reverse() 
+library(forcats)
+library(forcats)
+p + aes(x = fct_inorder(Model) ) + jtools::theme_apa() + xlab("Models") + ylab(expression("AIC Base" ~ Delta)) + scale_x_discrete(
+        labels=c(expression(phi), expression("Asym." ~ alpha), expression("Asym." ~ alpha ~ "+" ~ phi), expression("5" ~ alpha ~ "+" ~ phi),expression("Asym." ~ alpha ~ "+" ~ phi ~ "+" ~ beta[C]),expression("Asym." ~ alpha ~ "+" ~ phi ~ "+" ~ beta[F]))) + theme(text = element_text(size=15), axis.text.y = element_text(angle=45, hjust=1))
+
+ggsave("modelComp.jpg", units = "in", dpi = 600, width = 5, height = 5)
+```
+# Tests of Learning Rates
+
+## Permutation T-Test and Wilcoxon Signed Rank Test, Means and Medians
+
+```{r}
+permTest<-wPerm::perm.paired.loc(AsymLR.ParamDf$posLR, AsymLR.ParamDf$negLR, mean,
+                alternative = c("two.sided"),
+                R = 100000)
+print(permTest)
+permTest$Perm.values
+
+mean(AsymLR.PlotDf$values[AsymLR.PlotDf$ind=="negLR"])
+median(AsymLR.PlotDf$values[AsymLR.PlotDf$ind=="negLR"])
+sd(AsymLR.PlotDf$values[AsymLR.PlotDf$ind=="negLR"])
+mean(AsymLR.PlotDf$values[AsymLR.PlotDf$ind=="posLR"])
+median(AsymLR.PlotDf$values[AsymLR.PlotDf$ind=="posLR"])
+sd(AsymLR.PlotDf$values[AsymLR.PlotDf$ind=="posLR"])
+```
+
+## Scatterplot
+
+```{r}
+trsup <- data.frame(x=c(-2,-2,2), y=c(-2,2,2))
+trinf <- data.frame(x=c(-2,2,2), y=c(-2,-2,2))
+
+df <- data.frame(x = sample(1:100, 100, replace = FALSE), y = sample(1:100, 100, replace=FALSE))
+
+p1 <- ggplot(AsymLR.ParamDf, aes(x=negLR, y=posLR)) + geom_point() + xlab("Negative Learning Rates") + ylab("Positive Learning Rates") + geom_abline(intercept = 0, slope = 1)+ theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) + geom_polygon(aes(x=x,y=y), data = trsup, fill= "dodgerblue3", alpha = .4) + geom_polygon(aes(x=x,y=y), data = trinf, fill = "#FF000066", alpha = .4) + coord_cartesian(xlim=c(0,1), ylim=c(0,1))
+p1
+
+ggsave("scatterLR.jpg", units = "in", dpi = 600, width = 5, height = 5)
+```
+
+```{r}
+AsymLR.ParamDf
+```
+
+```{r}
+histposlr<-ggplot(AsymLR.ParamDf, aes(x=posLR)) +
+  geom_histogram(color="darkblue", fill="lightblue", alpha=.5) + theme_apa() + theme(text = element_text(size=12), axis.title.x = element_text(size = 14, face="bold"), axis.title.y=element_blank()) + xlab("Positive Learning Rate")
+histposlr
+
+histneglr<-ggplot(AsymLR.ParamDf, aes(x=negLR)) +
+  geom_histogram(color="firebrick4", fill="firebrick1", alpha=.5) + theme_apa() + theme(text = element_text(size=12), axis.title.x = element_text(size = 14, face="bold"), axis.title.y=element_blank()) + xlab("Negative Learning Rate")
+histneglr
+
+histdecay<-ggplot(AsymLR.ParamDf, aes(x=Decay)) +
+  geom_histogram(color="orange4", fill="orange", alpha=.5) + theme_apa() + theme(text = element_text(size=12), axis.title.x = element_text(size = 14, face="bold"), axis.title.y=element_blank()) + xlab("Decay")
+histdecay
+
+histslope<-ggplot(AsymLR.ParamDf, aes(x=slope)) +
+  geom_histogram(color="mediumpurple4", fill="mediumpurple", alpha=.5) + theme_apa() + theme(text = element_text(size=12), axis.title.x = element_text(size = 14, face="bold"), axis.title.y=element_blank()) + xlab("Feedback Sensitivity")
+histslope
+
+ggarrange(histposlr, histneglr, histdecay, histslope,
+          ncol = 2, nrow = 2)
+
+ggsave("hists.jpg", units = "in", dpi = 600, width = 6, height = 4)
+```
+
+# Correlation matrix for fitted params
+
+```{r}
+cormat <- round(cor(AsymLR.ParamDf[2:5]),2)
+library(reshape2)
+melted_cormat <- melt(cormat)
+  get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+  }
+  # Get upper triangle of the correlation matrix
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+reorder_cormat <- function(cormat){
+# Use correlation between variables as distance
+dd <- as.dist((1-cormat)/2)
+hc <- hclust(dd)
+cormat <-cormat[hc$order, hc$order]
+}
+
+upper_tri <- get_upper_tri(cormat)
+# Melt the correlation matrix
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+# Create a ggheatmap
+ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+    name="Pearson\nCorrelation") +
+  theme_minimal()+ # minimal theme
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 25, hjust = 1), axis.text.y = element_text( 
+    size = 25) )+
+ coord_fixed()
+
+greekLab <- c(expression(alpha[p]), expression(alpha[n]), expression(phi), expression(beta) )
+
+ggheatmap + 
+geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.border = element_blank(),
+  panel.background = element_blank(),
+  axis.ticks = element_blank(),
+  legend.justification = c(1, 0),
+  legend.position = c(0.48, 0.7),
+  legend.direction = "horizontal")+
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+                title.position = "top", title.hjust = 0.5)) +
+  scale_x_discrete(
+        labels=greekLab)  +
+  scale_y_discrete(
+        labels=greekLab)
+
+
+```
+
+
+# MLMs of Value Estimates Predicting Trial-by-Trial Self-Evaluations
+
+Value estimates moderately predict trial-by-trial self-evaluations, but moreso when interacting with trials. Oddly, at later trials, value estimates are less predictive of self-evaluations.
+
+```{r}
+# Null model
+m1 <- lmer(scale(selfRespT1) ~ 1 + ( 1 | subID ), data = tbtNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+# SE as Random Intercept
+m2 <- lmer(scale(selfRespT1) ~ scale(valEst) + ( 1 | subID ), data = tbtNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+# LRT
+anova(m2, m1)
+# Rsq diff
+r.squaredGLMM(m2)[1] - r.squaredGLMM(m1)[1]
+r.squaredGLMM(m2)[2] - r.squaredGLMM(m1)[2]
+
+# SE as random slope for subject
+m3 <- lmer(scale(selfRespT1) ~ scale(valEst) + ( scale(valEst) | subID ), data = tbtNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+summary(m3)
+
+# LRT
+anova(m3, m2)
+# Rsq diff
+r.squaredGLMM(m3)[1] - r.squaredGLMM(m2)[1]
+r.squaredGLMM(m3)[2] - r.squaredGLMM(m2)[2]
+
+# Trait as random factor
+m4 <- lmer(scale(selfRespT1) ~ scale(valEst) + ( scale(valEst) | subID ) + (1 | Trait ), data = tbtNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+summary(m4)
+
+# LRT
+anova(m4, m3)
+# rsqdiff
+r.squaredGLMM(m4)[1] - r.squaredGLMM(m3)[1]
+r.squaredGLMM(m4)[2] - r.squaredGLMM(m3)[2]
+
+# Remove NA values for LRTs because models can't be compared if not fit to same data
+tbtNeigh2 <- tbtNeigh[!is.na(tbtNeigh$T1averageAllPE),]
+# Alternative model 4 for LRT
+m4.2 <- lmer(scale(selfRespT1) ~ scale(valEst) + ( scale(valEst) | subID ) + (1 | Trait ), data = tbtNeigh2, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+# Include neighbors' outdegree PEs
+m5<- lmer(scale(selfRespT1) ~ scale(valEst) + scale(T1averageAllPE) + ( scale(valEst) | subID ) + (1 | Trait ), data = tbtNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+# Alternative model for LRT
+m5.2<- lmer(scale(selfRespT1) ~ scale(valEst) + scale(T1averageAllPE) + ( scale(valEst) | subID ) + (1 | Trait ), data = tbtNeigh2, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+summary(m5)
+anova(m5.2, m4.2)
+r.squaredGLMM(m5.2)[1] - r.squaredGLMM(m4.2)[1]
+r.squaredGLMM(m5.2)[2] - r.squaredGLMM(m4.2)[2]
+
+# Include random slope for neighbor PEs
+m6<- lmer(scale(selfRespT1) ~ scale(valEst) + scale(T1averageAllPE) + ( scale(valEst) + scale(T1averageAllPE) | subID ) + (1 | Trait ), data = tbtNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# Alternative model for LRT
+m6.2<- lmer(scale(selfRespT1) ~ scale(valEst) + scale(T1averageAllPE) + ( scale(valEst) + scale(T1averageAllPE)  | subID ) + (1 | Trait ), data = tbtNeigh2, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+summary(m6)
+anova(m6.2, m5.2)
+r.squaredGLMM(m6.2)[1] - r.squaredGLMM(m5.2)[1]
+r.squaredGLMM(m6.2)[2] - r.squaredGLMM(m5.2)[2]
+confint(m6)
+```
+
+
+## Multi-Level Model Plot of Value Estimates Effect Over Trials
+
+```{r}
+tbtPlot <- lmer(selfRespT1 ~ valEst + ( valEst | subID ) + ( 1 | Trait), data = tBt_Df, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+tbtraw <- ggpredict(tbtPlot, c("valEst")) %>% plot(show.title = FALSE, add.data=T, dot.alpha = .05, jitter = .3) + labs(
+    x = "Social Expectation", 
+    y = "T1 Self-Evaluation" 
+  ) + theme(axis.text=element_text(size=9, colour="black"),
+        axis.title=element_text(size=9,face="bold", colour="black")) + theme(legend.text = element_text(size=9, colour="black")) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+tbtraw
+ggsave("tbtPlot.jpg", units = "in", dpi = 600, width = 5.835, height = 5)
+```
+
+# MLMs of Value Estimates Predicting Re-Evaluations
+
+```{r}
+# dataset with NAs removed
+rDf <- na.omit(fullTDdf)
+# Null Model 
+m0 <- lmer(scale(selfRespT2) ~ 1 + (1 |subID), data = rDf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+
+# Base Residualized Change Model (T1 predicting T2)
+m1.2 <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + (1 |subID), data = rDf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m1.2, m0)
+# rsq diff
+r.squaredGLMM(m1.2)[1] - r.squaredGLMM(m0)[1]
+r.squaredGLMM(m1.2)[2] - r.squaredGLMM(m0)[2]
+m1 <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+# Prediction Error Main Effect Model
+m2F <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(predError) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m2F, m1)
+# rsq diff
+r.squaredGLMM(m2F)[1] - r.squaredGLMM(m1)[1]
+r.squaredGLMM(m2F)[2] - r.squaredGLMM(m1)[2]
+# Social Expectation Main Effect Model
+m2V <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+# LRT
+anova(m2V, m1)
+# rsq diff
+r.squaredGLMM(m2V)[1] - r.squaredGLMM(m1)[1]
+r.squaredGLMM(m2V)[2] - r.squaredGLMM(m1)[2]
+# Prediction Error and Social Expectation Model
+m2 <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m2, m2V)
+# rsq diff
+r.squaredGLMM(m2)[1] - r.squaredGLMM(m2F)[1]
+r.squaredGLMM(m2)[2] - r.squaredGLMM(m2F)[2]
+# Prediction Error, Social Expectation, and Indegree and Outdegree Centrality Model
+m2IO <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError) + scale(inDegree) + scale(outDegree) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m2IO, m2)
+# rsq diff
+r.squaredGLMM(m2IO)[1] - r.squaredGLMM(m2)[1]
+r.squaredGLMM(m2IO)[2] - r.squaredGLMM(m2)[2]
+# Prediction Error Interacting with Outdegree Model
+m3FO <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError) + scale(inDegree) + scale(predError)*scale(outDegree) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m2IO, m3FO)
+# rsq diff
+r.squaredGLMM(m3FO)[1] - r.squaredGLMM(m2IO)[1]
+r.squaredGLMM(m3FO)[2] - r.squaredGLMM(m2IO)[2]
+# Prediction Error Interacting with Indegree Model
+m3FI <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError) + scale(outDegree) + scale(predError)*scale(inDegree) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m2IO, m3FI)
+# rsq diff
+r.squaredGLMM(m3FI)[1] - r.squaredGLMM(m2IO)[1]
+r.squaredGLMM(m3FI)[2] - r.squaredGLMM(m2IO)[2]
+# Social Expectation Interacting with Outdegree Model
+m3VO <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError) + scale(inDegree) + scale(valEstF)*scale(outDegree) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m2IO, m3VO)
+# rsq diff
+r.squaredGLMM(m3VO)[1] - r.squaredGLMM(m2IO)[1]
+r.squaredGLMM(m3VO)[2] - r.squaredGLMM(m2IO)[2]
+# Social Expectation Interacting with Indegree Model
+m3VI <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError) + scale(outDegree) + scale(valEstF)*scale(inDegree) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m2IO, m3VI)
+# rsq diff
+r.squaredGLMM(m3VI)[1] - r.squaredGLMM(m2IO)[1]
+r.squaredGLMM(m3VI)[2] - r.squaredGLMM(m2IO)[2]
+# Social Expectation Interacting with Indegree and Prediction Error Interacting with Outdegree Model
+m3 <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError) + scale(valEstF)*scale(inDegree) + scale(predError)*scale(outDegree) + (1 |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m3,m3FO)
+# rsq diff
+r.squaredGLMM(m3)[1] - r.squaredGLMM(m3FO)[1]
+
+# Introducing random slope for social expectaton
+ZreEvalModelV <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError)*scale(outDegree) + scale(inDegree) + scale(valEstF):scale(inDegree) + ( scale(valEstF) |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m3,ZreEvalModelV)
+# rsq diff
+r.squaredGLMM(ZreEvalModelV)[1] - r.squaredGLMM(m3)[1]
+
+# Introducing random slope for prediction error
+ZreEvalModelF <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError)*scale(outDegree) + scale(inDegree) + scale(valEstF):scale(inDegree) + ( scale(predError) |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m3,ZreEvalModelF)
+# rsq diff
+r.squaredGLMM(ZreEvalModelF)[1] - r.squaredGLMM(m3)[1]
+
+# Introducing random slopes for both prediction error and social expectation
+ZreEvalModelB <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError)*scale(outDegree) + scale(inDegree) + scale(valEstF):scale(inDegree) + ( scale(predError) + scale(valEstF) |subID), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m3,ZreEvalModelB)
+# rsq diff
+r.squaredGLMM(ZreEvalModelB)[1] - r.squaredGLMM(m3)[1]
+
+# Introducing trait as a random factor
+ZreEvalModelFinal <- lmer(scale(selfRespT2) ~ scale(selfRespT1) + scale(valEstF) + scale(predError)*scale(outDegree) + scale(inDegree) + scale(valEstF):scale(inDegree) + ( scale(predError) + scale(valEstF) |subID) + ( 1 | Trait), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+anova(ZreEvalModelFinal, ZreEvalModelB)
+r.squaredGLMM(ZreEvalModelFinal)[1] - r.squaredGLMM(ZreEvalModelB)[1]
+
+summary(ZreEvalModelFinal)
+
+# all effect sizes
+b<-r2beta(ZreEvalModelFinal)
+data.frame(b$Effect, b$Rsq)
+# confidence intervals
+confint(ZreEvalModelFinal)
+```
+
+# Neighbors Reevaluation Model
+
+```{r}
+# create dataframe for LRTs so dataset is same size for model comparison
+reEvalNeigh2 <- reEvalNeigh[!is.na(reEvalNeigh$T2averageOutPE),]
+reEvalNeigh2 <- reEvalNeigh2[!is.na(reEvalNeigh2$T2averageInPE),]
+
+# Null Intercept Only Model
+m1 <- lmer(scale(selfRespT2) ~ 1 + ( 1 | subID ) + ( 1 | Trait), data = reEvalNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# Alternative model for LRT
+m1.2 <- lmer(scale(selfRespT2) ~ 1 + ( 1 | subID ) + ( 1 | Trait), data = reEvalNeigh2, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+
+# Indegree-connected PE neighbors main effect
+m2 <- lmer(scale(selfRespT2) ~ scale(T2averageInPE) + ( 1 | subID ) + ( 1 | Trait), data = reEvalNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+m2.2 <- lmer(scale(selfRespT2) ~ scale(T2averageInPE) + ( 1 | subID ) + ( 1 | Trait), data = reEvalNeigh2, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m2.2,m1.2)
+# rsq diff
+r.squaredGLMM(m2.2)[1] - r.squaredGLMM(m1)[1]
+
+# Outdegree-connected PE neighbors main effect
+m3 <- lmer(scale(selfRespT2) ~ scale(T2averageOutPE) + ( 1 | subID ) + ( 1 | Trait), data = reEvalNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+m3.2 <- lmer(scale(selfRespT2) ~ scale(T2averageOutPE) + ( 1 | subID ) + ( 1 | Trait), data = reEvalNeigh2, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m3.2,m2.2)
+# rsq diff
+r.squaredGLMM(m3)[1] - r.squaredGLMM(m2)[1]
+
+# Outdegree and indegree connected PE neighbors main effects; fixed slopes
+m4 <- lmer(scale(selfRespT2) ~ scale(T2averageInPE) + scale(T2averageOutPE) + ( 1 | subID ) + ( 1 | Trait), data = reEvalNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+m4.2 <- lmer(scale(selfRespT2) ~ scale(T2averageInPE) + scale(T2averageOutPE) + ( 1 | subID ) + ( 1 | Trait), data = reEvalNeigh2, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m4.2,m2.2)
+# rsq diff
+r.squaredGLMM(m4)[1] - r.squaredGLMM(m2)[1]
+
+# Indegree connected PE neighbors as random slope
+m5 <- lmer(scale(selfRespT2) ~ scale(T2averageInPE) + scale(T2averageOutPE) + ( scale(T2averageInPE) | subID ) + ( 1 | Trait), data = reEvalNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m5,m4)
+# rsq diff
+r.squaredGLMM(m5)[1] - r.squaredGLMM(m4)[1]
+
+# Outdegree connected PE neighbors as random slope
+m6 <- lmer(scale(selfRespT2) ~ scale(T2averageInPE) + scale(T2averageOutPE) + ( scale(T2averageOutPE) | subID ) + ( 1 | Trait), data = reEvalNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m6,m4)
+# rsq diff
+r.squaredGLMM(m6)[1] - r.squaredGLMM(m4)[1]
+
+# Both PE neighbors as random slopes
+m7 <- lmer(scale(selfRespT2) ~ scale(T2averageInPE) + scale(T2averageOutPE) + ( scale(T2averageInPE) + scale(T2averageOutPE) | subID ) + ( 1 | Trait), data = reEvalNeigh, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+# LRT
+anova(m7,m4)
+# rsq diff
+r.squaredGLMM(m7)[1] - r.squaredGLMM(m4)[1]
+summary(m7)
+
+# effect sizes
+b<-r2beta(m7)
+data.frame(b$Effect, b$Rsq)
+# confidence intervals
+#confint(m5)
+```
+
+## predError by Outdegree Interaction Plot
+
+```{r}
+reEvalModel <- lmer(selfRespT2 ~ selfRespT1 + valEstF + predError*outDegree + inDegree + valEstF:inDegree + ( valEstF + predError |subID) + ( 1 |Trait), data = fullTDdf, 
+              control = lmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun=2e5)), REML = FALSE)
+```
+
+
+```{r}
+p <- ggpredict(reEvalModel, c("outDegree","predError"))
+plotOUTPE<-ggplot(p, aes(x, predicted)) +  geom_line(aes(linetype=group, color=group)) + geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill=group), alpha=0.15) + scale_linetype_discrete(labels = c("Low PE","Mid PE", "High PE")) + scale_color_discrete(labels = c("Low PE","Mid PE", "High PE")) + scale_fill_discrete( 
+                      labels=c("Low PE", "Mid PE", "High PE")) + theme(
+    legend.position = c(.65, .075),
+    legend.justification = c("left", "bottom"),
+    legend.box.just = "left",
+    legend.margin = margin(6, 6, 6, 6)
+    ) + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Outdegree Centrality") + ylab("T2 Self-Evaluation")
+
+plotOUTPE
+
+ggsave("plotOUTPE.jpg", units = "in", dpi = 600, width = 5.835, height = 5)
+```
+
+### Raw data
+
+```{r}
+pr <- ggpredict(reEvalModel, c("outDegree","predError")) %>% plot(show.title = FALSE, add.data=T, dot.alpha = .25, jitter = .3) + xlab("Outdegree Centrality") + ylab("T2 Self-Evaluation") + theme(axis.text=element_text(size=9, colour="black"),
+        axis.title=element_text(size=9,face="bold", colour="black")) + theme(legend.text = element_text(size=9, colour="black")) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+
+#+ theme_apa() + theme(axis.text=element_text(size=9),
+#        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9))
+pr
+
+ggsave("plotOUTPEraw.jpg", units = "in", dpi = 600, width = 5.835, height = 5)
+```
+
+## Indegree x Social Expectation Plot
+
+```{r}
+p<-ggpredict(reEvalModel, c("inDegree", "valEstF"))
+plotINVE<-ggplot(p, aes(x, predicted)) +  geom_line(aes(linetype=group, color=group)) + geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill=group), alpha=0.15) + scale_linetype_discrete(labels = c("Low SE","Mid SE", "High SE")) + scale_color_discrete(labels = c("Low SE","Mid SE", "High SE")) + scale_fill_discrete( 
+                      labels=c("Low SE", "Mid SE", "High SE")) + theme(
+    legend.position = c(.03, .075),
+    legend.justification = c("left", "bottom"),
+    legend.box.just = "left",
+    legend.margin = margin(6, 6, 6, 6)
+    ) + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("Indegree Centrality") + ylab("T2 Self-Evaluation")
+plotINVE
+
+ggsave("plotINVE.jpg", units = "in", dpi = 600, width = 5.835, height = 5)
+```
+
+## Raw data
+
+```{r}
+pr_in <- ggpredict(reEvalModel, c("inDegree", "valEstF")) %>% plot(show.title = FALSE, add.data=T, dot.alpha = .25, jitter = .3) + xlab("Indegree Centrality") + ylab("T2 Self-Evaluation")+ theme(axis.text=element_text(size=9, colour="black"),
+        axis.title=element_text(size=9,face="bold", colour="black")) + theme(legend.text = element_text(size=9, colour="black")) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+pr_in
+
+ggsave("plotINSEraw.jpg", units = "in", dpi = 600, width = 5.835, height = 5)
+```
+
+# Individuals Differences and Model Parameters
+
+## Correlations with Positive Learning Rate
+
+```{r}
+indDiffPlot <- posLR.corDf %>% 
+  mutate(rowname = factor(rowname, levels = rowname[order(posLR)])) %>%  # Order by correlation strength
+  ggplot(aes(x = rowname, y = posLR)) +
+    geom_bar(stat = "identity") +
+    ylab("Correlation Coefficient") +
+    xlab("Individual Differences") + theme_grey(base_size = 9)  + theme(axis.text.x = element_text(angle = 90,hjust = 1)) +
+  theme(axis.text.x = element_text( 
+                           size = 9, angle = 45, vjust = 1)) + theme(axis.title.x = element_text(vjust=1.9)) +
+  annotate("text", x = 16, y = .417, label = "*") +
+  annotate("text", x = 15, y = .417, label = "*") +
+  annotate("text", x = 1, y = -.565, label = "*")+
+  annotate("text", x = 2, y = -.535, label = "*")+
+  annotate("text", x = 3, y = -.435, label = "*") + theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=9,face="bold")) + theme(legend.text = element_text(size=9)) + theme(panel.border = element_rect(colour = "black", fill = NA, size =1)) + theme(legend.title = element_blank()) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+indDiffPlot
+
+ggsave(filename = "posLRindDiffp.jpg", units = "in", dpi = 600, width = 6, height = 4, device = "jpg")
+```
+
+### FDR Correction
+
+```{r}
+#df<-AsymLR.corDf[c(2,10:ncol(AsymLR.corDf))]
+df<-AsymLR.corDf[c("posLR","Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")]
+res2 <- Hmisc::rcorr(as.matrix(df))
+pcol<-as.data.frame(res2$P)[1]
+padj<-p.adjust(as.numeric(unlist(pcol)), method = "fdr", n = nrow(pcol)-1)
+PLR_pcol<-cbind(pcol, data.frame(padj))
+PLR_pcol
+```
+
+### Create panel of scatterplots for associations below <.05
+
+```{r}
+# RS, LSA, BDI, SCC, SE, CON, NEG, EXT
+varNames<-c("RS","LSA","BDI","SCC","SE","DS","BF.EXT","BF.CON","BF.NEG")
+varLabels<-c("Reject. Sensit.", "Social Anxiety", "Depressive Symp.", "Self-Concept Clarity", "Self-Esteem","Dialectical Self", "Extraversion", "Conscientiousness", "Neuroticism")
+
+for(i in 1:length(varNames)){
+  varCol<-AsymLR.corDf[varNames[i]]
+  corDf <- data.frame(LR=AsymLR.corDf$posLR, ind=as.numeric(unlist(varCol[1])))
+  scatter <- ggplot(corDf, aes(x=ind, y=LR)) + ylim(0,1) + geom_point() + geom_smooth(method=lm, se=T, colour="black") + xlab(varLabels[i]) + ylab("Positive Learning Rate")  + theme_apa() + theme(text = element_text(size=10), axis.title.x = element_text(size = 10, face="bold"), axis.title.y=element_blank())
+  scatter
+  name<-paste0(varNames[i],"_plot")
+  assign(name,scatter)
+}
+
+
+```
+
+```{r}
+ggpubr::ggarrange(RS_plot, LSA_plot, BDI_plot, SCC_plot, SE_plot, DS_plot, BF.EXT_plot, BF.CON_plot, BF.NEG_plot,
+          ncol = 3, nrow = 3)
+
+ggsave("scatters.jpg", units = "in", dpi = 600, width = 7.5, height = 4)
+```
+
+
+## Correlations with Negative Learning Rate
+
+```{r}
+negLR.corDf %>% 
+  mutate(rowname = factor(rowname, levels = rowname[order(negLR)])) %>%  # Order by correlation strength
+  ggplot(aes(x = rowname, y = negLR)) +
+    geom_bar(stat = "identity") +
+    ylab("Correlation with\nPositive Learning Rate") +
+    xlab("Individual Differences") + theme_grey(base_size = 15)  + theme(axis.text.x = element_text(angle = 90,hjust = 1))+ theme_apa() +
+  theme(axis.text.x = element_text( 
+                           size = 11, angle = 45, vjust = 0.7)) + theme(axis.title.x = element_text(vjust=1.9))
+```
+
+### FDR Correction
+
+```{r}
+df<-AsymLR.corDf[c("negLR","Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")]
+res2 <- Hmisc::rcorr(as.matrix(df))
+pcol<-as.data.frame(res2$P)[1]
+padj<-p.adjust(as.numeric(unlist(pcol)), method = "fdr", n = nrow(pcol)-1)
+NLR_pcol<-cbind(pcol, data.frame(padj))
+NLR_pcol
+```
+
+## Correlations with Decay
+
+```{r}
+decay.corDf %>% 
+  mutate(rowname = factor(rowname, levels = rowname[order(decay)])) %>%  # Order by correlation strength
+  ggplot(aes(x = rowname, y = decay)) +
+    geom_bar(stat = "identity") +
+    ylab("Correlation with\nPositive Learning Rate") +
+    xlab("Individual Differences") + theme_grey(base_size = 15)  + theme(axis.text.x = element_text(angle = 90,hjust = 1))+ theme_apa() +
+  theme(axis.text.x = element_text( 
+                           size = 11, angle = 45, vjust = 0.7)) + theme(axis.title.x = element_text(vjust=1.9))
+```
+
+### FDR Correction
+
+```{r}
+df<-AsymLR.corDf[c("Decay","Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")]
+res2 <- Hmisc::rcorr(as.matrix(df))
+pcol<-as.data.frame(res2$P)[1]
+padj<-p.adjust(as.numeric(unlist(pcol)), method = "fdr", n = nrow(pcol)-1)
+DEC_pcol<-cbind(pcol, data.frame(padj))
+DEC_pcol
+```
+
+## Correlations with Slope
+
+```{r}
+slope.corDf %>% 
+  mutate(rowname = factor(rowname, levels = rowname[order(slope)])) %>%  # Order by correlation strength
+  ggplot(aes(x = rowname, y = slope)) +
+    geom_bar(stat = "identity") +
+    ylab("Correlation with\nPositive Learning Rate") +
+    xlab("Individual Differences") + theme_grey(base_size = 15)  + theme(axis.text.x = element_text(angle = 90,hjust = 1))+ theme_apa() +
+  theme(axis.text.x = element_text( 
+                           size = 11, angle = 45, vjust = 0.7)) + theme(axis.title.x = element_text(vjust=1.9))
+```
+
+### FDR Correction
+
+```{r}
+df<-AsymLR.corDf[c("slope","Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")]
+res2 <- Hmisc::rcorr(as.matrix(df))
+pcol<-as.data.frame(res2$P)[1]
+padj<-p.adjust(as.numeric(unlist(pcol)), method = "fdr", n = nrow(pcol)-1)
+FS_pcol<-cbind(pcol, data.frame(padj))
+FS_pcol
+```
+
+## Randomization Tests
+
+```{r}
+rand.test(AsymLR.corDf["posLR"], AsymLR.corDf[c("Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")], sims = 50000, crit = 0.95, graph = TRUE, seed = 2)
+```
+
+```{r}
+rand.test(AsymLR.corDf["negLR"], AsymLR.corDf[c("Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")], sims = 50000, crit = 0.95, graph = TRUE, seed = 2)
+```
+
+```{r}
+rand.test(AsymLR.corDf["decay"], AsymLR.corDf[c("Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")], sims = 50000, crit = 0.95, graph = TRUE, seed = 2)
+```
+
+```{r}
+rand.test(AsymLR.corDf["slope"], AsymLR.corDf[c("Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")], sims = 50000, crit = 0.95, graph = TRUE, seed = 2)
+```
+
+# Raw Panel
+
+```{r}
+ggarrange(rawLine,tbtraw,pr, pr_in,
+          ncol = 2, nrow = 2, legend="right", labels = c("A","B","C","D"))
+ggsave("allRaws.jpg", units = "in", dpi = 600, width = 7.5, height = 4)
+```
+

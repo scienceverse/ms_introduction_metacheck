@@ -1,0 +1,664 @@
+---
+title: "Making it harder to 'see' meaning"
+output:
+  html_document:
+    toc: yes
+  html_docoument:
+    toc: yes
+  html_notebook:
+    code_folding: hide
+    df_print: paged
+    number_sections: yes
+    theme: cerulean
+    toc: yes
+    toc_float: yes
+---
+
+*PRELIMINARIES*
+
+```{r packages, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+library(lme4)
+library(WRS2)
+library(knitr)
+library(reshape2)
+library(plyr)
+library(dplyr)
+library(stringr)
+library(sjPlot)
+library(cowplot)
+library(fmsb)
+library(ggthemes)
+library(effects)
+library(grid)
+library(gridExtra)
+library(magick)
+library(ggplotify)
+library(data.table)
+library(tidyr)
+library(psych)
+library(ggrepel)
+library(lmerTest)
+library(brms)
+
+```
+
+```{r load data}
+
+setwd("~/Desktop/vizint")
+ratings <- read.csv("ratings.csv")
+data.v.full <- read.csv("vizint_data.csv")
+data.m.full <- read.csv("manint_data.csv")
+vizint.task <- ggdraw() + draw_image("vizint_task.png")
+manint.task <- ggdraw() + draw_image("man_task.png")
+
+data.v.full <- merge(data.v.full, ratings, by="word")
+data.m.full <- merge(data.m.full, ratings, by="word")
+
+data.v.full <- within(data.v.full, exp_cond <- relevel(exp_cond, ref="No_Int"))
+data.m.full <- within(data.m.full, exp_cond <- relevel(exp_cond, ref="No_Int"))
+
+# convert duration to ms
+data.v.full$duration <- data.v.full$duration * 10
+data.m.full$duration <- data.m.full$duration * 10
+
+```
+
+```{r ratings summary}
+
+summary(ratings$viz_win)
+summary(ratings$man_win)
+
+ratings %>% 
+  summarise(sd_man = sd(man_win), sd_viz = sd(viz_win))
+
+```
+
+*EXPERIMENT 1*
+
+```{r vizint data summary}
+
+v_summary <- data.v.full %>%
+  group_by(exp_cond) %>%
+  summarise(v_RT_word = mean(RT_WORD), v_RT_shape = mean(RT_SHAPE),
+            v_Acc_word = mean(wordAcc), m_Acc_shape = mean(shapeAcc), 
+            sd_RT_word = sd(RT_WORD), sd_RT_shape = sd(RT_SHAPE),
+            sd_Acc_word = sd(wordAcc), sd_Acc_shape = sd(shapeAcc)) %>%
+  na.omit
+v_summary
+
+```
+
+This section shows the models testing the effects on word judgment response times.
+
+```{r vizint word RT models}
+
+# a priori models run for exp 1
+
+viz.null <- lmer(RT_WORD ~ 1 + (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.null)
+
+viz.1 <- lmer(RT_WORD ~ exp_cond + duration + conc + logFreq + viz_win + 
+                (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.1)
+
+viz.2 <- lmer(RT_WORD ~ exp_cond + duration + conc + logFreq + viz_win +
+                (exp_cond:conc) + 
+                (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.2)
+anova(viz.1, viz.2)
+
+viz.2.1 <- lmer(RT_WORD ~ exp_cond + duration + conc + logFreq + viz_win +
+                (exp_cond:viz_win) + 
+                (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.2.1)
+
+viz.3 <- lmer(RT_WORD ~ exp_cond + duration + conc + logFreq + viz_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + 
+                (1+exp_cond|subject) + (1+exp_cond|word),
+              data.v.full, REML=FALSE)
+summary(viz.3)
+anova(viz.2, viz.3)
+anova(viz.2.1, viz.3)
+
+# exploratory model ran post exp 2
+
+viz.3.1 <- lmer(RT_WORD ~ exp_cond + duration + conc + logFreq + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + 
+                (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.3.1)
+
+viz.4 <- lmer(RT_WORD ~ exp_cond + duration + conc + logFreq + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (1+exp_cond|subject) + (1+exp_cond|word),
+              data.v.full, REML=FALSE)
+summary(viz.4)
+
+```
+
+```{r std vizint word RT models, eval=FALSE, include=FALSE}
+
+# a priori models run for exp 1
+
+viz.null <- lmer(scale(RT_WORD) ~ 1 + (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.null)
+
+viz.1 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(conc) + scale(logFreq) + scale(viz_win) + 
+                (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.1)
+
+viz.2 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(conc) + scale(logFreq) + scale(viz_win) +
+                (exp_cond:scale(conc)) + 
+                (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.2)
+anova(viz.1, viz.2)
+
+viz.2.1 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(conc) + scale(logFreq) + scale(viz_win) +
+                (exp_cond:scale(viz_win)) + 
+                (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.2.1)
+
+viz.3 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(conc) + scale(logFreq) + scale(viz_win) +
+                (exp_cond:scale(conc)) + (exp_cond:scale(viz_win)) + 
+                (1+exp_cond|subject) + (1+exp_cond|word),
+              data.v.full, REML=FALSE)
+summary(viz.3)
+anova(viz.2, viz.3)
+anova(viz.2.1, viz.3)
+
+# exploratory model ran post exp 2
+
+viz.3.1 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(conc) + scale(logFreq) + 
+                scale(viz_win) + scale(man_win) +
+                (exp_cond:scale(conc)) + (exp_cond:scale(viz_win)) + 
+                (1+exp_cond|subject) + (1+exp_cond|word), data.v.full, REML=FALSE)
+summary(viz.3.1)
+
+viz.4 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(conc) + scale(logFreq) + 
+                scale(viz_win) + scale(man_win) +
+                (exp_cond:scale(conc)) + (exp_cond:scale(viz_win)) + (exp_cond:scale(man_win)) +
+                (1+exp_cond|subject) + (1+exp_cond|word),
+              data.v.full, REML=FALSE)
+summary(viz.4)
+
+```
+
+```{r exp1 bayesian, eval=FALSE, include=FALSE}
+
+V1 <- brm(RT_WORD ~ exp_cond + duration + logFreq + conc + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data=data.v.full)
+summary(V1)
+
+V2 <- brm(RT_WORD ~ exp_cond + duration + logFreq + conc + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (scale(conc) + scale(viz_win) + scale(man_win) + scale(conc):exp_cond + scale(viz_win):exp_cond + scale(man_win):exp_cond | subject) + (1+exp_cond|word), 
+          data=data.v.full)
+summary(V2)
+
+priors1 <- get_prior(RT_WORD ~ exp_cond + duration + logFreq + conc + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data=data.v.full)
+
+priors_exp1 = c(
+  set_prior('normal(1000, 20)',class="Intercept"),
+  set_prior('normal(100,10)', class='b', coef="exp_condInt"),
+  set_prior('normal(20,5)', class='b', coef="duration"),
+  set_prior('normal(15,4)', class='b', coef="conc"),
+  set_prior('normal(-3,2)', class='b', coef="logFreq"),
+  set_prior('normal(5, 3)', class='b', coef="exp_condInt:conc"),
+  set_prior('normal(15, 3)', class='b', coef="exp_condInt:viz_win"),
+  set_prior('normal(5, 3)', class='b', coef="exp_condInt:man_win")
+)
+
+E1 <- brm(RT_WORD ~ exp_cond + duration + logFreq + conc + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data=data.v.full,
+          prior=priors_exp1, sample_prior = TRUE, iter=100000, thin=100)
+print(summary(E1), digits=5)
+
+E1_int <- brm(RT_WORD ~ exp_cond + duration + logFreq + conc + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (scale(conc) + scale(viz_win) + scale(man_win) + scale(conc):exp_cond + scale(viz_win):exp_cond + scale(man_win):exp_cond | subject) + (1+exp_cond|word), 
+          data=data.v.full, prior=priors_exp1, sample_prior = TRUE, iter=100000, thin=100)
+print(summary(E1_int), digits=5)
+
+hypothesis(E1, "exp_condInt:viz_win > 0")
+hypothesis(E1, "exp_condInt:viz_win = 0")
+hypothesis(E1, "exp_condInt:man_win > 0")
+hypothesis(E1, "exp_condInt:man_win = 0")
+hypothesis(E1, "exp_condInt:viz_win = exp_condInt:man_win")
+hypothesis(E1, "exp_condInt:viz_win > exp_condInt:man_win")
+
+hypothesis(E1_int, "exp_condInt:viz_win > 0")
+hypothesis(E1_int, "exp_condInt:viz_win = 0")
+hypothesis(E1_int, "exp_condInt:man_win > 0")
+hypothesis(E1_int, "exp_condInt:man_win = 0")
+hypothesis(E1_int, "exp_condInt:viz_win = exp_condInt:man_win")
+hypothesis(E1_int, "exp_condInt:viz_win > exp_condInt:man_win")
+```
+
+This section shows the models testing the effects on word judgment accuracy.
+
+```{r vizint acc models}
+
+## models do not converge with random slopes
+## interaction models do not converge
+
+viz.Acc.1 <- glmer(wordAcc ~ exp_cond + duration + conc + logFreq + viz_win + 
+                     (1|subject) + (1|word), data.v.full, binomial)
+summary(viz.Acc.1)
+
+viz.Acc.2 <- glmer(wordAcc ~ exp_cond + duration + conc + logFreq + viz_win + 
+                     (exp_cond:conc) + 
+                     (1|subject) + (1|word), data.v.full, binomial)
+summary(viz.Acc.2)
+
+viz.Acc.3 <- glmer(wordAcc ~ exp_cond + duration + conc + logFreq + viz_win + 
+                     (exp_cond:conc) + (exp_cond:viz_win) + 
+                     (1|subject) + (1|word), data.v.full, binomial)
+summary(viz.Acc.3)
+
+anova(viz.Acc.1, viz.Acc.2)
+anova(viz.Acc.2, viz.Acc.3)
+
+```
+
+This section shows the models testing the effects on visual task performance.
+
+```{r task models}
+
+data.v.task <- subset(data.v.full, exp_cond=="Int")
+
+viz.task.0 <- lmer(RT_SHAPE ~ 1 + (1|subject) + (1|word), data.v.task, REML=FALSE)
+summary(viz.task.0)
+
+viz.task.1 <- lmer(RT_SHAPE ~ duration + conc + logFreq + viz_win + 
+                     (1|subject) + (1|word), data.v.task, REML=FALSE)
+summary(viz.task.1)
+
+
+viz.taskAcc.0 <- glmer(shapeAcc ~ 1 + (1|subject) + (1|word), data.v.task, binomial)
+summary(viz.taskAcc.0)
+
+viz.taskAcc.1 <- glmer(shapeAcc ~ duration + conc + logFreq + viz_win + 
+                         (1|subject) + (1|word), data.v.task, binomial)
+summary(viz.taskAcc.1)
+
+```
+
+*EXPERIMENT 2*
+
+```{r man int data summary}
+
+m_summary <- data.m.full %>%
+  group_by(exp_cond) %>%
+  summarise(m_RT_word = mean(RT_WORD), m_RT_shape = mean(RT_SHAPE),
+            m_Acc_word = mean(wordAcc), 
+            sd_RT_word = sd(RT_WORD), sd_RT_shape = sd(RT_SHAPE),
+            sd_Acc_word = sd(wordAcc)) %>%
+  na.omit
+m_summary
+
+```
+
+
+```{r manint word RT models}
+
+cont.1 <- lmer(RT_WORD ~ exp_cond + duration + logFreq + conc + man_win + viz_win +
+                 (1+exp_cond|subject) + (1+exp_cond|word), data.m.full, REML=FALSE)
+summary(cont.1)
+
+cont.2 <- lmer(RT_WORD ~ exp_cond + duration + logFreq + conc + man_win + viz_win + 
+                 (exp_cond:conc) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data.m.full, REML=FALSE)
+summary(cont.2)
+
+anova(cont.1, cont.2)
+
+cont.3 <- lmer(RT_WORD ~ exp_cond + duration + logFreq + conc + man_win + viz_win + 
+                 (exp_cond:conc) + (exp_cond:viz_win) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data.m.full, REML=FALSE)
+summary(cont.3)
+
+anova(cont.2, cont.3)
+
+cont.4 <- lmer(RT_WORD ~ exp_cond + duration + logFreq + conc + man_win + viz_win +
+                 (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data.m.full, REML=FALSE)
+summary(cont.4)
+
+anova(cont.3, cont.4)
+
+```
+
+```{r std manint word RT models, eval=FALSE, include=FALSE}
+
+cont.1 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(logFreq) + 
+                 scale(conc) + scale(man_win) + scale(viz_win) +
+                 (1+exp_cond|subject) + (1+exp_cond|word), data.m.full, REML=FALSE)
+summary(cont.1)
+
+cont.2 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(logFreq) + 
+                 scale(conc) + scale(man_win) + scale(viz_win) + 
+                 (exp_cond:scale(conc)) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data.m.full, REML=FALSE)
+summary(cont.2)
+
+anova(cont.1, cont.2)
+
+cont.3 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(logFreq) + 
+                 scale(conc) + scale(man_win) + scale(viz_win) + 
+                 (exp_cond:scale(conc)) + (exp_cond:scale(viz_win)) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data.m.full, REML=FALSE)
+summary(cont.3)
+
+anova(cont.2, cont.3)
+
+cont.4 <- lmer(scale(RT_WORD) ~ exp_cond + scale(duration) + scale(logFreq) + 
+                 scale(conc) + scale(man_win) + scale(viz_win) +
+                 (exp_cond:scale(conc)) + (exp_cond:scale(viz_win)) + (exp_cond:scale(man_win)) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data.m.full, REML=FALSE)
+summary(cont.4)
+
+anova(cont.3, cont.4)
+
+```
+
+```{r exp2 bayesian, eval=FALSE, include=FALSE}
+
+M1 <- brm(RT_WORD ~ exp_cond  + duration + logFreq + conc + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data=data.m.full)
+summary(M1)
+
+M2 <- brm(RT_WORD ~ exp_cond + duration + logFreq + conc + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (scale(conc) + scale(viz_win) + scale(man_win) + scale(conc):exp_cond + scale(viz_win):exp_cond + scale(man_win):exp_cond | subject) + (1+exp_cond|word), 
+          data=data.m.full)
+summary(M2)
+
+priors_exp2 = c(
+  set_prior('normal(1000, 20)',class="Intercept"),
+  set_prior('normal(100,10)', coef="exp_condInt"),
+  set_prior('normal(30,5)', coef="duration"),
+  set_prior('normal(10,4)', coef="conc"),
+  set_prior('normal(-7,3)', coef="logFreq"),
+  set_prior('normal(5, 3)', class='b', coef="exp_condInt:conc"),
+  set_prior('normal(5, 3)', coef="exp_condInt:viz_win"),
+  set_prior('normal(15, 3)', coef="exp_condInt:man_win")
+)
+
+E2 <- brm(RT_WORD ~ exp_cond + duration + logFreq + conc + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (1+exp_cond|subject) + (1+exp_cond|word), data=data.m.full,
+          prior=priors_exp2, sample_prior = TRUE, iter=100000, thin=100)
+summary(E2)
+
+E2_int <- brm(RT_WORD ~ exp_cond + duration + logFreq + conc + viz_win + man_win +
+                (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                (scale(conc) + scale(viz_win) + scale(man_win) + scale(conc):exp_cond + scale(viz_win):exp_cond + scale(man_win):exp_cond | subject) + (1+exp_cond|word), 
+          data=data.m.full, prior=priors_exp2, sample_prior = TRUE, iter=100000, thin=100)
+print(summary(E2_int), digits=5)
+
+hypothesis(E2, "exp_condInt:viz_win > 0")
+hypothesis(E2, "exp_condInt:viz_win = 0")
+hypothesis(E2, "exp_condInt:man_win > 0")
+hypothesis(E2, "exp_condInt:man_win = 0")
+hypothesis(E2, "exp_condInt:viz_win = exp_condInt:man_win")
+hypothesis(E2, "exp_condInt:man_win > exp_condInt:viz_win")
+
+hypothesis(E2_int, "exp_condInt:viz_win > 0")
+hypothesis(E2_int, "exp_condInt:viz_win = 0")
+hypothesis(E2_int, "exp_condInt:man_win > 0")
+hypothesis(E2_int, "exp_condInt:man_win = 0")
+hypothesis(E2_int, "exp_condInt:viz_win = exp_condInt:man_win")
+hypothesis(E2_int, "exp_condInt:man_win > exp_condInt:viz_win")
+
+```
+
+```{r manint acc models}
+
+cont.Acc.1 <- glmer(wordAcc ~ exp_cond + duration + logFreq + conc + viz_win + man_win + 
+                      (1|subject) + (1|word), data.m.full, binomial)
+summary(cont.Acc.1)
+
+cont.Acc.2 <- glmer(wordAcc ~ exp_cond + duration + logFreq + conc + viz_win + man_win + 
+                      (exp_cond:conc) + 
+                      (1|subject) + (1|word), data.m.full, binomial)
+summary(cont.Acc.2)
+
+cont.Acc.3 <- glmer(wordAcc ~ exp_cond + duration + logFreq + conc + viz_win + man_win + 
+                      (exp_cond:conc) + (exp_cond:viz_win) + 
+                      (1|subject) + (1|word), data.m.full, binomial)
+summary(cont.Acc.3)
+
+cont.Acc.4 <- glmer(wordAcc ~ exp_cond + duration + logFreq + conc + viz_win + man_win + 
+                      (exp_cond:conc) + (exp_cond:viz_win) + (exp_cond:man_win) +
+                      (1|subject) + (1|word), data.m.full, binomial)
+summary(cont.Acc.4)
+
+anova(cont.Acc.1, cont.Acc.2)
+anova(cont.Acc.2, cont.Acc.3)
+anova(cont.Acc.3, cont.Acc.4)
+
+```
+
+```{r computing effect size, eval=FALSE, include=FALSE}
+
+### only run this chunk if you want to check confidence intervals. it is SLOW.
+
+viz.1.CI <- confint(viz.1,parm="beta_")  ## slow
+viz.1.tab <- cbind(est=fixef(viz.1),viz.1.CI)
+
+viz.2.CI <- confint(viz.2,parm="beta_")  ## slow
+viz.2.tab <- cbind(est=fixef(viz.2),viz.2.CI)
+
+viz.3.CI <- confint(viz.3,parm="beta_")  ## slow
+viz.3.tab <- cbind(est=fixef(viz.3),viz.3.CI)
+
+viz.4.CI <- confint(viz.4,parm="beta_")  ## slow
+viz.4.tab <- cbind(est=fixef(viz.4),viz.4.CI)
+
+cont.1.CI <- confint(cont.1,parm="beta_")  ## slow
+cont.1.tab <- cbind(est=fixef(cont.1),cont.1.CI)
+
+cont.2.CI <- confint(cont.2,parm="beta_")  ## slow
+cont.2.tab <- cbind(est=fixef(cont.2),cont.2.CI)
+
+cont.3.CI <- confint(cont.3,parm="beta_")  ## slow
+cont.3.tab <- cbind(est=fixef(cont.3),cont.3.CI)
+
+cont.4.CI <- confint(cont.4,parm="beta_")  ## slow
+cont.4.tab <- cbind(est=fixef(cont.4),cont.4.CI)
+
+```
+
+```{r acc CIs, eval=FALSE, include=FALSE}
+viz.acc.CI <- confint(viz.Acc.1,parm="beta_")  ## slow
+viz.acc.tab <- cbind(est=fixef(viz.Acc.1),viz.acc.CI)
+viz.acc.OR <- exp(viz.acc.tab)
+
+cont.acc.CI <- confint(cont.Acc.1,parm="beta_")  ## slow
+cont.acc.tab <- cbind(est=fixef(cont.Acc.1),cont.acc.CI)
+cont.acc.OR <- exp(cont.acc.tab)
+
+```
+
+```{r vizint plots}
+
+viz.ratings.plot.dat <- with(data.v.full, aggregate(list(RT_WORD, wordAcc, viz_win, man_win, 
+                                                         resid_viz, resid_man, conc, logFreq, duration), 
+                                                    list(word, exp_cond), 
+                                                    mean, na.rm=TRUE))
+colnames(viz.ratings.plot.dat) <- c("word", "exp_cond", "RT_WORD", "wordAcc", "viz_win", "man_win", 
+                                    "resid_viz", "resid_man", "conc", "logFreq", "duration")
+
+viz.int.melt <- melt(viz.ratings.plot.dat, id.vars=c("word", "exp_cond"))
+viz.int.cast <- dcast(viz.int.melt, word ~ exp_cond + variable)
+colnames(viz.int.cast) <- c("word", "noInt_RT", "noInt_Acc", "viz_win", "man_win", 
+                            "resid_viz", "resid_man", "conc", "logFreq", "duration",
+                            "Int_RT", "Int_Acc", "viz_win2", "man_win2", 
+                            "resid_viz2", "resid_man2", "conc2", "logFreq2", "duration2")
+viz.int.cast$IntEff <-  viz.int.cast$Int_RT - viz.int.cast$noInt_RT
+
+# plots
+
+viz.ratings.plot <- ggplot(viz.int.cast, aes(x=viz_win, y=IntEff)) +
+  geom_point(size=.2, alpha=.2) +
+  geom_text_repel(label=viz.int.cast$word, size=2, segment.color = NA) +
+  geom_smooth(color="purple", method="lm") +
+  labs(x="Scaled Visual Rating", y="Visual Task Interference Effect (in ms)") +
+  theme_few()
+viz.ratings.plot
+
+fig1 <- plot_grid(vizint.task, viz.ratings.plot, nrow=1, labels=c("A","B"))
+fig1
+
+```
+
+```{r manint plots}
+
+man.ratings.plot.dat <- with(data.m.full, aggregate(list(RT_WORD, wordAcc, man_win, viz_win,
+                                                         resid_viz, resid_man, logFreq, conc, duration), 
+                                                    list(word, exp_cond), 
+                                                    mean, na.rm=TRUE))
+colnames(man.ratings.plot.dat) <- c("word", "exp_cond", "RT_WORD", "wordAcc", "man_win", "viz_win", 
+                                    "resid_viz", "resid_man", "logFreq", "conc", "duration")
+
+man.int.melt <- melt(man.ratings.plot.dat, id.vars=c("word", "exp_cond"))
+man.int.cast <- dcast(man.int.melt, word ~ exp_cond + variable)
+colnames(man.int.cast) <- c("word", "noInt_RT", "noInt_Acc", 
+                            "man_win", "viz_win", "resid_viz", "resid_man", "logFreq", "conc", "duration",
+                            "Int_RT", "Int_Acc",
+                            "man_win2", "viz_win2", "resid_viz2", "resid_man2", "logFreq2", "conc2", "duration2")
+man.int.cast$IntEff <-  man.int.cast$Int_RT - man.int.cast$noInt_RT
+
+# plots
+
+man.ratings.plot <- ggplot(man.int.cast, aes(x=man_win, y=IntEff)) +
+  geom_point(size=.2, alpha=.2) +
+  geom_text_repel(label=man.int.cast$word, size=2, segment.color = NA) +
+  geom_smooth(color="purple", method="lm") +
+  labs(x="Scaled Manual Rating", y="Manual Task Interference Effect (in ms)") +
+  theme_few()
+man.ratings.plot
+
+cont.ratings.plot <- ggplot(man.int.cast, aes(x=scale(viz_win), y=IntEff)) +
+  geom_point(size=.2, alpha=.2) +
+  geom_text_repel(label=man.int.cast$word, size=2, segment.color = NA) +
+  geom_smooth(color="purple", method="lm") +
+  labs(x="Scaled Visual Rating", y="Manual Task Interference Effect (in ms)") +
+  theme_few()
+cont.ratings.plot
+
+fig2a <- plot_grid(NULL, manint.task, NULL, nrow=1, labels=c("", "A", ""))
+fig2a
+fig2b <- plot_grid(cont.ratings.plot, man.ratings.plot, nrow = 1, labels=c("B", "C"))
+fig2b
+fig2 <- plot_grid(fig2a, fig2b, nrow=2, rel_heights = c(0.5, 1))
+fig2
+
+# correlations to superimpose on plots
+
+cor.test(viz.int.cast$viz_win, viz.int.cast$IntEff)
+cor.test(viz.int.cast$man_win, viz.int.cast$IntEff)
+
+cor.test(man.int.cast$man_win, man.int.cast$IntEff)
+cor.test(man.int.cast$viz_win, man.int.cast$IntEff)
+
+```
+
+```{r viz bayesian, eval=FALSE, include=FALSE}
+
+#this chunk will test whether the effect of visual experience is greater on visual than manual int
+
+# first need to create df for both exps combined
+
+viz.int.cast$exp <- "viz"
+man.int.cast$exp <- "man"
+
+data.cast.full <- rbind(viz.int.cast, man.int.cast)
+
+V_mod <- brm(IntEff ~ exp + duration + logFreq + conc + viz_win + man_win +
+                (exp:conc) + (exp:viz_win) + (exp:man_win), 
+         data=data.cast.full)
+summary(V_mod)
+
+priors_V = c(
+  set_prior('normal(100, 20)',class="Intercept"),
+  set_prior('normal(50,30)', coef="expviz"),
+  set_prior('normal(0,1)', coef="duration"),
+  set_prior('normal(-3,2)', coef="conc"),
+  set_prior('normal(0,1)', coef="logFreq"),
+  set_prior('normal(0, 1)', class='b', coef="expviz:conc"),
+  set_prior('normal(10, 3)', coef="expviz:viz_win"),
+  set_prior('normal(-10, 3)', coef="expviz:man_win")
+)
+
+V <- brm(IntEff ~ exp + duration + logFreq + conc + viz_win + man_win +
+                (exp:conc) + (exp:viz_win) + (exp:man_win), 
+         data=data.cast.full, prior=priors_V, sample_prior = TRUE, iter=100000, thin=100)
+summary(V)
+
+hypothesis(V, "expviz:viz_win > 0")
+hypothesis(V, "expviz:viz_win = 0")
+hypothesis(V, "expviz:man_win < 0")
+hypothesis(V, "expviz:man_win = 0")
+
+```
+
+```{r suppl}
+
+# exp 1
+
+viz.resid.plot1 <- ggplot(viz.int.cast, aes(x=resid_viz, y=IntEff)) +
+  geom_point(size=.2, alpha=.2) +
+  geom_text_repel(label=viz.int.cast$word, size=2, segment.color = NA) +
+  geom_smooth(color="purple", method="lm") +
+  labs(x="Residualized Visual Rating", y="Visual Task Interference Effect (in ms)") +
+  theme_few()
+viz.resid.plot1
+
+man.resid.plot1 <- ggplot(viz.int.cast, aes(x=resid_man, y=IntEff)) +
+  geom_point(size=.2, alpha=.2) +
+  geom_text_repel(label=viz.int.cast$word, size=2, segment.color = NA) +
+  geom_smooth(color="purple", method="lm") +
+  labs(x="Residualized Manual Rating", y="Visual Task Interference Effect (in ms)") +
+  theme_few()
+man.resid.plot1
+
+supp1 <- plot_grid(viz.resid.plot1, man.resid.plot1, nrow = 1, labels=c("A", "B"))
+supp1
+
+# exp 2
+
+man.resid.plot2 <- ggplot(man.int.cast, aes(x=resid_man, y=IntEff)) +
+  geom_point(size=.2, alpha=.2) +
+  geom_text_repel(label=viz.int.cast$word, size=2, segment.color = NA) +
+  geom_smooth(color="purple", method="lm") +
+  labs(x="Residualized Manual Rating", y="Manual Task Interference Effect (in ms)") +
+  theme_few()
+man.resid.plot2
+
+viz.resid.plot2 <- ggplot(man.int.cast, aes(x=resid_viz, y=IntEff)) +
+  geom_point(size=.2, alpha=.2) +
+  geom_text_repel(label=viz.int.cast$word, size=2, segment.color = NA) +
+  geom_smooth(color="purple", method="lm") +
+  labs(x="Residualized Visual Rating", y="Manual Task Interference Effect (in ms)") +
+  theme_few()
+viz.resid.plot2
+
+supp2 <- plot_grid(man.resid.plot2, viz.resid.plot2, nrow = 1, labels=c("A", "B"))
+supp2
+
+# correlations to superimpose on figures
+
+cor.test(viz.int.cast$resid_viz, viz.int.cast$IntEff)
+cor.test(viz.int.cast$resid_man, viz.int.cast$IntEff)
+
+cor.test(man.int.cast$resid_man, man.int.cast$IntEff)
+cor.test(man.int.cast$resid_viz, man.int.cast$IntEff)
+
+```

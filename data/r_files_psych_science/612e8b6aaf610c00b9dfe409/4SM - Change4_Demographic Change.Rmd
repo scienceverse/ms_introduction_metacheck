@@ -1,0 +1,1187 @@
+---
+  title: "Change4_SM for demographics across time"
+output:
+  word_document: default
+pdf_document: default
+date: "September 1st, 2021"
+---
+
+
+```{r, setup, include=FALSE}
+## Set wd to data location
+# knitr::opts_knit$set(root.dir = **)
+
+```
+
+```{r loading, echo = FALSE, message=FALSE}
+
+# Load data 
+load("timeseries_NEWDATA.RData")
+load("timeseries_OLDDATA.RData")
+
+
+# Load packages
+if (!require(plyr)) {install.packages("plyr", dependencies = TRUE); require(plyr)}
+if (!require(lsr)) {install.packages("lsr", dependencies = TRUE); require(lsr)}
+
+  
+```
+
+
+```{r codeCreatePOLts, include=FALSE}
+## Check politics across all attitudes --------------
+
+
+## AGE ----
+## Monthly frequencies
+age.poldems <- as.data.frame(table(timeseriesAge$politicalid, timeseriesAge$month.cent))
+colnames(age.poldems) <- c("pol", "month", "freq")
+age.poldems$month <- as.numeric(as.character(age.poldems$month))
+age.poldems_wide <- reshape(age.poldems, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+
+age.poldems_NEW <- as.data.frame(table(timeseriesAge_NEW$politicalid.new, timeseriesAge_NEW$month.cent))
+colnames(age.poldems_NEW) <- c("pol", "month", "freq")
+age.poldems_NEW$month <- as.numeric(as.character(age.poldems_NEW$month)) + 156
+age.poldems_NEW$pol <- factor(age.poldems_NEW$pol, labels = levels(age.poldems$pol))
+age.poldems_NEWwide <- reshape(age.poldems_NEW, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+age.poldems <- rbind(age.poldems, age.poldems_NEW)
+age.poldems_wide <- cbind(age.poldems_wide, age.poldems_NEWwide[,-1])
+age.poldems_wideN <- colSums(age.poldems_wide[,-1])
+age.poldems_wide[,-1] <- sweep(age.poldems_wide[,-1], 2, age.poldems_wideN, FUN = '/')
+
+
+plot(age.poldems$freq[age.poldems$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 5000))
+lines(age.poldems$freq[age.poldems$pol == "Moderately Conservative"], col = "red")
+lines(age.poldems$freq[age.poldems$pol == "Slightly Conservative"], col = "salmon")
+lines(age.poldems$freq[age.poldems$pol == "Strongly Liberal"], col = "darkblue")
+lines(age.poldems$freq[age.poldems$pol == "Moderately Liberal"], col = "blue")
+lines(age.poldems$freq[age.poldems$pol == "Slightly Conservative"], col = "cadetblue")
+lines(age.poldems$freq[age.poldems$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(age.poldems_wide)-1), y = as.numeric(age.poldems_wide[1,2:ncol(age.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(age.poldems_wide[2,2:ncol(age.poldems_wide)]), col = "red")
+lines(as.numeric(age.poldems_wide[3,2:ncol(age.poldems_wide)]), col = "salmon")
+lines(as.numeric(age.poldems_wide[7,2:ncol(age.poldems_wide)]), col = "darkblue")
+lines(as.numeric(age.poldems_wide[6,2:ncol(age.poldems_wide)]), col = "blue")
+lines(as.numeric(age.poldems_wide[5,2:ncol(age.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(age.poldems_wide[4,2:ncol(age.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+age.corpol <- list()
+age.corpoldat <- as.data.frame(matrix(nrow = 7, ncol = 4))
+colnames(age.corpoldat) <- c("att", "grp", "r", "p")
+age.corpoldat$att <- "age"
+age.corpoldat$grp <- age.poldems_wide$pol
+
+for (i in 1:7){
+  age.corpol[[i]] <- cor.test(as.numeric(age.poldems_wide[i,2:ncol(age.poldems_wide)]), 1:c(ncol(age.poldems_wide)-1)) # correlation w/ Strongly conservative
+  age.corpoldat$r[i] <- age.corpol[[i]]$estimate
+  age.corpoldat$p[i] <- age.corpol[[i]]$p.value
+}
+
+
+
+
+## Yearly frequencies
+table(timeseriesAge$politicalid)/sum(table(timeseriesAge$politicalid))
+timeseriesAge$year <- paste("20", substr(timeseriesAge$month, start = 1, stop = 2), sep = "")
+timeseriesAge_NEW$year <- paste("20", substr(timeseriesAge_NEW$month, start = 1, stop = 2), sep = "")
+
+age.poldems_year <- as.data.frame(table(timeseriesAge$politicalid, timeseriesAge$year))
+colnames(age.poldems_year) <- c("pol", "year", "freq")
+age.poldems_year$year <- as.numeric(as.character(age.poldems_year$year))
+age.poldems_year_wide <- reshape(age.poldems_year, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+
+age.poldems_year_NEW <- as.data.frame(table(timeseriesAge_NEW$politicalid.new, timeseriesAge_NEW$year))
+colnames(age.poldems_year_NEW) <- c("pol", "year", "freq")
+age.poldems_year_NEW$year <- as.numeric(as.character(age.poldems_year_NEW$year))
+age.poldems_year_NEW$pol <- factor(age.poldems_year_NEW$pol, labels = levels(age.poldems_year$pol))
+age.poldems_year_NEWwide <- reshape(age.poldems_year_NEW, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+age.poldems_year <- rbind(age.poldems_year, age.poldems_year_NEW)
+age.poldems_year_wide <- cbind(age.poldems_year_wide, age.poldems_year_NEWwide[,-1])
+age.poldems_year_wideN <- colSums(age.poldems_year_wide[,-1])
+age.poldems_year_wide[,-1] <- sweep(age.poldems_year_wide[,-1], 2, age.poldems_year_wideN, FUN = '/')
+
+
+plot(age.poldems_year$freq[age.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Year Index", col = "darkred",
+     ylim = c(0, 35000))
+lines(age.poldems_year$freq[age.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+plot(x = 1:c(ncol(age.poldems_year_wide)-1), y = as.numeric(age.poldems_year_wide[1,2:ncol(age.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(age.poldems_year_wide[2,2:ncol(age.poldems_year_wide)]), col = "red")
+lines(as.numeric(age.poldems_year_wide[3,2:ncol(age.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(age.poldems_year_wide[7,2:ncol(age.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(age.poldems_year_wide[6,2:ncol(age.poldems_year_wide)]), col = "blue")
+lines(as.numeric(age.poldems_year_wide[5,2:ncol(age.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(age.poldems_year_wide[4,2:ncol(age.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+
+
+## RACE ----
+## Monthly frequencies
+race.poldems <- as.data.frame(table(timeseriesRace$politicalid, timeseriesRace$month.cent))
+colnames(race.poldems) <- c("pol", "month", "freq")
+race.poldems$month <- as.numeric(as.character(race.poldems$month))
+race.poldems_wide <- reshape(race.poldems, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+
+race.poldems_NEW <- as.data.frame(table(timeseriesRace_NEW$politicalid.new, timeseriesRace_NEW$month.cent))
+colnames(race.poldems_NEW) <- c("pol", "month", "freq")
+race.poldems_NEW$month <- as.numeric(as.character(race.poldems_NEW$month)) + 156
+race.poldems_NEW$pol <- factor(race.poldems_NEW$pol, labels = levels(race.poldems$pol))
+race.poldems_NEWwide <- reshape(race.poldems_NEW, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+race.poldems <- rbind(race.poldems, race.poldems_NEW)
+race.poldems_wide <- cbind(race.poldems_wide, race.poldems_NEWwide[,-1])
+race.poldems_wideN <- colSums(race.poldems_wide[,-1])
+race.poldems_wide[,-1] <- sweep(race.poldems_wide[,-1], 2, race.poldems_wideN, FUN = '/')
+
+
+plot(race.poldems$freq[race.poldems$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 41000))
+lines(race.poldems$freq[race.poldems$pol == "Moderately Conservative"], col = "red")
+lines(race.poldems$freq[race.poldems$pol == "Slightly Conservative"], col = "salmon")
+lines(race.poldems$freq[race.poldems$pol == "Strongly Liberal"], col = "darkblue")
+lines(race.poldems$freq[race.poldems$pol == "Moderately Liberal"], col = "blue")
+lines(race.poldems$freq[race.poldems$pol == "Slightly Conservative"], col = "cadetblue")
+lines(race.poldems$freq[race.poldems$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(race.poldems_wide)-1), y = as.numeric(race.poldems_wide[1,2:ncol(race.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(race.poldems_wide[2,2:ncol(race.poldems_wide)]), col = "red")
+lines(as.numeric(race.poldems_wide[3,2:ncol(race.poldems_wide)]), col = "salmon")
+lines(as.numeric(race.poldems_wide[7,2:ncol(race.poldems_wide)]), col = "darkblue")
+lines(as.numeric(race.poldems_wide[6,2:ncol(race.poldems_wide)]), col = "blue")
+lines(as.numeric(race.poldems_wide[5,2:ncol(race.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(race.poldems_wide[4,2:ncol(race.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+race.corpol <- list()
+race.corpoldat <- as.data.frame(matrix(nrow = 7, ncol = 4))
+colnames(race.corpoldat) <- c("att", "grp", "r", "p")
+race.corpoldat$att <- "race"
+race.corpoldat$grp <- race.poldems_wide$pol
+
+for (i in 1:7){
+  race.corpol[[i]] <- cor.test(as.numeric(race.poldems_wide[i,2:ncol(race.poldems_wide)]), 1:c(ncol(race.poldems_wide)-1)) # correlation w/ Strongly conservative
+  race.corpoldat$r[i] <- race.corpol[[i]]$estimate
+  race.corpoldat$p[i] <- race.corpol[[i]]$p.value
+}
+
+race.corpoldat
+
+
+## Yearly frequencies
+table(timeseriesRace$politicalid)/sum(table(timeseriesRace$politicalid))
+timeseriesRace$year <- paste("20", substr(timeseriesRace$month, start = 1, stop = 2), sep = "")
+timeseriesRace_NEW$year <- paste("20", substr(timeseriesRace_NEW$month, start = 1, stop = 2), sep = "")
+
+race.poldems_year <- as.data.frame(table(timeseriesRace$politicalid, timeseriesRace$year))
+colnames(race.poldems_year) <- c("pol", "year", "freq")
+race.poldems_year$year <- as.numeric(as.character(race.poldems_year$year))
+race.poldems_year_wide <- reshape(race.poldems_year, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+
+race.poldems_year_NEW <- as.data.frame(table(timeseriesRace_NEW$politicalid.new, timeseriesRace_NEW$year))
+colnames(race.poldems_year_NEW) <- c("pol", "year", "freq")
+race.poldems_year_NEW$year <- as.numeric(as.character(race.poldems_year_NEW$year))
+race.poldems_year_NEW$pol <- factor(race.poldems_year_NEW$pol, labels = levels(race.poldems_year$pol))
+race.poldems_year_NEWwide <- reshape(race.poldems_year_NEW, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+race.poldems_year <- rbind(race.poldems_year, race.poldems_year_NEW)
+race.poldems_year_wide <- cbind(race.poldems_year_wide, race.poldems_year_NEWwide[,-1])
+race.poldems_year_wideN <- colSums(race.poldems_year_wide[,-1])
+race.poldems_year_wide[,-1] <- sweep(race.poldems_year_wide[,-1], 2, race.poldems_year_wideN, FUN = '/')
+
+
+plot(race.poldems_year$freq[race.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Year Index", col = "darkred",
+     ylim = c(0, 35000))
+lines(race.poldems_year$freq[race.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+plot(x = 1:c(ncol(race.poldems_year_wide)-1), y = as.numeric(race.poldems_year_wide[1,2:ncol(race.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(race.poldems_year_wide[2,2:ncol(race.poldems_year_wide)]), col = "red")
+lines(as.numeric(race.poldems_year_wide[3,2:ncol(race.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(race.poldems_year_wide[7,2:ncol(race.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(race.poldems_year_wide[6,2:ncol(race.poldems_year_wide)]), col = "blue")
+lines(as.numeric(race.poldems_year_wide[5,2:ncol(race.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(race.poldems_year_wide[4,2:ncol(race.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+
+## SKIN ----
+## Monthly frequencies
+skin.poldems <- as.data.frame(table(timeseriesSkin$politicalid, timeseriesSkin$month.cent))
+colnames(skin.poldems) <- c("pol", "month", "freq")
+skin.poldems$month <- as.numeric(as.character(skin.poldems$month))
+skin.poldems_wide <- reshape(skin.poldems, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+
+skin.poldems_NEW <- as.data.frame(table(timeseriesSkin_NEW$politicalid.new, timeseriesSkin_NEW$month.cent))
+colnames(skin.poldems_NEW) <- c("pol", "month", "freq")
+skin.poldems_NEW$month <- as.numeric(as.character(skin.poldems_NEW$month)) + 156
+skin.poldems_NEW$pol <- factor(skin.poldems_NEW$pol, labels = levels(skin.poldems$pol))
+skin.poldems_NEWwide <- reshape(skin.poldems_NEW, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+skin.poldems <- rbind(skin.poldems, skin.poldems_NEW)
+skin.poldems_wide <- cbind(skin.poldems_wide, skin.poldems_NEWwide[,-1])
+skin.poldems_wideN <- colSums(skin.poldems_wide[,-1])
+skin.poldems_wide[,-1] <- sweep(skin.poldems_wide[,-1], 2, skin.poldems_wideN, FUN = '/')
+
+
+plot(skin.poldems$freq[skin.poldems$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 41000))
+lines(skin.poldems$freq[skin.poldems$pol == "Moderately Conservative"], col = "red")
+lines(skin.poldems$freq[skin.poldems$pol == "Slightly Conservative"], col = "salmon")
+lines(skin.poldems$freq[skin.poldems$pol == "Strongly Liberal"], col = "darkblue")
+lines(skin.poldems$freq[skin.poldems$pol == "Moderately Liberal"], col = "blue")
+lines(skin.poldems$freq[skin.poldems$pol == "Slightly Conservative"], col = "cadetblue")
+lines(skin.poldems$freq[skin.poldems$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(skin.poldems_wide)-1), y = as.numeric(skin.poldems_wide[1,2:ncol(skin.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(skin.poldems_wide[2,2:ncol(skin.poldems_wide)]), col = "red")
+lines(as.numeric(skin.poldems_wide[3,2:ncol(skin.poldems_wide)]), col = "salmon")
+lines(as.numeric(skin.poldems_wide[7,2:ncol(skin.poldems_wide)]), col = "darkblue")
+lines(as.numeric(skin.poldems_wide[6,2:ncol(skin.poldems_wide)]), col = "blue")
+lines(as.numeric(skin.poldems_wide[5,2:ncol(skin.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(skin.poldems_wide[4,2:ncol(skin.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+skin.corpol <- list()
+skin.corpoldat <- as.data.frame(matrix(nrow = 7, ncol = 4))
+colnames(skin.corpoldat) <- c("att", "grp", "r", "p")
+skin.corpoldat$att <- "skin"
+skin.corpoldat$grp <- skin.poldems_wide$pol
+
+for (i in 1:7){
+  skin.corpol[[i]] <- cor.test(as.numeric(skin.poldems_wide[i,2:ncol(skin.poldems_wide)]), 1:c(ncol(skin.poldems_wide)-1)) # correlation w/ Strongly conservative
+  skin.corpoldat$r[i] <- skin.corpol[[i]]$estimate
+  skin.corpoldat$p[i] <- skin.corpol[[i]]$p.value
+}
+
+skin.corpoldat
+
+
+## Yearly frequencies
+table(timeseriesSkin$politicalid)/sum(table(timeseriesSkin$politicalid))
+timeseriesSkin$year <- paste("20", substr(timeseriesSkin$month, start = 1, stop = 2), sep = "")
+timeseriesSkin_NEW$year <- paste("20", substr(timeseriesSkin_NEW$month, start = 1, stop = 2), sep = "")
+
+skin.poldems_year <- as.data.frame(table(timeseriesSkin$politicalid, timeseriesSkin$year))
+colnames(skin.poldems_year) <- c("pol", "year", "freq")
+skin.poldems_year$year <- as.numeric(as.character(skin.poldems_year$year))
+skin.poldems_year_wide <- reshape(skin.poldems_year, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+
+skin.poldems_year_NEW <- as.data.frame(table(timeseriesSkin_NEW$politicalid.new, timeseriesSkin_NEW$year))
+colnames(skin.poldems_year_NEW) <- c("pol", "year", "freq")
+skin.poldems_year_NEW$year <- as.numeric(as.character(skin.poldems_year_NEW$year))
+skin.poldems_year_NEW$pol <- factor(skin.poldems_year_NEW$pol, labels = levels(skin.poldems_year$pol))
+skin.poldems_year_NEWwide <- reshape(skin.poldems_year_NEW, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+skin.poldems_year <- rbind(skin.poldems_year, skin.poldems_year_NEW)
+skin.poldems_year_wide <- cbind(skin.poldems_year_wide, skin.poldems_year_NEWwide[,-1])
+skin.poldems_year_wideN <- colSums(skin.poldems_year_wide[,-1])
+skin.poldems_year_wide[,-1] <- sweep(skin.poldems_year_wide[,-1], 2, skin.poldems_year_wideN, FUN = '/')
+
+
+plot(skin.poldems_year$freq[skin.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Year Index", col = "darkred",
+     ylim = c(0, 35000))
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+plot(x = 1:c(ncol(skin.poldems_year_wide)-1), y = as.numeric(skin.poldems_year_wide[1,2:ncol(skin.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(skin.poldems_year_wide[2,2:ncol(skin.poldems_year_wide)]), col = "red")
+lines(as.numeric(skin.poldems_year_wide[3,2:ncol(skin.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(skin.poldems_year_wide[7,2:ncol(skin.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(skin.poldems_year_wide[6,2:ncol(skin.poldems_year_wide)]), col = "blue")
+lines(as.numeric(skin.poldems_year_wide[5,2:ncol(skin.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(skin.poldems_year_wide[4,2:ncol(skin.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+
+
+
+
+## SEXUALITY ----
+## Monthly frequencies
+sex.poldems <- as.data.frame(table(timeseriesSex$politicalid, timeseriesSex$month.cent))
+colnames(sex.poldems) <- c("pol", "month", "freq")
+sex.poldems$month <- as.numeric(as.character(sex.poldems$month))
+sex.poldems_wide <- reshape(sex.poldems, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+
+sex.poldems_NEW <- as.data.frame(table(timeseriesSex_NEW$politicalid.new, timeseriesSex_NEW$month.cent))
+colnames(sex.poldems_NEW) <- c("pol", "month", "freq")
+sex.poldems_NEW$month <- as.numeric(as.character(sex.poldems_NEW$month)) + 156
+sex.poldems_NEW$pol <- factor(sex.poldems_NEW$pol, labels = levels(sex.poldems$pol))
+sex.poldems_NEWwide <- reshape(sex.poldems_NEW, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+sex.poldems <- rbind(sex.poldems, sex.poldems_NEW)
+sex.poldems_wide <- cbind(sex.poldems_wide, sex.poldems_NEWwide[,-1])
+sex.poldems_wideN <- colSums(sex.poldems_wide[,-1])
+sex.poldems_wide[,-1] <- sweep(sex.poldems_wide[,-1], 2, sex.poldems_wideN, FUN = '/')
+
+
+plot(sex.poldems$freq[sex.poldems$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 41000))
+lines(sex.poldems$freq[sex.poldems$pol == "Moderately Conservative"], col = "red")
+lines(sex.poldems$freq[sex.poldems$pol == "Slightly Conservative"], col = "salmon")
+lines(sex.poldems$freq[sex.poldems$pol == "Strongly Liberal"], col = "darkblue")
+lines(sex.poldems$freq[sex.poldems$pol == "Moderately Liberal"], col = "blue")
+lines(sex.poldems$freq[sex.poldems$pol == "Slightly Conservative"], col = "cadetblue")
+lines(sex.poldems$freq[sex.poldems$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(sex.poldems_wide)-1), y = as.numeric(sex.poldems_wide[1,2:ncol(sex.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(sex.poldems_wide[2,2:ncol(sex.poldems_wide)]), col = "red")
+lines(as.numeric(sex.poldems_wide[3,2:ncol(sex.poldems_wide)]), col = "salmon")
+lines(as.numeric(sex.poldems_wide[7,2:ncol(sex.poldems_wide)]), col = "darkblue")
+lines(as.numeric(sex.poldems_wide[6,2:ncol(sex.poldems_wide)]), col = "blue")
+lines(as.numeric(sex.poldems_wide[5,2:ncol(sex.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(sex.poldems_wide[4,2:ncol(sex.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+sex.corpol <- list()
+sex.corpoldat <- as.data.frame(matrix(nrow = 7, ncol = 4))
+colnames(sex.corpoldat) <- c("att", "grp", "r", "p")
+sex.corpoldat$att <- "sex"
+sex.corpoldat$grp <- sex.poldems_wide$pol
+
+for (i in 1:7){
+  sex.corpol[[i]] <- cor.test(as.numeric(sex.poldems_wide[i,2:ncol(sex.poldems_wide)]), 1:c(ncol(sex.poldems_wide)-1)) # correlation w/ Strongly conservative
+  sex.corpoldat$r[i] <- sex.corpol[[i]]$estimate
+  sex.corpoldat$p[i] <- sex.corpol[[i]]$p.value
+}
+
+sex.corpoldat
+
+
+## Yearly frequencies
+table(timeseriesSex$politicalid)/sum(table(timeseriesSex$politicalid))
+timeseriesSex$year <- paste("20", substr(timeseriesSex$month, start = 1, stop = 2), sep = "")
+timeseriesSex_NEW$year <- paste("20", substr(timeseriesSex_NEW$month, start = 1, stop = 2), sep = "")
+
+sex.poldems_year <- as.data.frame(table(timeseriesSex$politicalid, timeseriesSex$year))
+colnames(sex.poldems_year) <- c("pol", "year", "freq")
+sex.poldems_year$year <- as.numeric(as.character(sex.poldems_year$year))
+sex.poldems_year_wide <- reshape(sex.poldems_year, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+
+sex.poldems_year_NEW <- as.data.frame(table(timeseriesSex_NEW$politicalid.new, timeseriesSex_NEW$year))
+colnames(sex.poldems_year_NEW) <- c("pol", "year", "freq")
+sex.poldems_year_NEW$year <- as.numeric(as.character(sex.poldems_year_NEW$year))
+sex.poldems_year_NEW$pol <- factor(sex.poldems_year_NEW$pol, labels = levels(sex.poldems_year$pol))
+sex.poldems_year_NEWwide <- reshape(sex.poldems_year_NEW, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+sex.poldems_year <- rbind(sex.poldems_year, sex.poldems_year_NEW)
+sex.poldems_year_wide <- cbind(sex.poldems_year_wide, sex.poldems_year_NEWwide[,-1])
+sex.poldems_year_wideN <- colSums(sex.poldems_year_wide[,-1])
+sex.poldems_year_wide[,-1] <- sweep(sex.poldems_year_wide[,-1], 2, sex.poldems_year_wideN, FUN = '/')
+
+
+plot(sex.poldems_year$freq[sex.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Year Index", col = "darkred",
+     ylim = c(0, 35000))
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+plot(x = 1:c(ncol(sex.poldems_year_wide)-1), y = as.numeric(sex.poldems_year_wide[1,2:ncol(sex.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(sex.poldems_year_wide[2,2:ncol(sex.poldems_year_wide)]), col = "red")
+lines(as.numeric(sex.poldems_year_wide[3,2:ncol(sex.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(sex.poldems_year_wide[7,2:ncol(sex.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(sex.poldems_year_wide[6,2:ncol(sex.poldems_year_wide)]), col = "blue")
+lines(as.numeric(sex.poldems_year_wide[5,2:ncol(sex.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(sex.poldems_year_wide[4,2:ncol(sex.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+
+## DISABILITY ----
+## Monthly frequencies
+dis.poldems <- as.data.frame(table(timeseriesDis$politicalid, timeseriesDis$month.cent))
+colnames(dis.poldems) <- c("pol", "month", "freq")
+dis.poldems$month <- as.numeric(as.character(dis.poldems$month))
+dis.poldems_wide <- reshape(dis.poldems, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+
+dis.poldems_NEW <- as.data.frame(table(timeseriesDis_NEW$politicalid.new, timeseriesDis_NEW$month.cent))
+colnames(dis.poldems_NEW) <- c("pol", "month", "freq")
+dis.poldems_NEW$month <- as.numeric(as.character(dis.poldems_NEW$month)) + 156
+dis.poldems_NEW$pol <- factor(dis.poldems_NEW$pol, labels = levels(dis.poldems$pol))
+dis.poldems_NEWwide <- reshape(dis.poldems_NEW, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+dis.poldems <- rbind(dis.poldems, dis.poldems_NEW)
+dis.poldems_wide <- cbind(dis.poldems_wide, dis.poldems_NEWwide[,-1])
+dis.poldems_wideN <- colSums(dis.poldems_wide[,-1])
+dis.poldems_wide[,-1] <- sweep(dis.poldems_wide[,-1], 2, dis.poldems_wideN, FUN = '/')
+
+
+plot(dis.poldems$freq[dis.poldems$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 41000))
+lines(dis.poldems$freq[dis.poldems$pol == "Moderately Conservative"], col = "red")
+lines(dis.poldems$freq[dis.poldems$pol == "Slightly Conservative"], col = "salmon")
+lines(dis.poldems$freq[dis.poldems$pol == "Strongly Liberal"], col = "darkblue")
+lines(dis.poldems$freq[dis.poldems$pol == "Moderately Liberal"], col = "blue")
+lines(dis.poldems$freq[dis.poldems$pol == "Slightly Conservative"], col = "cadetblue")
+lines(dis.poldems$freq[dis.poldems$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(dis.poldems_wide)-1), y = as.numeric(dis.poldems_wide[1,2:ncol(dis.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(dis.poldems_wide[2,2:ncol(dis.poldems_wide)]), col = "red")
+lines(as.numeric(dis.poldems_wide[3,2:ncol(dis.poldems_wide)]), col = "salmon")
+lines(as.numeric(dis.poldems_wide[7,2:ncol(dis.poldems_wide)]), col = "darkblue")
+lines(as.numeric(dis.poldems_wide[6,2:ncol(dis.poldems_wide)]), col = "blue")
+lines(as.numeric(dis.poldems_wide[5,2:ncol(dis.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(dis.poldems_wide[4,2:ncol(dis.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+dis.corpol <- list()
+dis.corpoldat <- as.data.frame(matrix(nrow = 7, ncol = 4))
+colnames(dis.corpoldat) <- c("att", "grp", "r", "p")
+dis.corpoldat$att <- "dis"
+dis.corpoldat$grp <- dis.poldems_wide$pol
+
+for (i in 1:7){
+  dis.corpol[[i]] <- cor.test(as.numeric(dis.poldems_wide[i,2:ncol(dis.poldems_wide)]), 1:c(ncol(dis.poldems_wide)-1)) # correlation w/ Strongly conservative
+  dis.corpoldat$r[i] <- dis.corpol[[i]]$estimate
+  dis.corpoldat$p[i] <- dis.corpol[[i]]$p.value
+}
+
+dis.corpoldat
+
+
+## Yearly frequencies
+table(timeseriesDis$politicalid)/sum(table(timeseriesDis$politicalid))
+timeseriesDis$year <- paste("20", substr(timeseriesDis$month, start = 1, stop = 2), sep = "")
+timeseriesDis_NEW$year <- paste("20", substr(timeseriesDis_NEW$month, start = 1, stop = 2), sep = "")
+
+dis.poldems_year <- as.data.frame(table(timeseriesDis$politicalid, timeseriesDis$year))
+colnames(dis.poldems_year) <- c("pol", "year", "freq")
+dis.poldems_year$year <- as.numeric(as.character(dis.poldems_year$year))
+dis.poldems_year_wide <- reshape(dis.poldems_year, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+
+dis.poldems_year_NEW <- as.data.frame(table(timeseriesDis_NEW$politicalid.new, timeseriesDis_NEW$year))
+colnames(dis.poldems_year_NEW) <- c("pol", "year", "freq")
+dis.poldems_year_NEW$year <- as.numeric(as.character(dis.poldems_year_NEW$year))
+dis.poldems_year_NEW$pol <- factor(dis.poldems_year_NEW$pol, labels = levels(dis.poldems_year$pol))
+dis.poldems_year_NEWwide <- reshape(dis.poldems_year_NEW, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+dis.poldems_year <- rbind(dis.poldems_year, dis.poldems_year_NEW)
+dis.poldems_year_wide <- cbind(dis.poldems_year_wide, dis.poldems_year_NEWwide[,-1])
+dis.poldems_year_wideN <- colSums(dis.poldems_year_wide[,-1])
+dis.poldems_year_wide[,-1] <- sweep(dis.poldems_year_wide[,-1], 2, dis.poldems_year_wideN, FUN = '/')
+
+
+plot(dis.poldems_year$freq[dis.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Year Index", col = "darkred",
+     ylim = c(0, 35000))
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+plot(x = 1:c(ncol(dis.poldems_year_wide)-1), y = as.numeric(dis.poldems_year_wide[1,2:ncol(dis.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(dis.poldems_year_wide[2,2:ncol(dis.poldems_year_wide)]), col = "red")
+lines(as.numeric(dis.poldems_year_wide[3,2:ncol(dis.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(dis.poldems_year_wide[7,2:ncol(dis.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(dis.poldems_year_wide[6,2:ncol(dis.poldems_year_wide)]), col = "blue")
+lines(as.numeric(dis.poldems_year_wide[5,2:ncol(dis.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(dis.poldems_year_wide[4,2:ncol(dis.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+
+## BODY WEIGHT ----
+## Monthly frequencies
+table(timeseriesWeightBody$month.cent)
+weight.poldems <- as.data.frame(table(timeseriesWeightBody$politicalid, timeseriesWeightBody$month.cent))
+colnames(weight.poldems) <- c("pol", "month", "freq")
+weight.poldems$month <- as.numeric(as.character(weight.poldems$month))
+weight.poldems$freq <- ifelse(weight.poldems$month %in% c(125:131), NA, weight.poldems$freq)
+
+weight.poldems_wide <- reshape(weight.poldems, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+
+weight.poldems_NEW <- as.data.frame(table(timeseriesWeight_NEW$politicalid.new, timeseriesWeight_NEW$month.cent))
+colnames(weight.poldems_NEW) <- c("pol", "month", "freq")
+weight.poldems_NEW$month <- as.numeric(as.character(weight.poldems_NEW$month)) + 156
+weight.poldems_NEW$pol <- factor(weight.poldems_NEW$pol, labels = levels(weight.poldems$pol))
+weight.poldems_NEWwide <- reshape(weight.poldems_NEW, v.names = "freq", 
+                       timevar = "month", idvar = "pol",
+                       direction = "wide")
+weight.poldems <- rbind(weight.poldems, weight.poldems_NEW)
+weight.poldems_wide <- cbind(weight.poldems_wide, weight.poldems_NEWwide[,-1])
+weight.poldems_wideN <- colSums(weight.poldems_wide[,-1])
+weight.poldems_wide[,-1] <- sweep(weight.poldems_wide[,-1], 2, weight.poldems_wideN, FUN = '/')
+
+
+plot(weight.poldems$freq[weight.poldems$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Month Index", col = "darkred",
+     ylim = c(0, 15000))
+lines(weight.poldems$freq[weight.poldems$pol == "Moderately Conservative"], col = "red")
+lines(weight.poldems$freq[weight.poldems$pol == "Slightly Conservative"], col = "salmon")
+lines(weight.poldems$freq[weight.poldems$pol == "Strongly Liberal"], col = "darkblue")
+lines(weight.poldems$freq[weight.poldems$pol == "Moderately Liberal"], col = "blue")
+lines(weight.poldems$freq[weight.poldems$pol == "Slightly Conservative"], col = "cadetblue")
+lines(weight.poldems$freq[weight.poldems$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(weight.poldems_wide)-1), y = as.numeric(weight.poldems_wide[1,2:ncol(weight.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 121, by = 12), labels = c(2010:2020))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(weight.poldems_wide[2,2:ncol(weight.poldems_wide)]), col = "red")
+lines(as.numeric(weight.poldems_wide[3,2:ncol(weight.poldems_wide)]), col = "salmon")
+lines(as.numeric(weight.poldems_wide[7,2:ncol(weight.poldems_wide)]), col = "darkblue")
+lines(as.numeric(weight.poldems_wide[6,2:ncol(weight.poldems_wide)]), col = "blue")
+lines(as.numeric(weight.poldems_wide[5,2:ncol(weight.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(weight.poldems_wide[4,2:ncol(weight.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+weight.corpol <- list()
+weight.corpoldat <- as.data.frame(matrix(nrow = 7, ncol = 4))
+colnames(weight.corpoldat) <- c("att", "grp", "r", "p")
+weight.corpoldat$att <- "weight"
+weight.corpoldat$grp <- weight.poldems_wide$pol
+
+for (i in 1:7){
+  weight.corpol[[i]] <- cor.test(as.numeric(weight.poldems_wide[i,2:ncol(weight.poldems_wide)]), 1:c(ncol(weight.poldems_wide)-1)) # correlation w/ Strongly conservative
+  weight.corpoldat$r[i] <- weight.corpol[[i]]$estimate
+  weight.corpoldat$p[i] <- weight.corpol[[i]]$p.value
+}
+
+weight.corpoldat
+
+
+## Yearly frequencies
+table(timeseriesWeightBody$politicalid)/sum(table(timeseriesWeightBody$politicalid))
+timeseriesWeightBody$year <- paste("20", substr(timeseriesWeightBody$month, start = 1, stop = 2), sep = "")
+timeseriesWeight_NEW$year <- paste("20", substr(timeseriesWeight_NEW$month, start = 1, stop = 2), sep = "")
+
+weight.poldems_year <- as.data.frame(table(timeseriesWeightBody$politicalid, timeseriesWeightBody$year))
+colnames(weight.poldems_year) <- c("pol", "year", "freq")
+weight.poldems_year$year <- as.numeric(as.character(weight.poldems_year$year))
+weight.poldems_year_wide <- reshape(weight.poldems_year, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+
+weight.poldems_year_NEW <- as.data.frame(table(timeseriesWeight_NEW$politicalid.new, timeseriesWeight_NEW$year))
+colnames(weight.poldems_year_NEW) <- c("pol", "year", "freq")
+weight.poldems_year_NEW$year <- as.numeric(as.character(weight.poldems_year_NEW$year))
+weight.poldems_year_NEW$pol <- factor(weight.poldems_year_NEW$pol, labels = levels(weight.poldems_year$pol))
+weight.poldems_year_NEWwide <- reshape(weight.poldems_year_NEW, v.names = "freq", 
+                       timevar = "year", idvar = "pol",
+                       direction = "wide")
+weight.poldems_year <- rbind(weight.poldems_year, weight.poldems_year_NEW)
+weight.poldems_year_wide <- cbind(weight.poldems_year_wide, weight.poldems_year_NEWwide[,-1])
+weight.poldems_year_wideN <- colSums(weight.poldems_year_wide[,-1])
+weight.poldems_year_wide[,-1] <- sweep(weight.poldems_year_wide[,-1], 2, weight.poldems_year_wideN, FUN = '/')
+
+
+plot(weight.poldems_year$freq[weight.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "Year Index", col = "darkred",
+     ylim = c(0, 35000))
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+plot(x = 1:c(ncol(weight.poldems_year_wide)-1), y = as.numeric(weight.poldems_year_wide[1,2:ncol(weight.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:12), labels = c(2010:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(weight.poldems_year_wide[2,2:ncol(weight.poldems_year_wide)]), col = "red")
+lines(as.numeric(weight.poldems_year_wide[3,2:ncol(weight.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(weight.poldems_year_wide[7,2:ncol(weight.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(weight.poldems_year_wide[6,2:ncol(weight.poldems_year_wide)]), col = "blue")
+lines(as.numeric(weight.poldems_year_wide[5,2:ncol(weight.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(weight.poldems_year_wide[4,2:ncol(weight.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+
+
+
+```
+
+## Print table
+```{r tablOutput, echo=FALSE}
+## CREATE TABLE ----
+demchanges_table <- as.data.frame(matrix(nrow = 6*7, ncol = 6))
+colnames(demchanges_table) <- c("att", "grp", "r", "p", "startprop", "endprop")
+demchanges_table$att <- rep(c("Age", "Race", "Skin-tone", "Sexuality", "Disability", "Weight"), each = 7)
+demchanges_table$grp <- rep(c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative", "Neutral",
+                               "Slightly Liberal", "Moderately Liberal", "Strongly Liberal"), times = 6)
+
+demchanges_table$r <- round(c(age.corpoldat$r, race.corpoldat$r, skin.corpoldat$r, sex.corpoldat$r,
+                              dis.corpoldat$r, weight.corpoldat$r), 2) 
+demchanges_table$p <- round(c(age.corpoldat$p, race.corpoldat$p, skin.corpoldat$p, sex.corpoldat$p,
+                              dis.corpoldat$p, weight.corpoldat$p), 3)
+
+demchanges_table$startprop <-round(c(as.numeric(age.poldems_year_wide[1:7,2]), as.numeric(race.poldems_year_wide[1:7,2]),
+                                     as.numeric(skin.poldems_year_wide[1:7,2]), as.numeric(sex.poldems_year_wide[1:7,2]),
+                                     as.numeric(dis.poldems_year_wide[1:7,2]), as.numeric(weight.poldems_year_wide[1:7,2])), 3)
+demchanges_table$endprop <-round(c(as.numeric(age.poldems_year_wide[1:7,15]), as.numeric(race.poldems_year_wide[1:7,15]),
+                                     as.numeric(skin.poldems_year_wide[1:7,15]), as.numeric(sex.poldems_year_wide[1:7,15]),
+                                     as.numeric(dis.poldems_year_wide[1:7,15]), as.numeric(weight.poldems_year_wide[1:7,12])), 3)
+
+knitr::kable(demchanges_table,
+             col.names = c("Attitude", "Group", "Correlation w Time", "p of Correlation",
+                           "Starting Proportion (2007)", "Ending Proportion (2020)"))
+```
+
+
+## Save PDF of figures
+``` {r figureOutput, echo = FALSE}
+
+## Monthly relative ----
+pdf(file = "politicalrep_monthly.pdf", height = 10, width = 15)
+op <- par(mfrow = c(2,3))
+
+plot(x = 1:c(ncol(sex.poldems_wide)-1), y = as.numeric(sex.poldems_wide[1,2:ncol(sex.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "SEXUALITY",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(sex.poldems_wide[2,2:ncol(sex.poldems_wide)]), col = "red")
+lines(as.numeric(sex.poldems_wide[3,2:ncol(sex.poldems_wide)]), col = "salmon")
+lines(as.numeric(sex.poldems_wide[7,2:ncol(sex.poldems_wide)]), col = "darkblue")
+lines(as.numeric(sex.poldems_wide[6,2:ncol(sex.poldems_wide)]), col = "blue")
+lines(as.numeric(sex.poldems_wide[5,2:ncol(sex.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(sex.poldems_wide[4,2:ncol(sex.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(race.poldems_wide)-1), y = as.numeric(race.poldems_wide[1,2:ncol(race.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "RACE",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(race.poldems_wide[2,2:ncol(race.poldems_wide)]), col = "red")
+lines(as.numeric(race.poldems_wide[3,2:ncol(race.poldems_wide)]), col = "salmon")
+lines(as.numeric(race.poldems_wide[7,2:ncol(race.poldems_wide)]), col = "darkblue")
+lines(as.numeric(race.poldems_wide[6,2:ncol(race.poldems_wide)]), col = "blue")
+lines(as.numeric(race.poldems_wide[5,2:ncol(race.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(race.poldems_wide[4,2:ncol(race.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(skin.poldems_wide)-1), y = as.numeric(skin.poldems_wide[1,2:ncol(skin.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "SKIN-TONE",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(skin.poldems_wide[2,2:ncol(skin.poldems_wide)]), col = "red")
+lines(as.numeric(skin.poldems_wide[3,2:ncol(skin.poldems_wide)]), col = "salmon")
+lines(as.numeric(skin.poldems_wide[7,2:ncol(skin.poldems_wide)]), col = "darkblue")
+lines(as.numeric(skin.poldems_wide[6,2:ncol(skin.poldems_wide)]), col = "blue")
+lines(as.numeric(skin.poldems_wide[5,2:ncol(skin.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(skin.poldems_wide[4,2:ncol(skin.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(age.poldems_wide)-1), y = as.numeric(age.poldems_wide[1,2:ncol(age.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "AGE",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(age.poldems_wide[2,2:ncol(age.poldems_wide)]), col = "red")
+lines(as.numeric(age.poldems_wide[3,2:ncol(age.poldems_wide)]), col = "salmon")
+lines(as.numeric(age.poldems_wide[7,2:ncol(age.poldems_wide)]), col = "darkblue")
+lines(as.numeric(age.poldems_wide[6,2:ncol(age.poldems_wide)]), col = "blue")
+lines(as.numeric(age.poldems_wide[5,2:ncol(age.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(age.poldems_wide[4,2:ncol(age.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(dis.poldems_wide)-1), y = as.numeric(dis.poldems_wide[1,2:ncol(dis.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "DISABILITY",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 169, by = 12), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(dis.poldems_wide[2,2:ncol(dis.poldems_wide)]), col = "red")
+lines(as.numeric(dis.poldems_wide[3,2:ncol(dis.poldems_wide)]), col = "salmon")
+lines(as.numeric(dis.poldems_wide[7,2:ncol(dis.poldems_wide)]), col = "darkblue")
+lines(as.numeric(dis.poldems_wide[6,2:ncol(dis.poldems_wide)]), col = "blue")
+lines(as.numeric(dis.poldems_wide[5,2:ncol(dis.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(dis.poldems_wide[4,2:ncol(dis.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(weight.poldems_wide)-1), y = as.numeric(weight.poldems_wide[1,2:ncol(weight.poldems_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "BODY WEIGHT",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = seq(1, 121, by = 12), labels = c(2010:2020))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(weight.poldems_wide[2,2:ncol(weight.poldems_wide)]), col = "red")
+lines(as.numeric(weight.poldems_wide[3,2:ncol(weight.poldems_wide)]), col = "salmon")
+lines(as.numeric(weight.poldems_wide[7,2:ncol(weight.poldems_wide)]), col = "darkblue")
+lines(as.numeric(weight.poldems_wide[6,2:ncol(weight.poldems_wide)]), col = "blue")
+lines(as.numeric(weight.poldems_wide[5,2:ncol(weight.poldems_wide)]), col = "cadetblue")
+lines(as.numeric(weight.poldems_wide[4,2:ncol(weight.poldems_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+par(op)
+dev.off()
+
+
+
+## Yearly relative ----
+pdf(file = "politicalrep_yearly.pdf", height = 10, width = 15)
+op <- par(mfrow = c(2,3))
+
+plot(x = 1:c(ncol(sex.poldems_year_wide)-1), y = as.numeric(sex.poldems_year_wide[1,2:ncol(sex.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "SEXUALITY",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(sex.poldems_year_wide[2,2:ncol(sex.poldems_year_wide)]), col = "red")
+lines(as.numeric(sex.poldems_year_wide[3,2:ncol(sex.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(sex.poldems_year_wide[7,2:ncol(sex.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(sex.poldems_year_wide[6,2:ncol(sex.poldems_year_wide)]), col = "blue")
+lines(as.numeric(sex.poldems_year_wide[5,2:ncol(sex.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(sex.poldems_year_wide[4,2:ncol(sex.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(race.poldems_year_wide)-1), y = as.numeric(race.poldems_year_wide[1,2:ncol(race.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "RACE",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(race.poldems_year_wide[2,2:ncol(race.poldems_year_wide)]), col = "red")
+lines(as.numeric(race.poldems_year_wide[3,2:ncol(race.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(race.poldems_year_wide[7,2:ncol(race.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(race.poldems_year_wide[6,2:ncol(race.poldems_year_wide)]), col = "blue")
+lines(as.numeric(race.poldems_year_wide[5,2:ncol(race.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(race.poldems_year_wide[4,2:ncol(race.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(skin.poldems_year_wide)-1), y = as.numeric(skin.poldems_year_wide[1,2:ncol(skin.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "SKIN-TONE",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(skin.poldems_year_wide[2,2:ncol(skin.poldems_year_wide)]), col = "red")
+lines(as.numeric(skin.poldems_year_wide[3,2:ncol(skin.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(skin.poldems_year_wide[7,2:ncol(skin.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(skin.poldems_year_wide[6,2:ncol(skin.poldems_year_wide)]), col = "blue")
+lines(as.numeric(skin.poldems_year_wide[5,2:ncol(skin.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(skin.poldems_year_wide[4,2:ncol(skin.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(age.poldems_year_wide)-1), y = as.numeric(age.poldems_year_wide[1,2:ncol(age.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "AGE",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(age.poldems_year_wide[2,2:ncol(age.poldems_year_wide)]), col = "red")
+lines(as.numeric(age.poldems_year_wide[3,2:ncol(age.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(age.poldems_year_wide[7,2:ncol(age.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(age.poldems_year_wide[6,2:ncol(age.poldems_year_wide)]), col = "blue")
+lines(as.numeric(age.poldems_year_wide[5,2:ncol(age.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(age.poldems_year_wide[4,2:ncol(age.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(dis.poldems_year_wide)-1), y = as.numeric(dis.poldems_year_wide[1,2:ncol(dis.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "DISABILITY",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(dis.poldems_year_wide[2,2:ncol(dis.poldems_year_wide)]), col = "red")
+lines(as.numeric(dis.poldems_year_wide[3,2:ncol(dis.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(dis.poldems_year_wide[7,2:ncol(dis.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(dis.poldems_year_wide[6,2:ncol(dis.poldems_year_wide)]), col = "blue")
+lines(as.numeric(dis.poldems_year_wide[5,2:ncol(dis.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(dis.poldems_year_wide[4,2:ncol(dis.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(x = 1:c(ncol(weight.poldems_year_wide)-1), y = as.numeric(weight.poldems_year_wide[1,2:ncol(weight.poldems_year_wide)]),
+     type = "l", ylab = "Relative Frequency", xlab = "", col = "darkred", main = "BODY WEIGHT",
+     ylim = c(0, 0.6), axes = FALSE)
+box()
+axis(1, at = c(1:12), labels = c(2010:2021))
+axis(2, at = seq(0, 0.6, by = 0.1), labels = seq(0, 0.6, by = 0.1))
+lines(as.numeric(weight.poldems_year_wide[2,2:ncol(weight.poldems_year_wide)]), col = "red")
+lines(as.numeric(weight.poldems_year_wide[3,2:ncol(weight.poldems_year_wide)]), col = "salmon")
+lines(as.numeric(weight.poldems_year_wide[7,2:ncol(weight.poldems_year_wide)]), col = "darkblue")
+lines(as.numeric(weight.poldems_year_wide[6,2:ncol(weight.poldems_year_wide)]), col = "blue")
+lines(as.numeric(weight.poldems_year_wide[5,2:ncol(weight.poldems_year_wide)]), col = "cadetblue")
+lines(as.numeric(weight.poldems_year_wide[4,2:ncol(weight.poldems_year_wide)]), col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+par(op)
+dev.off()
+
+
+## Yearly raw ----
+pdf(file = "politicalrep_yearly_raw.pdf", height = 10, width = 15)
+op <- par(mfrow = c(2,3))
+plot(sex.poldems_year$freq[sex.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",main = "SEXUALITY",
+     ylim = c(0, 50000), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 50000, by = 5000), labels = seq(0, 50000, by = 5000))
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(sex.poldems_year$freq[sex.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(race.poldems_year$freq[race.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",main = "RACE",
+     ylim = c(0, 120000), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 120000, by = 15000), labels = seq(0, 120000, by = 15000))
+lines(race.poldems_year$freq[race.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(race.poldems_year$freq[race.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+plot(skin.poldems_year$freq[skin.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",main = "SKIN-TONE",
+     ylim = c(0, 50000), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 50000, by = 5000), labels = seq(0, 50000, by = 5000))
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(skin.poldems_year$freq[skin.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(age.poldems_year$freq[age.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Raw Frequency", xlab = "", col = "darkred", main = "AGE",
+     ylim = c(0, 35000), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 35000, by = 5000), labels = seq(0, 35000, by = 5000))
+lines(age.poldems_year$freq[age.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(age.poldems_year$freq[age.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+
+plot(dis.poldems_year$freq[dis.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",main = "DISABILITY",
+     ylim = c(0, 35000), axes = FALSE)
+box()
+axis(1, at = c(1:15), labels = c(2007:2021))
+axis(2, at = seq(0, 35000, by = 5000), labels = seq(0, 35000, by = 5000))
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(dis.poldems_year$freq[dis.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+plot(weight.poldems_year$freq[weight.poldems_year$pol == "Strongly Conservative"],
+     type = "l", ylab = "Frequency", xlab = "", col = "darkred",main = "BODY WEIGHT",
+     ylim = c(0, 35000), axes = FALSE)
+box()
+axis(1, at = c(1:11), labels = c(2011:2021))
+axis(2, at = seq(0, 35000, by = 5000), labels = seq(0, 35000, by = 5000))
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Moderately Conservative"], col = "red")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Slightly Conservative"], col = "salmon")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Strongly Liberal"], col = "darkblue")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Moderately Liberal"], col = "blue")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Slightly Conservative"], col = "cadetblue")
+lines(weight.poldems_year$freq[weight.poldems_year$pol == "Neutral"], col = "black")
+legend("topleft", c("Strongly Conservative", "Moderately Conservative", "Slightly Conservative",
+                    "Slightly Liberal", "Moderately Liberal", "Strongly Liberal", "Neutral"),
+       col = c("darkred", "red", "salmon", "darkblue", "blue", "cadetblue", "black"),
+       lty = 1, lwd = 4, bty = "n", ncol = 2)
+
+par(op)
+dev.off()
+
+```
+
+

@@ -1,0 +1,155 @@
+---
+title: 'Study 1, data processing steps'
+author: "Sonja Kunz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    code_download: true
+---
+
+Load packages
+
+```{r, message=FALSE}
+library(tidyverse) 
+library(misty)
+library(siggitRausti)
+```
+
+Import raw data.
+
+```{r, message=FALSE}
+dat_raw <- 
+  read_csv2('Data/Study1_data_raw.csv')
+```
+
+# Check for zero variance in responses
+
+We preregistered that we would exclude participants with zero variance in their responses, indicating that they clicked through the questionnaire. We checked the variance in participants' responses across all dependent measures, using the  `row_sds` function from the `siggitRausti` package. 
+
+```{r}
+variance <- dat_raw %>% 
+  select(starts_with(c('unhealthy', 'healthy', 'belief'))) %>%
+  mutate(variance = row_sds(.))
+
+variance[which(variance$variance == 0), ]
+```
+
+There were no cases with zero variance in responses, so we did not exclude any participants.
+
+# Variable computations
+
+## Dependent measures
+
+The main dependent variable was the strength of participants' perceived relationship between health and taste, which we assessed in two ways. 
+
+Participants estimated the probability of getting a tasty food, given that they order a healthy and an unhealthy food, both on a scale from 0% to 100%, separately for each delivery app (Conditional probability estimate).
+
+Also, participants indicated, within as well as across contexts, which foods they thought to taste better on a scale from 1 = *the unhealthy foods* to 100 = *the healthy foods* (Relative contingency belief). 
+
+First, we re-coded all measures so that they ranged from - 0.5 to 0.5.
+
+```{r}
+dat <-
+  dat_raw %>% 
+  mutate(healthy_tasty_c1_R = (healthy_tasty_c1 - 50) / 100,
+         unhealthy_tasty_c1_R = (unhealthy_tasty_c1 - 50) / 100,
+         belief_ht_c1_R = (belief_ht_c1 - 50) / 100, 
+         healthy_tasty_c2_R = (healthy_tasty_c2 - 50) / 100,
+         unhealthy_tasty_c2_R = (unhealthy_tasty_c2 - 50) / 100,
+         belief_ht_c2_R = (belief_ht_c2 - 50) / 100, 
+         belief_ht_overall_R = (belief_ht_overall - 50) / 100)
+```
+
+For the conditional probability estimates, we calculated for each app the difference between the estimated probability of getting a tasty food between the healthy and unhealthy food. A positive value indicates a stronger healthy-tasty belief, a negative value indicates an unhealthy-tasty belief.
+
+```{r}
+dat <-
+  dat %>% 
+  mutate(condi_est_c1 = healthy_tasty_c1_R - unhealthy_tasty_c1_R,
+         condi_est_c2 = healthy_tasty_c2_R - unhealthy_tasty_c2_R)
+```
+
+Next, we checked, whether this difference score correlated with the relative contingency belief.
+
+```{r}
+dat %>% 
+  select(condi_est_c1, belief_ht_c1_R) %>% 
+  item.alpha()
+
+dat %>% 
+  select(condi_est_c2, belief_ht_c2_R) %>% 
+  item.alpha()
+```
+
+Reliability between the conditional probability estimate and the relative contingency belief was acceptable in the first context (Cronbach's alpha .77), but low in the second context (Cronbach's alpha .53), so we analysed the two dependent variables separately.
+
+## Additional measures
+
+### Protestant ethic scale (PES)
+
+We assessed participants' protestant ethic with 11 items by Katz & Hass (1988).
+Participants indicated their agreement with 11 items on a scale from 0 = *strongly disagree* to 5 = *strongly agree*.</br>
+- E.g., “I feel uneasy when there is little work for me to do.”
+
+#### Scale reliability
+```{r}
+dat %>% 
+  select(starts_with('PES_')) %>% 
+  item.alpha()
+```
+
+#### Calculate the mean PES scores
+
+```{r}
+dat <-
+  dat %>%
+  mutate(PES = rowMeans(.[ ,c('PES_1', 'PES_2', 'PES_3', 'PES_4', 'PES_5', 'PES_6', 'PES_7', 'PES_8', 'PES_9', 'PES_10')])
+         )
+```
+
+### Body mass index (BMI)
+
+To calculate the BMI, we assessed participants' height in feet and inches and their weight in stones and pounds. Participants had the option to leave the question for their weight unanswered, therefore there are some missing values in this variable.
+
+```{r, include=FALSE}
+# Some participants indicated decimals with commas instead of points. Therefore, we first changed all commas in the `weight` variable into points.
+dat <- 
+  dat %>% 
+  mutate(weight = as.numeric(sub(",", ".", weight, fixed=TRUE), na.rm = TRUE)
+  )
+
+```
+
+First, we transferred the height in feet and inches into height in inches by multiplying `height` by 12.
+Similarly, we transferred the weight in stones and lbs into lbs by multiplying `weight` by 14.
+
+```{r}
+dat <- dat %>% 
+  mutate(height_inches = height*12,
+         weight_lbs = weight*14)
+```
+
+Next, we calculated the body mass index (BMI), by dividing weight in lbs by height in inches squared, multiplied by 703.
+
+```{r}
+dat <-
+  dat %>% 
+  mutate(BMI = weight_lbs / height_inches^2 * 703)
+```
+
+# Save processed data
+
+Remove all unneeded variables and save the processed data as a CSV.
+
+```{r}
+dat %>% 
+  select(id, condition, random_app, BMI, PES, nutrition, allergy, 
+         starts_with(c('base', 'condi')),
+         belief_ht_c1_R, belief_ht_c2_R, belief_ht_overall_R, preference,
+         starts_with('delivery')
+         )%>%
+  write_csv2('Data/Study1_data_processed.csv')
+```

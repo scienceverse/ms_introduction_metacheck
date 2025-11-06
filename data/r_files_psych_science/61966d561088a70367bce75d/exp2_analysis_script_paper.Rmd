@@ -1,0 +1,1074 @@
+---
+title: Two-year-olds' eye movements reflect confidence in their knowledge of a word
+  meaning (exp2)
+author: "Isabelle Dautriche"
+date: "04/07/2019"
+output: 
+  html_document: 
+    toc: true
+    toc_depth: 3  
+    number_sections: true  
+    theme: united 
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(grid)
+require(gridExtra)
+require(lme4)
+require(ggpubr)
+library(cowplot)
+library(brms)
+library(loo)
+library(reshape2)
+source("./eyetrack.R")
+
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE, ci = TRUE) {
+    library(plyr)
+
+    # New version of length which can handle NA's: if na.rm==T, don't count them
+    length2 <- function (x, na.rm=FALSE) {
+        if (na.rm) sum(!is.na(x))
+        else       length(x)
+    }
+
+    if(ci == TRUE)
+    {  
+    # This does the summary. For each group's data frame, return a vector with
+    # N, mean, and sd
+    datac <- ddply(data, groupvars, .drop=.drop,
+      .fun = function(xx, col) {
+        c(N    = length2(xx[[col]], na.rm=na.rm),
+          mean = mean   (xx[[col]], na.rm=na.rm),
+          sd   = sd     (xx[[col]], na.rm=na.rm)
+        )
+      },
+      measurevar
+    )
+
+    # Rename the "mean" column    
+    datac <- plyr::rename(datac, c("mean" = measurevar))
+
+    datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+
+    # Confidence interval multiplier for standard error
+    # Calculate t-statistic for confidence interval: 
+    # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+    ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+    datac$ci <- datac$se * ciMult
+    }
+    else
+    {
+      
+     datac <- ddply(data, groupvars, .drop=.drop,
+        .fun = function(xx, col) {
+          c(mean = mean   (xx[[col]], na.rm=na.rm))
+        },
+        measurevar
+      )
+
+    # Rename the "mean" column    
+    datac <- plyr::rename(datac, c("mean" = measurevar))
+    }
+    return(datac)
+}
+```
+
+# Data preparation
+
+```{r data-load}
+data <- read.table("./../data/Results.txt", header = TRUE)
+age <- read.table("./../data/age.txt", header = TRUE)
+
+```
+
+Create column condition (known vs. unknown objects) 
+
+```{r data-col}
+data$trial_type <- "known"
+data$trial_type[which(data$Item %in% c("danu","modi"))] <- "novel"
+
+```
+
+Remove participants that needs to be excluded for non-data criteria 
+
+```{r participants-selection}
+data <- subset(data, Subject != 16)
+```
+
+Remove trials that do not folow the following criteria:
+
+1. More than 50% of looks on screen during the display period
+
+2. Look initiated during the anticipaton period
+
+3. Took less than 3 seconds to fix the central fixation (time between the display and the anticipation period)
+
+4. More than 50% of looks on screen during the anticipation period
+
+
+```{r trial-selection}
+infos.trials <- ddply(subset(data, Time >= 0 & Time <=2500),.(Subject, Trial, Condition, trial_type, Item, AwayDisp, Tcontingent, Initiated, Tanticipation, Toffset), summarize, away_anticip = sum(Away)/length(Away))
+good.trials <- subset(infos.trials, (Initiated == 1 & AwayDisp <= 0.5 & as.numeric(Tcontingent) <= 3 & away_anticip <= 0.50))
+data <- merge(data, good.trials)
+```
+
+Generate sequence of looks for each trial with its associated duration for each ROI, we clean looks that last less than 50 ms as these are likely to be non-elicited by the participant (either on the border of a zone or some flickering due to the eye-tracker)
+
+
+```{r trial-sequence}
+trial.sequence <- subset(data, Time >= 0 & Time <=2500)
+trial.sequence <- trial.sequence[with(trial.sequence, order(Subject,Trial,Time)), ]
+trial.sequence$sequence <- cumsum(c(0,as.numeric(diff(trial.sequence$ROI))!=0))
+maxT <- ddply(trial.sequence[with(trial.sequence, order(Subject, Trial,-Time)), ],.(Subject, Trial, trial_type, ROI, sequence, Tanticipation), function(x) x[c(1), ])
+maxT <- maxT[, c("Subject","Trial","Condition","trial_type","Item","sequence","Time", "ROI","Tanticipation")]
+minT <- ddply(trial.sequence[with(trial.sequence, order(Subject, Trial,Time)), ],.(Subject, Trial, trial_type, ROI, sequence, Tanticipation), function(x) x[c(1), ])
+minT <- minT[, c("Subject","Trial","Condition","trial_type","Item","sequence","Time", "ROI","Tanticipation")]
+names(maxT) <- c("Subject", "Trial","Condition","trial_type","Item","sequence", "maxTime","ROI","Tanticipation")
+names(minT) <- c("Subject", "Trial","Condition","trial_type","Item","sequence", "minTime","ROI","Tanticipation")
+trial.sequence <- merge(minT, maxT)
+trial.sequence$Persistence <- trial.sequence$maxTime - trial.sequence$minTime 
+trial.sequence <- subset(trial.sequence, Persistence > 100  | ROI  == "T" | ROI == "D")
+trial.sequence <- trial.sequence[with(trial.sequence, order(Subject,Trial,sequence)), ]
+trial.sequence$sequence2 <- cumsum(c(0,as.numeric(diff(trial.sequence$ROI))!=0))
+trial.sequence <- ddply(trial.sequence, .(Subject, Condition, Trial, trial_type, Item, sequence2, ROI,Tanticipation), summarize, minT = min(minTime), maxT = max(maxTime))
+trial.sequence$Persistence <- trial.sequence$maxT - trial.sequence$minT 
+trial.sequence <- trial.sequence[with(trial.sequence, order(Subject,Trial,sequence2)), ]
+trial.sequence <- ddply(trial.sequence, .(Subject, Trial, trial_type), mutate, index=seq_along(sequence2))
+ddply(subset(trial.sequence, index ==1), .(Condition, trial_type, ROI), summarize, n = length(Trial))
+```
+
+Select first look only to Target or Distractor, greater than 100ms and select only participants that have 2 trials per condition
+
+```{r first-look-select}
+trial.sequence$Tanticipation <- as.numeric(as.character(trial.sequence$Tanticipation))
+first.look <- subset(trial.sequence, index ==1 & ROI %in% c("T","D") & Persistence > 100  & minT == 0)
+known.trials <- ddply(subset(first.look, trial_type == "known"), .(Subject), summarize, nk = length(unique(Trial)))
+unknown.trials <- ddply(subset(first.look, trial_type == "novel"), .(Subject), summarize, nu = length(unique(Trial)))
+trials <- merge(known.trials, unknown.trials)
+first.look <- merge(first.look,trials)
+first.look <- subset(first.look, nk > 1 & nu > 1)
+length(unique(first.look$Subject))
+#first.look <- merge(first.look,age)
+first.look$animacy <- "inanimate"
+first.look$animacy[which(first.look$Item %in% c("butterfly","duck","cat","fish"))] <- "animate"
+
+ddply(first.look, .(Condition), summarize, n = length(unique(Subject)))
+```
+
+# Analysis 1: Word recognition performance
+
+## First-look responses
+
+### Plots
+
+```{r first-look-main,warning=FALSE, message =FALSE}
+#Novel words
+cmap_cond <- c("#4800B3","#FFD325")
+cmap_cond <- c("#25B39F","#FF8A44")
+first.look$to_target <- as.numeric(first.look$ROI == "T")
+df_to_gg_suj <- summarySE(first.look, measurevar="to_target", groupvars=c("Subject","Condition","trial_type"))
+df_to_gg <- summarySE(df_to_gg_suj , measurevar="to_target", groupvars=c("Condition","trial_type"))
+
+first.look.acc.novel <- ggplot(subset(df_to_gg_suj, trial_type == "novel"), aes(x= Condition, y=to_target, color = Condition, fill = Condition))+ 
+  geom_hline(yintercept=0.5,linetype="dashed")+
+  geom_dotplot(binaxis="y", aes(fill = Condition), stackdir="center",dotsize=0.5, alpha=0.5)+
+  geom_errorbar(data = subset(df_to_gg, trial_type == "novel"), aes(ymin= to_target-se, ymax= to_target +se), colour = "black", width=0.1,size=1,alpha=1) +
+  geom_point(data = subset(df_to_gg, trial_type == "novel"), size=3, colour = "BLACK", shape=21, stroke = 1.5)+
+  ggtitle("")+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5))  + 
+  xlab("") + 
+  ylab("proportion of target first looks \n (anticipation phase)") +
+  theme(legend.position = "none")+  
+  scale_fill_manual(values =cmap_cond) +
+  scale_colour_manual(values =cmap_cond) +
+  theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),panel.grid = element_blank())
+print(first.look.acc.novel)
+
+#known words
+first.look.acc.known <- ggplot(subset(df_to_gg_suj, trial_type == "known"), aes(x= Condition, y=to_target, color = Condition, fill = Condition))+ 
+  geom_hline(yintercept=0.5,linetype="dashed")+
+  geom_dotplot(binaxis="y", aes(fill = Condition), stackdir="center",dotsize=0.5, alpha=0.5)+
+  geom_errorbar(data = subset(df_to_gg, trial_type == "known"), aes(ymin= to_target-se, ymax= to_target +se), colour = "black", width=0.1,size=1,alpha=1) +
+  geom_point(data = subset(df_to_gg, trial_type == "known"), size=3, colour = "BLACK", shape=21, stroke = 1.5)+
+  ggtitle("")+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5))  + 
+  xlab("") + 
+  ylab("proportion of target first looks \n (anticipation phase)") +
+  theme(legend.position = "none")+  
+  scale_fill_manual(values =cmap_cond) +
+  scale_colour_manual(values =cmap_cond) +
+  theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),panel.grid = element_blank())+
+  annotate("Text", x = 2, y = 0.99, label = "*",size =17,colour="#FF8A44")
+print(first.look.acc.known)
+
+
+first.look$look <- "RT < 367ms"
+first.look$look[which(first.look$Tanticipation >= 1.072)] <- "RT >= 367ms"
+df_to_gg_suj <- summarySE(first.look, measurevar="to_target", groupvars=c("Subject","trial_type","look","Condition"))
+df_to_gg <- summarySE(df_to_gg_suj , measurevar="to_target", groupvars=c("trial_type","look","Condition")) 
+
+
+first.look.rt.known <- ggplot(subset(df_to_gg_suj, trial_type == "known"), aes(x= Condition, y=to_target, color = Condition, fill = Condition))+
+  geom_hline(yintercept=0.5,linetype="dashed")+
+  geom_dotplot(binaxis="y", aes(fill = Condition), stackdir="center",dotsize=0.5, alpha=0.4)+
+  geom_errorbar(data = subset(df_to_gg, trial_type == "known"), aes(ymin= to_target-se, ymax= to_target +se), colour = "black", width=0.1,size=1,alpha=1) +
+  geom_point(data = subset(df_to_gg, trial_type == "known"), size=3, colour = "BLACK", shape=21, stroke = 1.5)+
+  ggtitle("")+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5))  + 
+  xlab("") + 
+  ylab("proportion of target first looks \n (anticipation phase)") +
+  theme(legend.position = "none")+  
+  scale_fill_manual(values =cmap_cond) +
+  scale_colour_manual(values =cmap_cond) +
+  facet_grid(.~ look)+
+  theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),panel.grid = element_blank()) 
+  #annotate("Text", x = 1, y = 0.98, label = "*",size =18,colour="#4800B3")
+
+print(first.look.rt.known)
+
+first.look.rt.novel <- ggplot(subset(df_to_gg_suj, trial_type == "novel"), aes(x= Condition, y=to_target, color = Condition, fill = Condition))+
+  geom_hline(yintercept=0.5,linetype="dashed")+
+  geom_dotplot(binaxis="y", aes(fill = Condition), stackdir="center",dotsize=0.5, alpha=0.4)+
+  geom_errorbar(data = subset(df_to_gg, trial_type == "novel"), aes(ymin= to_target-se, ymax= to_target +se), colour = "black", width=0.1,size=1,alpha=1) +
+  geom_point(data = subset(df_to_gg, trial_type == "novel"), size=3, colour = "BLACK", shape=21, stroke = 1.5)+
+  ggtitle("")+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5))  + 
+  xlab("") + 
+  ylab("proportion of target first looks \n (anticipation phase)") +
+  theme(legend.position = "none")+  
+  scale_fill_manual(values =cmap_cond) +
+  scale_colour_manual(values =cmap_cond) +
+  facet_grid(.~ look)+
+  theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),panel.grid = element_blank()) 
+  #annotate("Text", x = 1, y = 0.98, label = "*",size =18,colour="#4800B3")
+
+print(first.look.rt.novel)
+
+
+```
+
+### statistical analysis
+
+Note that the models below are singular (singularity due to the participant intercept), we describe below the method we approached
+
+```{r first_look_analysis}
+#KNOWN WORDS
+#prep
+#first.look$Age_scaled <- scale(first.look$Age)
+first.look$Condition <- factor(first.look$Condition)
+first.look$Condition.numeric <- sapply(first.look$Condition,function(i) contr.sum(2)[i,])
+
+m <- glmer(to_target ~ Condition + (1  | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+# 
+# print("test interaction")
+# m1 <- glmer(to_target ~ Condition + Age_scaled + (1  | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+# print(anova(m,m1)) #no
+# 
+# print("test for main effect of age")
+# m2 <- glmer(to_target ~ Condition.numeric + Condition.numeric:Age_scaled + (1 | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+# print(anova(m,m2))#no
+
+# print("test for main effect of Condition")
+# m3 <- glmer(to_target ~ Age_scaled + Condition:Age_scaled + (1  | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+# print(anova(m,m3)) #no
+# we remove age as a predictor
+
+
+print("comparison to chance")
+summary(m)
+#We change the intercept in order to have the comparison with the chance level for each condition)
+first.look$Condition <- relevel(first.look$Condition , "unreliable")
+m <- glmer(to_target ~ Condition  + (1  | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+summary(m)
+
+
+
+#NOVEL WORDS
+m <- glmer(to_target ~ Condition  + (1  | Subject), subset(first.look, trial_type == "novel"), family= "binomial")
+
+# print("test interaction")
+# m1 <- glmer(to_target ~ Condition + Age_scaled + (1  | Subject), subset(first.look, trial_type == "novel"), family= "binomial")
+# print(anova(m,m1)) #no
+# 
+# print("test for main effect of age")
+# m2 <- glmer(to_target ~ Condition.numeric + Condition.numeric:Age_scaled + (1 | Subject), subset(first.look, trial_type == "novel"), family= "binomial")
+# print(anova(m,m2))#no
+# 
+# print("test for main effect of Condition")
+# m3 <- glmer(to_target ~ Age_scaled + Condition:Age_scaled + (1  | Subject), subset(first.look, trial_type == "novel"), family= "binomial")
+# print(anova(m,m3)) #no
+
+print("comparison to chance")
+summary(m)
+#We change the intercept in order to have the comparison with the chance level for each condition)
+first.look$Condition <- relevel(first.look$Condition , "unreliable")
+m <- glmer(to_target ~ Condition + (1  | Subject), subset(first.look, trial_type == "novel"), family= "binomial")
+summary(m)
+
+```
+
+Note that all the models are equivalent to the same models without random effects (the variance for the random intercepts are 0 for each participant because there is not enough data per participant).
+
+We could:
+
+- leave as it is, not taking into account intercept by participant (approach used in the paper)
+
+- fit the model with random effect as fixed effect 
+
+- go bayesian
+
+Let's go Bayesian to check. We fit the same model with random intercepts. (uncomment -- takes 1-2min to run)
+
+```{r go-bayesian}
+# global.static.formula <- brmsformula(to_target ~  Condition + (1 | Subject))
+# 
+# bm.known <- brm(global.static.formula, 
+#                         data = subset(first.look, trial_type == "known"), 
+#                         cores = parallel::detectCores(),
+#                         control = list(adapt_delta = 0.95))
+# 
+# bm.novel <- brm(global.static.formula, 
+#                         data = subset(first.look, trial_type == "novel"), 
+#                         cores = parallel::detectCores(),
+#                         control = list(adapt_delta = 0.95))
+# 
+# h <- c("Conditionunreliable = 0","Intercept = 0.5","Intercept + Conditionunreliable = 0.5")
+# (hyp <- hypothesis(bm.known, h))
+# plot(hyp, ignore_prior = TRUE)
+# 
+# h <- c("Conditionunreliable = 0","Intercept = 0.5","Intercept + Conditionunreliable = 0.5")
+# (hyp <- hypothesis(bm.novel, h))
+# plot(hyp, ignore_prior = TRU
+```
+
+Per RT
+
+
+```{r analysis-firstlooks-RT}
+
+first.look$Condition <- factor(first.look$Condition)
+first.look$Condition.numeric <- sapply(first.look$Condition,function(i) contr.sum(2)[i,])
+first.look$look <- factor(first.look$look)
+first.look$look.numeric <- sapply(first.look$look,function(i) contr.sum(2)[i,])
+
+
+m <- glmer(to_target ~ Condition * look + (1  | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+m1 <- glmer(to_target ~ Condition + look + (1  | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+print(anova(m,m1))
+
+m2 <- glmer(to_target ~ Condition.numeric : look + Condition.numeric + (1  | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+print(anova(m,m2))
+
+m3 <- glmer(to_target ~ look.numeric : Condition + look.numeric +(1  | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+print(anova(m,m3))
+
+first.look$Condition <- relevel(first.look$Condition , "unreliable")
+first.look$look <- factor(first.look$look)
+first.look$look <- relevel(first.look$look , "RT >= 367ms")
+m <- glmer(to_target ~ Condition * look + (1  | Subject), subset(first.look, trial_type == "known"), family= "binomial")
+
+summary(m)
+
+d.n <- summarySE(first.look, measurevar="Tanticipation", groupvars=c("trial_type","Condition"))
+```
+
+## Baseline looks
+
+```{r baseline-looks}
+dbas <- read.table("./../data/Results_baseline.txt", header = TRUE)
+dbas$Trial_type <- "known"
+dbas$Trial_type[which(dbas$Item %in% c("danu","modi"))] <- "novel"
+trials <- first.look[, c("Subject","Trial","Condition","Item")]
+dbas <- merge(dbas, trials)
+
+df_to_gg_trial_bas <- summarySE(subset(dbas,Away != 1 & Center !=1 & OutROI !=1), measurevar="Target", groupvars=c("Subject","Trial_type","Trial"))
+df_to_gg_suj_bas <- summarySE(df_to_gg_trial_bas, measurevar="Target", groupvars=c("Subject","Trial_type"))
+df_to_gg_bas <- summarySE(df_to_gg_suj_bas , measurevar="Target", groupvars=c("Trial_type"))
+print(df_to_gg_bas)
+
+# baseline to 0.5
+t.test(subset(df_to_gg_suj_bas, Trial_type == "novel")$Target, mu=0.5)
+t.test(subset(df_to_gg_suj_bas, Trial_type == "known")$Target, mu=0.5)
+
+```
+
+## Recognition during the looking-while-listening phase
+
+Loading data
+
+```{r load-display}
+ddisplay <- read.table("./../data/Results_display_binned.txt", header = TRUE)
+```
+
+
+```{r display-selected-plot,warning=FALSE, message =FALSE}
+df_to_spag <- summarySE(subset(ddisplay, bin_target != 0 | bin_distractor != 0), measurevar="bin_target", groupvars=c("Subject","Condition","trial_type","Time"),na.rm=TRUE)
+
+display.acc.known <- spaghetti(subset(df_to_spag, trial_type == "known"),meltids=c("TimePlot","Subject","Condition"),meltfactors=c("Subject","Condition"),region=c("bin_target"),colorvariable="Condition", errbarvars=c("Condition"),upperlimit=5000,lowerlimit=0,srate=2,sample=50,downsample="down",timeAlignVar= "Time",onset=0, showplot=T, analysiswindow= T, analysisonset=0,colormapping = cmap_cond,area="exp2_known",title="",ymax=0.9)
+print(display.acc.known)
+
+display.acc.novel <- spaghetti(subset(df_to_spag, trial_type == "novel"),meltids=c("TimePlot","Subject","Condition"),meltfactors=c("Subject","Condition"),region=c("bin_target"),colorvariable="Condition", errbarvars=c("Condition"),upperlimit=5000,lowerlimit=0,srate=2,sample=50,downsample="down",timeAlignVar= "Time",onset=0, showplot=T, analysiswindow= T, analysisonset=0,colormapping = cmap_cond, area="exp2_novel",title="",ymax=0.9)
+print(display.acc.novel)
+
+```
+
+
+ Danu vs. modi
+ 
+```{r display-danu-modi,warning=FALSE, message =FALSE}
+trials <- first.look[, c("Subject","Trial","trial_type","Item")]
+ddisplay <- merge(ddisplay, trials)
+
+df_to_spag <- summarySE(subset(ddisplay, bin_target != 0 | bin_distractor != 0), measurevar="bin_target", groupvars=c("Subject","trial_type","Time","Item"),na.rm=TRUE)
+
+display.acc.novel.reliable <- spaghetti(subset(df_to_spag, trial_type == "novel"),meltids=c("TimePlot","Subject","Item"),meltfactors=c("Subject","Item"),region=c("bin_target"),colorvariable="Item", errbarvars=c("Item"),upperlimit=5000,lowerlimit=0,srate=2,sample=50,downsample="down",timeAlignVar= "Time",onset=0, showplot=T, analysiswindow= T, analysisonset=0,colormapping = cmap_cond, area="",title="novel words",ymax=0.9)
+print(display.acc.novel.reliable)
+```
+
+
+# Analysis 2: Word recognition confidence
+
+## Persistence times
+
+### Plots
+
+- In each condition 
+
+- per Item pair as a function of animacy 
+
+```{r persistence,warning=FALSE, message =FALSE}
+cmap <- c("red","blue")
+first.look$Condition <- relevel(first.look$Condition , "reliable")
+
+df_to_gg_suj <- summarySE(first.look, measurevar="Persistence", groupvars=c("Subject", "Condition","trial_type","ROI"))
+df_to_gg <- summarySE(df_to_gg_suj , measurevar="Persistence", groupvars=c("Condition","trial_type","ROI"))
+
+dodge= 0.25
+persistence_plot.known <- ggplot(subset(df_to_gg, trial_type == "known"), aes(x= Condition, y= Persistence, colour = ROI, fill = ROI))+ 
+  geom_dotplot(data=subset(df_to_gg_suj, trial_type == "known"), binaxis = "y", stackdir = "center", alpha =0.3, position=position_dodge(width=dodge), dotsize = 0.4) + 
+  geom_errorbar(aes(ymin= Persistence-se, ymax= Persistence +se),width=0.2,size=1,position=position_dodge(width=dodge), colour ="black") + 
+  geom_point(size=3,position=position_dodge(width=dodge), shape = 21, stroke =1.5, colour ="black") + 
+  theme_bw(base_size = 18) + theme(plot.title = element_text(hjust = 0.5)) + 
+  guides(fill=guide_legend(title="first look")) + 
+  scale_colour_manual(values = cmap)  +
+  scale_fill_manual(values = cmap)  +
+  guides(colour=FALSE) +
+  scale_fill_manual(values = cmap,labels = c("incorrect", "correct"))+
+  scale_y_continuous(name="persistence (ms)",limits = c(0,2500)) +
+  xlab("")+
+    theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),
+        legend.background = element_rect(fill="transparent"),panel.grid = element_blank())+
+  theme(legend.position = c(0.50, 0.85))
+
+
+print(persistence_plot.known)
+
+dodge= 0.25
+persistence_plot.novel <- ggplot(subset(df_to_gg, trial_type == "novel"), aes(x= Condition, y= Persistence, colour = ROI, fill = ROI))+ 
+  geom_dotplot(data=subset(df_to_gg_suj, trial_type == "novel"), binaxis = "y", stackdir = "center", alpha =0.3, position=position_dodge(width=dodge), dotsize = 0.4) + 
+  geom_errorbar(aes(ymin= Persistence-se, ymax= Persistence +se),width=0.2,size=1,position=position_dodge(width=dodge), colour ="black") + 
+  ylim(0,2500)+
+  geom_point(size=3,position=position_dodge(width=dodge), shape = 21, stroke =1.5, colour ="black") + 
+  theme_bw(base_size = 18) + theme(plot.title = element_text(hjust = 0.5)) + 
+  guides(fill=guide_legend(title="first look")) + 
+  scale_colour_manual(values = cmap)  +
+  scale_fill_manual(values = cmap)  +
+  guides(colour=FALSE) +
+  scale_fill_manual(values = cmap,labels = c("incorrect", "correct"))+
+  # coord_flip()+
+  scale_y_continuous(name="persistence (ms)") +
+  xlab("")+
+    theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),
+        legend.background = element_rect(fill="transparent"),panel.grid = element_blank())+
+  theme(legend.position = c(0.50, 0.85))
+
+print(persistence_plot.novel)
+
+
+df_to_gg_suj <- summarySE(subset(first.look, trial_type == "known"), measurevar="Persistence", groupvars=c("Subject", "animacy","ROI","Condition"))
+df_to_gg <- summarySE(df_to_gg_suj , measurevar="Persistence", groupvars=c("animacy","ROI","Condition"))
+
+
+dodge= 0.25
+persistence.anim <- ggplot(df_to_gg, aes(x= animacy, y= Persistence, colour = ROI, fill = ROI))+ 
+  geom_dotplot(data=df_to_gg_suj, binaxis = "y", stackdir = "center", alpha =0.3, position=position_dodge(width=dodge), dotsize = 0.4, binpositions='all' ) + 
+  geom_errorbar(aes(ymin= Persistence-se, ymax= Persistence +se),width=0.2,size=1,position=position_dodge(width=dodge), colour ="black") + 
+  geom_point(size=3,position=position_dodge(width=dodge), shape = 21, stroke =1.5, colour ="black") + 
+  theme_bw(base_size = 18) + theme(plot.title = element_text(hjust = 0.5)) + 
+  guides(fill=guide_legend(title="First look")) + 
+  scale_colour_manual(values = cmap)  +
+  guides(colour=FALSE) +
+  scale_fill_manual(values = cmap,labels = c("Incorrect", "Correct"))+
+  # coord_flip()+
+  scale_y_continuous(name="Persistence (ms)") +
+  xlab("")+
+    theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),
+        legend.background = element_rect(fill="transparent"))+
+  facet_grid(.~Condition)
+  # theme(legend.position = c(0.50, 0.85))+
+
+
+print(persistence.anim)
+# 
+# 
+# m <- lmer(Persistence_log ~ ROI * animacy + (1   | Subject), subset(first.look, trial_type == "known" & Condition == "reliable" ))
+# m1 <- lmer(Persistence_log ~ ROI + animacy + (1   | Subject), subset(first.look, trial_type == "known"& Condition == "reliable" ))
+# print(anova(m,m1))
+# m2 <- lmer(Persistence_log ~ ROI.numeric + animacy:ROI.numeric + (1  | Subject), subset(first.look, trial_type == "known"& Condition == "reliable" ))
+# print(anova(m,m2)) #no
+
+
+
+df_to_gg_suj <- summarySE(first.look, measurevar="Persistence", groupvars=c("Subject", "Condition","trial_type","ROI","look"))
+df_to_gg <- summarySE(df_to_gg_suj , measurevar="Persistence", groupvars=c("Condition","trial_type","ROI","look"))
+
+persistence.rt.known <- ggplot(subset(df_to_gg, trial_type == "known"), aes(x= Condition, y= Persistence, colour = ROI, fill = ROI))+ 
+  geom_dotplot(data=subset(df_to_gg_suj, trial_type == "known"), binaxis = "y", stackdir = "center", alpha =0.3, position=position_dodge(width=dodge), dotsize = 0.4) + 
+  geom_errorbar(aes(ymin= Persistence-se, ymax= Persistence +se),width=0.2,size=1,position=position_dodge(width=dodge), colour ="black") + 
+  geom_point(size=3,position=position_dodge(width=dodge), shape = 21, stroke =1.5, colour ="black") + 
+  theme_bw(base_size = 18) + theme(plot.title = element_text(hjust = 0.5)) + 
+  guides(fill=guide_legend(title="first look")) + 
+  scale_colour_manual(values = cmap)  +
+  scale_fill_manual(values = cmap)  +
+  guides(colour=FALSE) +
+  scale_fill_manual(values = cmap,labels = c("incorrect", "correct"))+
+  scale_y_continuous(name="persistence (ms)") +
+  xlab("")+
+  facet_grid(.~ look)+
+    theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),
+        legend.background = element_rect(fill="transparent"),panel.grid = element_blank())+
+  theme(legend.position = "top")
+
+print(persistence.rt.known)
+
+persistence.rt.novel <- ggplot(subset(df_to_gg, trial_type == "novel"), aes(x= Condition, y= Persistence, colour = ROI, fill = ROI))+ 
+  geom_dotplot(data=subset(df_to_gg_suj, trial_type == "novel"), binaxis = "y", stackdir = "center", alpha =0.3, position=position_dodge(width=dodge), dotsize = 0.4) + 
+  geom_errorbar(aes(ymin= Persistence-se, ymax= Persistence +se),width=0.2,size=1,position=position_dodge(width=dodge), colour ="black") + 
+  geom_point(size=3,position=position_dodge(width=dodge), shape = 21, stroke =1.5, colour ="black") + 
+  theme_bw(base_size = 18) + theme(plot.title = element_text(hjust = 0.5)) + 
+  guides(fill=guide_legend(title="first look")) + 
+  scale_colour_manual(values = cmap)  +
+  scale_fill_manual(values = cmap)  +
+  guides(colour=FALSE) +
+  scale_fill_manual(values = cmap,labels = c("incorrect", "correct"))+
+  scale_y_continuous(name="persistence (ms)") +
+  xlab("")+
+  facet_grid(.~ look)+
+    theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),
+        legend.background = element_rect(fill="transparent"),panel.grid = element_blank())+
+ theme(legend.position = "top")
+
+print(persistence.rt.novel)
+
+
+```
+
+
+### Statistical analysis 
+
+```{r persistence-analysis}
+## KNOWN vs. NOVEL effect of word type
+first.look$Persistence_log <- log(first.look$Persistence)
+m <- lmer(Persistence_log ~ trial_type * ROI + (1 | Subject), subset(first.look))
+first.look$trial_type <- factor(first.look$trial_type)
+first.look$trial_type.numeric <- sapply(first.look$trial_type,function(i) contr.sum(2)[i,])
+m2 <- lmer(Persistence_log ~ trial_type.numeric + trial_type.numeric:ROI + (1 | Subject), subset(first.look))
+print(anova(m,m2))
+
+library(lsmeans)
+lsmeans(m, pairwise ~ trial_type * ROI)
+
+## KNOWN 
+
+# #dataframe preparation
+# first.look$Condition <- factor(first.look$Condition)
+# first.look$ROI <- factor(first.look$ROI)
+# first.look$ROI.numeric <- sapply(first.look$ROI,function(i) contr.sum(2)[i,])
+# first.look$Condition.numeric <- sapply(first.look$Condition,function(i) contr.sum(2)[i,])
+# 
+# m <- lmer(Persistence_log ~ Condition * ROI * Age_scaled + (1   | Subject), subset(first.look, trial_type == "known"))
+# print("test for triple interaction")
+# m1 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + Age_scaled + Condition.numeric : ROI.numeric + Age_scaled : Condition.numeric + Age_scaled : ROI.numeric + (1   | Subject), subset(first.look, trial_type == "known"))
+# print(anova(m,m1))  #no
+# 
+# print("test for main effect of Age")
+# m2 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + Condition.numeric : ROI.numeric + Age_scaled : Condition.numeric + Age_scaled : ROI.numeric + Condition.numeric : ROI.numeric:Age_scaled +(1   | Subject), subset(first.look, trial_type == "known"))
+# print(anova(m,m2))  #no
+# 
+# print("test for interaction Age:ROI")
+# m3 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + Age_scaled + Condition.numeric : ROI.numeric + Age_scaled : Condition.numeric  + Condition.numeric : ROI.numeric:Age_scaled +(1   | Subject), subset(first.look, trial_type == "known"))
+# print(anova(m,m3)) #no
+# 
+# print("test for interaction Age:Trial type")
+# m4 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + Age_scaled + Condition.numeric : ROI.numeric + Age_scaled : ROI.numeric  + Condition.numeric : ROI.numeric : Age_scaled +(1   | Subject), subset(first.look, trial_type == "known"))
+# print(anova(m,m4))  #no
+# no effect of age we remove it
+
+## KNOWN
+# test interaction
+first.look$Condition <- relevel(first.look$Condition , "unreliable")
+
+m <- lmer(Persistence_log ~ Condition * ROI + (1 | Subject), subset(first.look, trial_type == "known"))
+m1 <- lmer(Persistence_log ~ Condition + ROI + (1 | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m1))#yes
+
+# test main effect of condition
+first.look$ROI <- factor(first.look$ROI)
+first.look$ROI.numeric <- sapply(first.look$ROI,function(i) contr.sum(2)[i,])
+m2 <- lmer(Persistence_log ~ ROI.numeric + Condition:ROI.numeric + (1 | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m2))#marginal
+
+# test main effect of first look
+first.look$Condition <- factor(first.look$Condition)
+first.look$Condition.numeric <- sapply(first.look$Condition,function(i) contr.sum(2)[i,])
+m3 <- lmer(Persistence_log ~ Condition.numeric + Condition.numeric:ROI + (1 | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m3))#yes
+
+summary(m)
+
+#pair-wise comparisons
+require(lsmeans)
+lsmeans(m, pairwise ~ Condition * ROI)
+
+
+## NOVEL
+# test interaction
+first.look$Condition <- relevel(first.look$Condition , "unreliable")
+
+m <- lmer(Persistence_log ~ Condition * ROI + (1 | Subject), subset(first.look, trial_type == "novel"))
+m1 <- lmer(Persistence_log ~ Condition + ROI + (1 | Subject), subset(first.look, trial_type == "novel"))
+print(anova(m,m1))#no
+
+# test main effect of condition
+first.look$ROI <- factor(first.look$ROI)
+first.look$ROI.numeric <- sapply(first.look$ROI,function(i) contr.sum(2)[i,])
+m2 <- lmer(Persistence_log ~ ROI.numeric + Condition:ROI.numeric + (1 | Subject), subset(first.look, trial_type == "novel"))
+print(anova(m,m2))#no
+
+# test main effect of first look
+first.look$Condition <- factor(first.look$Condition)
+first.look$Condition.numeric <- sapply(first.look$Condition,function(i) contr.sum(2)[i,])
+m3 <- lmer(Persistence_log ~ Condition.numeric + Condition.numeric:ROI + (1 | Subject), subset(first.look, trial_type == "novel"))
+print(anova(m,m3))#no
+
+summary(m)
+
+
+
+```
+
+Per RT
+```{r persistence_analysis_RT}
+print("Test for the triple interaction")
+m <- lmer(Persistence_log ~ Condition * ROI * look + (1   | Subject), subset(first.look, trial_type == "known"))
+m1 <- lmer(Persistence_log ~ Condition * ROI + look + (1   | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m1))
+
+print("Test for interaction ROI * look ")
+m2 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + look.numeric+ Condition.numeric:look.numeric + + Condition.numeric:ROI.numeric + (1 | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m2))
+
+print("Test for a main effect of RT ")
+m3 <- lmer(Persistence_log ~ Condition.numeric + Condition.numeric:look + ROI.numeric:look + ROI.numeric + (1 | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m3))
+
+
+
+```
+
+
+## gaze-shift frequency
+
+### Plots
+
+```{r gaze-switch}
+trials.in.analysis <- first.look[c("Subject","Trial","ROI")]
+names(trials.in.analysis) <- c("Subject","Trial","first_ROI")
+trial.sequence.used <- merge(trial.sequence, trials.in.analysis)
+
+d.switch <- trial.sequence.used %>%
+  filter(ROI %in% c("T","D"))%>%
+  group_by(Subject, Trial, trial_type, Condition)  %>%
+  summarize(n_switch = length(index)) 
+
+
+df_to_gg_suj <- summarySE(subset(d.switch), measurevar="n_switch", groupvars=c("Subject", "trial_type","Condition"))
+df_to_gg <- summarySE(df_to_gg_suj , measurevar="n_switch", groupvars=c("trial_type","Condition"))
+
+dodge= 0.25
+gsf.known <- ggplot(subset(df_to_gg, trial_type == "known"), aes(x= Condition, y= n_switch, colour = Condition, fill =Condition))+ 
+  geom_dotplot(data=subset(df_to_gg_suj, trial_type == "known"), binaxis = "y", stackdir = "center", alpha =0.3, position=position_dodge(width=dodge), dotsize = 0.4, binpositions='all' ) + 
+  geom_errorbar(aes(ymin= n_switch-se, ymax= n_switch +se),width=0.2,size=1,position=position_dodge(width=dodge), colour ="black") + 
+  geom_point(size=3,position=position_dodge(width=dodge), shape = 21, stroke =1.5, colour ="black") + 
+  theme_bw(base_size = 18) + theme(plot.title = element_text(hjust = 0.5)) + 
+  scale_colour_manual(values = cmap_cond)  +
+  scale_fill_manual(values = cmap_cond)  +
+  guides(colour=FALSE,fill=FALSE) +
+  # coord_flip()+
+  scale_y_continuous(name="gaze-switch frequency", limits = c(1,4.1)) +
+  xlab("")+
+    theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),
+        legend.background = element_rect(fill="transparent"),panel.grid = element_blank())+
+  theme(legend.position = c(0.50, 0.85))
+
+print(gsf.known)
+
+
+gsf.novel <- ggplot(subset(df_to_gg, trial_type == "novel"), aes(x= Condition, y= n_switch, colour = Condition, fill =Condition))+ 
+  geom_dotplot(data=subset(df_to_gg_suj, trial_type == "novel"), binaxis = "y", stackdir = "center", alpha =0.3, position=position_dodge(width=dodge), dotsize = 0.4, binpositions='all' ) + 
+  geom_errorbar(aes(ymin= n_switch-se, ymax= n_switch +se),width=0.2,size=1,position=position_dodge(width=dodge), colour ="black") + 
+  geom_point(size=3,position=position_dodge(width=dodge), shape = 21, stroke =1.5, colour ="black") + 
+  theme_bw(base_size = 18) + theme(plot.title = element_text(hjust = 0.5)) + 
+  scale_colour_manual(values = cmap_cond)  +
+  scale_fill_manual(values = cmap_cond)  +
+  guides(colour=FALSE,fill=FALSE) +
+  # coord_flip()+
+  scale_y_continuous(name="gaze-switch frequency", limits = c(1,4.1)) +
+  xlab("")+
+    theme(axis.text=element_text(size=18),
+        axis.title=element_text(size=18),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        strip.text = element_text(size=18),
+        legend.background = element_rect(fill="transparent"),panel.grid = element_blank())+
+  theme(legend.position = c(0.50, 0.85))
+
+print(gsf.novel)
+
+```
+
+### Statistical analysis
+
+```{r gaze-switch-analysis}
+print("test for interaction")
+m <- lmer(n_switch ~ Condition * trial_type + (1  | Subject), data = d.switch)
+m1 <- lmer(n_switch ~ Condition + trial_type + (1  | Subject), data = d.switch)
+print(anova(m,m1))
+d.switch$trial_type <- factor(d.switch$trial_type)
+d.switch$trial_type <- relevel(d.switch$trial_type , "novel")
+m <- lmer(n_switch ~ Condition * trial_type + (1  | Subject), data = d.switch)
+
+print("test for main effect of trial type")
+d.switch$Condition <- factor(d.switch$Condition)
+d.switch$Condition.numeric <- sapply(d.switch$Condition,function(i) contr.sum(2)[i,])
+m2 <- lmer(n_switch ~ Condition.numeric + Condition.numeric:trial_type + (1 | Subject), d.switch)
+print(anova(m,m2))
+
+print("test for main effect of condition")
+d.switch$trial_type <- factor(d.switch$trial_type)
+d.switch$trial_type.numeric <- sapply(d.switch$trial_type,function(i) contr.sum(2)[i,])
+m3 <- lmer(n_switch ~ trial_type.numeric + Condition:trial_type.numeric + (1 | Subject), d.switch)
+print(anova(m,m3))
+
+
+```
+
+
+
+
+
+
+# Figures for paper 
+
+
+```{r mainfigure,warning=FALSE, message =FALSE}
+aligned_plots_known <- align_plots(display.acc.known,first.look.acc.known, persistence_plot.known, align="hv", axis="tblr")
+aligned_plots_novel <- align_plots(display.acc.novel,first.look.acc.novel, persistence_plot.novel, align="hv", axis="tblr")
+
+res <- ggdraw() +
+  draw_plot(aligned_plots_known[[1]], x = -0.02, y = 0.5, width = 0.68, height = 0.45) +
+  draw_plot(aligned_plots_known[[2]], x = 0.67, y = 0.5, width = .33, height = 0.45) +
+  draw_plot(aligned_plots_novel[[1]], x = -0.02, y = 0, width = 0.68, height = 0.45) +
+  draw_plot(aligned_plots_novel[[2]], x = 0.67, y = 0, width = .33, height = 0.45) +
+  draw_plot_label(label = c("A", "B", "C","D"), size = 24,
+                  x = c(0, 0.68, 0, 0.68), y = c(0.55, 0.55, 0.05, 0.05))+
+  draw_plot_label(label = c("known words", "novel words"), size = 24,
+                  x = c(0.32, 0.32), y = c(1, 0.5))  +
+  draw_line(
+    x = c(0, 1),
+    y = c(0.5, 0.5),
+    size = 1
+  )
+
+ggexport(res, filename = "exp2_performance.pdf",width=11, height=10, units="in")
+
+# 
+aligned_plots_known <- align_plots(persistence_plot.known, gsf.known, align="hv", axis="tblr")
+aligned_plots_novel <- align_plots(persistence_plot.novel, gsf.novel, align="hv", axis="tblr")
+
+res <- ggdraw() +
+  draw_plot(aligned_plots_known[[1]], x = 0, y = 0.5, width = 0.45, height = 0.45) +
+  draw_plot(aligned_plots_known[[2]], x = 0.5, y = 0.5, width = .45, height = 0.45) +
+  draw_plot(aligned_plots_novel[[1]], x = 0, y = 0, width = 0.45, height = 0.45) +
+  draw_plot(aligned_plots_novel[[2]], x = 0.5, y = 0, width = .45, height = 0.45) +
+  draw_plot_label(label = c("A", "B", "C","D"), size = 24,
+                  x = c(0, 0.55, 0, 0.55), y = c(0.55, 0.55, 0.05, 0.05))+
+  draw_plot_label(label = c("known words", "novel words"), size = 24,
+                  x = c(0.32, 0.32), y = c(1, 0.5))  +
+  draw_line(
+    x = c(0, 1),
+    y = c(0.5, 0.5),
+    size = 1
+  )
+
+ggexport(res, filename = "exp2_confidence.pdf",width=10, height=10, units="in")
+
+```
+
+
+SI RT
+```{r SI-RT}
+
+aligned_plots_firstlook <- align_plots(first.look.rt.known, first.look.rt.novel, align="hv", axis="tblr")
+aligned_plots_conf <- align_plots(persistence.rt.known, persistence.rt.novel, align="hv", axis="tblr")
+
+
+res <- ggdraw() +
+  draw_plot(aligned_plots_firstlook[[1]], x = 0, y = 0.5, width = 0.5, height = 0.45) +
+  draw_plot(aligned_plots_firstlook[[2]], x = 0.5, y = 0.5, width = 0.5, height = 0.45) +
+  draw_plot(aligned_plots_conf[[1]], x = 0, y = 0, width = 0.5, height = 0.5) +
+  draw_plot(aligned_plots_conf[[2]], x = 0.5, y = 0, width = 0.5, height = 0.5) +
+  draw_plot_label(label = c("A", "B","C","D"), size = 20,
+                  x = c(0, 0.5, 0, 0.5), y = c(1, 1, 0.5, 0.5))
+ggexport(res, filename = "SI_RT_exp2.pdf",width=18, height=10, units="in")
+
+```
+
+
+# Additional plots + analyses (SI)
+
+## Additional analyses on confidence (post-hoc -- SI)
+
+Within each condition
+
+```{r add-analyses}
+m <- lmer(Persistence_log ~ trial_type * ROI + (1 | Subject), subset(first.look, Condition == "reliable"))
+m1 <- lmer(Persistence_log ~ trial_type + ROI + (1 | Subject), subset(first.look, Condition == "reliable"))
+print(anova(m,m1))
+
+m <- lmer(Persistence_log ~ trial_type * ROI + (1 | Subject), subset(first.look, Condition == "unreliable"))
+m1 <- lmer(Persistence_log ~ trial_type + ROI + (1 | Subject), subset(first.look, Condition == "unreliable"))
+print(anova(m,m1))
+```
+
+
+
+## Time course during anticipation phase
+
+
+```{r coarse-anticipation,warning=FALSE, message =FALSE}
+d.coarse <- first.look[, c("Subject","Trial","trial_type","ROI")]
+d.timecourse <- subset(data, select = -ROI)
+d.coarse <- merge(d.timecourse, d.coarse)
+
+print(spaghetti(subset(d.coarse, Away != 1 & Center != 1 & OutROI !=1 & Condition == "reliable"),meltids=c("TimePlot","Subject","trial_type"),meltfactors=c("Subject","trial_type"),region=c("Target"),colorvariable="trial_type",errbarvars=c("trial_type"),upperlimit=2500,lowerlimit=0,srate=2,sample=50,downsample="down",timeAlignVar= "Time",onset=0, showplot=T, analysiswindow= T, analysisonset=0,title="From first look -- reliable condition", colormapping = cmap_cond))
+
+print(spaghetti(subset(d.coarse, Away != 1 & Center != 1 & OutROI !=1 & Condition == "unreliable"),meltids=c("TimePlot","Subject","trial_type"),meltfactors=c("Subject","trial_type"),region=c("Target"),colorvariable="trial_type",errbarvars=c("trial_type"),upperlimit=2500,lowerlimit=0,srate=2,sample=50,downsample="down",timeAlignVar= "Time",onset=0, showplot=T, analysiswindow= T, analysisonset=0,title="From first look -- unreliable condition", colormapping = cmap_cond))
+
+```
+
+## test for low level interpretation: RT influence on persistence times (SI)
+
+Could the persistence effect be caused by some low-level response such as RT?
+
+```{r rt,warning=FALSE, message =FALSE}
+first.look$Tanticipation <- as.numeric(as.character(first.look$Tanticipation))
+df_to_gg_suj <- summarySE(first.look, measurevar="Tanticipation", groupvars=c("Subject", "Condition","trial_type","ROI"))
+df_to_gg <- summarySE(df_to_gg_suj , measurevar="Tanticipation", groupvars=c("Condition","trial_type","ROI"))
+
+ggplot(df_to_gg, aes(x= trial_type, y= Tanticipation, colour = ROI))+  geom_line() +geom_point() + geom_errorbar(aes(ymin= Tanticipation-se, ymax= Tanticipation +se), width=0.1) + theme_bw(base_size = 16) + theme(plot.title = element_text(hjust = 0.5)) + scale_x_discrete(name="Trial type") + scale_y_continuous(name="RT (ms)") +guides(colour=guide_legend(title="First look")) + scale_colour_manual(values = cmap)  + scale_colour_manual(values = cmap,labels = c("Incorrect", "Correct"))  + facet_grid(.~Condition)
+
+```
+
+```{r rt-analysis}
+
+ggplot(data = first.look, aes(x=Tanticipation, y = Persistence,color = Condition))+
+  geom_point()+
+  geom_smooth(method ='lm')+
+  facet_grid(.~trial_type)
+
+## known words
+print("test effect of RT")
+m <- lmer(Persistence_log ~  ROI * Condition + Tanticipation + (1   | Subject), subset(first.look, trial_type == "known"))
+m1 <- lmer(Persistence_log ~  ROI * Condition + (1   | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m1))
+
+print("test main effect of condition in the presence of RT")
+m2 <- lmer(Persistence_log ~ Tanticipation + ROI.numeric + Condition:ROI.numeric + (1 | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m2))
+
+
+print("test effect of first look accuracy in the presence of RT")
+m3 <- lmer(Persistence_log ~ Tanticipation +Condition.numeric + Condition.numeric:ROI + (1 | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m3))
+
+print("test interaction in the presence of RT")
+m4 <- lmer(Persistence_log ~ Tanticipation +Condition  + ROI + (1 | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m4))
+
+
+## novel words
+#test effect of RT
+m <- lmer(Persistence_log ~  ROI * Condition + Tanticipation + (1   | Subject), subset(first.look, trial_type == "novel"))
+m1 <- lmer(Persistence_log ~  ROI * Condition + (1   | Subject), subset(first.look, trial_type == "novel"))
+print(anova(m,m1))
+
+# test main effect of condition in the presence of RT
+m2 <- lmer(Persistence_log ~ Tanticipation + ROI.numeric + Condition:ROI.numeric + (1 | Subject), subset(first.look, trial_type == "novel"))
+print(anova(m,m2))
+
+
+#test effect of first look accuracy in the presence of RT
+m3 <- lmer(Persistence_log ~ Tanticipation +Condition.numeric + Condition.numeric:ROI + (1 | Subject), subset(first.look, trial_type == "novel"))
+print(anova(m,m3))
+
+#test interaction in the presence of RT
+m4 <- lmer(Persistence_log ~ Tanticipation +Condition  + ROI + (1 | Subject), subset(first.look, trial_type == "novel"))
+print(anova(m,m4))
+```
+
+## test for low level interpretation: Effect of word-referent knowledge/memory on first looks (SI)
+
+First look responses may be correlated with different states of knowledge about the word. For instance it could be that children who initiated an incorrect first look when tested on a word w knew w less well than children who initiated a correct first look when tested on w (despite parental reports being similar). In other words, looking first at the correct vs. incorrect referent may artificially split our participants according to the strength of their word-referent knowledge. If this is the case, then we would expect that participants who had made a correct first look during the anticipation phase would also have spent more time looking toward the target during the previous looking-while-listening phase, as compared to participants who made an incorrect first look. 
+
+Plot proportion of target looks during the looking-while-listening phase as a function of first look accuracy for known words in the anticipation phase 
+
+```{r display-first-look,warning=FALSE, message =FALSE}
+cmap_first <- c("red","blue")
+trials <- first.look[, c("Subject","Trial","to_target")]
+ddisplay <- merge(ddisplay, trials)
+
+df_to_spag <- summarySE(subset(ddisplay, (bin_target != 0 | bin_distractor != 0) & trial_type == "known" & Condition == "reliable"), measurevar="bin_target", groupvars=c("Subject","Time","to_target"),na.rm=TRUE)
+
+display.firstacc.known <- spaghetti(df_to_spag,meltids=c("TimePlot","Subject","to_target"),meltfactors=c("Subject","to_target"),region=c("bin_target"),colorvariable="to_target", errbarvars=c("to_target"),upperlimit=5000,lowerlimit=0,srate=50,sample=1,downsample="down",timeAlignVar= "Time",onset=0, showplot=T, analysiswindow= T, analysisonset=0,title="reliable condition",colormapping = cmap_first, area = "",ymax=0.9)+
+  guides(fill=guide_legend(title="First look")) + 
+  guides(colour=FALSE) +
+  scale_fill_manual(values = cmap_first,labels = c("Incorrect", "Correct"))
+print(display.firstacc.known)
+
+df_to_spag <- summarySE(subset(ddisplay, (bin_target != 0 | bin_distractor != 0) & trial_type == "known" & Condition == "unreliable"), measurevar="bin_target", groupvars=c("Subject","Time","to_target"),na.rm=TRUE)
+
+display.firstacc.unknown <- spaghetti(df_to_spag,meltids=c("TimePlot","Subject","to_target"),meltfactors=c("Subject","to_target"),region=c("bin_target"),colorvariable="to_target", errbarvars=c("to_target"),upperlimit=5000,lowerlimit=0,srate=50,sample=1,downsample="down",timeAlignVar= "Time",onset=0, showplot=T, analysiswindow= T, analysisonset=0,title="unreliable condition",colormapping = cmap_first, area = "",ymax=0.9)+
+  guides(fill=guide_legend(title="First look")) + 
+  guides(colour=FALSE) +
+  scale_fill_manual(values = cmap_first,labels = c("Incorrect", "Correct"))
+print(display.firstacc.unknown)
+
+```
+
+## test for low level interpretation: Effect of object preference on persistence times. (SI)
+
+Could it be that children simply persist for longer when they first look towards the location they had also favored during the looking-while-listening phase? 
+
+To test this, we added ObjectPreference (the proportion of target looks during the looking-while-listening phase for a given trial) as a predictor in the mixed model analysis of confidence
+
+
+```{r att-pref}
+df.trial <- summarySE(subset(ddisplay, (bin_target != 0 | bin_distractor != 0) & Time <=700), measurevar="bin_target", groupvars=c("Subject","Trial","to_target", "trial_type","Condition"),na.rm=TRUE)
+df.trial$bin_target_scaled <- scale(df.trial$bin_target)
+first.look <- merge(df.trial, first.look)
+
+m <- lmer(Persistence_log ~ Condition * ROI * bin_target_scaled + (1   | Subject), subset(first.look, trial_type == "known"))
+print("test for triple interaction")
+m1 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + bin_target_scaled + Condition.numeric : ROI.numeric + bin_target_scaled : Condition.numeric + bin_target_scaled : ROI.numeric + (1   | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m1))  #no
+
+print("test for main effect of perf")
+m2 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + Condition.numeric : ROI.numeric + bin_target_scaled : Condition.numeric + bin_target_scaled : ROI.numeric + Condition.numeric : ROI.numeric:bin_target_scaled +(1   | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m2))  #no
+
+print("test for interaction perf:ROI")
+m3 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + bin_target_scaled + Condition.numeric : ROI.numeric + bin_target_scaled : Condition.numeric  + Condition.numeric : ROI.numeric:bin_target_scaled +(1   | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m3)) #no
+
+print("test for interaction perf:Condition")
+m4 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + bin_target_scaled + Condition.numeric : ROI.numeric + bin_target_scaled : ROI.numeric  + Condition.numeric : ROI.numeric : bin_target_scaled +(1   | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m4))  #no
+
+print("test for interaction between first look and condition")
+m5 <- lmer(Persistence_log ~ Condition.numeric + ROI.numeric + bin_target_scaled + bin_target_scaled : ROI.numeric  + Condition.numeric : ROI.numeric : bin_target_scaled + bin_target_scaled : Condition.numeric + (1   | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m5)) # yes
+
+print("test for main effect of first look accuracy")
+m6 <- lmer(Persistence_log ~ Condition.numeric + Condition.numeric:ROI.numeric +  bin_target_scaled + bin_target_scaled : ROI.numeric  + Condition.numeric : ROI.numeric : bin_target_scaled + bin_target_scaled : Condition.numeric + (1  | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m6)) # yes
+
+print("test for main effect of Condition")
+m7 <- lmer(Persistence_log ~ ROI.numeric + Condition.numeric:ROI.numeric +  bin_target_scaled + bin_target_scaled : ROI.numeric  + Condition.numeric : ROI.numeric : bin_target_scaled + bin_target_scaled : Condition.numeric + (1  | Subject), subset(first.look, trial_type == "known"))
+print(anova(m,m7)) #yes
+
+```
+
+## test for low level interpretation: memory for the location of the object
+
+The difference in persistence patterns across the unreliable and the reliable conditions could still be the result of children having more difficulty in reinstating the location of the correct picture in the unreliable condition (perhaps because the speaker is unusual and this may affect their memory strength in some way). 
+
+We can test this by examining the reward phase, which occurred after the anticipation phase. In this phase, participants see the two original images animated but with no identifying linguistic stimuli. Thus, if participants have worse memory for the word-label associations in the unreliable condition, then we should see fewer looks toward the word that was labelled in the anticipation phase. 
+
+
+```{r load-reward}
+dreward <- read.table("./../data/Results_reward_binned.txt", header = TRUE)
+```
+
+
+```{r reward-selected-plot,warning=FALSE, message =FALSE}
+df_to_spag <- summarySE(subset(dreward, (bin_target != 0 | bin_distractor != 0)), measurevar="bin_target", groupvars=c("Subject","Condition","trial_type","Time"),na.rm=TRUE)
+
+reward.acc.known <- spaghetti(subset(df_to_spag, trial_type == "known"),meltids=c("TimePlot","Subject","Condition"),meltfactors=c("Subject","Condition"),region=c("bin_target"),colorvariable="Condition", errbarvars=c("Condition"),upperlimit=5000,lowerlimit=0,srate=2,sample=50,downsample="down",timeAlignVar= "Time",onset=0, showplot=T, analysiswindow= T, analysisonset=0,colormapping = cmap_cond,area="",title="known words",ymax=0.9)
+print(reward.acc.known)
+
+reward.acc.novel <- spaghetti(subset(df_to_spag, trial_type == "novel"),meltids=c("TimePlot","Subject","Condition"),meltfactors=c("Subject","Condition"),region=c("bin_target"),colorvariable="Condition", errbarvars=c("Condition"),upperlimit=5000,lowerlimit=0,srate=2,sample=50,downsample="down",timeAlignVar= "Time",onset=0, showplot=T, analysiswindow= T, analysisonset=0,colormapping = cmap_cond, area="",title="novel words",ymax=0.9)
+print(reward.acc.novel)
+
+```
+

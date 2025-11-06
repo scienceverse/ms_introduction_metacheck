@@ -1,0 +1,762 @@
+---
+title: "The lure of counterfactual curiosity"
+author: "Lily FitzGibbon"
+date: "11/06/2020"
+output: html_document
+---
+# Results markdown {.tabset}
+If you want to run these analyses yourself, you only need to download the CC_analysis_markdown.Rmd file - it will source the data and other functions from OSF.
+
+## Setup and data prep {.tabset}
+### Load packages and data
+
+```{r load packages and data and read in some bespoke functions}
+require(pacman)
+
+p_load(httr)
+p_load(data.table)
+p_load(tidyr)
+p_load(kableExtra)
+p_load(plyr)
+p_load(dplyr)
+p_load(ggplot2)
+p_load(sjPlot)
+p_load(lme4)
+p_load(metafor)
+p_load(lavaan)
+p_load(lavaan.survey)
+p_load(semPlot)
+p_load(ggdistribute)
+p_load(patchwork)
+p_load(mgcv)
+
+# read in the data for the main studies
+study_list <- lapply(c("ufpd6", "4cq85", "9p2j8", "2sey7", "9syk8"), function(code){
+  url <- paste0('https://osf.io/',code,'//?action=download')
+  filename <- 'osf_dataframe.csv'
+  GET(url, write_disk(filename, overwrite = TRUE))
+  read.csv(filename, header=TRUE, na.strings="NA")
+})
+
+studies <- c("E1 no cost", "E2 money", "E3 effort", "E4 effort", "E5 time")
+
+# give them informative names
+names(study_list) <- studies
+
+
+# source functions from file on OSF
+url <- paste0('https://osf.io/dy3uq//?action=download')
+filename <- 'functions.R'
+GET(url, write_disk(filename, overwrite = TRUE))
+source(filename)
+
+
+```
+
+### Scaling centring and subsetting
+
+Data are subsetted for different analyses and scaling is conducted within each subset
+```{r subset data}
+# create a list to hold all the subsetted data
+study_data <- list()
+
+# store the raw data
+study_data$raw <- study_list
+
+# prepare the data for analysis - recalculate some variables
+study_data$raw <- lapply(study_data$raw, function(data){
+  
+  # dummy recodes for simple slopes
+  data$inf_received_dummy <- dplyr::recode(data$information_received_ec, `-1` = 0, `1` = 1) 
+  data$inf_not_received_dummy <- dplyr::recode(data$information_received_ec, `1` = 0, `-1` = 1) 
+  
+  # make the n_pumps adjust variable by subtracting n_pumps from next_trial_n_pumps
+  data$n_pumps_adjust <- data$next_trial_n_pumps - data$n_pumps
+  
+  # make a variable that tracks whether information was sought on the next trial
+  data$next_trial_info_sought <- NA
+  data$next_trial_info_sought[data$trial %in% 0:58] <- data$information_sought[data$trial %in% 1:59]
+  
+  # Because some participants pressed enter in the age field, their age included "\n" and so came out as NA in the as.numeric function. 
+  # This has been corrected here:
+  if(!is.numeric(data$age)){ 
+    data$age <- as.numeric(unlist(lapply(strsplit(data$age, "\\n"), function(x)x[[1]])))
+  }
+  
+  # return all the data
+  data
+})
+
+# list non-categorical predictors (to be centered within subject and standardised)
+predictors <- c("n_pumps", # number of pumps made
+                "limit", # balloon's limit
+                "diff_pumps_limit", # missed opportunity
+                "pump_value", # number of points each pump is worth
+                "trial", # the trial number
+                "outcome_rating", # the first rating after seeing the outcome
+                "emotion_change_rating", # the second rating after seeing or not seeing the information
+                "next_trial_n_pumps", # number of pumps made on the next trial
+                "n_pumps_adjust", # adjustment of pumps on the next trial
+                "next_trial_points" # number of points banked on the next trial
+                )
+
+
+ID_scale <- function(data, predictors, standardize = T){
+  # scale 
+    for(predictor in predictors){
+      if(standardize){
+          data[,paste(predictor, "Z", sep="_")] <- scale(data[, predictor], center = F)
+      }
+      data[,paste(predictor, "ID_mean_Z", sep="_")] <-  tapply(data[,paste(predictor, "Z", sep="_")], data$subject, mean, na.rm=T)[as.character(data$subject)]
+      data[,paste(predictor, "IDS", sep="_")] <- as.numeric(data[,paste(predictor, "Z", sep="_")]) -as.numeric(data[,paste(predictor, "ID_mean_Z", sep="_")])
+      data[,paste(predictor, "ID_mean", sep="_")] <-  tapply(data[,predictor], data$subject, mean, na.rm=T)[as.character(data$subject)]
+      data[,paste(predictor, "IDC", sep="_")] <- as.numeric(data[,predictor]) -as.numeric(data[,paste(predictor, "ID_mean", sep="_")])
+    }
+  
+  # interaction terms for SEM
+  data$`value_IS` <- data$pump_value_IDS*data$information_received_ec
+  data$`diff_IS` <- data$diff_pumps_limit_IDS*data$information_received_ec
+  
+  data
+}
+
+# group mean scale the predictors for each subset (but don't standardize again)
+study_data$all <- lapply(study_data$raw, function(data){
+    ID_scale(data, predictors)
+})
+
+# group mean scale the predictors for each subset (but don't standardize again)
+# Try harder trials are excluded from effort experiments.
+study_data$bank <- lapply(study_data$all, function(data){
+    ID_scale(data[data$outcome=="bank" & data$information_outcome!='try harder',], predictors, standardize = F)
+})
+
+
+study_data$bust <- lapply(study_data$all, function(data){
+    ID_scale(data[data$outcome=="bust" & data$information_outcome!='try harder',], predictors, standardize = F)
+})
+
+
+# data for exploratory analysis looking at motivation to seek information
+study_data$fb_bank_bank <- lapply(study_data$all, function(data){
+    df <- ID_scale(data[data$outcome=="bank" & data$next_trial_bank==1 & data$information_outcome=='yes',], predictors, standardize = F)
+})
+
+
+# save the study data
+save(study_data, file = "study_data.RData")
+
+```
+
+## Participant descriptives
+```{r ppt descriptives table}
+
+# note that these values are slightly different to the preprint because a couple of particpants' ages were ignored due to having \n in the age field 
+ppt_descriptives <- t(as.data.frame(lapply(study_data$raw, function(data){
+  c(n = length(unique(data$subject)),
+    n_female = sum(data$gender[data$trial==0]=="female"),
+    age_mean = mean(data$age[data$trial==0], na.rm=T),
+    age_sd = sd(data$age[data$trial==0], na.rm=T),
+    age_min = min(data$age[data$trial==0], na.rm=T),
+    age_max = max(data$age[data$trial==0], na.rm=T)
+  )
+})))
+
+
+kable(ppt_descriptives,digits = 2,col.names = c("N", "N female", "Age (mean)", "Age (SD)", "Age (min)", "Age (max)"), caption = "Participant demographics")
+
+
+```
+
+## Task descriptives
+```{r task descriptives}
+# descriptives of task performance by participant
+ppt_summary <- lapply(study_data$raw, function(data){
+  ddply(.data = data, .variables = .(subject), .fun = summarise, 
+        mean_n_pumps = mean(n_pumps),
+        prop_bank = sum(outcome=="bank")/60,
+        prop_bust = sum(outcome=="bust")/60,
+        prop_inf = sum(information_sought)/60,
+        prop_inf_bank = sum(information_sought & outcome=="bank")/sum(outcome=="bank"),
+        prop_inf_bust = sum(information_sought & outcome=="bust")/sum(outcome=="bust")
+  )
+})
+
+# summarise the descriptives of task behaviour within each experiment
+task_descriptives <-  as.data.frame(t(as.data.frame(lapply(ppt_summary, function(data){
+  c(study=NA,
+    mean_n_pumps = mean(data$mean_n_pumps),
+    se_n_pumps = sd(data$mean_n_pumps)/sqrt(30),
+    mean_prop_bank = mean(data$prop_bank),
+    se_prop_bank = sd(data$prop_bank)/sqrt(30),
+    mean_prop_bust = mean(data$prop_bust),
+    se_prop_bust = sd(data$prop_bust)/sqrt(30),
+    mean_prop_inf_bank = mean(data$prop_inf_bank),
+    se_prop_inf_bank = sd(data$prop_inf_bank)/sqrt(30),
+    CI_lower_prop_inf_bank = t.test(data$prop_inf_bank)$conf.int[1],
+    CI_upper_prop_inf_bank = t.test(data$prop_inf_bank)$conf.int[2],
+    mean_prop_inf_bust = mean(data$prop_inf_bust),
+    se_prop_inf_bust = sd(data$prop_inf_bust)/sqrt(30)
+    )
+}))), row.names = F)
+
+# add the study labels
+task_descriptives$study <- studies
+
+# meta analyses of descriptive statistics are reported
+meta_pumps <- rma.uni(yi = task_descriptives$mean_n_pumps, sei = task_descriptives$se_n_pumps, method = "REML")
+meta_bank <- rma.uni(yi = task_descriptives$mean_prop_bank, sei = task_descriptives$se_prop_bank, method = "REML")
+meta_inf_bank <- rma.uni(yi = task_descriptives$mean_prop_inf_bank, sei = task_descriptives$se_prop_inf_bank, method = "REML")
+meta_inf_bust <- rma.uni(yi = task_descriptives$mean_prop_inf_bust, sei = task_descriptives$se_prop_inf_bust, method = "REML")
+
+# bind the summart into a dataframe for a nice table
+df <- rbind(task_descriptives[,c("mean_n_pumps", "se_n_pumps", "mean_prop_bank", "se_prop_bank", "mean_prop_inf_bank", "se_prop_inf_bank")],c(meta_pumps$b, meta_pumps$se, meta_bank$b, meta_bank$se, meta_inf_bank$b, meta_inf_bank$se), c(meta_pumps$I2, NA, meta_bank$I2, NA, meta_inf_bank$I2, NA))
+df$se_n_pumps[1:7] <- paste0(" (", round(df$se_n_pumps[1:7],2), ")")
+df$se_prop_bank[1:7] <- paste0(" (", round(df$se_prop_bank[1:7],2), ")")
+df$se_prop_inf_bank[1:7] <- paste0(" (", round(df$se_prop_inf_bank[1:7],2), ")")
+rownames(df) <-  c(studies, "Metaanalysis b", "Heterogeneity (I^2)")
+options(knitr.kable.NA = '')
+kable(df, digits = 2, align=rep(c('r','l'), 3),format = "html", col.names = c("Mean pumps", "(SE)", "Mean proportion\nbank outcome", "(SE)", "Mean proportion\ninformation seeking\n(bank trials)","(SE)"))%>%
+    kableExtra::group_rows(start_row = 1, end_row = length(studies), label_row_css = "border-bottom: 1px solid;") %>%
+    kableExtra::group_rows(start_row = length(studies)+1, end_row = length(studies)+2, label_row_css = "border-bottom: 1px solid;")
+
+```
+
+## Information seeking
+```{r information seeking}
+# did people seek information? Null model to determine whether intercept differs from 0.
+seek_bank_null <- lapply(study_data$bank, function(trial_data){
+  lmer(data = trial_data, formula = information_sought~1+(1|subject))
+})
+tab_model(seek_bank_null, dv.labels = studies)
+
+```
+
+## Emotional experience
+```{r emotional experience}
+# main effects of information seeking, pump value, and size of the missed opportunity on emotion change rating
+emo_bank_1 <- lapply(study_data$bank, function(trial_data){
+  lmer(data = trial_data, formula = emotion_change_rating_Z~information_received_ec+pump_value_IDS+diff_pumps_limit_IDC+
+          (1+information_received_ec+pump_value_IDS+diff_pumps_limit_IDC||subject), 
+       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+})
+
+# add interactions with information seeking - there are singular fit warnings for some of these models. These are resolved by removing the random effect of pump value without dramatically changing the results.
+emo_bank_2 <- lapply(study_data$bank, function(trial_data){
+  lmer(data = trial_data, formula = emotion_change_rating_Z~information_received_ec*(pump_value_IDS+diff_pumps_limit_IDC)+
+          (1+information_received_ec*(pump_value_IDS+diff_pumps_limit_IDC)||subject), 
+       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+})
+
+# run the meta analysis and print the data frame
+meta_emo_bank_1 <- meta_func(emo_bank_1, studies)
+meta_emo_bank_2 <- meta_func(emo_bank_2, studies)
+kable(meta_emo_bank_1$df, digits = 3)
+kable(meta_emo_bank_2$df, digits = 3)
+
+
+# simple slopes (information received is dummy coded in both directions and main effects give simple slopes)
+emo_bank_inf <- lapply(study_data$bank, function(trial_data){
+  lmer(data = trial_data, formula = emotion_change_rating_Z~inf_not_received_dummy*(pump_value_IDS+diff_pumps_limit_IDC)+
+          (1+inf_not_received_dummy*(pump_value_IDS+diff_pumps_limit_IDC)||subject), 
+       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+})
+
+emo_bank_no_inf <- lapply(study_data$bank, function(trial_data){
+  lmer(data = trial_data, formula = emotion_change_rating_Z~inf_received_dummy*(pump_value_IDS+diff_pumps_limit_IDC)+
+          (1+inf_received_dummy*(pump_value_IDS+diff_pumps_limit_IDC)||subject), 
+       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+})
+
+
+# run the meta analysis and print the data frame
+meta_emo_inf_bank <- meta_func(emo_bank_inf, studies)
+meta_emo_no_inf_bank <- meta_func(emo_bank_no_inf, studies)
+
+kable(meta_emo_inf_bank$df, digits = 3)
+kable(meta_emo_no_inf_bank$df, digits = 3)
+
+# combine and summarise for plots
+bank_data_all <- rbindlist(study_data$bank, fill = T, use.names = T, idcol = "experiment")
+bank_data_all$`Information seeking` <- factor(bank_data_all$information_received_ec, levels=c(-1,1), labels = c("No information", "Information"))
+
+summary_dat_bank = ddply(bank_data_all, .(subject, experiment, information_received_ec), summarize, emotion_change_rating = mean(emotion_change_rating))
+summary_dat_bank$`Information seeking` <- factor(summary_dat_bank$information_received_ec, levels=c(-1,1), labels = c("No information", "Information"))
+
+# plots
+fig_2_a <- rain_plot(summary_dat_bank)
+fig_2_b <- ggplot(bank_data_all, aes(x=diff_pumps_limit, y=emotion_change_rating_IDC, col=factor(information_received_ec, levels=c(-1,1), labels=c("No information", "Information")), group=interaction(experiment, factor(information_received_ec, levels=c(-1,1), labels=c("No information", "Information")))))+stat_smooth(geom="line", alpha=0.5,method="lm", se=F)+theme_classic()+labs(x="Missed opportunity", y="Emotion change rating",title="b")+stat_smooth(mapping=aes(x=diff_pumps_limit, y=emotion_change_rating_IDC, col=factor(information_received_ec, levels=c(-1,1), labels=c("No information", "Information"))), method ="lm", inherit.aes = F)+coord_cartesian(ylim=c(-200,200))+scale_x_continuous(breaks=seq(-12,12))+scale_color_brewer(palette = "Set1", name="")+theme(legend.position = c(0.85,0.85))
+wrap_plots(fig_2_a, fig_2_b, widths = c(0.55,0.45))
+
+```
+
+## Downstream effects (Structural equation models) {.tabset}
+### Model spec
+```{r model specs}
+   unsaturated_model <- '
+
+      # mediation
+      emotion_change_rating_Z ~ a*information_received_ec + x1*diff_pumps_limit_IDS + x2*diff_IS + x3*pump_value_IDS + x4*value_IS
+      n_pumps_adjust_Z ~ b*emotion_change_rating_Z + x5*diff_pumps_limit_IDS + x6*diff_IS + x7*pump_value_IDS + x8*value_IS
+    
+      next_trial_bank ~ c*n_pumps_adjust_Z + x9*diff_pumps_limit_IDS + x10*diff_IS + x11*pump_value_IDS + x12*value_IS
+      next_trial_points_Z ~ d*n_pumps_adjust_Z + x15*diff_pumps_limit_IDS + x16*diff_IS + x17*pump_value_IDS + x18*value_IS 
+      
+      
+      # covariance
+      next_trial_points_Z ~~ z1*next_trial_bank
+
+
+      # information seeking via regret to outcome effects
+      IS_outcome := a*b*c
+      IS_points := a*b*d
+
+  '
+
+   saturated_model <- '
+
+      # mediation
+      emotion_change_rating_Z ~ a*information_received_ec + x1*diff_pumps_limit_IDS + x2*diff_IS + x3*pump_value_IDS + x4*value_IS
+      n_pumps_adjust_Z ~ b*emotion_change_rating_Z + x5*diff_pumps_limit_IDS + x6*diff_IS + x7*pump_value_IDS + x8*value_IS + e*information_received_ec
+    
+      next_trial_bank ~ c*n_pumps_adjust_Z + x9*diff_pumps_limit_IDS + x10*diff_IS + x11*pump_value_IDS + x12*value_IS + x13*emotion_change_rating_Z + x14*information_received_ec
+      next_trial_points_Z ~ d*n_pumps_adjust_Z + x15*diff_pumps_limit_IDS + x16*diff_IS + x17*pump_value_IDS + x18*value_IS + x19*emotion_change_rating_Z + x20*information_received_ec
+      
+      
+      # covariance
+      next_trial_points_Z ~~ z1*next_trial_bank
+
+
+      # information seeking via regret to outcome effects
+      IS_outcome := a*b*c
+      IS_points := a*b*d
+
+  '
+
+```
+
+
+### Run the models {.tabset}
+```{r model spec}
+
+bank_unsaturated_mediation <- lapply(study_data$bank, function(data){
+  fit <- sem(unsaturated_model, data = data, cluster = "subject", 
+             ordered = c("next_trial_bank", "information_received_ec")
+  )
+  fit.survey <- lavaan.survey(fit, svydesign(ids = ~subject, prob=~1, data = data))
+  list(fit=fit.survey, pe=parameterEstimates(fit.survey,  standardized = F))
+})
+
+bank_saturated_mediation <- lapply(study_data$bank, function(data){
+  fit <- sem(saturated_model, data = data, cluster = "subject", 
+             ordered = c("next_trial_bank", "information_received_ec")
+  )
+  fit.survey <- lavaan.survey(fit, svydesign(ids = ~subject, prob=~1, data = data))
+  list(fit=fit.survey, pe=parameterEstimates(fit.survey, standardized = F))
+})
+
+bust_unsaturated_mediation <- lapply(study_data$bust, function(data){
+  fit <- sem(unsaturated_model, data = data, cluster = "subject", 
+             ordered = c("next_trial_bank", "information_received_ec")
+  )
+  fit.survey <- lavaan.survey(fit, svydesign(ids = ~subject, prob=~1, data = data))
+  list(fit=fit.survey, pe=parameterEstimates(fit.survey,  standardized = F))
+})
+
+bust_saturated_mediation <- lapply(study_data$bust, function(data){
+  fit <- sem(saturated_model, data = data, cluster = "subject", 
+             ordered = c("next_trial_bank", "information_received_ec")
+  )
+  fit.survey <- lavaan.survey(fit, svydesign(ids = ~subject, prob=~1, data = data))
+  list(fit=fit.survey, pe=parameterEstimates(fit.survey, standardized = F))
+})
+
+mediations <- list(`Bank unsaturated mediation`=bank_unsaturated_mediation, 
+     `Bank saturated mediation`=bank_saturated_mediation, 
+     `Bust unsaturated mediation`=bust_unsaturated_mediation, 
+     `Bust saturated mediation`=bust_saturated_mediation)
+
+save(mediations, file="mediations.RData")
+```
+
+### Model results  {.tabset}
+```{r modelfits, results="asis", echo=F}
+metas <- lapply(names(mediations), function(name){
+  cat(paste("\n\n####", name, "{.tabset}   \n"))
+  
+  mediation <- mediations[[name]]
+  
+  cat("\n\n##### Meta-analysis  \n")
+  meta_med <- meta_func_sem(mediation, names(mediation))
+  print(scroll_box(kable_styling(kable(meta_med$df[order(meta_med$df$label),-c(1:3)], digits = 3, format = "html", sep.col=' '))),width="100%")
+  
+  lapply(names(mediation), function(exp){ 
+    model <- mediation[[exp]]
+    
+    cat(paste("\n\n#####", exp, "   \n"))
+    print(sem_paths(model$fit, standardized = TRUE, ci = "standardized"))
+    print(kable_styling(kable(t(as.data.frame(fitmeasures(model$fit)[c("tli","rmsea","rmsea.ci.upper","rmsea.ci.lower","cfi")])),"html", row.names=F, digits=3, caption="Model fit indices", padding=0.1)))
+  })
+
+  meta_med
+})
+
+names(metas) <- names(mediations)
+
+# output data for path diagram (used as variables in an Illustrator file to create the figure)
+dat_for_paths <- rbindlist(lapply(metas, function(meta){
+    x <- paste0(sprintf("%.3f",round(meta$df[meta$df$label %in% c("a", "b", "c", "d"),"est"],3)),meta$df[meta$df$label %in% c("a", "b", "c", "d"),"psig"])
+    names(x) <- c("a", "b", "c", "d")
+    as.data.frame(t(x))
+    }), idcol = "name")
+
+
+# write.csv(dat_for_paths, "dat_for_paths.csv")
+
+url <- paste0('https://osf.io/aeu3m//?action=download')
+filename <- 'sem_path_labels.csv'
+GET(url, write_disk(filename, overwrite = TRUE))
+sat_labs <- read.csv(filename, header=TRUE, na.strings="NA")
+
+
+lapply(names(metas), function(meta){
+  df <- merge(metas[[meta]]$df, sat_labs, all = F)
+  df$`95% CI` <- paste0("[", format(round(df$ci.lower,3), nsmall=2), ", ", format(round(df$ci.upper,3), nsmall=2), "]")
+  df <- df[order(df$order),c("pretty_label", "est", "se", "95% CI", "z", "pvalue", "I2")]
+  df[,c("est", "se")] <- format(round(df[,c("est", "se")], 3), nsmall=3)
+  df$z <- format(round(df$z, 2), nsmall=2)
+  df$pvalue <- ifelse(df$pvalue<0.001, "< .001", substr(as.character(round(df$pvalue, 3)), 2, 5))
+  df$I2 <- paste0(round(df$I2,0), "%")
+  write.csv(df, file = paste0(meta, ".csv"), row.names = F, fileEncoding = "UTF-8")
+})
+
+```
+
+## Non-instrumentality of information
+```{r non-instrumentality of information}
+# pool data for plot of non-linear relationship between adjustment and obtained points
+bank_data_all <- rbindlist(study_data$bank, fill = T, use.names = T, idcol = "experiment")
+
+fig_4_a <- ggplot(bank_data_all, aes(x=n_pumps_adjust, y=next_trial_points))+
+ stat_smooth(col="black")+theme_classic()+labs(x="Behavior  adjustment", y="Points banked on next trial", title="a")
+
+
+# simulation function
+simu <- function(runs = 10000, beta_lims = c(0,1), seed=101){
+  set.seed(seed)
+  dat.sum <- matrix(ncol = 4, nrow = runs)
+  colnames(dat.sum) <- c("subject", "start.pumps", "sd.pumps", "beta")
+  
+  dat.sum[,"subject"] <- 1:runs
+  dat.sum[,"start.pumps"] <- floor(runif(runs,1,13))
+  dat.sum[,"sd.pumps"] <- sample(0:3, runs, replace = TRUE)
+  dat.sum[,"beta"] <- runif(runs,beta_lims[1],beta_lims[2])
+  dat.sum.start <- dat.sum
+  
+  sims <- lapply(c("diff", "diffoutcome", "null"), function(predictor){
+
+    dat.sum <- dat.sum.start
+
+    raw <- lapply(split(as.data.frame(dat.sum), as.data.frame(dat.sum)$subject), function(j){
+      dat <- matrix(ncol = 14, nrow = 60)
+      colnames(dat) <- c("trial", "limit", "n_pumps", "outcome", "outcome.01", "diff", "points", "diffoutcome", "start", "walk", "pred", "sd", "beta", "start.pumps")
+      dat[,"trial"] <- 1:60
+      dat[,"limit"] <- floor(runif(60, min=0, max=13))
+      dat[,"sd"] <- j$sd.pumps
+      dat[,"start.pumps"] <- j$start.pumps
+      dat[,"beta"] <- j$beta
+      
+       for(i in 1:60){
+        start <- ifelse(i==1,NA,dat[i-1,"n_pumps"])
+        walk <- rnorm(1,0,j$sd.pumps)
+        pred <- ifelse(predictor!="null",dat[i-1,predictor]*j$beta,0)
+        dat[i,c("start", "walk", "pred")] <- c(start, walk, pred)
+        dat[i,"n_pumps"] <- round(ifelse(i == 1, j$start.pumps, 
+                                   start + walk + pred),0)
+        dat[i,"n_pumps"] <- ifelse(dat[i,"n_pumps"] < 1, 1, dat[i,"n_pumps"])
+        dat[i,"n_pumps"] <- ifelse(dat[i,"n_pumps"] > 12, 12, dat[i,"n_pumps"])
+        dat[i,"outcome"] <- ifelse(dat[i,"n_pumps"]>dat[i,"limit"],-1,1)
+        dat[i,"outcome.01"] <- ifelse(dat[i,"n_pumps"]>dat[i,"limit"],0,1)
+        dat[i,"diff"] <- dat[i,"limit"] - dat[i,"n_pumps"]
+        dat[i, "diffoutcome"] <- dat[i, "outcome.01"]*12 - dat[i, "n_pumps"]
+      }
+  
+      dat[,"points"] <- dat[,"n_pumps"]*dat[,"outcome.01"]
+      dat
+    })
+    
+    list(summary=as.data.frame(dat.sum), raw=raw)
+    
+   })
+  names(sims) <- c("diff", "diffoutcome", "null")
+  
+  sims <- lapply(sims, function(predictor){
+    x <- rbindlist(lapply(predictor$raw, function(dat){
+      dat <- as.data.frame(dat)
+      dat$prev.outcome <- factor(c(NA, dat$outcome[1:nrow(dat)-1]), levels=c(-1,1), labels=c("bust","bank"))
+      data.frame(mean.points=mean(dat$points), mean.points.bank=ifelse(sum(!is.na(dat$prev.outcome=="bank"))>0, mean(dat$points[dat$prev.outcome=="bank"],na.rm=T),NA), mean.points.bust=ifelse(sum(!is.na(dat$prev.outcome=="bust"))>0, mean(dat$points[dat$prev.outcome=="bust"],na.rm=T),NA))
+    }))
+    predictor$summary <- cbind(predictor$summary,x)
+    predictor
+  })
+  
+  sims
+}
+
+## we won't actually run the simulation here (it takes ages). Here's one we ran earlier, retrieve from OSF.
+# sim <- simu(runs=10000)
+# 
+# save(sim, file = "simulation.RData")
+
+
+url <- paste0('https://osf.io/s284f//?action=download')
+filename <- 'simulation.RData'
+GET(url, write_disk(filename, overwrite = TRUE))
+load(filename)
+
+# max function is performed over all trials, bank trials only, bust trials only. All trials are reported in the manuscript
+max <- lapply(list(all=NULL,bank=".bank",bust=".bust"), function(txt){
+  data.frame(max.points=unlist(lapply(list(`Outcome observer`="diffoutcome", `Information seeker`="diff"), function(mod){
+    unlist(lapply(0:3, function(sd){
+      data <- list(mod=walk[[mod]]$summary[walk[[mod]]$summary$sd.pumps==sd,],null=walk$null$summary[walk$null$summary$sd.pumps==sd,])
+      if(!is.null(txt)){
+        switch(txt,
+               ".bank" = list(mod=data$mod[data$mod$outcome==1,],null=data$null[data$null$outcome==1,]),
+               ".bust" = list(mod=data$mod[data$mod$outcome==-1,],null=data$null[data$null$outcome==-1,])
+        )}
+      max(predict(gam(formula = as.formula(paste0("mean.points",txt," ~ s(beta, bs='cs')")), data=data$mod), newdata = data.frame(beta=seq(0,1,0.001))) - predict(gam(formula = as.formula(paste0("mean.points",txt, " ~ s(beta, bs='cs')")), data=data$null), newdata = data.frame(beta=seq(0,1,0.001))))
+    }))
+  })), predictor=rep(c("Outcome observer", "Information seeker"), each=4), sd=rep(0:3,2))
+})
+
+print(fig_4_b <- ggplot(max$all, aes(x=sd, y=max.points, fill=factor(predictor, levels=c("Outcome observer", "Information seeker"), labels=c("Outcome observer", "Information seeker"))))+geom_bar(position = position_dodge(), stat="identity")+theme_classic()+scale_fill_brewer(palette = "Set1", name="")+scale_y_continuous(expand = c(0,0), limits=c(0, 1.25), breaks = seq(0,1.2,0.2))+labs(x=expression(paste("Response volatility (", sigma, ")")), y="Simulated max point gain", title="b")+theme(legend.position = c(0.7,0.9)))
+
+wrap_plots(fig_4_a, fig_4_b)
+
+gains <- lapply(list(all=NULL,bank=".bank",bust=".bust"), function(txt){
+  rbindlist(lapply(list(`Outcome observer`="diffoutcome", `Information seeker`="diff"), function(mod){
+    rbindlist(lapply(list("0"=0,"1"=1,"2"=2,"3"=3), function(sd){
+      data <- list(mod=walk[[mod]]$summary[walk[[mod]]$summary$sd.pumps==sd,],null=walk$null$summary[walk$null$summary$sd.pumps==sd,])
+      if(!is.null(txt)){
+        switch(txt,
+               ".bank" = list(mod=data$mod[data$mod$outcome==1,],null=data$null[data$null$outcome==1,]),
+               ".bust" = list(mod=data$mod[data$mod$outcome==-1,],null=data$null[data$null$outcome==-1,])
+        )}
+      df <- data.frame(beta=seq(0,1,0.001))
+      df$mean.points.pred = predict(gam(formula = as.formula(paste0("mean.points",txt," ~ s(beta, bs='cs')")), data=data$mod), newdata = df)
+      df$mean.points.null = predict(gam(formula = as.formula(paste0("mean.points",txt," ~ s(beta, bs='cs')")), data=data$null), newdata = df)
+      df$gain <- df$mean.points.pred- df$mean.points.null
+      df
+    }), idcol = "sd")
+  }), idcol = "predictor")
+})
+
+
+# print figures
+fig_S3_a <- ggplot(gains$all[gains$all$predictor=="Outcome observer"], aes(x=beta, y=gain, col=factor(sd)))+stat_smooth(se=F)+theme_classic()+scale_color_manual(name = expression(paste("Response volatility (",sigma,")")), values=RColorBrewer::brewer.pal(9, "Reds")[c(9,7,5,3)])+coord_cartesian(ylim = c(-1.5,1))+labs(title="Outcome observer", y="Points gain", x=expression(alpha[o]))
+fig_S3_b <- ggplot(gains$all[gains$all$predictor=="Information seeker"], aes(x=beta, y=gain, col=factor(sd)))+stat_smooth(se=F)+theme_classic()+scale_color_manual(name = "", values=RColorBrewer::brewer.pal(9, "Blues")[c(9,7,5,3)])+coord_cartesian(ylim = c(-1.5,1))+labs(title="Information seeker", y="Points gain", x=expression(alpha[i]))
+
+print(fig_S3 <- wrap_plots(fig_S3_a, fig_S3_b, guides = "collect"))
+
+
+```
+
+
+## Replication study
+```{r replication SOM}
+
+url <- paste0('https://osf.io/fmek8//?action=download')
+filename <- 'replication.csv'
+GET(url, write_disk(filename, overwrite = TRUE))
+replication <- read.csv(filename, header=TRUE, na.strings="NA")
+
+
+# analyses
+# Manuscript: difference score
+# Information
+round(mean(replication$emo_diff[replication$outcome=="bank" & replication$information_seeking]),2)
+round(sd(replication$emo_diff[replication$outcome=="bank" & replication$information_seeking])/sqrt(length(replication$emo_diff[replication$outcome=="bank" & replication$information_seeking])),2)
+
+# No information
+round(mean(replication$emo_diff[replication$outcome=="bank" & !replication$information_seeking]),2)
+round(sd(replication$emo_diff[replication$outcome=="bank" & !replication$information_seeking])/sqrt(length(replication$emo_diff[replication$outcome=="bank" & !replication$information_seeking])),2)
+
+t.test(replication$emo_diff[replication$information_seeking & replication$outcome=="bank"], replication$emo_diff[!replication$information_seeking & replication$outcome=="bank"], paired=F, alternative = "two.sided")
+effectsize::cohens_d(replication$emo_diff[replication$information_seeking & replication$outcome=="bank"], replication$emo_diff[!replication$information_seeking & replication$outcome=="bank"], paired=F)
+
+summary(model <- lm(scale(emo_diff)~ifelse(information_seeking, 1, -1)*(scale(missed, scale = F)), data=replication[replication$outcome=="bank",]))
+summary(model_no_inf <- lm(scale(emo_diff)~ifelse(information_seeking, 1, 0)*(scale(missed, scale = F)), data=replication[replication$outcome=="bank",]))
+summary(model_inf <- lm(scale(emo_diff)~ifelse(information_seeking, 0, 1)*(scale(missed, scale = F)), data=replication[replication$outcome=="bank",]))
+
+confint(model)
+confint(model_no_inf)
+confint(model_inf)
+
+
+# SOM: second ratings only
+round(mean(replication$emo_diff[replication$outcome=="bank" & replication$information_seeking]),2)
+round(sd(replication$emo_diff[replication$outcome=="bank" & replication$information_seeking])/sqrt(length(replication$emo_diff[replication$outcome=="bank" & replication$information_seeking])),2)
+
+# No information
+round(mean(replication$emo_diff[replication$outcome=="bank" & !replication$information_seeking]),2)
+round(sd(replication$emo_diff[replication$outcome=="bank" & !replication$information_seeking])/sqrt(length(replication$emo_diff[replication$outcome=="bank" & !replication$information_seeking])),2)
+
+t.test(replication$emo_rating_2[replication$information_seeking & replication$outcome=="bank"], replication$emo_rating_2[!replication$information_seeking & replication$outcome=="bank"], paired=F, alternative = "two.sided")
+effectsize::cohens_d(replication$emo_rating_2[replication$information_seeking & replication$outcome=="bank"], replication$emo_rating_2[!replication$information_seeking & replication$outcome=="bank"], paired=F)
+
+# models controlling for the number of pumps
+summary(model_diff <- lm(scale(emo_diff)~ifelse(information_seeking, 1, -1)+scale(n_pumps, scale = F), data=replication[replication$outcome=="bank",]))
+confint(model_diff)
+
+summary(model_r2 <- lm(scale(emo_rating_2)~ifelse(information_seeking, 1, -1)+scale(n_pumps, scale = F), data=replication[replication$outcome=="bank",]))
+confint(model_r2)
+
+
+
+fig_S4_a <- plot_summary(replication[replication$outcome=="bank",], y="emo_diff", col='factor(information_seeking, levels=c(F,T), labels=c("No information", "Information"))', title="a", geom = "mean_ci", guide=F, guide.name = NA, y.lab = "Emotion change (Rating 2 - Rating 1)", adjust=1.5)+theme(legend.position = c(0.8,0.2))+coord_cartesian(ylim=c(-500,300))
+
+fig_S4_b <- ggplot(replication[replication$outcome=="bank",], aes(x=missed, y=emo_diff, col=factor(information_seeking, levels=c(F,T), labels=c("No information", "Information")), fill=factor(information_seeking, levels=c(F,T), labels=c("No information", "Information"))))+stat_smooth(method="lm")+scale_color_brewer(palette = "Set1", name="Information seeking")+scale_fill_brewer(palette = "Set1", name="Information seeking")+theme_classic()+labs(x="Missed opportunity", y="Emotion change (Rating 2 - Rating 1)", title="b")+scale_x_continuous(breaks=seq(0,12))+theme(legend.position = c(0.8,0.9))+coord_cartesian(ylim=c(-500,300))
+
+wrap_plots(fig_S4_a, fig_S4_b, widths=c(5,4), heights = c(5))
+
+
+```
+
+
+
+## SOM: Bust Info seeking
+```{r bust information seeking}
+meta_inf_bust
+
+kable(task_descriptives[,c("study", "mean_prop_inf_bust", "se_prop_inf_bust")], digits = 2)
+
+# did people seek information? Null model to determine whether intercept differs from 0.
+seek_bust_null <- lapply(study_data$bust, function(trial_data){
+  lmer(data = trial_data, formula = information_sought~1+(1|subject))
+})
+tab_model(seek_bust_null, dv.labels = studies)
+
+```
+
+## SOM: Bust Emotional experience
+```{r bust emotional experience}
+# main effects of information seeking, pump value, and size of the missed opportunity on emotion change rating
+emo_bust_1 <- lapply(study_data$bust, function(trial_data){
+  lmer(data = trial_data, formula = emotion_change_rating_Z~information_received_ec+pump_value_IDS+diff_pumps_limit_IDC+
+          (1+information_received_ec+pump_value_IDS+diff_pumps_limit_IDC||subject), 
+       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+})
+
+# add interactions with information seeking - there are singular fit warnings for some of these models. These are resolved by removing the random effect of pump value without dramatically changing the results.
+emo_bust_2 <- lapply(study_data$bust, function(trial_data){
+  lmer(data = trial_data, formula = emotion_change_rating_Z~information_received_ec*(pump_value_IDS+diff_pumps_limit_IDC)+
+          (1+information_received_ec*(pump_value_IDS+diff_pumps_limit_IDC)||subject), 
+       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+})
+
+# run the meta analysis and print the data frame
+meta_emo_bust_1 <- meta_func(emo_bust_1, studies)
+meta_emo_bust_2 <- meta_func(emo_bust_2, studies)
+kable(meta_emo_bust_1$df, digits = 3)
+kable(meta_emo_bust_2$df, digits = 3)
+
+
+# simple slopes (information received is dummy coded in both directions and main effects give simple slopes)
+emo_bust_inf <- lapply(study_data$bust, function(trial_data){
+  lmer(data = trial_data, formula = emotion_change_rating_Z~inf_not_received_dummy*(pump_value_IDS+diff_pumps_limit_IDC)+
+          (1+inf_not_received_dummy*(pump_value_IDS+diff_pumps_limit_IDC)||subject), 
+       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+})
+
+emo_bust_no_inf <- lapply(study_data$bust, function(trial_data){
+  lmer(data = trial_data, formula = emotion_change_rating_Z~inf_received_dummy*(pump_value_IDS+diff_pumps_limit_IDC)+
+          (1+inf_received_dummy*(pump_value_IDS+diff_pumps_limit_IDC)||subject), 
+       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+})
+
+
+# run the meta analysis and print the data frame
+meta_emo_inf_bust <- meta_func(emo_bust_inf, studies)
+meta_emo_no_inf_bust <- meta_func(emo_bust_no_inf, studies)
+
+kable(meta_emo_inf_bust$df, digits = 3)
+kable(meta_emo_no_inf_bust$df, digits = 3)
+
+
+# combine and summarise for plots
+bust_data_all <- rbindlist(study_data$bust, fill = T, use.names = T, idcol = "experiment")
+bust_data_all$`Information seeking` <- factor(bust_data_all$information_received_ec, levels=c(-1,1), labels = c("No information", "Information"))
+
+summary_dat_bust = ddply(bust_data_all, .(subject, experiment, information_received_ec), summarize, emotion_change_rating = mean(emotion_change_rating))
+summary_dat_bust$`Information seeking` <- factor(summary_dat_bust$information_received_ec, levels=c(-1,1), labels = c("No information", "Information"))
+
+# plots
+fig_S1_a <- rain_plot(summary_dat_bust)
+fig_S1_b <- ggplot(bust_data_all, aes(x=diff_pumps_limit, y=emotion_change_rating_IDC, col=factor(information_received_ec, levels=c(-1,1), labels=c("No information", "Information")), group=interaction(experiment, factor(information_received_ec, levels=c(-1,1), labels=c("No information", "Information")))))+stat_smooth(geom="line", alpha=0.5,method="lm", se=F)+theme_classic()+labs(x="Missed opportunity", y="Emotion change rating",title="b")+stat_smooth(mapping=aes(x=diff_pumps_limit, y=emotion_change_rating_IDC, col=factor(information_received_ec, levels=c(-1,1), labels=c("No information", "Information"))), method ="lm", inherit.aes = F)+coord_cartesian(ylim=c(-200,200))+scale_x_continuous(breaks=seq(-12,12))+scale_color_brewer(palette = "Set1", name="")+theme(legend.position = c(0.85,0.85))
+wrap_plots(fig_S1_a, fig_S1_b)
+
+
+```
+
+## SOM: Predicting info seeking
+```{r predicting information seeking}
+seek_all <- lapply(study_data$all, function(trial_data){
+  glmer(data = trial_data, formula = information_sought~outcome_ec*(n_pumps_IDC+pump_value_IDS)+
+          (outcome_ec*(n_pumps_IDC+pump_value_IDS)||subject), 
+        family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+})
+
+
+names(seek_all) <- studies
+tab_model(seek_all, dv.labels = studies)
+
+meta_seek_all <- meta_func(seek_all, studies)
+kable(meta_seek_all$df, digits = 3)
+
+
+# exploratory analysis to investigate effect of emotion on decision to seek information in next trial
+
+emo_seek <- lapply(study_data$fb_bank_bank, function(data) {
+summary(glmer(data=data, formula=next_trial_info_sought~emotion_change_rating+(emotion_change_rating|subject), family="binomial"))})
+kable(meta_func(emo_seek, studies)$df, digits = 3)
+
+
+```
+
+
+## SOM: Parameter estimate plots
+
+```{r parameter estimate plots}
+
+print(fig_S5 <- ggforest(meta_emo_bank_1$metas, 
+                          labels = c("Information\nseeking", "Pump value", "Missed\nopportunity"),
+                          hetero = "I2",
+                          x_lab = "Effect on emotion change rating",
+                          palette = RColorBrewer::brewer.pal(n = 7, name = 'Dark2')) + theme(text=element_text(size=16)))
+                          
+print(fig_S6 <- ggforest(meta_emo_bank_2$metas, 
+         labels = c("Information\nseeking (IS)", "Pump value", "Missed\nopportunity", "Pump value*\nIS", "Missed\nopportunity*\nIS"), 
+         hetero = "I2",
+         x_lab = "Effect on emotion change rating",
+         palette = RColorBrewer::brewer.pal(n = 7, name = 'Dark2')) + theme(text=element_text(size=16)))                    
+
+print(fig_S7 <- ggforest(meta_emo_bust_1$metas, 
+                          labels = c("Information\nseeking", "Pump value", "Missed\nopportunity"),
+                          hetero = "I2",
+                          x_lab = "Effect on emotion change rating",
+                          palette = RColorBrewer::brewer.pal(n = 7, name = 'Dark2')) + theme(text=element_text(size=16)))
+                          
+print(fig_S8 <- ggforest(meta_emo_bust_2$metas, 
+         labels = c("Information\nseeking (IS)", "Pump value", "Missed\nopportunity", "Pump value*\nIS", "Missed\nopportunity*\nIS"), 
+         hetero = "I2",
+         x_lab = "Effect on emotion change rating",
+         palette = RColorBrewer::brewer.pal(n = 7, name = 'Dark2')) + theme(text=element_text(size=16)))                    
+
+# output the plots
+# lapply(list(list(fig_S5, "fig_S5"), list(fig_S7, "fig_S7")), function(x) ggsave(x[[1]], filename = paste0(x[[2]], ".png"), height = 5, width = 5, device = "png"))
+# 
+# lapply(list(list(fig_S6, "fig_S6"), list(fig_S8, "fig_S8")), function(x) ggsave(x[[1]], filename = paste0(x[[2]], ".png"), height = 5, width = 7, device = "png"))
+
+
+```
+

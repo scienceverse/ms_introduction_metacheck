@@ -49,18 +49,18 @@ abstract: "Metascientific research has revealed that researchers often fall shor
 #| eval: false
 
 # install the apaquarto extension
-quarto::quarto_add_extension("wjschne/apaquarto", no_prompt = TRUE)
+# quarto::quarto_add_extension("wjschne/apaquarto", no_prompt = TRUE)
 
-# install the dev version of papercheck
+# install the dev version of metacheck
 # install.packages("devtools")
-devtools::install_github("scienceverse/papercheck")
+devtools::install_github("scienceverse/metacheck")
 ```
 
 
 ```{r}
 #| label: setup
 
-library(papercheck)
+library(metacheck)
 library(knitr)
 library(kableExtra)
 library(osfr)
@@ -84,6 +84,12 @@ library(fs)     # For file handling
 library(openalexR)
 options(openalexR.mailto = "D.Lakens@tue.nl")
 library(progress)
+library(rstudioapi)
+library(textutils)
+
+
+# Set working directory to the file location of this R file. Make sure the related folders (e.g., data) are in the same location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Read in raw xml files into papercheck opbjects. This takes a lot of time, and therefore we save the object. 
 # xml <- read("psych_science_xml")
@@ -95,7 +101,7 @@ load("data/psychscience_openalex_2014_2024.RData")
 load("data/psychscience_crossref_2014_2024.RData")
 # Downloaded in the chunk osf_retrieve, but stored as it takes a long time to run
 all_osf_file_info_psych_science <- readRDS("data/all_osf_file_info_psych_science.rds")
-
+all_osf_r_file_psych_science <- readRDS("data/r_file_info_psych_science.rds")
 
 # Extract data from the XML object
 dois <- unname(sapply(xml, function(x) x[["info"]][["doi"]]))
@@ -365,7 +371,7 @@ ggplot(combined_summary, aes(x = factor(year), y = percentage, fill = test_type)
 
 There is widespread support among scientists for open science practices, such as data and code sharing [@ferguson2023survey]. Funders increasingly require the researchers they fund to make data and code available alongside publications from funded projects. As data and code sharing is a relatively new practice, and there is a lack of training in data management, it is common to see badly documented data repositories. Data repositories would improve substantially if more scientists followed best practices, such as the TIER protocol (https://www.projecttier.org/tier-protocol/protocol-4-0/). By automatically checking data repositories, Papercheck can increase awareness of best practices, and make suggestions for improvements.
 
-At a minimum a data repository for a scientific paper should contain a Read Me file that contains instructions on how to reproduce reported results. If data is shared, it should be stored in a 'data' folder, or at least have the word 'data' in the filename. Furthermore, there should be a codebook or data dictionary that explains which variables are included in the dataset, and what the values mean, in order for others to re-use the data. Code or scripts should similarly be shared in 'code' folder, or at least have the word 'code' in the filename. Ideally peer reviewers or editors would check the contents of a data repository. In practice, time constraints make it so that data repositories are often not checked. Automation can perform some checks of whether data repositories are organized following best practices, reducing the worksload of peer reviewers.
+At a minimum a data repository for a scientific paper should contain a Read Me file that contains instructions on how to reproduce reported results. If data is shared, it should be stored in a 'data' folder, or at least have the word 'data' in the filename. Furthermore, there should be a codebook or data dictionary that explains which variables are included in the dataset, and what the values mean, in order for others to re-use the data. Code or scripts should similarly be shared in 'code' folder, or at least have the word 'code' in the filename. Ideally peer reviewers or editors would check the contents of a data repository. In practice, time constraints make it so that data repositories are often not checked. Automation can perform some checks of whether data repositories are organized following best practices, reducing the workload of peer reviewers.
 
 We will illustrate the process of checking a data repository by focusing on repositories on the Open Science Framework (www.osf.io). We start by searching for OSF URLs using the `osf_links` function. The function try to extract OSF links as reliably as possible, and detects X out of Y manually coded OSF links in validation datasets [DESCRIBE].
 
@@ -410,18 +416,55 @@ files_only <- subset(unique_files, osf_type == "files")
 # Count how many papers have at least one linked preregistration over time. I think Lisa should have a function to add these to the main dataframe? 
 
 
+# Download all files
+# Get unique project names. Not all are open. 
+unique_projects <- files_only[!duplicated(files_only["project"]), ]
+
+for (i in 1:nrow(unique_projects)) {
+  osf_file_download(unique_projects$project[i], 
+                    download_to = "data/osf_files_psych_science",
+                    max_file_size = 50,
+                    max_download_size = 10000,
+                    max_folder_length = 260,
+                    ignore_folder_structure = TRUE)
+}
 
 
+
+# Some of the files are zip files. We will unzip them. 
+# Find all .zip files recursively
+zip_files <- list.files(path = "data/all_osf_files_psych_science", pattern = "\\.zip$", recursive = TRUE, full.names = TRUE)
+
+# Unzip each file
+for (zip_file in zip_files) {
+  # Create a target directory based on the zip file name
+  target_dir <- file.path(dirname(zip_file), tools::file_path_sans_ext(basename(zip_file)))
+  dir.create(target_dir, showWarnings = FALSE)
+  
+  # Unzip the file
+  unzip(zip_file, exdir = target_dir)
+}
 ```
 
-So far we have used Papercheck to check whether links exist, are publicly available, and whether certain types of files exist. But it is also possible to automatically download files, examine their contents, and provide feedback to users. This can be useful to examine datasets (e.g., is personal information such as IP addressesincluded), or code files. Papercheck also contains a function `osf_file_download` to download all files from a project on the OSF while maintaining the folder structure. This should make it easier for reviewers to manually check all content shared on the OSF.
+So far we have used Papercheck to check whether links exist, are publicly available, and whether certain types of files exist. But it is also possible to automatically download files, examine their contents, and provide feedback to users. This can be useful to examine datasets (e.g., is personal information such as IP addresses included), or code files. Papercheck also contains a function `osf_file_download` to download all files from a project on the OSF while maintaining the folder structure. This function can be used to easily download and check content shared on the OSF. 
 
-
-CAN I ONLY DOWNLOAD R FILES AND CHECK THEM? 
+It is also possible to download files from data repositories, and perform checks on the content of these files. As an example, we have created a function that will examine four best practices in files that contain R code. These best practices are providing sufficient comments in the code file (so that other users can understand the code), not declaring all libraries in one block at the top of the file (which makes it more cumbersome to install all required R packages), using fixed file paths (which need to be manually changed to make the code run), and not making all files that should be loaded or sourced - such as data files, or other R files with functions - available in the same repository. 
 
 ```{r}
 
 r_files_only <- files_only[grepl("\\.(r|rmd|qmd)$", files_only$name, ignore.case = TRUE), ]
+
+# Now once again, but download only R files
+# Note we are providing file IDs, not project ID's, and then the download function just grabs the individual files
+for (i in 1:nrow(all_osf_r_file_psych_science)) {
+  osf_file_download(all_osf_r_file_psych_science$osf_id[i], 
+                    download_to = "data/r_files_psych_science",
+                    max_file_size = 50,
+                    max_download_size = 10000,
+                    max_folder_length = 260,
+                    ignore_folder_structure = TRUE)
+}
+
 
 r_files_only$comment_lines <- NA
 r_files_only$code_lines <- NA
@@ -429,6 +472,59 @@ r_files_only$percentage_comment <- NA
 r_files_only$library_on_top <- NA
 r_files_only$hardcoded_folders <- NA
 
+# Vector of known filenames to compare against; compare by basename
+known_names <- basename(files_only$name)
+
+# Ensure the new columns exist with informative defaults
+r_files_only$files_loaded <- NA_integer_
+r_files_only$files_sourced <- NA_integer_
+r_files_only$loaded_files_all_in_names <- NA_integer_
+r_files_only$sourced_files_all_in_names <- NA_integer_
+
+# (Optional) keep the actual detected names as list-columns for inspection/debugging
+if (!"loaded_files" %in% names(r_files_only)) {
+  r_files_only$loaded_files <- I(vector("list", nrow(r_files_only)))
+}
+if (!"sourced_files" %in% names(r_files_only)) {
+  r_files_only$sourced_files <- I(vector("list", nrow(r_files_only)))
+}
+
+# Helper to extract quoted strings (excludes URLs)
+.extract_quoted <- function(x) {
+  qs <- unlist(regmatches(x, gregexpr("(['\"]).*?\\1", x, perl = TRUE)))
+  if (length(qs) == 0) return(character(0))
+  qs <- gsub("^['\"]|['\"]$", "", qs)
+  qs <- qs[!grepl("^https?://", qs, perl = TRUE)]  # exclude URLs
+  qs
+}
+
+# Reasonable file extension filters to reduce false positives
+.data_ext <- "(csv|tsv|txt|xlsx?|rds|rdata|rda|sav|dta|sas7bdat|json|ya?ml|xml|feather|parquet|ods)$"
+.code_ext <- "(r|R|rmd|Rmd|qmd|Rnw)$"
+# Which functions count as "loading a data file" (pkg:: prefix optional)
+.load_fun <- c(
+  "(?:[[:alnum:]_.]+::)?read\\.(?:csv2?|table|delim2?)",  # base read.* family
+  "(?:[[:alnum:]_.]+::)?readRDS",
+  "(?:[[:alnum:]_.]+::)?load",
+  "(?:[[:alnum:]_.]+::)?read_(?:csv2?|tsv|delim|rds|lines)",  # readr
+  "(?:[[:alnum:]_.]+::)?fread",                                # data.table
+  "(?:[[:alnum:]_.]+::)?read_(?:xlsx?|excel)",                 # readxl
+  "(?:[[:alnum:]_.]+::)?read\\.xlsx",                          # openxlsx
+  "(?:[[:alnum:]_.]+::)?read_(?:dta|sav|sas)",                 # haven
+  "(?:[[:alnum:]_.]+::)?read\\.dta",                           # foreign
+  "(?:[[:alnum:]_.]+::)?read_feather",                         # feather
+  "(?:[[:alnum:]_.]+::)?read_parquet",                         # arrow
+  "(?:[[:alnum:]_.]+::)?fromJSON",                             # jsonlite
+  "(?:[[:alnum:]_.]+::)?read_yaml",                            # yaml
+  "(?:[[:alnum:]_.]+::)?read_xml",                             # xml2
+  "(?:[[:alnum:]_.]+::)?read_ods",                             # readODS
+  "(?:[[:alnum:]_.]+::)?readtext"                              # readtext
+)
+
+.load_pat <- paste0("\\b(", paste(.load_fun, collapse = "|"), ")\\s*\\(")
+
+# Pattern for source()
+.source_pat <- "\\bsource\\s*\\("
 # Some libraries are declared in the beginning, but there are ret
 
 # Iterate over each row in osf_files
@@ -513,101 +609,215 @@ r_files_only$hardcoded_folders <- NA
 # saveRDS(r_files_only, file = "r_file_info_psych_science.rds")
 
 
+# Folder where you want to save the downloaded files
+save_dir <- "r_files_downloads"
 
+# Create the root folder if it doesn't exist
+dir.create(save_dir, showWarnings = FALSE, recursive = TRUE)
 
+for (i in seq_len(nrow(all_osf_r_file_psych_science))) {
+  download_link <- all_osf_r_file_psych_science$download_url[i]
+  cat(sprintf("[%d/%d] %s\n", i, nrow(all_osf_r_file_psych_science), download_link))
 
-
-
-
-
-# BELOW OLD
-files_only$name
-# Subset of all R Files
-# Get all the OSF ID's
-# DOWNLOAD THEM ALL OR READ THEM IN DIRECTLY?
-
-
-osf_ids_vector <- all_osf_links_df$osf_project_id           # extract the column
-osf_ids_vector <- osf_ids_vector[!is.na(osf_ids_vector)]    # remove NA values
-osf_ids_vector <- unique(osf_ids_vector)                    # remove duplicates
-
-for (i in 1:nrow(osf_ids_vector)) {
-  link <- as.character(osf_ids_vector[i])  # Get the osf_id
-  
-  print(link)
-  print(i)
-  osf_id <- as_id("3kj6u")  # Ensure as_id function is defined
-  osf_project <- osf_retrieve_node(osf_id)
-  osf_files <- osf_ls_files(osf_project)
-  
-  # Save only .R files
-  osf_files <- osf_files[grepl("\\.r$", osf_files$name, ignore.case = TRUE), ]
-  
-  # Check if the dataframe is empty
-  if (nrow(osf_files) == 0) {
-    cat("There are no R files\n")
+  # Decide the relative filename to write
+  if ("path" %in% names(all_osf_r_file_psych_science) &&
+      is.character(all_osf_r_file_psych_science$path[i]) &&
+      !is.na(all_osf_r_file_psych_science$path[i]) && nzchar(all_osf_r_file_psych_science$path[i])) {
+    rel <- all_osf_r_file_psych_science$path[i]         # preserves repo subfolders if present
+  } else if ("name" %in% names(all_osf_r_file_psych_science) &&
+             is.character(all_osf_r_file_psych_science$name[i]) &&
+             !is.na(all_osf_r_file_psych_science$name[i]) && nzchar(all_osf_r_file_psych_science$name[i])) {
+    rel <- all_osf_r_file_psych_science$name[i]
   } else {
-    # Iterate over each row in osf_files
-    for (i in seq_len(nrow(osf_files))) {
-      # Read in the R code
-      download_link <- osf_files[[3]][[i]][["links"]][["download"]]
-      print(download_link)
-      
-      # Use tryCatch to handle warnings when reading the file
-      r_code <- tryCatch(
-        readLines(url(download_link)),
-        warning = function(w) {
-          cat(sprintf("Skipping file due to warning: %s\n", conditionMessage(w)))
-          return(NULL)
-        },
-        error = function(e) {
-          cat(sprintf("Skipping file due to error: %s\n", conditionMessage(e)))
-          return(NULL)
-        }
-      )
-      
-      # Skip further processing if the code is NULL
-      if (is.null(r_code)) next
-
-      # Search for absolute file paths (both Windows and Unix)
-      absolute_paths <- grep('(["\'])([A-Za-z]:\\\\|/|~)', r_code, value = TRUE)
-
-      # Print the result
-      if (length(absolute_paths) > 0) {
-        cat("We found the following absolute paths:\n")
-        cat(absolute_paths, sep = "\n")
-      } else {
-        cat("There are no absolute paths, well done!\n")
-      }
-
-      # Find lines where libraries are loaded
-      library_lines <- grep("\\b(library|require)\\(", r_code)
-
-      # Check if libraries are loaded at multiple places
-      if (length(library_lines) > 1 && !all(diff(library_lines) == 1)) {
-        cat("Libraries are loaded in multiple places in the script:\n")
-        cat(sprintf("Line %d: %s\n", library_lines, r_code[library_lines]), sep = "")
-      } else if (length(library_lines) > 0) {
-        cat("Libraries are loaded in a single block, well done!\n")
-      } else {
-        # Warning if no libraries are loaded
-        cat("Warning: No libraries are specified in this script.\n")
-      }
-    }
+    # Fallback: strip any query string from URL and take the basename
+    rel <- basename(sub("\\?.*$", "", download_link))
   }
+
+  dest <- file.path(save_dir, rel)
+
+  # Ensure subdirectories exist when preserving structure
+  dir.create(dirname(dest), showWarnings = FALSE, recursive = TRUE)
+
+  # Download; use mode = "wb" for cross-platform (esp. Windows) safety
+  tryCatch(
+    {
+      utils::download.file(download_link, destfile = dest, mode = "wb", quiet = TRUE)
+      # Uncomment if you want a light throttle:
+      # Sys.sleep(0.2)
+    },
+    error = function(e) {
+      message("Failed to download: ", download_link, " -> ", conditionMessage(e))
+    }
+  )
 }
+
+
+# Local version for all downloaded r files
+
+# List all .R and .Rmd files (case-insensitive)
+r_files_downloaded <- list.files(
+  path = "data/r_files_psych_science",
+  pattern = "\\.(R|rmd)$",
+  recursive = TRUE,
+  ignore.case = TRUE,
+  full.names = TRUE
+)
+
+# Create a data frame to store results
+r_files_only <- data.frame(
+  path = r_files_downloaded,
+  name = basename(r_files_downloaded),
+  hardcoded_folders = NA,
+  library_on_top = NA,
+  comment_lines = NA,
+  code_lines = NA,
+  percentage_comment = NA,
+  stringsAsFactors = FALSE
+)
+
+
+# Before the loop (initialize to list-columns of length nrow)
+if (!("loaded_files" %in% names(r_files_only)) || !is.list(r_files_only$loaded_files)) {
+  r_files_only$loaded_files <- vector("list", nrow(r_files_only))
+}
+if (!("sourced_files" %in% names(r_files_only)) || !is.list(r_files_only$sourced_files)) {
+  r_files_only$sourced_files <- vector("list", nrow(r_files_only))
+}
+
+
+# Iterate over each file
+for (i in 1:nrow(r_files_only)) {
+  file_path <- r_files_only$path[i]
+  cat("Processing file:", file_path, "\n")
+  cat("This is", i, "out of", nrow(r_files_only), "\n")
+  
+    # Read the file as raw bytes first because the script will throw an error for some r files with non UTF-8 characters
+    raw_lines <- readLines(file_path, warn = FALSE)
+
+    # Convert to UTF-8, replacing invalid characters
+    rfile <- iconv(raw_lines, from = "UTF-8", to = "UTF-8", sub = "byte")
+
+    # Remove any NA entries resulting from failed conversions
+    rfile <- rfile[!is.na(rfile)]
+
+  # Filter out comments, empty lines, and Rmd chunk headers
+  rfile_nc <- grep('^(\\s*$|\\s*#|```\\s*\\{r)', rfile, invert = TRUE, value = TRUE)
+  
+  # Exclude lines containing knitr::include_graphics
+  rfile_nc <- grep('knitr::include_graphics', rfile_nc, invert = TRUE, value = TRUE)
+  
+  # Regex for absolute paths (quoted, excludes URLs)
+  absolute_paths <- grep(
+    '(?<![A-Za-z0-9_])(["\'])(?:(?!https?://)(?:[A-Za-z]:[\\\\/]|(?:\\\\\\\\|//)[^\\\\/]+[\\\\/]|~[/\\\\]|/(?:Users|home|var|etc|opt|srv|mnt|Volumes|Library|Applications|gpfs|data|tmp|media|root)\\b)[^"\']*)\\1',
+    rfile_nc,
+    value = TRUE,
+    perl = TRUE
+  )
+  
+  if (length(absolute_paths) > 0) {
+    cat("We found the following absolute paths:\n")
+    cat(absolute_paths, sep = "\n")
+    r_files_only$hardcoded_folders[i] <- 1
+    
+    # Write to file
+    log_con <- file("absolute_paths_found.txt", open = "a")
+    writeLines(c(sprintf("File: %s", r_files_only$name[i]), absolute_paths, ""), con = log_con)
+    close(log_con)
+  } else {
+    cat("There are no absolute paths, well done!\n")
+    r_files_only$hardcoded_folders[i] <- 0
+  }
+  
+  # Find lines where libraries are loaded
+  library_lines <- grep("\\b(library|require)\\(", rfile)
+  
+  if (length(library_lines) > 1 && !all(diff(library_lines) == 1)) {
+    cat("Libraries are loaded in multiple places in the script:\n")
+    cat(sprintf("Line %d: %s\n", library_lines, rfile[library_lines]), sep = "")
+    r_files_only$library_on_top[i] <- 1
+  } else if (length(library_lines) > 0) {
+    cat("Libraries are loaded in a single block, well done!\n")
+    r_files_only$library_on_top[i] <- 0
+  } else {
+    cat("No libraries are specified in this script.\n")
+    r_files_only$library_on_top[i] <- NA
+  }
+  
+  # Count total lines
+  total_lines <- length(rfile)
+  
+  # Count comment lines
+  comment_lines <- sum(grepl("^\\s*#", rfile))
+  r_files_only$comment_lines[i] <- comment_lines
+  
+  # Count code lines
+  code_lines <- sum(rfile != "" & !grepl("^\\s*#", rfile))
+  r_files_only$code_lines[i] <- code_lines
+  
+  # Percentage of comment lines
+  percent_comments <- if (total_lines > 0) (comment_lines / total_lines) * 100 else NA
+  r_files_only$percentage_comment[i] <- percent_comments
+  
+  ### NEW: detect loaded/sourced files (NULL-safe) -----------------------------
+
+# Lines with data-loading calls
+load_lines <- grep(.load_pat, rfile_nc, value = TRUE, perl = TRUE)
+
+loaded_paths <- unique(unlist(lapply(load_lines, function(ln) {
+  cand <- .extract_quoted(ln)
+  cand[grepl(paste0("\\.", .data_ext, "$"), cand, ignore.case = TRUE, perl = TRUE)]
+}), use.names = FALSE))
+if (is.null(loaded_paths)) loaded_paths <- character(0)
+loaded_files <- unique(basename(loaded_paths))
+
+# Lines with source() calls
+source_lines <- grep(.source_pat, rfile_nc, value = TRUE, perl = TRUE)
+
+sourced_paths <- unique(unlist(lapply(source_lines, function(ln) {
+  cand <- .extract_quoted(ln)
+  cand[grepl(paste0("\\.", .code_ext, "$"), cand, ignore.case = TRUE, perl = TRUE)]
+}), use.names = FALSE))
+if (is.null(sourced_paths)) sourced_paths <- character(0)
+sourced_files <- unique(basename(sourced_paths))
+
+# Binary indicators: 1 if any found, else 0
+r_files_only$files_loaded[i]  <- as.integer(length(loaded_files)  > 0)
+r_files_only$files_sourced[i] <- as.integer(length(sourced_files) > 0)
+
+# Compare to known names (by basename; optional case-insensitive shown below)
+# known_names <- basename(files_only$name)   # if you haven't defined it earlier
+# known_names <- unique(known_names[!is.na(known_names)])
+
+# Case-sensitive version:
+# r_files_only$loaded_files_all_in_names[i]  <- if (length(loaded_files)  == 0) NA_integer_ else as.integer(all(loaded_files  %in% known_names))
+# r_files_only$sourced_files_all_in_names[i] <- if (length(sourced_files) == 0) NA_integer_ else as.integer(all(sourced_files %in% known_names))
+
+# Optional: case-insensitive comparison (often safer on Windows/macOS)
+r_files_only$loaded_files_all_in_names[i]  <-
+  if (length(loaded_files) == 0) NA_integer_ else
+    as.integer(all(tolower(loaded_files)  %in% tolower(known_names)))
+
+r_files_only$sourced_files_all_in_names[i] <-
+  if (length(sourced_files) == 0) NA_integer_ else
+    as.integer(all(tolower(sourced_files) %in% tolower(known_names)))
+
+# (Optional) keep the sets for audit/debugging
+r_files_only$loaded_files[[i]]  <- list(loaded_files)
+r_files_only$sourced_files[[i]] <- list(sourced_files)
+
+### END NEW ------------------------------------------------------------------
+} 
+
 
 ```
 
+PROVDE SOME SUMMARY OF RUNNING THIS CODE ON ALL PSYCH SCIENCE PAPERS, AFTER VALIDATING THE CODE A BIT
+
 ### Checking Preregistrations
 
-It is increasingly common for researchers to preregister their studies [@spitzer2023registered; @imai2025pre]. As preregistration is a new practice, best practices are continuously being developed. Researchers who preregister should ideally continuously stay up-to-date 
+It is increasingly common for researchers to preregister their studies [@spitzer2023registered; @imai2025pre]. As preregistration is a new practice, best practices are continuously being developed. Researchers who preregister should ideally continuously stay up-to-date about these best practices, but in practice researchers might not have the time to do so. Automation can assist researchers in keeping up-to-date about updated best practices. 
 
-and it can be difficult for researchers to stay up to date and write a state-of-the-art preregistration. it is not surprising that researchers do not perform preregistrations following the state-of-the-art. One challenge is that researchers deviate from their preregistration when reporting results from preregistered studies, but do not transparently report these deviations [@van2024potential]. Reviewers could check whether researchers adhere to the preregistration, but this requires some effort. Automation can provide a partial solution by making information from the preregistration more easily available.
-
-Here we demonstrate how Papercheck can automatically retrieve the content of a preregistration. The preregistration can then be presented alongside the relevant information in the manuscript. This makes it easier for peer reviewers to compare the information.
-
-We focus on AsPredicted preregistrations as their structured format makes it especially easy to retrieve information
+It has recently become clear that researchers often fail to disclose deviations from their preregistration [@van2024potential], but that is is important to do so. Reviewers could check whether researchers adhere to the preregistration, but this requires additional time from peer reviewers. As peer review is already considered insufficiently rewarded, and it is increasingly difficult to find researchers willing to peer review articles, it would be beneficial make such checks as effortless as possible. Here we demonstrate how Papercheck can automatically retrieve the content of a preregistration. The preregistration can then be presented alongside the relevant information in the manuscript. We focus on AsPredicted preregistrations as their structured format makes it especially easy to retrieve information, but the same principle can be applied to other preregistration databases. 
 
 ### Checking Power Analyses
 
@@ -1508,7 +1718,7 @@ RGX_ASPREDICTED_BLIND <- "http://aspredicted\\.org/blind\\.php\\?x=s*[a-zA-Z0-9]
 text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")
 
 RGX_ASPREDICTED_BLIND <- "http://aspredicted\\.org/blind\\.php\\?x=s*[a-zA-Z0-9]{6}"
-text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")
+text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")*****
 
 # Remove duplicates
 text_found_as_predicted_blind <- text_found_as_predicted_blind %>% distinct(text, .keep_all = TRUE)

@@ -1,0 +1,330 @@
+---
+title: "Parental Political Ideology Influences How Children Punish"
+author: "Rachel Leshin"
+date: "6/23/2022"
+output: word_document
+---
+
+```{r libraries, include=FALSE}
+
+#Load in libraries
+
+library(foreign)
+library(ggplot2)
+library(plyr)
+library(psych)
+library(lmSupport)
+library(dplyr)
+library(lme4)
+library(Rmisc)
+library(tidyr)
+library(readr)
+library(here)
+library(hablar)
+library(tidyverse)
+library(effects)
+library(questionr)
+library(tidyr)
+
+```
+
+```{r file description}
+
+#This file contains all supplementary analyses from the pilot study to Experiment 2.  
+
+```
+
+```{r upload data, include = FALSE}
+
+##First, let's read in the processed data file
+costly4_data <- read.csv(here::here("costly_s2_pilot.csv"), header = TRUE)
+costly_clean <- costly4_data
+
+```
+
+```{r simple demographics}
+
+#Age and gender
+psych::describe(costly_clean$age)
+prop.table(xtabs(~Gender, data = costly_clean))
+prop.table(xtabs(~race_bin, data = costly_clean))
+
+```
+
+#### Comprehension check: Valuing of Resource
+```{r analyze data - evaluation of animal vids and pref Qs, include = TRUE}
+
+#Create new df for analyses
+costly_a <- costly_clean
+
+##Liking of video
+
+#Binary liking response  (1 = like, 2 = not like)
+prop.table(xtabs(~Q.intro_like, data = costly_a)) #most kids liked video (98%)
+
+#Full liking response (liking binary + "how much"; 1 = a little, 2 = some, 3 = a lot)
+costly_a <- costly_a %>% 
+  dplyr::mutate(
+    Q.intro_like_full = case_when(
+      Q.intro_like == "2" ~ 0,
+      Q.intro_like == "1" & Q.much_like == "1" ~ 1,
+      Q.intro_like == "1" & Q.much_like == "2" ~ 2,
+      Q.intro_like == "1" & Q.much_like == "3" ~ 3,
+      TRUE ~ as.numeric(Q.intro_like)
+      ))
+
+prop.table(xtabs(~Q.intro_like_full, data = costly_a)) #most kids liked video a lot (83%)
+
+##Wanting to watch another video
+
+#Binary wanting response (1 = want to, 2 = don't want to)
+prop.table(xtabs(~Q.another, data = costly_a)) #most kids wanted to watch another (95%)
+
+#Full wanting response (wanting binary + "how much"; 1 = a little, 2 = some, 3 = a lot)
+costly_a <- costly_a %>% 
+  dplyr::mutate(
+    Q.another_full = case_when(
+      Q.another == "2" ~ 0,
+      Q.another == "1" & Q.much_another == "1" ~ 1,
+      Q.another == "1" & Q.much_another == "2" ~ 2,
+      Q.another == "1" & Q.much_another == "3" ~ 3,
+      TRUE ~ as.numeric(Q.another)
+      ))
+
+prop.table(xtabs(~Q.another_full, data = costly_a)) #most kids really wanted to watch another (85%)
+
+```
+
+#### Comprehension check: Transgression
+```{r analyze data - manipulation comprehension check, include = TRUE}
+
+##Comprehension check of what Stacy did
+
+#Create man_check column to determine if answer is right or wrong (1 = hold, 2 = tear) --> 0 = right, 1 = wrong
+costly_a <- costly_a %>% 
+  dplyr::mutate(
+    man_check = case_when(
+      condition == 0 & what_do == 1 ~ 0,
+      condition == 1 & what_do == 2 ~ 0,
+      TRUE ~ as.numeric(1)
+      ))
+prop.table(xtabs(~man_check, data = costly_a)) #90% pass mancheck
+
+#Breaking down by condition
+prop.table(xtabs(~man_check, data = subset(costly_a, condition == 0))) #95%
+prop.table(xtabs(~man_check, data = subset(costly_a, condition == 1))) #85%
+
+#Comprehension of how nice it was
+
+#Recode nice_notnice (currently: 1 = nice, 2 = not nice; now: 0 = nice, 1 = not nice)
+costly_a$nice_notnice_re <- ifelse(costly_a$nice_notnice == 1, 0,
+                                    ifelse(costly_a$nice_notnice == 2, 1, NA))
+
+xtabs(~nice_notnice_re+condition, data = costly_a)
+
+#Breaking down by condition
+prop.table(xtabs(~nice_notnice_re, data = subset(costly_a, condition == 0)))
+prop.table(xtabs(~nice_notnice_re, data = subset(costly_a, condition == 1)))
+
+```
+
+#### Comprehension check: Open/lock instructions
+```{r analyze data - comprehension check of decision task, include = TRUE}
+
+##Comprehension of open/lock instructions (if we press the open button, will both you and Stacy have to watch an extra hour to watch the videos? yes, or no?)
+
+#First, need to recode these so there is consistency across datasets: OPEN questions 
+
+#in GIRL survey: 3 = yes, 2 = no; recode so that 1 = yes, 2 = no
+#in BOY-BOT dataset: 1 = yes, 2 = no (can leave as is)
+#in BOY-BBT dataset: 1 = yes, 2 = no (can leave as is)
+
+costly_a <- costly_a %>% 
+  dplyr::mutate(
+    open_comp = case_when(
+      Gender == "F" & open_comp == "3" ~ 1,
+      Gender == "F" & open_comp == "2" ~ 2,
+      TRUE ~ as.numeric(open_comp)
+      ))
+
+#Now, recode for accuracy (currently, 1 (yes) = incorrect, 2 (no) = correct; now, 1 = incorrect, 0 = correct)
+costly_a$open_comp_re <- ifelse(costly_a$open_comp == 1, 1,
+                                    ifelse(costly_a$open_comp == 2, 0, NA))
+
+#Comprehension of "open" function
+prop.table(xtabs(~open_comp_re, data = costly_a)) #majority got it right (93%)
+
+#Now, recode for accuracy (currently, 1 (yes) = correct, 2 (no) = incorrect; now, 0 = correct, 1 = incorrect)
+costly_a$lock_comp_re <- ifelse(costly_a$lock_comp == 1, 0,
+                                    ifelse(costly_a$lock_comp == 2, 1, NA))
+
+#Comprehension of "lock" function
+prop.table(xtabs(~lock_comp_re, data = costly_a)) #most kids got this correct (95%)
+
+```
+
+#### Costly punishment decision: descriptive analyses
+```{r describe data - costly punishment decision, include = TRUE}
+
+#Recode punish_decide (currently: 1 = don't punish, 2 = punish; now: 0 = don't punish, 1 = punish)
+costly_a$punish_decide_re <- ifelse(costly_a$punish_decide == 1, 0,
+                                    ifelse(costly_a$punish_decide == 2, 1, NA))
+
+#Descriptives of punishment
+prop.table(xtabs(~punish_decide_re, data = costly_a))
+
+#Descriptives of punishment by condition
+prop.table(xtabs(~punish_decide_re, data = subset(costly_a, condition == "0")))
+prop.table(xtabs(~punish_decide_re, data = subset(costly_a, condition == "1")))
+
+```
+
+#### Costly punishment decision: inferential analyses
+```{r analyze data - costly punishment decision, include = TRUE}
+
+#Test main prediction: that condition predicts punishment
+chisq.test(costly_a$punish_decide_re, costly_a$condition, correct=FALSE)
+
+#Check to see if condition*age relates to punishment
+model_punish_cond_age <- glm(punish_decide_re ~ condition*age_c, data = costly_a)
+summary(model_punish_cond_age)
+
+```
+
+#### Non costly punishment decision
+```{r analyze instances of non-costly punishment, include = TRUE}
+
+#Recode get_to_watch (currently, 1 = yes, 2 = no; now, 0 = yes, 1 = no)
+costly_a$get_to_watch_re <- ifelse(costly_a$get_to_watch == 1, 0,
+                                    ifelse(costly_a$get_to_watch == 2, 1, NA))
+
+xtabs(~get_to_watch_re+condition, data = costly_a)
+
+#Breaking down by condition
+prop.table(xtabs(~get_to_watch_re, data = subset(costly_a, condition == 0)))
+prop.table(xtabs(~get_to_watch_re, data = subset(costly_a, condition == 1)))
+
+#Test whether condition is related to non-costly punishment
+chisq.test(costly_a$get_to_watch_re, costly_a$condition, correct=FALSE) #sig
+
+```
+
+#### Exploratory validation measures: How happy/sad target will feel
+```{r analyze data - perception of targets' feelings post-decision, include = TRUE}
+
+##Assessment of how target feels after video bin has been opened or locked (1 = really sad, 2 = sad, 3 = kind of sad, 4 = kind of happy, 5 = really happy, 6 = happy)
+
+#Compute means for feelings when video bin is open
+mean(costly_a$feel_open, na.rm = TRUE) #5.71
+
+#Compute means for feelings when video bin is locked
+mean(costly_a$feel_locked, na.rm = TRUE) #2.36
+
+#Compare means in locked vs. open scenarios
+t.test(x = costly_a$feel_open,
+       y = costly_a$feel_locked,
+       paired = FALSE,
+       na.rm = TRUE) #significantly different (p <.001)
+
+```
+
+#### Exploratory validation measures: What will target do in the future
+```{r analyze data - perception of targets' future behavior, include = TRUE}
+
+#Recode next_time (currently: 1 = hold paper, 2 = tear paper up; now: 0 = hold paper, 1 = tear paper up)
+costly_a$next_time_re <- ifelse(costly_a$next_time == 1, 0,
+                                    ifelse(costly_a$next_time == 2, 1, NA))
+
+#Test for interaction between punishment decision + condition
+model_nexttime <- glm(next_time_re ~ condition*punish_decide_re, data = costly_a)
+summary(model_nexttime)
+
+#Parse interaction by dividing df
+costly_a_0 <- costly_a %>%
+  filter(condition == 0)
+
+costly_a_1 <- costly_a %>%
+  filter(condition == 1)
+
+model_nexttime_0 <- glm(next_time_re ~ punish_decide_re, data = costly_a_0)
+summary(model_nexttime_0)
+
+model_nexttime_1 <- glm(next_time_re ~ punish_decide_re, data = costly_a_1)
+summary(model_nexttime_1)
+
+xtabs(~next_time_re + punish_decide_re, data = costly_a_1) #0% of kids who punished, 50% of those who didn't
+
+```
+
+#### Exploratory validation measures: Why did transgressor do what they did
+```{r analyze data - explanation for transgression (internal vs. external), include = TRUE}
+
+##Perceptions of what whether transgression was due to bad person or bad day
+
+#Recode person_day (currently: 1 = bad person, 2 = bad day; now: 1 = bad person, 0 = bad day)
+
+#Accidentally run in both conditions; only analyze condition = 0
+costly_a_1$person_day_re <- ifelse(costly_a_1$person_day == 1, 1,
+                                    ifelse(costly_a_1$person_day == 2, 0, NA))
+
+#Descriptives
+prop.table(xtabs(~person_day_re, data = costly_a_1))
+
+#Add in punishment decision
+xtabs(~person_day_re+punish_decide_re, data = costly_a_1)
+
+#See if differences are meaningful
+chisq.test(costly_a_1$person_day_re, costly_a_1$punish_decide_re, correct=FALSE) #ns
+
+```
+
+#### Exploratory validation measures: Desire to play with target in the future
+```{r analyze data - desire to play with target in future, include = FALSE}
+
+##Desire to play with the target in the future (1 = yes, 2 = no)
+
+#Recode play_with (currently: 1 = yes, 2 = no; now: 0 = yes, 1 = no)
+costly_a$play_with_re <- ifelse(costly_a$play_with == 1, 0,
+                                    ifelse(costly_a$play_with == 2, 1, NA))
+
+costly_a_1$play_with_re <- ifelse(costly_a_1$play_with == 1, 0,
+                                     ifelse(costly_a_1$play_with == 2, 1, NA))
+
+#Descriptives
+prop.table(xtabs(~play_with_re, data = costly_a)) 
+xtabs(~play_with_re+condition, data = costly_a)
+xtabs(~play_with_re+punish_decide_re, data = costly_a_1)
+
+#See if differences are meaningful across conditions
+chisq.test(costly_a$play_with_re, costly_a$punish_decide_re, correct=FALSE) #ns
+
+#See if differences are meaningful in transgression condition
+chisq.test(costly_a_1$play_with_re, costly_a_1$punish_decide_re, correct=FALSE) #ns
+
+```
+
+#### Exploratory validation measures: Target's regret for action
+```{r analyze data - targets' feeling regret for action, include = TRUE}
+
+##Perception that target feels bad for what she did (1 = yes, 2 = no)
+
+#Recode feel_bad (currently: 1 = yes, 2 = no; now: 0 = yes, 1 = no)
+costly_a$feel_bad_re <- ifelse(costly_a$feel_bad == 1, 0,
+                                    ifelse(costly_a$feel_bad == 2, 1, NA))
+
+costly_a_1$feel_bad_re <- ifelse(costly_a_1$feel_bad == 1, 0,
+                                    ifelse(costly_a_1$feel_bad == 2, 1, NA))
+
+#Descriptives
+prop.table(xtabs(~feel_bad_re, data = costly_a)) #61% = yes, 39% = no
+xtabs(~feel_bad_re+condition, data = costly_a) #61% = yes, 39% = no
+xtabs(~feel_bad_re+punish_decide_re, data = costly_a_1) #61% = yes, 39% = no
+
+#See if differences are meaningful across conditions
+chisq.test(costly_a$feel_bad_re, costly_a$punish_decide, correct=FALSE) #ns
+
+#See if differences are meaningful in transgression condition
+chisq.test(costly_a_1$feel_bad_re, costly_a_1$punish_decide, correct=FALSE) #ns
+
+```
+

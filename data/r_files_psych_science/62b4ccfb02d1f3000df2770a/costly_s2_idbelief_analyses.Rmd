@@ -1,0 +1,905 @@
+---
+title: 'Parental Political Ideology Influences How Children Punish'
+author: "Rachel Leshin"
+date: "6/23/2022"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r libraries, include=FALSE}
+
+#Load in libraries
+
+library(ggplot2)
+library(plyr)
+library(psych)
+library(lmSupport)
+library(dplyr)
+library(lme4)
+library(Rmisc)
+library(tidyr)
+library(readr)
+library(here)
+library(hablar)
+library(tidyverse)
+library(effects)
+library(questionr)
+library(Hmisc)
+library(emmeans)
+library(interactions)
+library(DescTools)
+library(ggpubr)
+
+```
+
+```{r file description}
+
+#This file contains all primary analyses drawing from secondary data of parents' ideological beliefs for Experiment 2. 
+
+```
+
+```{r upload PANDA data (s2), include = FALSE}
+
+##Read in cleaned PANDA data file
+panda_csv <- read.csv(here::here("costly_data_s2_idbeliefs.csv"), header = TRUE)
+panda_csv <- panda_csv[-c(1)]
+
+##Trim to only vars we need
+panda <- panda_csv %>%
+  select(ID, condition_group, age, age_c, liking_correct, q_get_to_watch, q_punish_decide, q_feel_lock, q_feel_open, q_next_time, q_person_day, q_play_with, q_feel_bad, pol_id_new, pol_id_new_c, pol_id_spouse, pol_id_combo, pol_id_combo_c, 35:40, start_date)
+
+```
+
+```{r secondary data for s2, include = FALSE}
+
+##Read in secondary data from BC study
+bc_raw <- read.csv(here::here("secondary_data_long.csv"), header = TRUE, na.strings = c("", "NA"))
+bc <- bc_raw
+
+##Read in BC file with adjusted dot
+bc_shortdot_raw <- read.csv(here::here("secondary_data_dot.csv"), header = TRUE, na.strings = c("", "NA"))
+bc_dot <- bc_shortdot_raw
+
+#Change dot to real_dot to distinguish when merging
+bc_dot <- bc_dot %>%
+  rename(dot_real = dot,
+         parent_survey_dot_real = parent_survey_dot)
+
+#Clean to just what we need
+bc_dot <- bc_dot %>%
+  select(ID, wave, start_date, parent_survey_dot_real)
+
+```
+
+```{r cleaning of secondary data, include = FALSE}
+
+#Keep only columns we need
+bc_short <- bc %>%
+  select(ID, valid.data, dot, parent_survey_dot, wave, ambiguous, choose1, essentialist, structural, choose2, status_high, exp_endorse_1, exp_endorse_2, exp_choice, value_priorities_1, value_priorities_2, value_priorities_7, how_often_3, how_often_7, hi_FRIENDS_6, hi_FRIENDS_7, hi_FRIENDS_8, hi_live_4, age_app_4, comfort_4, helpful_4, politics_1)
+
+#Merge with PANDA data for Tobi
+output_tobi <- left_join(panda, bc_short, by = "ID")
+write.csv(output_tobi, "costly_bc_output.csv")
+
+#Divide up into parent and kids
+bc_kid <- bc_short %>%
+  select(ID, valid.data, dot, wave, ambiguous, choose1, essentialist, structural, choose2, status_high)
+
+bc_parent <- bc_short %>%
+  select(ID, valid.data, parent_survey_dot, dot, wave, exp_endorse_1, exp_endorse_2, exp_choice, value_priorities_1, value_priorities_2, value_priorities_7, how_often_3, how_often_7, hi_FRIENDS_6, hi_FRIENDS_7, hi_FRIENDS_8, hi_live_4, age_app_4, comfort_4, helpful_4, politics_1)
+
+#Create row of total NAs per kid
+bc_kid$na_count<-rowSums(apply(is.na(bc_kid),2,as.numeric))
+
+#Select rows with fewest NAs
+bc_kid_min <- bc_kid %>%
+  group_by(ID) %>%
+  slice_min(na_count) 
+
+#Create row of total NAs per parent
+bc_parent$na_count<-rowSums(apply(is.na(bc_parent),2,as.numeric))
+
+#Select rows with fewest NAs
+bc_parent_min <- bc_parent %>%
+  group_by(ID) %>%
+  slice_min(na_count)
+
+#Find out how many IDs are overlapped
+length(intersect(panda$ID, bc_kid_min$ID))
+length(intersect(panda$ID, bc_parent_min$ID)) 
+
+#Merge with PANDA, keep all that are in PANDA
+panda_bc_kid_all <- left_join(panda, bc_kid_min, by = "ID")
+panda_bc_parent_all <- left_join(panda, bc_parent_min, by = "ID")
+
+#Find duplicate entries in adult df
+dupe_parent <- data.frame(table(panda_bc_parent_all$ID))
+dupe_parent <- panda_bc_parent_all[panda_bc_parent_all$ID %in% dupe_parent$Var1[dupe_parent$Freq > 1],]
+dupe_parent <- dupe_parent %>%
+  select(ID, wave, start_date, exp_endorse_1, exp_endorse_2) %>%
+  filter(!is.na(exp_endorse_1)) #filtering for just the dupes we care about
+
+#Send to Tobi
+output_tobi_abb <- dupe_parent
+write.csv(output_tobi_abb, "costly_bc_output_short.csv")
+
+#Select only kids from wave closest to Costly (delete kids from waves further apart; referencing bc_dot df)
+panda_bc_parent_all_dot <- panda_bc_parent_all %>%
+  filter(!(ID == "157H" & wave == "w3"),
+         !(ID == "1580H" & wave == "w3"),
+         !(ID == "1630H" & wave == "w5"),
+         !(ID == "1720H" & wave == "w3"),
+         !(ID == "385H" & wave == "w1"),
+         !(ID == "4399H" & wave == "w3"),
+         !(ID == "4512H" & wave == "w3"),
+         !(ID == "4535H" & wave == "w3"),
+         !(ID == "4556H" & wave == "w3"),
+         !(ID == "5391H" & wave == "w3"),
+         !(ID == "5527H" & wave == "w3"),
+         !(ID == "5656H" & wave == "w3"),
+         !(ID == "5733H" & wave == "w3"),
+         !(ID == "5774H" & wave == "w3"))
+         
+panda_bc_kid_all_dot <- panda_bc_kid_all %>%
+  filter(!(ID == "157H" & wave == "w3"),
+         !(ID == "1580H" & wave == "w3"),
+         !(ID == "1630H" & wave == "w5"),
+         !(ID == "1720H" & wave == "w3"),
+         !(ID == "385H" & wave == "w1"),
+         !(ID == "4399H" & wave == "w3"),
+         !(ID == "4512H" & wave == "w3"),
+         !(ID == "4535H" & wave == "w3"),
+         !(ID == "4556H" & wave == "w3"),
+         !(ID == "5391H" & wave == "w3"),
+         !(ID == "5527H" & wave == "w3"),
+         !(ID == "5656H" & wave == "w3"),
+         !(ID == "5733H" & wave == "w3"),
+         !(ID == "5774H" & wave == "w3"))
+         
+#Delete duplicate entries
+panda_bc_kid <- panda_bc_kid_all_dot %>%
+  distinct(ID, .keep_all = TRUE)
+
+panda_bc_parent <- panda_bc_parent_all_dot %>%
+  distinct(ID, .keep_all = TRUE)
+
+#Check that all responses we have for relevant parent measures are in there (N = 131)
+test <- panda_bc_parent %>%
+  select(ID, exp_endorse_1) %>%
+  filter(!is.na(exp_endorse_1))
+
+```
+
+```{r clean secondary kid data, include = FALSE}
+
+#Choose1 and Choose2 (essentialist = 1, structural = 0)
+panda_bc_kid <- panda_bc_kid %>%
+  mutate(choose1 = case_when(
+         choose1 == "essentialist" ~ 1,
+         choose1 == "structural" ~ 0,
+         TRUE ~ as.numeric(NA))) %>%
+  mutate(choose2 = case_when(
+         choose2 == "essentialist" ~ 1,
+         choose2 == "structural" ~ 0,
+         TRUE ~ as.numeric(NA)))
+
+panda_bc_kid <- panda_bc_kid %>%
+  mutate(status_high = case_when(
+         status_high == "stereotype consistent" ~ 0,
+         status_high == "stereotype inconsistent" ~ 1,
+         TRUE ~ as.numeric(NA)))
+
+```
+
+```{r clean secondary parent data, include = FALSE}
+
+#Clean parent data first
+
+#exp_endorse_1 (essentialist reasons) and exp_endorse 2 (structural reasons) 
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(exp_endorse_ess = case_when(
+         exp_endorse_1 == "Strongly disagree" ~ 1,
+         exp_endorse_1 == "Disagree" ~ 2,
+         exp_endorse_1 == "Somewhat disagree" ~ 3,
+         exp_endorse_1 == "Neither agree nor disagree" ~ 4,
+         exp_endorse_1 == "Somewhat agree" ~ 5,
+         exp_endorse_1 == "Agree" ~ 6,
+         exp_endorse_1 == "Strongly agree" ~ 7,
+         TRUE ~ as.numeric(NA))) %>%
+  mutate(exp_endorse_struc = case_when(
+         exp_endorse_2 == "Strongly disagree" ~ 1,
+         exp_endorse_2 == "Disagree" ~ 2,
+         exp_endorse_2 == "Somewhat disagree" ~ 3,
+         exp_endorse_2 == "Neither agree nor disagree" ~ 4,
+         exp_endorse_2 == "Somewhat agree" ~ 5,
+         exp_endorse_2 == "Agree" ~ 6,
+         exp_endorse_2 == "Strongly agree" ~ 7,
+         TRUE ~ as.numeric(NA)))
+
+#Exp_choice (1 = essentialist explanation, 0 = structural explanation)
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(exp_choice = case_when(
+    exp_choice == "Due to something specific to them, such as their work ethic or financial choices." ~ 1,
+    exp_choice == "Due to something about society, such as access to jobs and education." ~ 0,
+    TRUE ~ as.numeric(NA)))
+
+#Values_Priorities_1 and Values_Priorities_2 (1 = most important, 8 = least important)
+panda_bc_parent <- panda_bc_parent %>%
+  rename(value_equality = value_priorities_1,
+         value_freedom = value_priorities_2,
+         value_natsec = value_priorities_7)
+
+#How_often questions
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(how_often_racetalk = case_when(
+    how_often_3 == "Never" ~ 0,
+    how_often_3 == "Rarely" ~ 1,
+    how_often_3 == "Sometimes" ~ 2,
+    how_often_3 == "Very Often" ~ 3,
+    how_often_3 == "Often" ~ 4,
+    TRUE ~ as.numeric(NA))) %>%
+  mutate(how_often_culturalevent = case_when(
+    how_often_7 == "Never" ~ 0,
+    how_often_7 == "Rarely" ~ 1,
+    how_often_7 == "Sometimes" ~ 2,
+    how_often_7 == "Very Often" ~ 3,
+    how_often_7 == "Often" ~ 4,
+    TRUE ~ as.numeric(NA)))
+
+#How important (hi_) child's friends questions
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(hi_friends_racediv = case_when(
+    hi_FRIENDS_6 == "Not at all important" ~ 0,
+    hi_FRIENDS_6 == "Slightly important" ~ 1,
+    hi_FRIENDS_6 == "Moderately important" ~ 2,
+    hi_FRIENDS_6 == "Very important" ~ 3,
+    hi_FRIENDS_6 == "Extremely important" ~ 4,
+    TRUE ~ as.numeric(NA))) %>%
+  mutate(hi_friends_ecosim = case_when(
+    hi_FRIENDS_7 == "Not at all important" ~ 0,
+    hi_FRIENDS_7 == "Slightly important" ~ 1,
+    hi_FRIENDS_7 == "Moderately important" ~ 2,
+    hi_FRIENDS_7 == "Very important" ~ 3,
+    hi_FRIENDS_7 == "Extremely important" ~ 4,
+    TRUE ~ as.numeric(NA))) %>%
+  mutate(hi_friends_polsim = case_when(
+    hi_FRIENDS_8 == "Not at all important" ~ 0,
+    hi_FRIENDS_8 == "Slightly important" ~ 1,
+    hi_FRIENDS_8 == "Moderately important" ~ 2,
+    hi_FRIENDS_8 == "Very important" ~ 3,
+    hi_FRIENDS_8 == "Extremely important" ~ 4,
+    TRUE ~ as.numeric(NA)))
+
+#How important (hi_) live questions
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(hi_live_div = case_when(
+    hi_live_4 == "Not at all important" ~ 0,
+    hi_live_4 == "Slightly important" ~ 1,
+    hi_live_4 == "Moderately important" ~ 2,
+    hi_live_4 == "Very important" ~ 3,
+    hi_live_4 == "Extremely important" ~ 4,
+    TRUE ~ as.numeric(NA)))
+
+#How age-appropriate questions
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(age_app_race = case_when(
+    age_app_4 == "Very inappropriate" ~ 0,
+    age_app_4 == "Inappropriate" ~ 1,
+    age_app_4 == "In the middle" ~ 2,
+    age_app_4 == "Appropriate" ~ 3,
+    age_app_4 == "Very appropriate" ~ 4,
+    TRUE ~ as.numeric(NA)))
+
+#How comfortable questions
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(comfort_race = case_when(
+    comfort_4 == "Very uncomfortable" ~ 0,
+    comfort_4 == "Uncomfortable" ~ 1,
+    comfort_4 == "In the middle" ~ 2,
+    comfort_4 == "Comfortable" ~ 3,
+    comfort_4 == "Very comfortable" ~ 4,
+    TRUE ~ as.numeric(NA)))
+
+#How helpful questions
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(helpful_race = case_when(
+    helpful_4 == "Very unhelpful" ~ 0,
+    helpful_4 == "Unhelpful" ~ 1,
+    helpful_4 == "In the middle" ~ 2,
+    helpful_4 == "Helpful" ~ 3,
+    helpful_4 == "Very helpful" ~ 4,
+    TRUE ~ as.numeric(NA)))
+
+#Politics (just to double-check with Costly political ID var)
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(politics_bc = case_when(
+    politics_1 == "Very Conservative" ~ 7,
+    politics_1 == "Conservative" ~ 6,
+    politics_1 == "Slightly Conservative" ~ 5,
+    politics_1 == "Middle-of-the-road"~ 4,
+    politics_1 == "Slightly Liberal" ~ 3,
+    politics_1 == "Liberal" ~ 2,
+    politics_1 == "Very Liberal" ~ 1,
+    TRUE ~ as.numeric(NA)))
+
+```
+
+```{r mean-center ideology-linked variables, include = FALSE}
+
+#Mean-center each variable of interest
+panda_bc_parent$exp_endorse_ess_c <- scale(panda_bc_parent$exp_endorse_ess, center = TRUE, scale = FALSE)
+
+panda_bc_parent$exp_endorse_struc_c <- scale(panda_bc_parent$exp_endorse_struc, center = TRUE, scale = FALSE)
+
+panda_bc_parent$value_freedom_c <- scale(panda_bc_parent$value_freedom, center = TRUE, scale = FALSE)
+
+```
+
+```{r run models with parent data on punishment, include = FALSE}
+
+#Run models with BC vars from parents
+punish_bc_parent1 <- glm(q_punish_decide ~ exp_endorse_ess_c*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent1) #sig 2-way
+
+punish_bc_parent2 <- glm(q_punish_decide ~ exp_endorse_struc_c*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent2) #marginal 2-way
+
+punish_bc_parent3 <- glm(q_punish_decide ~ exp_choice*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent3) #ns
+
+punish_bc_parent4 <- glm(q_punish_decide ~ value_equality*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent4) #ns
+
+punish_bc_parent5 <- glm(q_punish_decide ~ value_freedom_c*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent5) #sig 2-way
+
+punish_bc_parent6 <- glm(q_punish_decide ~ how_often_racetalk*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent6) #ns
+
+punish_bc_parent7 <- glm(q_punish_decide ~ how_often_culturalevent*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent7) #ns
+
+punish_bc_parent8 <- glm(q_punish_decide ~ hi_friends_racediv*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent8) #ns
+
+punish_bc_parent9 <- glm(q_punish_decide ~ hi_friends_ecosim*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent9) #ns
+
+punish_bc_parent10 <- glm(q_punish_decide ~ hi_friends_polsim*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent10) #ns
+
+punish_bc_parent11 <- glm(q_punish_decide ~ hi_live_div*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent11) #ns
+
+punish_bc_parent12 <- glm(q_punish_decide ~ age_app_race*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent12) #ns
+
+punish_bc_parent13 <- glm(q_punish_decide ~ comfort_race*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent13) #ns
+
+punish_bc_parent14 <- glm(q_punish_decide ~ helpful_race*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent14) #ns
+
+punish_bc_parent15 <- glm(q_punish_decide ~ value_natsec*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent15) #ns
+
+```
+
+## Distribution of new parent variables that interact with condition to predict punishment
+```{r plot distributions of parent variables, include = TRUE}
+
+hist_ess <- ggplot(data = panda_bc_parent,
+                     aes(x = exp_endorse_ess)) +
+              geom_histogram(color = "white", fill = "80CAA4") +
+              xlab("Parents' Endorsement of Essentialist Explanations for Inequality \n (1 = Strongly Disagree, 7 = Strongly Agreee)") + 
+              ylab("Number of Participants") +
+              scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7)) + 
+              expand_limits(x = c(1, 7)) +
+              theme_classic()
+hist_ess
+
+hist_struc <- ggplot(data = panda_bc_parent,
+                     aes(x = exp_endorse_struc)) +
+              geom_histogram(color = "white", fill = "80CAA4") +
+              xlab("Parents' Endorsement of Structural Explanations for Inequality \n (1 = Strongly Disagree, 7 = Strongly Agreee)") + 
+              ylab("Number of Participants") +
+              scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7)) + 
+              expand_limits(x = c(1, 7)) +
+              theme_classic()
+hist_struc
+
+hist_freedom <- ggplot(data = panda_bc_parent,
+                     aes(x = value_freedom)) +
+              geom_histogram(color = "white", fill = "80CAA4") +
+              xlab("Parents' Prioritization of Freedom as a Value \n (1 = Most Important, 8 = Least Important)") + 
+              ylab("Number of Participants") +
+              theme_classic() +
+              scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7, 8)) +
+              expand_limits(x = c(1, 8))
+hist_freedom
+
+```
+
+## Correlations of new parent variables and political ideology (as used in Costly PANDA)
+```{r calculate correlations with parent ID, include = TRUE}
+
+corr.test(panda_bc_parent$pol_id_new, panda_bc_parent$exp_endorse_ess) #r = .30, p < .001
+corr.test(panda_bc_parent$pol_id_new, panda_bc_parent$exp_endorse_struc) #r = -.38, p < .001  
+corr.test(panda_bc_parent$pol_id_new, panda_bc_parent$value_freedom) #r = -.15, p = .10
+
+```
+
+## Model 1: Predicting punishment from condition and parents' endorsement of essentialist explanations for inequality
+```{r follow up on findings from parents - 1, include = TRUE}
+
+#Model 1: endorsement of essentialist explanations for inequality (N = 128)
+punish_bc_parent1 <- glm(q_punish_decide ~ exp_endorse_ess_c*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent1) #sig 2-way
+
+punish_bc_parent1_plot <- glm(q_punish_decide ~ exp_endorse_ess*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent1_plot)
+
+#Get predicted means for graphing
+predicted_bc_parent1 <-effect("exp_endorse_ess*condition_group",
+                                    mod=punish_bc_parent1_plot, confidence.level = .975)
+predicted_bc_parent1<-as.data.frame(predicted_bc_parent1)
+
+#Create labels
+exp_endorse_label <- c("1 \n More Liberal \n Responding \n ('Strongly Disagree')", "2", "3", "4", "5","6", "7 \n More Conservative \n Responding \n ('Strongly Agree')")
+
+#Plot predicted means
+plot_punish_bc_parent1 <- ggplot() + 
+  geom_jitter(data = panda_bc_parent, aes(x = exp_endorse_ess, y = q_punish_decide, 
+                  group = condition_group, color = condition_group), alpha = .7, height = .1) +
+  stat_smooth(data = predicted_bc_parent1, aes(x = exp_endorse_ess, y = fit,
+                                               group = condition_group, color = condition_group),
+              method = "glm", method.args =list(family="binomial"), 
+              fill = "#F6F3FF",
+              se = TRUE,
+              size = 2) +
+  theme_classic() +
+  labs(x = "Parents' Endorsement of \n Essentialist Explanations for Inequality",  
+  y ="Decision to Enact Costly Punishment\nAgainst Transgressor",
+  color = "Transgressor's\n Group") +
+  scale_color_manual(
+  values = c("#8C8C8C", "#1F1F1F"),
+  labels = c("Ingroup", "Outgroup")) +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7),
+                     labels = exp_endorse_label) + 
+  scale_y_continuous(breaks = c(0,1), labels = c("No", "Yes")) + 
+  expand_limits(x = 7.5) + 
+  theme(legend.position = "none") +
+  geom_vline(xintercept = 3.627, linetype = "dashed", size = 1.2, color = "#0E2EE4") +
+  geom_segment(aes(x = 3.50, y = .38, xend = 1.5, yend = .38), arrow = arrow(length = unit(0.5, "cm")), color = "#0E2EE4", size = 1.2) +
+  theme(axis.title.x = element_text(size = 10, color = "black"),
+        axis.title.y = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 8, color = "black"),
+        legend.title = element_text(size = 10, color = "black"),
+        legend.text = element_text(size = 8, color = "black"),
+        rect = element_rect(fill = "transparent")) 
+plot_punish_bc_parent1 
+
+#Run J-N analysis
+
+#Check simple effects (within in- and out-group)
+punish_bc_parent1_simp <- glm(q_punish_decide ~ condition_group/exp_endorse_ess_c*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent1_simp) #effect of parents' essentialist explanations is in out-group
+
+#First, change condition to numeric variable (for J-N to run)
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(condition_num = case_when(
+    condition_group == "ingroup_toogit" ~ 0,
+    condition_group == "outgroup_flurp" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+punish_bc_parent1_JN <- glm(q_punish_decide ~ condition_num*exp_endorse_ess*age_c, family = binomial, data = panda_bc_parent)
+#summary(punish_bc_parent1_JN) 
+sim_slopes(punish_bc_parent1_JN, pred="exp_endorse_ess", modx="condition_num")
+
+#J-N analysis code from other website
+jn_parent1 <- johnson_neyman(
+  punish_bc_parent1_JN,
+  condition_num,
+  exp_endorse_ess,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,7),
+  title = "Johnson-Neyman plot: Parents' Essentialist Endorsement"
+)
+jn_parent1 #effect of in-group > out-group begins at endorsement below 3.627 (~disagree that essentialist reasons explain; liberal end of spectrum); no significant out-group > in-group here
+
+```
+
+## Model 2: Predicting punishment from condition and parents' endorsement of structural explanations for inequality
+```{r follow up on findings from parents - 2, include = TRUE}
+
+#Model 2: endorsement of essentialist explanations for structural (N = 128)
+punish_bc_parent2 <- glm(q_punish_decide ~ exp_endorse_struc_c*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent2) #marginally sig 2-way
+
+punish_bc_parent2_plot <- glm(q_punish_decide ~ exp_endorse_struc*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent2_plot) #marginally sig 2-way
+
+#Get predicted means for graphing
+predicted_bc_parent2 <-effect("exp_endorse_struc*condition_group",
+                                    mod=punish_bc_parent2_plot, confidence.level = .975)
+predicted_bc_parent2 <-as.data.frame(predicted_bc_parent2)
+
+#Create labels
+exp_struc_label <- c("1 \n More Conservative \n Responding \n ('Strongly Disagree')", "2", "3", "4", "5","6", "7 \n More Liberal \n Responding \n ('Strongly Agree')")
+
+#Plot predicted means
+plot_punish_bc_parent2 <- ggplot() + 
+  geom_jitter(data = panda_bc_parent, aes(x = exp_endorse_struc, y = q_punish_decide, 
+                  group = condition_group, color = condition_group), alpha = .7, height = .1) +
+  stat_smooth(data = predicted_bc_parent2, aes(x = exp_endorse_struc, y = fit,
+                                               group = condition_group, color = condition_group),
+              method = "glm", method.args =list(family="binomial"), 
+              fill = "#F1EAFF",
+              se = TRUE,
+              size = 1.8) +
+  theme_classic() +
+  labs(x = "Parents' Endorsement of \n Structural Explanations for Inequality",  
+  y ="Decision to Enact Costly Punishment\nAgainst Transgressor",
+  color = "Transgressor's\n Group") +
+  scale_color_manual(
+  values = c("#8C8C8C", "#1F1F1F"),
+  labels = c("Ingroup", "Outgroup")) +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7),
+                     labels = exp_endorse_label) + 
+  expand_limits(x = 1) + 
+  theme(legend.position = "none")
+plot_punish_bc_parent2
+
+#Check simple effects (within in- and out-group)
+punish_bc_parent2_simp <- glm(q_punish_decide ~ condition_group/exp_endorse_struc*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent2_simp) #effect of parents' structural explanations appears in out-group
+
+#Run J-N analysis
+
+#First, change condition to numeric variable (for J-N to run)
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(condition_num = case_when(
+    condition_group == "ingroup_toogit" ~ 0,
+    condition_group == "outgroup_flurp" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+punish_bc_parent2_JN <- glm(q_punish_decide ~ condition_num*exp_endorse_struc*age_c, family = binomial, data = panda_bc_parent)
+#summary(punish_bc_parent2_JN) 
+
+#J-N analysis code from other website
+jn_parent2 <- johnson_neyman(
+  punish_bc_parent2_JN,
+  condition_num,
+  exp_endorse_struc,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,7),
+  title = "Johnson-Neyman plot: Parents' Structuralist Endorsement"
+)
+jn_parent2 #effect of in-group > out-group begins at endorsement above 5.261 (~agree that structural reasons explain; liberal end of spectrum); no significant out-group > in-group here
+
+```
+
+## Model 2 (reverse-coded): Predicting punishment from condition and parents' endorsement of structural explanations for inequality
+```{r follow up on findings from parents - 2 (reverse-coded), include = TRUE}
+
+#Make reverse-coded variable, re-center var, and re-run model
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(exp_endorse_struc_rev = 8 - exp_endorse_struc)
+
+panda_bc_parent$exp_endorse_struc_rev_c <- scale(panda_bc_parent$exp_endorse_struc_rev, center = TRUE, scale = FALSE)
+
+punish_bc_parent2_rev <- glm(q_punish_decide ~ exp_endorse_struc_rev_c*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent2_rev)
+
+punish_bc_parent2_rev_plot <- glm(q_punish_decide ~ exp_endorse_struc_rev*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent2_rev_plot)
+
+#Get predicted means for graphing
+predicted_bc_parent2_rev <-effect("exp_endorse_struc_rev*condition_group",
+                                    mod=punish_bc_parent2_rev_plot, confidence.level = .975)
+predicted_bc_parent2_rev<-as.data.frame(predicted_bc_parent2_rev)
+
+#Create labels (rev)
+exp_struc_label_rev <- c("1 \n More Liberal \n  Responding \n ('Strongly Agree')", "2", "3", "4", "5","6", "7 \n More Conservative \n Responding \n ('Strongly Disgree')")
+
+#Plot predicted means of rev
+plot_punish_bc_parent2_rev <- ggplot() + 
+  geom_jitter(data = panda_bc_parent, aes(x = exp_endorse_struc_rev, y = q_punish_decide, 
+                  group = condition_group, color = condition_group), alpha = .7, height = .1) +
+  stat_smooth(data = predicted_bc_parent2_rev, aes(x = exp_endorse_struc_rev, y = fit,
+                                               group = condition_group, color = condition_group),
+              method = "glm", method.args =list(family="binomial"), 
+              fill = "#F6F3FF",
+              se = TRUE,
+              size = 2) +
+  theme_classic() +
+  labs(x = "Parents' Endorsement of \n Structural Explanations for Inequality",  
+  y ="Decision to Enact Costly Punishment\nAgainst Transgressor",
+  color = "Transgressor's\n Group") +
+  scale_color_manual(
+  values = c("#8C8C8C", "#1F1F1F"),
+  labels = c("Ingroup", "Outgroup")) +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7),
+                     labels = exp_struc_label_rev) + 
+  scale_y_continuous(breaks = c(0,1), labels = c("No", "Yes")) + 
+  expand_limits(x = 7.5) + 
+  theme(legend.position = "none") +
+  geom_vline(xintercept = 1.739, linetype = "dashed", size = 1.2, color = "#0E2EE4") +
+  geom_segment(aes(x = 1.650, y = .42, xend = 1, yend = .42), arrow = arrow(length = unit(0.5, "cm")), color = "#0E2EE4", size = 1.2) +
+  theme(axis.title.x = element_text(size = 10, color = "black"),
+        axis.title.y = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 8, color = "black"),
+        legend.title = element_text(size = 10, color = "black"),
+        legend.text = element_text(size = 8, color = "black")) 
+plot_punish_bc_parent2_rev #465 x 350 (600 x 450)
+
+#Check simple effects (within in- and out-group)
+punish_bc_parent2_rev_simp <- glm(q_punish_decide ~ condition_group/exp_endorse_struc_rev_c*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent2_rev_simp) #effect of parents' structural explanations appears in out-group
+
+#Run J-N analysis
+
+#First, change condition to numeric variable (for J-N to run)
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(condition_num = case_when(
+    condition_group == "ingroup_toogit" ~ 0,
+    condition_group == "outgroup_flurp" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+punish_bc_parent2_rev_JN <- glm(q_punish_decide ~ condition_num*exp_endorse_struc_rev*age_c, family = binomial, data = panda_bc_parent)
+#summary(punish_bc_parent2_JN) 
+
+#J-N analysis code from other website
+jn_parent2_rev <- johnson_neyman(
+  punish_bc_parent2_rev_JN,
+  condition_num,
+  exp_endorse_struc_rev,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,7),
+  title = "Johnson-Neyman plot: Parents' Structuralist Endorsement (Reverse-coded)"
+)
+jn_parent2_rev #effect of in-group > out-group begins at endorsement above 5.261 (~agree that structural reasons explain); no significant out-group > in-group here
+
+```
+
+## Model 3: Predicting punishment from condition and parents' prioritization of freedom as a value
+```{r follow up on findings from parents - 3, include = TRUE}
+
+#Model 3: prioritizing freedom as a value (1 = most important, 7 = least important); (N = 121)
+punish_bc_parent5 <- glm(q_punish_decide ~ value_freedom_c*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent5) #sig 2-way
+
+punish_bc_parent5_plot <- glm(q_punish_decide ~ value_freedom*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent5_plot)
+
+#Get predicted means for graphing
+predicted_bc_parent5 <-effect("value_freedom*condition_group",
+                                    mod=punish_bc_parent5_plot, confidence.level = .975)
+predicted_bc_parent5<-as.data.frame(predicted_bc_parent5)
+
+#Create labels
+exp_value_label <- c("1 \n Most \n Important", "2", "3", "4","5", "6", "7", "8 \n Least \n Important")
+
+#Plot predicted means
+plot_punish_bc_parent5 <- ggplot() + 
+  geom_jitter(data = panda_bc_parent, aes(x = value_freedom, y = q_punish_decide, 
+                  group = condition_group, color = condition_group), alpha = .7, height = .1) +
+  stat_smooth(data = predicted_bc_parent5, aes(x = value_freedom, y = fit,
+                                               group = condition_group, color = condition_group),
+              method = "glm", method.args =list(family="binomial"), 
+              fill = "#F1EAFF",
+              se = TRUE,
+              size = 1.8) +
+  theme_classic() +
+  labs(x = "Parents' Prioritization of Freedom as a Value",  
+  y ="Decision to Enact Costly Punishment\nAgainst Transgressor",
+  color = "Transgressor's\n Group") +
+  scale_color_manual(
+  values = c("#8C8C8C", "#1F1F1F"),
+  labels = c("Ingroup", "Outgroup")) +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7, 8),
+                     labels = exp_value_label) +
+  expand_limits(x = 8) + 
+  theme(legend.position = "none")
+plot_punish_bc_parent5
+
+#Check simple effects (within in- and out-group)
+punish_bc_parent5_simp  <- glm(q_punish_decide ~ condition_group/value_freedom*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent5_simp) 
+
+#Run J-N analysis
+
+#First, change condition to numeric variable (for J-N to run)
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(condition_num = case_when(
+    condition_group == "ingroup_toogit" ~ 0,
+    condition_group == "outgroup_flurp" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+punish_bc_parent5_JN <- glm(q_punish_decide ~ condition_num*value_freedom*age_c, family = binomial, data = panda_bc_parent)
+#summary(punish_bc_parent5_JN) 
+
+#J-N analysis code from other website
+jn_parent5 <- johnson_neyman(
+  punish_bc_parent5_JN,
+  condition_num,
+  value_freedom,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,8),
+  title = "Johnson-Neyman plot: Parents' Valuing of Freedom"
+)
+jn_parent5 #effect of in-group > out-group begins at endorsement above 4.8 (~valuing freedom as 5th/8th most important; liberal end of spectrum); effect of out-group > in-group begins at .91 (~valuing freedom at 1st/8th most important)
+
+```
+
+## Model 3 (reverse-coded): Predicting punishment from condition and parents' prioritization of freedom as a value
+```{r follow up on findings from parents - 3, include = TRUE}
+
+#Make reverse-coded variable and re-run model (1 = least important, 7 = most important)
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(value_freedom_rev = 9 - value_freedom)
+
+panda_bc_parent$value_freedom_rev_c <- scale(panda_bc_parent$value_freedom_rev, center = TRUE, scale = FALSE)
+
+punish_bc_parent5_rev <- glm(q_punish_decide ~ value_freedom_rev_c*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent5_rev) #sig 2-way
+
+punish_bc_parent5_rev_plot <- glm(q_punish_decide ~ value_freedom_rev*condition_group*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent5_rev_plot) #sig 2-way
+
+#Get predicted means for graphing
+predicted_bc_parent5_rev <-effect("value_freedom_rev*condition_group",
+                                    mod=punish_bc_parent5_rev_plot, confidence.level = .975)
+predicted_bc_parent5_rev<-as.data.frame(predicted_bc_parent5_rev)
+
+#Create labels
+exp_value_label_rev <- c("1 \n More Liberal \n Responding \n ('Least Important')", "2", "3", "4","5", "6", "7", "8 \n More Conservative \n Responding \n ('Most Important')")
+
+#Plot predicted means
+plot_punish_bc_parent5_rev <- ggplot() + 
+  geom_jitter(data = panda_bc_parent, aes(x = value_freedom_rev, y = q_punish_decide, 
+                  group = condition_group, color = condition_group), alpha = .7, height = .1) +
+  stat_smooth(data = predicted_bc_parent5_rev, aes(x = value_freedom_rev, y = fit,
+                                               group = condition_group, color = condition_group),
+              method = "glm", method.args =list(family="binomial"), 
+              fill = "#F6F3FF",
+              se = TRUE,
+              size = 2) +
+  theme_classic() +
+  labs(x = "Parents' Prioritization of \n Freedom as a Value",  
+  y ="Decision to Enact Costly Punishment\nAgainst Transgressor",
+  color = "Transgressor's Group") +
+  scale_color_manual(
+  values = c("#8C8C8C", "#1F1F1F"),
+  labels = c("Ingroup", "Outgroup")) +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7, 8),
+                     labels = exp_value_label_rev) +
+  scale_y_continuous(breaks = c(0,1), labels = c("No", "Yes")) + 
+  expand_limits(x = c(1, 8.5)) + 
+  theme(legend.position = "right") +
+  geom_vline(xintercept = 4.199, linetype = "dashed", size = 1.2, color = "#0E2EE4") +
+  geom_segment(aes(x = 4.05, y = .47, xend = 2.2, yend = .47), arrow = arrow(length = unit(0.5, "cm")), color = "#0E2EE4", size = 1.2) +
+  theme(axis.title.x = element_text(size = 10, color = "black"),
+        axis.title.y = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 8, color = "black"),
+        legend.title = element_text(size = 9, color = "black"),
+        legend.text = element_text(size = 7, color = "black")) +
+  guides(col = guide_legend(ncol = 2))
+plot_punish_bc_parent5_rev #510 x 395
+
+#Check simple effects (within in- and out-group)
+punish_bc_parent5_rev_simp  <- glm(q_punish_decide ~ condition_group/value_freedom_rev_c*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent5_rev_simp) 
+
+#Run J-N analysis
+
+#First, change condition to numeric variable (for J-N to run)
+panda_bc_parent <- panda_bc_parent %>%
+  mutate(condition_num = case_when(
+    condition_group == "ingroup_toogit" ~ 0,
+    condition_group == "outgroup_flurp" ~ 1,
+  ))
+
+#Re-run model with numeric condition variable and with pol_id_new not centered (for interpretability of graph)
+punish_bc_parent5_rev_JN <- glm(q_punish_decide ~ condition_num*value_freedom_rev*age_c, family = binomial, data = panda_bc_parent)
+summary(punish_bc_parent5_rev_JN) 
+
+#J-N analysis code from other website
+jn_parent5_rev <- johnson_neyman(
+  punish_bc_parent5_rev_JN,
+  condition_num,
+  value_freedom_rev,
+  vmat = NULL,
+  alpha = 0.05,
+  plot = TRUE,
+  control.fdr = FALSE,
+  line.thickness = 0.5,
+  df = "residual",
+  digits = getOption("jtools-digits", 3),
+  critical.t = NULL,
+  sig.color = "#00BFC4",
+  insig.color = "#F8766D",
+  mod.range = c(1,8),
+  title = "Johnson-Neyman plot: Parents' Valuing of Freedom (Reverse-coded)"
+)
+
+jn_parent5_rev #effect of in-group > out-group begins at endorsement below 4.2 (~valuing freedom as less than somewhat important; liberal end of spectrum); effect of out-group > in-group is not significant
+
+```
+
+```{r export plots, include = FALSE}
+
+#Individually
+plot_punish_bc_parent1 #510 x 395
+ggsave("plot_punish_bc_parent1.png", width = 110, height = 90, units = "mm", dpi = 800)
+
+plot_punish_bc_parent2_rev
+ggsave("plot_punish_bc_parent2_rev.png", width = 110, height = 90, units = "mm", dpi = 800)
+
+plot_punish_bc_parent5_rev
+ggsave("plot_punish_bc_parent5_rev.png", width = 110, height = 90, units = "mm", dpi = 800)
+
+#Altogether
+parent_all <- ggarrange(plot_punish_bc_parent1, plot_punish_bc_parent2_rev, plot_punish_bc_parent5_rev, nrow = 1)
+parent_all
+
+```
+
+#Generate correlation table for ideology-linked vars
+```{r corr tables for id-linked vars, include = TRUE}
+
+parent_idlinked <- panda_bc_parent %>%
+  select(pol_id_new, exp_endorse_ess, exp_endorse_struc_rev, value_freedom_rev)
+parent_idlinked <- as.matrix(parent_idlinked)
+parent_idlinked_corr <- rcorr(parent_idlinked)
+parent_idlinked_corr
+
+#Convert to df
+parent_idlinked_corr_r <- as.data.frame(parent_idlinked_corr$r)
+parent_idlinked_corr_r <- format(parent_idlinked_corr_r, digits = 2)
+
+#Export corr table
+write.csv(parent_idlinked_corr_r, "parent_panda_idlinked_corr.csv")
+```

@@ -1,0 +1,772 @@
+---
+title: 'Love of Large Numbers: Reproducible Report'
+author: "Derek Powell"
+date: "7/13/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(MASS)
+library(ppcor)
+library(ggplot2)
+library(gridExtra)
+library(viridis)
+library(extrafont)
+# font_import() # uncomment on first run
+
+```
+
+# Preliminaries
+
+This is a reproducible report to accompany "The Love of Large Numbers: A Popularity Bias in Consumer Choice," by Derek Powell, Jingqi Yu, Melissa DeWolf, and Keith J. Holyoak. This will allow for the reproduction of the figures and analyses reported in the paper. Some additional analyses not reported in the paper are descrbed in the final section of this document.
+
+Running this notebook requires the files contained in the OSF repository for this article.
+
+This notebook is not completely self-contained. Many data files were prepared outside of R. Components of the processing of Amazon.com reviews were completed in Python, and the model predictions are generated using custom Matlab code. The Matlab model code is also included so that the model predictions can be reproduced, but this cannot be run in this notebook.
+
+# Amazon Review Data
+
+## Table 1.
+
+```{r, echo=FALSE, include=FALSE}
+
+########
+## load in data
+########
+# for cell data
+cell <- read.csv("Data Files/rev_avgs_cell_5orMore_meta.csv",header = TRUE)
+cell.nm <- cell[which(cell$price>0),]
+# for health data
+health <- read.csv('Data Files/rev_avgs_health_5orMore_meta.csv',header=TRUE)
+health.nm <- health[which(health$price>0),]
+# for electronics
+elec <- read.csv('Data Files/rev_avgs_electronics_5orMore_meta.csv',header=TRUE)
+elec.nm <- elec[which(elec$price>0),]
+# for kitchen and dining (partial subset of home and kitchen)
+dining <- read.csv('Data Files/rev_avgs_kitchendining_5orMore_meta.csv',header=TRUE)
+dining.nm <- dining[which(dining$price>0),]
+
+```
+
+```{r, include=FALSE}
+totalProds <- sum(length(cell.nm$N),length(health.nm$N),length(elec.nm$N),length(dining.nm$N))
+totalRevs <- sum(cell.nm$N,health.nm$N,elec.nm$N,dining.nm$N)
+```
+
+Total number of products: `r totalProds`
+
+Total number of Reviews: `r totalRevs`
+
+Cell phones and accessories - number of reviews: `r length(cell.nm$N)`
+
+Cell phones and accessories - number of products: `r sum(cell.nm$N)`
+
+Electronics - number of reviews: `r length(elec.nm$N)`
+
+Electronics - number of products: `r sum(elec.nm$N)`
+
+Health & Beauty - number of reviews: `r length(health.nm$N)`
+
+Health & Beauty - number of products: `r sum(health.nm$N)`
+
+Kitchen & Dining - number of reviews: `r length(dining.nm$N)`
+
+Kitchen & Dining  - number of products: `r sum(dining.nm$N)`
+
+**Below are outputs of correlational analyses:**
+
+```{r, echo=FALSE}
+###################
+### analysis for table 1
+###########
+print("Cell Phones & Accessories")
+pcor.test(cell.nm$score,cell.nm$N,cell.nm$price,method="spearman")
+print("Health & Beauty")
+pcor.test(health.nm$score,health.nm$N,health.nm$price,method="spearman")
+print("Electronics")
+pcor.test(elec.nm$score,elec.nm$N,elec.nm$price,method="spearman")
+print("Kitchen and Dining")
+pcor.test(dining.nm$score,dining.nm$N,dining.nm$price,method="spearman")
+
+
+```
+
+## Figure 1.
+
+```{r, echo=FALSE, fig.align = "center", fig.height=4,fig.width=6.5}
+
+##############
+## define function for kernel density conditional P plots
+##############
+make_density_plot_x <- function(data_input,maxN){
+  
+mydata <- data_input[which(data_input$N < maxN),]
+
+
+k1 <- kde2d(mydata$score,mydata$N,n=256) # 
+
+# generate distribution of P(x|N)
+mymat = k1$z
+for(i in 1:dim(mymat)[1])  # for each row
+{
+  for(j in 1:dim(mymat)[2]) # for each column
+  {
+    valsum=sum(k1$z[,i]) 
+    mymat[j,i] = k1$z[j,i]/valsum # calculate P(x|n) from P(x,n)
+  }
+}
+
+k1c <- k1
+k1c$z <-mymat
+output <- k1c
+
+return(output)
+}
+
+
+
+# make kernel density estimates of P(X|n)
+
+dens.cell <- make_density_plot_x(cell.nm,quantile(cell.nm$N,.95))
+dens.elec <- make_density_plot_x(elec.nm,quantile(elec.nm$N,.95))
+dens.health <- make_density_plot_x(health.nm,quantile(health.nm$N,.95))
+dens.dining <- make_density_plot_x(dining.nm,quantile(health.nm$N,.95))
+```
+
+```{r, echo=FALSE}
+##########
+## create 2x2 plot of heatmaps for P(x|n) (figure 1)
+##########
+
+# Color housekeeping
+
+v <- viridis(32)
+legend_title = expression(paste(italic("P"),"(",italic("x"),"|",italic("n"),")"))
+
+heatmap_theme= theme(panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        axis.line=element_line(color='black'),
+        text=element_text(family='Arial',size=12),
+        plot.title=element_text(family='Arial'))
+
+df.cell <- data.frame(expand.grid(x=dens.cell$x, y=dens.cell$y), z=as.vector(dens.cell$z))
+df.elec <- data.frame(expand.grid(x=dens.elec$x, y=dens.elec$y), z=as.vector(dens.elec$z))
+df.health <- data.frame(expand.grid(x=dens.health$x, y=dens.health$y), z=as.vector(dens.health$z))
+df.dining <- data.frame(expand.grid(x=dens.dining$x, y=dens.dining$y), z=as.vector(dens.dining$z))
+
+plt.cell <- ggplot(df.cell, aes(x,y,colour=z))  + geom_point() + 
+  scale_colour_gradientn(colours=v,
+                         guide = guide_colourbar(title=legend_title,
+                                                 nbin=128, 
+                                                 barheight = 4, 
+                                                 barwidth = .5)) +
+  labs(x="Average Score",
+       y="Number of Reviews",
+       title="Cell Phones & Accessories") + 
+  heatmap_theme
+
+plt.elec <- ggplot(df.elec, aes(x,y,colour=z)) + geom_point() + 
+  scale_colour_gradientn(colours=v, guide = guide_colourbar(title=legend_title,nbin=128, barheight = 4, barwidth = .5)) +
+  labs(x="Average Score",y="Number of Reviews",title="Electronics") + heatmap_theme
+
+plt.health <- ggplot(df.health, aes(x,y,colour=z)) + geom_point() + 
+  scale_colour_gradientn(colours=v, guide = guide_colourbar(title=legend_title,nbin=128, barheight = 4, barwidth = .5)) +
+  labs(x="Average Score",y="Number of Reviews",title="Health & Beauty") + heatmap_theme
+
+plt.dining <- ggplot(df.dining, aes(x,y,colour=z)) + geom_point() + 
+  scale_colour_gradientn(colours=v, guide = guide_colourbar(title=legend_title, nbin=128, barheight = 4, barwidth = .5)) +
+  labs(x="Average Score",y="Number of Reviews",title="Kitchen & Dining") + heatmap_theme
+
+
+plt.heatmaps <- grid.arrange(plt.cell,plt.elec,plt.health,plt.dining,ncol=2)
+ggsave('Outputs/Fig1.png',plot=plt.heatmaps,width=6.5,height=4.5)
+ggsave('Outputs/Fig1_print.tiff',plot=plt.heatmaps, device="tiff", dpi=300, width=6.5,height=4.5)
+```
+
+## Figure 2.
+
+```{r, echo=FALSE, fig.align = "center", fig.height=3, fig.width=6}
+
+###############
+# combine data
+################
+elec.nm$category <- 'elec'
+cell.nm$category <- 'cell'
+dining.nm$category <- 'dining'
+health.nm$category <- 'health'
+alldata <- merge(cell.nm,elec.nm, all=TRUE)
+alldata <- merge(alldata,dining.nm, all=TRUE)
+alldata <- merge(alldata,health.nm, all=TRUE)
+alldata <- within(alldata, rm(salesRank))
+reviewlabels <- c("Cell Phones & Accessories",
+                                        "Kitchen & Dining",
+                                        "Electronics",
+                                        "Health & Beauty")
+alldata$category <- factor(alldata$category, 
+                              levels=c("cell","dining","elec","health"),
+                              labels= reviewlabels)
+
+```
+
+
+```{r, include=FALSE}
+
+##############
+#  create overlaid kernel density plots (figure 2)
+##############
+postscript("Outputs/Fig2_print.eps", height = 4.5, width = 6.5,
+           family = "Arial", paper = "special", onefile = FALSE,
+           horizontal = FALSE)
+
+ggplot(data=alldata, aes(x=score,linetype=category)) + 
+  geom_line(stat="density",size=.75) + 
+  scale_linetype_manual(name="Category", labels=reviewlabels, values=c("solid","dotted","dashed","dotdash")) +
+  # scale_color_manual(name="Category", labels=reviewlabels, values=c("salmon","dark green","purple","blue")) +
+  # scale_colour_discrete(name="Category", labels=reviewlabels, values=viridis(4)) +
+  labs(linetype="Category", y="Density",x="Average Score") + 
+  heatmap_theme +
+  theme(legend.position=c(.2,.7), panel.background=element_blank(), legend.box.background=element_blank(), rect=element_blank()) +
+  guides(linetype=guide_legend(keywidth=2, label.position = "top", title.position = "top", 
+                             direction="vertical"))
+
+dev.off()
+# ggsave('Outputs/Fig2.png',plot=plt.density,width=6.5,height=4.5)
+# ggsave('Outputs/Fig2_print.eps',plot=plt.density,width=6.5,height=4.5)
+```
+
+```{r, echo=FALSE, fig.align = "center", fig.height=4.5, fig.width=6.5}
+ggplot(data=alldata, aes(x=score,linetype=category)) + 
+  geom_line(stat="density",size=.75) + 
+  scale_linetype_manual(name="Category", labels=reviewlabels, values=c("solid","dotted","dashed","dotdash")) +
+  # scale_color_manual(name="Category", labels=reviewlabels, values=c("salmon","dark green","purple","blue")) +
+  # scale_colour_discrete(name="Category", labels=reviewlabels, values=viridis(4)) +
+  labs(linetype="Category", y="Density",x="Average Score") + 
+  heatmap_theme +
+  theme(legend.position=c(.2,.7), panel.background=element_blank(), legend.box.background=element_blank(), rect=element_blank()) +
+  guides(linetype=guide_legend(keywidth=2, label.position = "top", title.position = "top", 
+                             direction="vertical"))
+```
+
+# Model Predictions
+
+## Figure 3
+
+```{r, include=FALSE}
+
+# load in human data
+
+exp1exp2 <- read.csv('Data Files/exp1exp2_data_leftRight.csv',header=TRUE)
+
+# code popularity into binary var
+exp1exp2$popRatio_bin <- ifelse(exp1exp2$leftN>exp1exp2$rightN,1,0)
+exp1exp2$experiment <- ifelse(exp1exp2$experiment==2,1,0)
+
+
+exp1exp2$sd <-  sqrt(exp1exp2$choseBigP*(1 - exp1exp2$choseBigP) / (exp1exp2$choseLR+exp1exp2$choseMR))
+
+exp1 <- exp1exp2[which(exp1exp2$experiment==0),]
+exp2 <- exp1exp2[which(exp1exp2$experiment==1),]
+```
+
+```{r, include=FALSE}
+# save prior as matlab .mat
+# require(R.matlab)
+# writeMat('Outputs/cell_prior.mat',score=cell.nm$score)
+```
+
+```{r, include=FALSE, fig.align = "center", fig.height=3, fig.width=7}
+
+apatheme=
+  theme(panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        axis.line=element_line(color='black'),
+        panel.background=element_blank(),
+        text=element_text(family='Arial',size=12),
+        plot.title=element_text(family='Arial'))
+
+exp1$mod_pred_emp_MR <- ifelse(exp1$reverse==1, 1- exp1$mod_pred_emp, exp1$mod_pred_emp)
+exp2$mod_pred_emp_MR <- ifelse(exp2$reverse==1, 1- exp2$mod_pred_emp, exp2$mod_pred_emp)
+
+lines <- c("longdash","dotdash","solid","dashed","dotted")
+#### do the plotting
+##### empirical prior
+emp_sm <- read.csv('Data Files/output_emp_6-26_tdist.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+emp_sm$diff <- emp_sm$diff*-1
+
+plt.emp_sm <- ggplot(emp_sm, aes(x=score,y=chooseBig, linetype=as.factor(diff), linetype=lines))+
+  labs(x="Rating of Product A (MR)",y="P(MR Product Superior)",title="Relatively small\nsample sizes")+
+  scale_linetype_manual(values=lines) +
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top",
+                               direction="vertical", title="MR Rating\nAdvantage\n",reverse=TRUE)) +
+  xlim(1.25,4.75)+ylim(0,1)+ geom_line() + geom_hline(yintercept=.5,color='grey') +
+  geom_point(data=exp2, aes(x=bigScore, y=mod_pred_emp_MR), shape=20) +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5, aspect.ratio=1)
+
+
+emp_lg <- read.csv('Data Files/output_emp_25-150_tdist.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+emp_lg$diff <- emp_lg$diff*-1
+
+
+plt.emp_lg <- ggplot(emp_lg, aes(x=score,y=chooseBig, linetype=as.factor(diff),linetype=))+
+  labs(x="Rating of Product A (MR)",y="P(MR Product Superior)",title="Relatively large\nsample sizes")+
+  scale_linetype_manual(values=lines) +
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top", 
+                               direction="vertical", title="MR Rating\nAdvantage\n", reverse = TRUE)) +
+  xlim(1.25,4.75)+ylim(0,1)+ geom_line() + geom_hline(yintercept=.5,color='grey') +
+  geom_point(data=exp1, aes(x=bigScore, y=mod_pred_emp_MR), shape=20) +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5, aspect.ratio=1, rect=element_blank())
+
+g <- ggplotGrob(plt.emp_lg)$grobs
+legend3 <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+
+
+postscript("Outputs/Fig3_print.eps", height = 2.75, width = 6.83,
+           family = "Arial", paper = "special", onefile = FALSE,
+           horizontal = FALSE)
+plt.fig3 <- grid.arrange(plt.emp_lg+theme(legend.position="none"), 
+                    plt.emp_sm+theme(legend.position="none"), 
+                    legend3, ncol=3, widths = c(1,1,.5))
+
+dev.off()
+
+```
+
+```{r, echo=FALSE, fig.align = "center", fig.height=2.75, fig.width=6.83}
+# show figure in report
+grid.arrange(plt.emp_lg+theme(legend.position="none"),
+                    plt.emp_sm+theme(legend.position="none"),
+                    legend3, ncol=3, widths = c(1,1,.5))
+```
+
+
+# Human Data
+
+## Experiment 1
+
+### Qualitative analyses
+
+For trials where model predicts P(LR superior) >= .55, what proportion of Ps still continue to choose MR product? Compare against chance responding for these trials reveals Ps are biased toward MR product even in cases where model predicts it is worse.
+
+```{r, echo=FALSE}
+
+# recreate qualitative analyses here
+
+# grab relevant trials w/ which
+exp1_model_favs_LR <- exp1[which((exp1$reverse==0 & exp1$mod_pred_emp <= .45) | (exp1$reverse==1 & exp1$mod_pred_emp >= .55)) ,]
+
+# count # of relevant trials
+nrow(exp1_model_favs_LR)
+
+# sum actual choices and do sign test
+
+binom.test(as.integer(sum(exp1_model_favs_LR$choseMR)), 
+           as.integer(sum(exp1_model_favs_LR$choseMR) + sum(exp1_model_favs_LR$choseLR)))
+  
+```
+
+### Figure 5
+
+```{r, include=FALSE, fig.width=4.5, fig.height=6}
+
+fitexp1 <- glm(cbind(choseR, choseL) ~ revAdvL  + popRatio_bin, data=exp1, family=binomial(logit))
+
+#### Generate Figures
+# apatheme=theme_bw()+
+#   theme(panel.grid.major=element_blank(),
+#         panel.grid.minor=element_blank(),
+#         axis.line=element_line(color='black'),
+#         panel.border = element_rect(color='black'),
+#         text=element_text(family='Helvetica'))
+p1.y_label <- expression(paste(italic("P"),"(choose MR product)"))
+p1 <- ggplot(exp1, aes(x=bigScore,y=choseBigP, linetype=as.factor(diff))) +
+  scale_linetype_manual(values=lines) +
+  geom_errorbar(aes(x=bigScore, ymin=choseBigP-sd, ymax=choseBigP+sd), width=0.1) +
+  labs(x="Rating of MR Product",y=p1.y_label)+
+  guides(linetype=guide_legend(keywidth=2, 
+                               label.position = "left", 
+                               title.position = "top",
+                               direction="vertical", 
+                               title="MR Rating\nAdvantage", 
+                               reverse=TRUE)) +
+  xlim(2.5,4.75)+ylim(0,1) + 
+  geom_line() +
+  geom_point() + 
+  # geom_line(aes(x=bigScore, y=mod_pred_emp_MR,linetype=as.factor(diff)), color="grey") +
+  apatheme  +
+  theme(aspect.ratio=1, rect=element_blank())
+  
+  # theme(legend.position=c(.5,.15),legend.text.align=.5,legend.title.align=.5,legend.title=element_text(size=10))
+# 
+# fitexp1 <- glm(cbind(choseR, choseL) ~ revAdvL  + popRatio_bin, data=exp1, family=binomial(logit))
+
+p2 <- ggplot(exp1, aes(x=mod_pred_emp, y=choseLeftP, shape=ifelse(popRatio_bin >0,"MR","LR"))) +
+    geom_point() + 
+    coord_fixed(xlim=c(0,1), ylim=c(0,1)) + 
+  labs(x="Predicted P(left superior)\nIntuitive Statistician Model",
+       y="P(choose Left)\nHuman Judgments") +
+  guides(shape=guide_legend(keywidth=2, label.position = "right", title.position = "left",
+                               direction="horizontal", title="Left product condition", reverse=TRUE)) +
+  theme(axis.title=element_text(size=9), axis.text=element_text(size=9))
+
+p3 <- ggplot(exp1, aes(x=predict(fitexp1,type="response"), y=choseLeftP, shape=ifelse(popRatio_bin >0,"MR","LR"))) +
+    geom_point() + 
+    coord_fixed(xlim=c(0,1), ylim=c(0,1)) + 
+  labs(x="Predicted P(left superior)\nHeuristic Model",
+       y="P(choose Left)\nHuman Judgments") +
+  theme(legend.position="none") +
+  theme(axis.title=element_text(size=9), axis.text=element_text(size=9))
+
+
+lay <- rbind(c(1, 1, 1, 1),
+             c(1, 1, 1, 1),
+             c(2, 2, 3, 3),
+             c(NA, 4,4,NA))
+
+g <- ggplotGrob(p2)$grobs
+legend5 <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+
+# plt <- grid.arrange(p1,arrangeGrob(p2,p3,nrow=2), layout_matrix=lay)
+postscript("Outputs/Fig5_print.eps", height = 6, width = 4.5,
+           family = "Arial", paper = "special", onefile = FALSE,
+           horizontal = FALSE)
+plt.fig5 <- grid.arrange(p1,p2+theme(legend.position="none"), p3, legend5, layout_matrix=lay, heights=c(.75,.75,1,.25))
+dev.off()
+
+
+# ggsave('Outputs/Fig5.png',plot=plt, width=4.5,height=6)
+# ggsave('Outputs/Fig5_print.pdf',plot=plt, device="pdf", width=4.5,height=6)
+```
+
+```{r, echo=FALSE, fig.align="center", fig.height=6, fig.width=4.5}
+grid.arrange(p1,p2+theme(legend.position="none"), p3, legend5, layout_matrix=lay, heights=c(.75,.75,1,.25))
+```
+
+
+### Model Comparison
+
+Summary of logistic regression (heuristic cue-weighting) model of Experiment 1.
+
+```{r, echo=FALSE}
+
+AIC_exp1_mod_emp = 2*0 - sum(log(exp1$mod_pred_emp)*exp1$choseL+log(1-exp1$mod_pred_emp)*exp1$choseR)
+
+AIC_exp1_mod_unif = 2*0 - sum(log(exp1$mod_pred_unif)*exp1$choseL+log(1-exp1$mod_pred_unif)*exp1$choseR)
+
+summary(fitexp1)
+
+print(paste('AIC of Bayesian model (emp.) = ',AIC_exp1_mod_emp))
+print(paste('AIC of Bayesian model (unif.) = ',AIC_exp1_mod_unif))
+print(paste('AIC of Logistic Regression model = ',AIC(fitexp1)))
+
+print(paste('R2 for Bayesian model (emp) = ',cor(exp1$mod_pred_emp,exp1$choseLeftP)^2))
+print(paste('R2 for Bayesian model (unif) = ',cor(exp1$mod_pred_unif,exp1$choseLeftP)^2))
+print(paste('R2 for logistic regression model = ',cor(predict(fitexp1,type="response"),exp1$choseLeftP)^2))
+```
+
+## Experiment 2
+
+### Qualitative analyses
+
+For trials where model predicts P(LR superior) >= .55, what proportion of Ps still continue to choose MR product? Compare against chance responding for these trials reveals Ps are biased toward MR product even in cases where model predicts it is worse.
+
+```{r, echo=FALSE}
+
+# recreate qualitative analyses here
+
+# grab relevant trials w/ which
+exp2_model_favs_LR <- exp2[which((exp2$reverse==0 & exp2$mod_pred_emp <= .45) | (exp2$reverse==1 & exp2$mod_pred_emp >= .55)) ,]
+
+# count # of relevant trials
+nrow(exp2_model_favs_LR)
+
+# sum actual choices and do sign test
+
+binom.test(as.integer(sum(exp2_model_favs_LR$choseMR)), 
+           as.integer(sum(exp2_model_favs_LR$choseMR) + sum(exp2_model_favs_LR$choseLR)))
+  
+```
+
+### Figure 6
+
+
+```{r, include=FALSE, fig.width=4.25, fig.height=6}
+
+fitexp2 <- glm(cbind(choseR, choseL) ~ revAdvL  + popRatio_bin, data=exp2, family=binomial(logit))
+
+#### Generate Figures
+
+p1.y_label <- expression(paste(italic("P"),"(choose MR product)"))
+p1 <- ggplot(exp2, aes(x=bigScore,y=choseBigP, linetype=as.factor(diff))) +
+  scale_linetype_manual(values=lines) +
+  geom_errorbar(aes(x=bigScore, ymin=choseBigP-sd, ymax=choseBigP+sd), width=0.1) +
+  labs(x="Rating of MR Product",y=p1.y_label)+
+  guides(linetype=guide_legend(keywidth=2, 
+                               label.position = "left", 
+                               title.position = "top",
+                               direction="vertical", 
+                               title="MR Rating\nAdvantage", 
+                               reverse=TRUE)) +
+  xlim(2.5,4.75)+ylim(0,1) + 
+  geom_line() +
+  geom_point() + 
+  # geom_line(aes(x=bigScore, y=mod_pred_emp_MR,linetype=as.factor(diff)), color="grey") +
+  apatheme  +
+  theme(aspect.ratio=1, rect=element_blank())
+  
+  # theme(legend.position=c(.5,.15),legend.text.align=.5,legend.title.align=.5,legend.title=element_text(size=10))
+
+fitexp2 <- glm(cbind(choseR, choseL) ~ revAdvL  + popRatio_bin, data=exp2, family=binomial(logit))
+
+p2 <- ggplot(exp2, aes(x=mod_pred_emp, y=choseLeftP, shape=ifelse(popRatio_bin >0,"MR","LR"))) +
+    geom_point() + 
+    coord_fixed(xlim=c(0,1), ylim=c(0,1)) + 
+  labs(x="Predicted P(left superior)\nIntuitive Statistician Model",
+       y="P(choose Left)\nHuman Judgments") +
+  guides(shape=guide_legend(keywidth=2, label.position = "right", title.position = "left",
+                               direction="horizontal", title="Left product condition", reverse=TRUE)) +
+  theme(axis.title=element_text(size=9), axis.text=element_text(size=9))
+
+p3 <- ggplot(exp2, aes(x=predict(fitexp1,type="response"), y=choseLeftP, shape=ifelse(popRatio_bin >0,"MR","LR"))) +
+    geom_point() + 
+    coord_fixed(xlim=c(0,1), ylim=c(0,1)) + 
+  labs(x="Predicted P(left superior)\nHeuristic Model",
+       y="P(choose Left)\nHuman Judgments") +
+  theme(legend.position="none") +
+  theme(axis.title=element_text(size=9), axis.text=element_text(size=9))
+
+
+lay <- rbind(c(1, 1, 1, 1),
+             c(1, 1, 1, 1),
+             c(2, 2, 3, 3),
+             c(NA, 4,4,NA))
+
+g <- ggplotGrob(p2)$grobs
+legend6 <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+
+# plt <- grid.arrange(p1,arrangeGrob(p2,p3,nrow=2), layout_matrix=lay)
+postscript("Outputs/Fig6_print.eps", height = 6, width = 4.5,
+           family = "Arial", paper = "special", onefile = FALSE,
+           horizontal = FALSE)
+plt.fig6 <- grid.arrange(p1,p2+theme(legend.position="none"), p3, legend6, layout_matrix=lay, heights=c(.75,.75,1,.25))
+dev.off()
+
+```
+
+```{r, echo=FALSE, fig.align = "center", fig.height=6, fig.width=4.5}
+grid.arrange(p1,p2+theme(legend.position="none"), p3, legend6, layout_matrix=lay, heights=c(.75,.75,1,.25))
+```
+
+
+
+### Model Comparison
+
+```{r, echo=FALSE}
+summary(fitexp2)
+
+AIC_exp2_mod_emp = 2*0 - sum(log(exp2$mod_pred_emp)*exp2$choseL+log(1-exp2$mod_pred_emp)*exp2$choseR)
+
+AIC_exp2_mod_unif = 2*0 - sum(log(exp2$mod_pred_unif)*exp2$choseL+log(1-exp2$mod_pred_unif)*exp2$choseR)
+
+print(paste('AIC of Bayesian model (emp.) = ', AIC_exp2_mod_emp))
+print(paste('AIC of Bayesian model (unif.) = ', AIC_exp2_mod_unif))
+print(paste('AIC of Logistic Regression model = ', AIC(fitexp2)))
+
+
+print(paste('R2 for Bayesian model (emp) = ',cor(exp2$mod_pred_emp,exp2$choseLeftP)^2))
+print(paste('R2 for Bayesian model (unif) = ',cor(exp2$mod_pred_unif,exp2$choseLeftP)^2))
+print(paste('R2 for logistic regression model = ',cor(predict(fitexp2,type="response"),exp2$choseLeftP)^2))
+```
+
+## Meta-analysis
+
+Determining whether Ps were sensitive to sample size by comparing results across experiments 1 and 2. Should see an effect (and/or interaction) of experiment in the model. It is non-significant, suggesting that responses didn't differ across experiments and absolute sample sizes.
+
+```{r, echo=FALSE}
+
+summary(fit_red <- glm(cbind(choseR, choseL) ~ revAdvL  + popRatio_bin, data=exp1exp2, family=binomial(logit)))
+
+summary(fit_full <- glm(cbind(choseR, choseL) ~ revAdvL  + popRatio_bin + experiment + experiment*revAdvL, data=exp1exp2, family=binomial(logit)))
+
+anova(fit_red, fit_full,test="Chisq")
+```
+
+
+\pagebreak
+
+# Additional Supplemental Analyses
+
+We now consider some additional model predictions and analyses. Some of the following were omitted from the paper due to brevity. Other points remain highly speculative but may suggest interesting avenues for future research.
+
+## Bayesian Intuitive Statistician Model: Uniform Priors
+
+The figure below shows the Bayesian model predictions for small and large samples and with empirical priors (estimated from Amazon data) as well as uninformative priors, $U(1,5)$.
+
+```{r, echo=FALSE, fig.align = "center", fig.heigh=6, fig.width=7.5}
+
+apatheme=theme_bw()+
+  theme(panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        axis.line=element_line(color='black'),
+        panel.border = element_rect(color='black'),
+        text=element_text(family='Helvetica',size=12),
+        plot.title=element_text(family='Helvetica'))
+  
+#### do the plotting
+##### empirical prior
+emp_sm <- read.csv('Data Files/output_emp_6-26_tdist.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+emp_sm$diff <- emp_sm$diff*-1
+
+plt.emp_sm <- ggplot(emp_sm, aes(x=score,y=chooseBig, linetype=as.factor(diff)))+
+  scale_linetype_manual(values=lines) +
+  labs(x="Score of MR Product",y="P(MR Product Superior)",title="Emp. (sm. Ns)")+
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top", 
+                               direction="vertical", title="MR Rating\nAdvantage\n",reverse=TRUE)) +
+  xlim(1.25,4.75)+ylim(0,1)+ geom_line() + geom_hline(yintercept=.5,color='grey') +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5)
+
+
+emp_lg <- read.csv('Data Files/output_emp_25-150_tdist.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+emp_lg$diff <- emp_lg$diff*-1
+
+plt.emp_lg <- ggplot(emp_lg, aes(x=score,y=chooseBig, linetype=as.factor(diff)))+
+  labs(x="Score of MR Product",y="P(MR Product Superior)",title="Emp. (lg. Ns)")+
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top", 
+                               direction="vertical", title="MR Rating\nAdvantage\n", reverse = TRUE)) +
+  xlim(1.25,4.75)+ylim(0,1)+ geom_line() + geom_hline(yintercept=.5,color='grey') +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5)
+
+unif_sm <- read.csv('Data Files/output_unif_6-26_tdist.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+unif_sm$diff <- unif_sm$diff*-1
+
+plt.unif_sm <- ggplot(unif_sm, aes(x=score,y=chooseBig, linetype=as.factor(diff)))+
+  labs(x="Score of MR Product",y="P(MR Product Superior)",title="Unif. (sm. Ns)")+
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top", 
+                               direction="vertical", title="MR Rating\nAdvantage\n",reverse=TRUE)) +
+  xlim(1.25,4.75)+ylim(0,1)+ geom_line() + geom_hline(yintercept=.5,color='grey') +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5)
+
+
+unif_lg <- read.csv('Data Files/output_unif_25-150_tdist.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+unif_lg$diff <- unif_lg$diff*-1
+
+plt.unif_lg <- ggplot(unif_lg, aes(x=score,y=chooseBig, linetype=as.factor(diff)))+
+  labs(x="Score of MR Product",y="P(MR Product Superior)",title="Unif. (lg. Ns)")+
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top", 
+                               direction="vertical", title="MR Rating\nAdvantage\n", reverse = TRUE)) +
+  xlim(1.25,4.75)+ylim(0,1)+ geom_line() + geom_hline(yintercept=.5,color='grey') +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5)
+
+
+grid.arrange(plt.emp_sm, plt.emp_lg, plt.unif_sm, plt.unif_lg, ncol=2)
+```
+
+### Discussion
+
+As can be seen in the figure, the predicted influence of absolute review score (whether both products are poor, middling, outstanding, etc.) is largely a product of the empirical prior. 
+
+Let us consider the effect of the empirical prior on the model’s selection of products as compared with the uniform prior. For a model with uninformative (uniform) priors, the absolute review score affects selections only near the bounds of the scale (1 and 5). However, as seen in the plots on the right, the model with empirical priors generally favors selecting product A (the product with more reviews) when reviews are favorable, and favors selecting product B (the product with fewer reviews) when reviews are poor. This prediction is uniquely driven by the prior expectation that a majority of products are of fairly high quality: when we generally expect products to be of high quality, we should prefer a product with poor reviews that provide us less, rather than more, certainty of its low quality. Finally, as shown in the plot on the left, this effect is somewhat diminished as sample size increases (indicated by a decrease in the slope of the lines). This prediction is in keeping with a general feature of Bayesian models, that the influence of prior expectations diminishes as the amount of available information increases.
+
+## Choices by Expected Utility
+
+We conceived of product selection in this task as an attempt to select the product that was more likely to be of higher quality. Thus, the model computes P($\theta_A$ > $\theta_B$). Another way to perform this task would be to attempt to maximize the expected utility of the product choice. This model would calculate the difference in expected utility between the two products, and then somehow translate those utility calculations into a probability of selecting each product. Crudely, the model would be more likely to select the product with greater utility and this probability would increase as the difference in utilities increased.
+
+A utility function, $U(x)$, is a function that maps inputs (e.g., dollar amounts, or here, star ratings) to subjective value. Our approach in the paper allowed us to remain agnostic regardingto the utility function participants used in assigning values to different star ratings. This is because P($\theta_A$ > $\theta_B$) is unaffected by the choice of utility function so long as the same monotonic utility function is applied to both items. To grasp this intuitively, consider the actual process by which we calculate P($\theta_A$ > $\theta_B$): we sample values from each distribution and compare which is greater many times until a probability can be estimated. Whether we compare the original star ratings or transform them, the inequality will remain the same (again, so long as the transformation is applied identically to both and is monotonic). 
+In contrast, maximizing the utility of the selected product requires that some utility function be assumed or estimated. This goes well beyond the scope of our paper. However, we can begin to explore these issues with some additional model simulations. 
+
+In this simulation we examine how a log utility function affects the predictions of the model. One classical model of a utility function is $U(x)$ = $log(x)$. This function is able to capture many important features of human decision-making, such as risk aversion. Risk aversion is the tendency to prefer a certain gain over a risky one--even when the expected value of the two gains are equal. For instance, people generally prefer a certain \$50 gain to a 50% probability of a \$100 gain.
+
+
+```{r, echo=FALSE, fig.align = "center", fig.heigh=6, fig.width=7.5}
+
+apatheme=theme_bw()+
+  theme(panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        axis.line=element_line(color='black'),
+        panel.border = element_rect(color='black'),
+        text=element_text(family='Helvetica',size=12),
+        plot.title=element_text(family='Helvetica'))
+  
+#### do the plotting
+##### empirical prior
+lin_sm <- read.csv('Data Files/output_emp_6-26_lin_util.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+lin_sm$diff <- lin_sm$diff*-1
+
+plt.lin_sm <- ggplot(lin_sm, aes(x=score,y=chooseBig, linetype=as.factor(diff)))+
+  scale_linetype_manual(values=lines) +
+  labs(x="Score of MR Product",y="E(Utility Diff.)",title="U(x)=x (sm. Ns)")+
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top", 
+                               direction="vertical", title="MR Rating\nAdvantage\n",reverse=TRUE)) +
+  xlim(1.25,4.75)+ geom_line() + geom_hline(yintercept=0,color='grey') +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5)
+
+
+lin_lg <- read.csv('Data Files/output_emp_25-150_lin_util.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+lin_lg$diff <- lin_lg$diff*-1
+
+plt.lin_lg <- ggplot(lin_lg, aes(x=score,y=chooseBig, linetype=as.factor(diff)))+
+  scale_linetype_manual(values=lines) +
+  labs(x="Score of MR Product",y="E(Utility Diff.)",title="U(x)=x (lg. Ns)")+
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top", 
+                               direction="vertical", title="MR Rating\nAdvantage\n", reverse = TRUE)) +
+  xlim(1.25,4.75)+ geom_line() + geom_hline(yintercept=0,color='grey') +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5)
+
+log_sm <- read.csv('Data Files/output_emp_6-26_log_util.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+log_sm$diff <- log_sm$diff*-1
+
+plt.log_sm <- ggplot(log_sm, aes(x=score,y=chooseBig, linetype=as.factor(diff)))+
+  scale_linetype_manual(values=lines) +
+  labs(x="Score of MR Product",y="E(Utility Diff.)",title="U(x)=log(x) (sm. Ns)")+
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top", 
+                               direction="vertical", title="MR Rating\nAdvantage\n",reverse=TRUE)) +
+  xlim(1.25,4.75)+geom_line() + geom_hline(yintercept=0,color='grey') +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5)
+
+
+log_lg <- read.csv('Data Files/output_emp_25-150_log_util.csv',header=FALSE, col.names=c("chooseBig","score","diff"))
+log_lg$diff <- log_lg$diff*-1
+
+plt.log_lg <- ggplot(log_lg, aes(x=score,y=chooseBig, linetype=as.factor(diff)))+
+  scale_linetype_manual(values=lines) +
+  labs(x="Score of MR Product",y="E(Utility Diff.)",title="U(x)=log(x) (lg. Ns)")+
+  guides(linetype=guide_legend(keywidth=2, label.position = "left", title.position = "top", 
+                               direction="vertical", title="MR Rating\nAdvantage\n", reverse = TRUE)) +
+  xlim(1.25,4.75)+ geom_line() + geom_hline(yintercept=0,color='grey') +
+  #geom_dl(aes(label=diff),method=angled.boxes) +
+  apatheme + theme(legend.position="right",legend.text.align=.5,legend.title.align=.5)
+
+
+grid.arrange(plt.lin_sm,plt.lin_lg,plt.log_sm,plt.log_lg,ncol=2)
+```
+
+We calculate the expected utility difference under the model assuming a linear utility function (star ratings untransformed; left) and a log utility function over star ratings (right) for small (*n* = 6 v. *n* = 26; top) and large sample sizes (*n* = 25 v. *n* = 150; bottom).
+
+### Discussion
+
+As is clear from the figure, the choice of utility function has a non-trivial impact on the difference in expected utility between the two products. However, qualitatively comparing these predictions to the human behavioral data, it is clear the model favors selecting the LR product in many of the situations where participants overwhelmingly prefer the MR product. That is, it fails as a model of the observed human behavior in this task.
+
+Future research might attempt to empirically elicit people's utility functions over star ratings, and might also explore how these functions differ across domains.
+
+
+# Reproducibility notes
+
+This was tested and found working with the following versions of R and packages:
+
+- R: `r getRversion()`
+- ggplot2: `r packageVersion("ggplot2")`
+- gridExtra: `r packageVersion("gridExtra")`
+- MASS: `r packageVersion("MASS")`
+- ppcor: `r packageVersion("ppcor")`
+- viridis: `r packageVersion("viridis")`
+- extrafont: `r packageVersion("extrafont")`

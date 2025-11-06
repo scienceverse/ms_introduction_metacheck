@@ -1,0 +1,1814 @@
+---
+title: "Church attendance Descriptives"
+author: "Anastasia Ejova"
+date: "01 March 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#setwd("C:/Users/AEJO347/Dropbox/Auckland/Church attendance project/ALT-SR church attendance")
+setwd("~/Dropbox/Auckland/Church attendance project/ALT-SR church attendance")
+
+library(dplyr)
+library(psych)
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(car)
+library(lsr)
+#library(xlsx)
+library(readxl)
+
+```
+
+# Main analysis; max no. of monthly church attendances = 31
+## Read in txt file and load packages
+```{r}
+#NZAll <- read.table(file = "NZAVS Longitudinal Mplus Base Dataset.txt")
+
+MPlus <- read.table("ALT-SR CHURCH DATA DESCR 16.txt")
+MPlus2 <- read.table("ALT-SR CHURCH DATA OUTPUT 16.txt") #21 vars, subnum 20th
+
+```
+
+MPLUS ORDER OF VARIABLES - descr
+    AGE_T02
+    GENDER
+    EUR
+    ETHCAT
+    RELICHT2
+    RELICHT3
+    RELICHT4
+    RELICHT5
+    RELICHT6
+    RELICHT7
+    RELICHT8
+    RELICHT9
+    T01
+    T02
+    T03
+    T04
+    T05
+    T06
+    T07
+    T08
+    T09
+    RELIGT1
+    RELIGT2
+    RELIGT3
+    RELIGT4
+    RELIGT5
+    RELIGT6
+    RELIGT7
+    RELIGT8
+    RELIGT9
+    X_T2
+    X_T3
+    X_T4
+    X_T5
+    X_T6
+    X_T7
+    X_T8
+    X_T9
+    Y_T2
+    Y_T3
+    Y_T4
+    Y_T5
+    Y_T6
+    Y_T7
+    Y_T8
+    Y_T9
+    AVCHAT
+    NEUFIR29
+    K6FIR29
+    FIRHLT29
+    DEPRMERG
+    GROUP
+    FIRRELID
+    CHSUM29
+    ATT1PROP
+    SUBNUM
+    
+Mplus order of variables - output
+    X_T2
+    X_T3
+    X_T4
+    X_T5
+    X_T6
+    X_T7
+    X_T8
+    X_T9
+    Y_T2
+    Y_T3
+    Y_T4
+    Y_T5
+    Y_T6
+    Y_T7
+    Y_T8
+    Y_T9
+    CONTROL1
+    CONTROL2
+    CONTROL3
+    CONTROL4
+    SUBNUM
+    GROUP
+
+## Create new dataset so as to always be able to revert back to the original
+```{r}
+
+NZAllM1 <- MPlus
+
+IDs <- MPlus2$V21
+NZAllM2 <- dplyr::filter(MPlus, V56 %in% IDs)
+
+names(NZAllM2) <- c("AgeT2", "Gender", "Euro", "EthCat", 
+                    "ChAttT2", "ChAttT3", "ChAttT4", "ChAttT5", "ChAttT6", "ChAttT7", "ChAttT8", "ChAttT9",
+                    "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09",
+                    "ReligT1", "ReligT2", "ReligT3", "ReligT4", "ReligT5", "ReligT6", "ReligT7", "ReligT8", "ReligT9",
+                    "NT2", "NT3", "NT4", "NT5", "NT6", "NT7", "NT8", "NT9",
+                    "MDT2", "MDT3", "MDT4", "MDT5", "MDT6", "MDT7", "MDT8", "MDT9",
+                    "AverageChurchAtt", "NeuFirst29", "MDFirst29", "HealthFirst29",
+                    "DeprFirst29", "Group", "RelIDFir29", 
+                    "ChAttNonMissing29", "PropChAttGT1", "Subnum")
+
+NZAllM2 <- NZAllM2 %>%
+  mutate_at(.vars = vars("AgeT2", "Gender", "Euro", "EthCat", 
+                    "ChAttT2", "ChAttT3", "ChAttT4", "ChAttT5", "ChAttT6", "ChAttT7", "ChAttT8", "ChAttT9",
+                    "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09",
+                    "ReligT1", "ReligT2", "ReligT3", "ReligT4", "ReligT5", "ReligT6", "ReligT7", "ReligT8", "ReligT9",
+                    "NT2", "NT3", "NT4", "NT5", "NT6", "NT7", "NT8", "NT9",
+                    "MDT2", "MDT3", "MDT4", "MDT5", "MDT6", "MDT7", "MDT8", "MDT9",
+                    "AverageChurchAtt", "NeuFirst29", "MDFirst29", "HealthFirst29", 
+                    "DeprFirst29", "Group", "RelIDFir29", 
+                    "ChAttNonMissing29", "PropChAttGT1", "Subnum"),
+  .funs = funs(ifelse(. == 999, NA, .))) 
+
+
+NZAllM2$Gender <- factor(NZAllM2$Gender, ordered = T)
+levels(NZAllM2$Gender) = c("Woman","Man") 
+NZAllM2$Euro <- factor(NZAllM2$Euro, ordered = T)
+levels(NZAllM2$Euro) = c("No","Yes") 
+NZAllM2$Group <- factor(NZAllM2$Group, ordered = T)
+levels(NZAllM2$Group) = c("Non-attenders", "Sporadic attenders", "Consistent attenders") 
+
+
+NZAllM2$ReligT2notna <- NA
+NZAllM2$ReligT2notna[!is.na(NZAllM2$ReligT2)] <- 1
+
+NZAllM2$ReligT3notna <- NA
+NZAllM2$ReligT3notna[!is.na(NZAllM2$ReligT3)] <- 1
+
+NZAllM2$ReligT4notna <- NA
+NZAllM2$ReligT4notna[!is.na(NZAllM2$ReligT4)] <- 1
+
+NZAllM2$ReligT5notna <- NA
+NZAllM2$ReligT5notna[!is.na(NZAllM2$ReligT5)] <- 1
+
+NZAllM2$ReligT6notna <- NA
+NZAllM2$ReligT6notna[!is.na(NZAllM2$ReligT6)] <- 1
+
+NZAllM2$ReligT7notna <- NA
+NZAllM2$ReligT7notna[!is.na(NZAllM2$ReligT7)] <- 1
+
+NZAllM2$ReligT8notna <- NA
+NZAllM2$ReligT8notna[!is.na(NZAllM2$ReligT8)] <- 1
+
+NZAllM2$ReligT9notna <- NA
+NZAllM2$ReligT9notna[!is.na(NZAllM2$ReligT9)] <- 1
+
+NZAllM2$ReligTotnotna <- NA
+NZAllM2$ReligTotnotna <- rowSums(NZAllM2[,c("ReligT2notna", "ReligT3notna", "ReligT4notna", "ReligT5notna", 
+                                            "ReligT6notna", "ReligT7notna", "ReligT8notna", "ReligT9notna")], na.rm = T)
+
+NZAllM2$ReligSum29 <- rowSums(NZAllM2[,c("ReligT2", "ReligT3", "ReligT4", "ReligT5", 
+                                        "ReligT6", "ReligT7", "ReligT8", "ReligT9")], na.rm = T)
+
+
+NZAllM2$PropRel29 <- NZAllM2$ReligSum29/NZAllM2$ReligTotnotna
+
+#table(NZAllM2$T02, exclude = NULL)
+#table(NZAllM2$T03, exclude = NULL)
+#table(NZAllM2$T04, exclude = NULL)
+#table(NZAllM2$T05, exclude = NULL)
+#table(NZAllM2$T06, exclude = NULL) #-1 n = 10
+#table(NZAllM2$T07, exclude = NULL) #-1 n = 31
+#table(NZAllM2$T08, exclude = NULL) #-1 n = 92
+#table(NZAllM2$T09, exclude = NULL) #-1 n = 102
+
+NZAllM2 <- NZAllM2 %>%
+  mutate_at(.vars = vars(
+                    "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09"),
+  .funs = funs(ifelse(. == -1, 0, .))) 
+
+
+NZAllM2$TSUM29 <- rowSums(NZAllM2[,c("T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09")], na.rm = T)
+
+```
+
+# Figure 2 Annotated histogram
+```{r}
+table(NZAllM2$PropChAttGT1)
+table(NZAllM2$Group)
+
+hist_gr1att <- ggplot(NZAllM2, aes(x=PropChAttGT1)) +
+  geom_bar() +
+  geom_text(stat='count', aes(label=..count..), vjust=-1, size = 4, angle = 35, hjust = 0) +
+  geom_segment(aes(x = .125, y = 2000, xend = 0.52, yend = 2000), colour = "gray48", size = 0.5) +
+  geom_segment(aes(x = 0.55, y = 2000, xend = 1, yend = 2000), colour = "gray48", size = 0.5) +
+  geom_text(aes(label= "3535", x = 0.05, y = 2500), size = 5, colour = "gray48", angle = 35) +
+  geom_text(aes(label= "1662", x = 0.3125, y = 2100), size = 5, colour = "gray48", angle = 35) +
+  geom_text(aes(label= "2442", x = 0.7855, y = 2100), size = 5, colour = "gray48", angle = 35) +
+  coord_cartesian(ylim = c(0,3000), xlim = c(0,1.0)) +
+  scale_y_continuous(breaks = seq(0, 3000, 200), name = "No. of participants\n") +
+  scale_x_continuous(breaks = seq(0, 1, .1), 
+                   name = "\nProportion of surveys in which church attedance was reported at least once in the preceding month") +
+  theme_bw() +
+  theme(#axis.title.x=element_blank(),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10),
+      strip.text.x = element_text(size = 12),
+      legend.position="none")
+hist_gr1att 
+ggsave(file="Hist_ChurchAttendanceProportion_Max31.pdf", width = 270, height = 210, units = "mm")
+
+```
+
+# Table 1 Descriptives and ANOVA/chi-square results
+```{r}
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$AgeT2, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Age.xlsx", row.names = F)
+aovModel <- aov(AgeT2 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #non-sig
+etaSquared(aovModel, type = 2)
+leveneTest(AgeT2 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$AgeT2 ~ NZAllM2$Group) #non-sig
+
+mytable <- table(NZAllM2$Gender, NZAllM2$Group)
+prop.table(mytable, margin = 2)
+associationTest(~ Gender + Group, data = NZAllM2) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$DeprFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Depriv.xlsx", row.names = F)
+aovModel <- aov(DeprFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(DeprFirst29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$DeprFirst29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$HealthFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Health.xlsx", row.names = F)
+aovModel <- aov(HealthFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(HealthFirst29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$HealthFirst29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$AverageChurchAtt, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_AvChAtt.xlsx", row.names = F)
+aovModel <- aov(AverageChurchAtt ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(AverageChurchAtt ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$AverageChurchAtt ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$NeuFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Neurot.xlsx", row.names = F)
+aovModel <- aov(NeuFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #marginally sig
+etaSquared(aovModel, type = 2)
+leveneTest(NeuFirst29 ~ Group, data = NZAllM2) #fine
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$NeuFirst29 ~ NZAllM2$Group) #marginally sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$MDFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_MD.xlsx", row.names = F)
+aovModel <- aov(MDFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(MDFirst29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$MDFirst29 ~ NZAllM2$Group) #sig
+
+mytable <- table(NZAllM2$Euro, NZAllM2$Group)
+prop.table(mytable, margin = 2)
+associationTest(~ Euro + Group, data = NZAllM2) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$PropRel29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_PropRel.xlsx", row.names = F)
+aovModel <- aov(PropRel29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(PropRel29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$PropRel29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$RelIDFir29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_RelID.xlsx", row.names = F)
+aovModel <- aov(RelIDFir29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(RelIDFir29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$RelIDFir29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$TSUM29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_TSUM.xlsx", row.names = F)
+table(NZAllM2$TSUM29, exclude = NULL)
+aovModel <- aov(NZAllM2$TSUM29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(NZAllM2$TSUM29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$TSUM29 ~ NZAllM2$Group) #sig
+
+```
+
+# Supp figure - histogram of PropRel29
+```{r}
+table(NZAllM2$Group)
+facet_labelsGroup <- c("Non-attenders" = "Non-attenders\nn = 3,535", "Sporadic attenders" = "Sporadic attenders\nn = 1,656", "Consistent attenders" = "Consistent attenders\nn = 2,393")
+
+hist_relprop <- ggplot(NZAllM2, aes(x = PropRel29))+
+coord_cartesian(ylim = c(0,1.0), xlim = c(0,1.0)) +
+facet_wrap(~ Group, ncol = 3, labeller = labeller(Group = facet_labelsGroup)) +
+geom_bar(aes(y = ..prop..), position = position_dodge(), stat = "count") + 
+scale_y_continuous(breaks = seq(0, 1, .1), labels = scales::percent, name = "Percentage of group") +
+scale_x_continuous(breaks = seq(0, 1, .2), name = "Proportion of completed surveys 2010 to 2017 in which participant reported being religious") +
+theme_bw() +
+theme(#axis.title.x=element_blank(),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10),
+      strip.text.x = element_text(size = 12),
+      legend.position="none")
+
+hist_relprop
+ggsave(file="Hist_RelProp_Max31.pdf", width = 210, height = 150, units = "mm")
+```
+
+# Figure 2 - Panel of church attendance trajectories
+```{r}
+
+PointData <- read_excel("Groupwise LGM results 3.xlsx", sheet = "Graphing parameters MD")
+
+LGCData <- read_excel("Groupwise LGM results 3.xlsx", sheet = "LGC MD")
+
+PointData$Group <- NA
+for (i in 1:nrow(PointData)) {
+  if (substr(PointData$Point[i],1,1) == "A") {
+          PointData$Group[i] <- "Non"
+  } else if (substr(PointData$Point[i],1,1) == "B") { 
+          PointData$Group[i] <- "Sporadic"
+  } else if (substr(PointData$Point[i],1,1) == "C") { 
+          PointData$Group[i] <- "Consistent"
+  }
+}
+
+PointData$Year <- NA
+for (i in 1:nrow(PointData)) {
+    PointData$Year[i] <- as.numeric(paste0("20",substr(PointData$Point[i],2,3), sep = ""))
+}
+
+ PointDataN <-  PointData %>%
+  filter(Group == "Non")
+
+ PointDataS <-  PointData %>%
+  filter(Group == "Sporadic")
+
+ PointDataC <-  PointData %>%
+  filter(Group == "Consistent")
+
+####
+ 
+LGCData$Annot <- NA
+LGCData$FontFace <- NA
+for (i in 1:nrow(LGCData)) {
+  if(LGCData$ParSig[i] <= .001) { #if slope parameter is sig
+    LGCData$Annot[i] <- "***"
+    LGCData$FontFace[i] <- "bold"
+  } else if (LGCData$ParSig[i] <= .01) { 
+    LGCData$Annot[i] <- "**"
+    LGCData$FontFace[i] <- "bold"
+  }  else if (LGCData$ParSig[i] <= .05) {
+    LGCData$Annot[i] <- "*"
+    LGCData$FontFace[i] <- "bold"
+  } else if (LGCData$ParSig[i] > .05) {
+    LGCData$Annot[i] <- ""
+    LGCData$FontFace[i] <- "plain"
+  }
+}
+
+for (i in 1:nrow(LGCData)) {
+  if (LGCData$Group[i] == "A") {
+          LGCData$Group[i] <- "Non"
+  } else if (LGCData$Group[i] == "B") {
+          LGCData$Group[i] <- "Sporadic"
+  } else if (LGCData$Group[i] == "C") { 
+          LGCData$Group[i] <- "Consistent"
+  }
+}
+
+LGCDataN <- LGCData %>%
+  filter(Group == "Non")
+
+LGCDataS <- LGCData %>%
+  filter(Group == "Sporadic")
+
+LGCDataC <- LGCData %>%
+  filter(Group == "Consistent")
+
+```
+
+## Non-attenders
+```{r}
+ylimL <- 0.5
+ylimH <- 1
+ybL <- 0.5
+ybH <- 1
+bint <- .05
+
+#colours: http://sape.inf.usi.ch/quick-reference/ggplot2/colour
+
+GroupName_N <- "Non-attenders\n(n = 3,535)"
+
+line_N <-  ggplot(PointDataN) +
+    geom_line(data = PointDataN, size = 1.2, 
+              aes(x = Year, y = Estimate), colour = "#08519c") + #dark blue
+    geom_ribbon(data = PointDataN, 
+                aes(x = Year, ymin=Estimate-1.96*SE, ymax=Estimate+1.96*SE), alpha = 0.3, 
+                color = "#4292c6", fill = "#4292c6") + #fill lighter
+    geom_text(aes(y = 0.98, x = 2010, label = GroupName_N), 
+              colour = "black", hjust = "left", size = 6) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "I_m",], 
+              aes(y = 0.70, x = 2010, 
+              label = paste0("Intcpt mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "S_m",], 
+              aes(y = 0.68, x = 2010, 
+              label = paste0("Slope mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "I_v",], 
+              aes(y = 0.66, x = 2010, 
+              label = paste0("Intcpt var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "S_v",], 
+              aes(y = 0.64, x = 2010, 
+              label = paste0("Slope var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+  
+    coord_cartesian(xlim = c(2010,2017), ylim = c(ylimL, ylimH)) +
+    scale_y_continuous(breaks=seq(ybL, ybH, bint)) +
+    scale_x_continuous(breaks=seq(2010,2017,1)) + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 14))
+
+ggsave(line_N, file="Lineplot_Non-attenders_Max31.pdf", width = 210, height = 210, units = "mm")
+
+```
+
+
+## Sporadic attenders
+```{r}
+GroupName_S <- "Sporadic attenders\n(n = 1,656)"
+
+line_S <-  ggplot(PointDataS) +
+    geom_line(data = PointDataS, size = 1.2, 
+              aes(x = Year, y = Estimate), colour = "#08519c") + #dark blue
+    geom_ribbon(data = PointDataS, 
+                aes(x = Year, ymin=Estimate-1.96*SE, ymax=Estimate+1.96*SE), alpha = 0.3, 
+                color = "#4292c6", fill = "#4292c6") + #fill lighter
+    geom_text(aes(y = 0.98, x = 2010, label = GroupName_S), 
+              colour = "black", hjust = "left", size = 6) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "I_m",], 
+              aes(y = 0.70, x = 2010, 
+              label = paste0("Intcpt mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "S_m",], 
+              aes(y = 0.68, x = 2010, 
+              label = paste0("Slope mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "I_v",], 
+              aes(y = 0.66, x = 2010, 
+              label = paste0("Intcpt var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "S_v",], 
+              aes(y = 0.64, x = 2010, 
+              label = paste0("Slope var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+  
+    coord_cartesian(xlim = c(2010,2017), ylim = c(ylimL, ylimH)) +
+    scale_y_continuous(breaks=seq(ybL, ybH, bint)) +
+    scale_x_continuous(breaks=seq(2010,2017,1)) + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 14))
+
+ggsave(line_S, file="Lineplot_Sporadic_Max31.pdf", width = 210, height = 210, units = "mm")
+
+```
+
+
+
+
+```{r}
+GroupName_C <- "Consistent attenders\n(n = 2,393)"
+
+line_C <-  ggplot(PointDataC) +
+    geom_line(data = PointDataC, size = 1.2, 
+              aes(x = Year, y = Estimate), colour = "#08519c") + #dark blue
+    geom_ribbon(data = PointDataC, 
+                aes(x = Year, ymin=Estimate-1.96*SE, ymax=Estimate+1.96*SE), alpha = 0.3, 
+                color = "#4292c6", fill = "#4292c6") + #fill lighter
+    geom_text(aes(y = 0.98, x = 2010, label = GroupName_C), 
+              colour = "black", hjust = "left", size = 6) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "I_m",], 
+              aes(y = 0.70, x = 2010, 
+              label = paste0("Intcpt mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "S_m",], 
+              aes(y = 0.68, x = 2010, 
+              label = paste0("Slope mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "I_v",], 
+              aes(y = 0.66, x = 2010, 
+              label = paste0("Intcpt var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "S_v",], 
+              aes(y = 0.64, x = 2010, 
+              label = paste0("Slope var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+  
+    coord_cartesian(xlim = c(2010,2017), ylim = c(ylimL, ylimH)) +
+    scale_y_continuous(breaks=seq(ybL, ybH, bint)) +
+    scale_x_continuous(breaks=seq(2010,2017,1)) + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 14))
+
+ggsave(line_C, file="Lineplot_Consistent_Max31.pdf", width = 210, height = 210, units = "mm")
+```
+
+
+## Arrange in grid
+```{r}
+g <- grid.arrange(grobs = list(line_N, line_S, line_C), nrow = 1, ncol = 3)
+ggsave(file="GroupLGC_AllGraphs_Max31.pdf", g, width = 350, height = 210, units = "mm")
+```
+
+# Slope difference as a percentage of SD in intercepts
+```{r}
+#ALT-SR (numbers are from MPlus output)
+0.014*sqrt(3500)
+0.020*sqrt(1657)
+0.017*sqrt(2399)
+
+(0.014*sqrt(3500) +
+0.020*sqrt(1657) +
+0.017*sqrt(2399))/3
+
+
+.012*8
+.007*8
+
+(.012*8)/0.8250098
+(.007*8)/0.8250098
+
+```
+
+
+# Including all participants, regardless of max church attendance
+## Read in txt file and load packages
+```{r}
+#NZAll <- read.table(file = "NZAVS Longitudinal Mplus Base Dataset.txt")
+
+MPlus <- read.table("ALT-SR CHURCH DATA DESCR 17.txt")
+MPlus2 <- read.table("ALT-SR CHURCH DATA OUTPUT 17.txt") #21 vars, subnum 20th
+
+```
+
+MPLUS ORDER OF VARIABLES - descr
+    AGE_T02
+    GENDER
+    EUR
+    ETHCAT
+    RELICHT2
+    RELICHT3
+    RELICHT4
+    RELICHT5
+    RELICHT6
+    RELICHT7
+    RELICHT8
+    RELICHT9
+    T01
+    T02
+    T03
+    T04
+    T05
+    T06
+    T07
+    T08
+    T09
+    RELIGT1
+    RELIGT2
+    RELIGT3
+    RELIGT4
+    RELIGT5
+    RELIGT6
+    RELIGT7
+    RELIGT8
+    RELIGT9
+    X_T2
+    X_T3
+    X_T4
+    X_T5
+    X_T6
+    X_T7
+    X_T8
+    X_T9
+    Y_T2
+    Y_T3
+    Y_T4
+    Y_T5
+    Y_T6
+    Y_T7
+    Y_T8
+    Y_T9
+    AVCHAT
+    NEUFIR29
+    K6FIR29
+    FIRHLT29
+    DEPRMERG
+    GROUP
+    FIRRELID
+    CHSUM29
+    ATT1PROP
+    SUBNUM
+    
+Mplus order of variables - output
+    X_T2
+    X_T3
+    X_T4
+    X_T5
+    X_T6
+    X_T7
+    X_T8
+    X_T9
+    Y_T2
+    Y_T3
+    Y_T4
+    Y_T5
+    Y_T6
+    Y_T7
+    Y_T8
+    Y_T9
+    CONTROL1
+    CONTROL2
+    CONTROL3
+    CONTROL4
+    SUBNUM
+    GROUP
+
+## Create new dataset so as to always be able to revert back to the original
+```{r}
+
+NZAllM1 <- MPlus
+
+IDs <- MPlus2$V21
+NZAllM2 <- dplyr::filter(MPlus, V56 %in% IDs)
+
+names(NZAllM2) <- c("AgeT2", "Gender", "Euro", "EthCat", 
+                    "ChAttT2", "ChAttT3", "ChAttT4", "ChAttT5", "ChAttT6", "ChAttT7", "ChAttT8", "ChAttT9",
+                    "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09",
+                    "ReligT1", "ReligT2", "ReligT3", "ReligT4", "ReligT5", "ReligT6", "ReligT7", "ReligT8", "ReligT9",
+                    "NT2", "NT3", "NT4", "NT5", "NT6", "NT7", "NT8", "NT9",
+                    "MDT2", "MDT3", "MDT4", "MDT5", "MDT6", "MDT7", "MDT8", "MDT9",
+                    "AverageChurchAtt", "NeuFirst29", "MDFirst29", "HealthFirst29",
+                    "DeprFirst29", "Group", "RelIDFir29", 
+                    "ChAttNonMissing29", "PropChAttGT1", "Subnum")
+
+NZAllM2 <- NZAllM2 %>%
+  mutate_at(.vars = vars("AgeT2", "Gender", "Euro", "EthCat", 
+                    "ChAttT2", "ChAttT3", "ChAttT4", "ChAttT5", "ChAttT6", "ChAttT7", "ChAttT8", "ChAttT9",
+                    "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09",
+                    "ReligT1", "ReligT2", "ReligT3", "ReligT4", "ReligT5", "ReligT6", "ReligT7", "ReligT8", "ReligT9",
+                    "NT2", "NT3", "NT4", "NT5", "NT6", "NT7", "NT8", "NT9",
+                    "MDT2", "MDT3", "MDT4", "MDT5", "MDT6", "MDT7", "MDT8", "MDT9",
+                    "AverageChurchAtt", "NeuFirst29", "MDFirst29", "HealthFirst29", 
+                    "DeprFirst29", "Group", "RelIDFir29", 
+                    "ChAttNonMissing29", "PropChAttGT1", "Subnum"),
+  .funs = funs(ifelse(. == 999, NA, .))) 
+
+
+NZAllM2$Gender <- factor(NZAllM2$Gender, ordered = T)
+levels(NZAllM2$Gender) = c("Woman","Man") 
+NZAllM2$Euro <- factor(NZAllM2$Euro, ordered = T)
+levels(NZAllM2$Euro) = c("No","Yes") 
+NZAllM2$Group <- factor(NZAllM2$Group, ordered = T)
+levels(NZAllM2$Group) = c("Non-attenders", "Sporadic attenders", "Consistent attenders") 
+
+
+NZAllM2$ReligT2notna <- NA
+NZAllM2$ReligT2notna[!is.na(NZAllM2$ReligT2)] <- 1
+
+NZAllM2$ReligT3notna <- NA
+NZAllM2$ReligT3notna[!is.na(NZAllM2$ReligT3)] <- 1
+
+NZAllM2$ReligT4notna <- NA
+NZAllM2$ReligT4notna[!is.na(NZAllM2$ReligT4)] <- 1
+
+NZAllM2$ReligT5notna <- NA
+NZAllM2$ReligT5notna[!is.na(NZAllM2$ReligT5)] <- 1
+
+NZAllM2$ReligT6notna <- NA
+NZAllM2$ReligT6notna[!is.na(NZAllM2$ReligT6)] <- 1
+
+NZAllM2$ReligT7notna <- NA
+NZAllM2$ReligT7notna[!is.na(NZAllM2$ReligT7)] <- 1
+
+NZAllM2$ReligT8notna <- NA
+NZAllM2$ReligT8notna[!is.na(NZAllM2$ReligT8)] <- 1
+
+NZAllM2$ReligT9notna <- NA
+NZAllM2$ReligT9notna[!is.na(NZAllM2$ReligT9)] <- 1
+
+NZAllM2$ReligTotnotna <- NA
+NZAllM2$ReligTotnotna <- rowSums(NZAllM2[,c("ReligT2notna", "ReligT3notna", "ReligT4notna", "ReligT5notna", 
+                                            "ReligT6notna", "ReligT7notna", "ReligT8notna", "ReligT9notna")], na.rm = T)
+
+NZAllM2$ReligSum29 <- rowSums(NZAllM2[,c("ReligT2", "ReligT3", "ReligT4", "ReligT5", 
+                                        "ReligT6", "ReligT7", "ReligT8", "ReligT9")], na.rm = T)
+
+
+NZAllM2$PropRel29 <- NZAllM2$ReligSum29/NZAllM2$ReligTotnotna
+
+#table(NZAllM2$T02, exclude = NULL)
+#table(NZAllM2$T03, exclude = NULL)
+#table(NZAllM2$T04, exclude = NULL)
+#table(NZAllM2$T05, exclude = NULL)
+#table(NZAllM2$T06, exclude = NULL) #-1 n = 10
+#table(NZAllM2$T07, exclude = NULL) #-1 n = 31
+#table(NZAllM2$T08, exclude = NULL) #-1 n = 92
+#table(NZAllM2$T09, exclude = NULL) #-1 n = 102
+
+NZAllM2 <- NZAllM2 %>%
+  mutate_at(.vars = vars(
+                    "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09"),
+  .funs = funs(ifelse(. == -1, 0, .))) 
+
+
+NZAllM2$TSUM29 <- rowSums(NZAllM2[,c("T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09")], na.rm = T)
+
+```
+
+# Figure 2 Annotated histogram
+```{r}
+table(NZAllM2$PropChAttGT1)
+table(NZAllM2$Group)
+
+hist_gr1att <- ggplot(NZAllM2, aes(x=PropChAttGT1)) +
+  geom_bar() +
+  geom_text(stat='count', aes(label=..count..), vjust=-1, size = 4, angle = 35, hjust = 0) +
+  geom_segment(aes(x = .125, y = 2000, xend = 0.52, yend = 2000), colour = "gray48", size = 0.5) +
+  geom_segment(aes(x = 0.55, y = 2000, xend = 1, yend = 2000), colour = "gray48", size = 0.5) +
+  geom_text(aes(label= "3535", x = 0.05, y = 2500), size = 5, colour = "gray48", angle = 35) +
+  geom_text(aes(label= "1662", x = 0.3125, y = 2100), size = 5, colour = "gray48", angle = 35) +
+  geom_text(aes(label= "2442", x = 0.7855, y = 2100), size = 5, colour = "gray48", angle = 35) +
+  coord_cartesian(ylim = c(0,3000), xlim = c(0,1.0)) +
+  scale_y_continuous(breaks = seq(0, 3000, 200), name = "No. of participants\n") +
+  scale_x_continuous(breaks = seq(0, 1, .1), 
+                   name = "\nProportion of surveys in which church attedance was reported at least once in the preceding month") +
+  theme_bw() +
+  theme(#axis.title.x=element_blank(),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10),
+      strip.text.x = element_text(size = 12),
+      legend.position="none")
+hist_gr1att 
+ggsave(file="Hist_ChurchAttendanceProportion_NoMax.pdf", width = 270, height = 210, units = "mm")
+
+```
+
+# Table 1 Descriptives and ANOVA/chi-square results
+
+```{r}
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$AgeT2, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Age.xlsx", row.names = F)
+aovModel <- aov(AgeT2 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #non-sig
+etaSquared(aovModel, type = 2)
+leveneTest(AgeT2 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$AgeT2 ~ NZAllM2$Group) #non-sig
+
+mytable <- table(NZAllM2$Gender, NZAllM2$Group)
+prop.table(mytable, margin = 2)
+associationTest(~ Gender + Group, data = NZAllM2) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$DeprFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Depriv.xlsx", row.names = F)
+aovModel <- aov(DeprFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(DeprFirst29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$DeprFirst29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$HealthFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Health.xlsx", row.names = F)
+aovModel <- aov(HealthFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(HealthFirst29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$HealthFirst29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$AverageChurchAtt, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_AvChAtt.xlsx", row.names = F)
+aovModel <- aov(AverageChurchAtt ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(AverageChurchAtt ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$AverageChurchAtt ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$NeuFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Neurot.xlsx", row.names = F)
+aovModel <- aov(NeuFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #marginally sig
+etaSquared(aovModel, type = 2)
+leveneTest(NeuFirst29 ~ Group, data = NZAllM2) #fine
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$NeuFirst29 ~ NZAllM2$Group) #marginally sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$MDFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_MD.xlsx", row.names = F)
+aovModel <- aov(MDFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(MDFirst29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$MDFirst29 ~ NZAllM2$Group) #sig
+
+mytable <- table(NZAllM2$Euro, NZAllM2$Group)
+prop.table(mytable, margin = 2)
+associationTest(~ Euro + Group, data = NZAllM2) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$PropRel29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_PropRel.xlsx", row.names = F)
+aovModel <- aov(PropRel29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(PropRel29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$PropRel29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$RelIDFir29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_RelID.xlsx", row.names = F)
+aovModel <- aov(RelIDFir29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(RelIDFir29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$RelIDFir29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$TSUM29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_TSUM.xlsx", row.names = F)
+table(NZAllM2$TSUM29, exclude = NULL)
+aovModel <- aov(NZAllM2$TSUM29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(NZAllM2$TSUM29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$TSUM29 ~ NZAllM2$Group) #sig
+
+```
+
+# Supp figure - histogram of PropRel29
+```{r}
+table(NZAllM2$Group)
+facet_labelsGroup <- c("Non-attenders" = "Non-attenders\nn = 3,535", "Sporadic attenders" = "Sporadic attenders\nn = 1,662", "Consistent attenders" = "Consistent attenders\nn = 2,442")
+
+hist_relprop <- ggplot(NZAllM2, aes(x = PropRel29))+
+coord_cartesian(ylim = c(0,1.0), xlim = c(0,1.0)) +
+facet_wrap(~ Group, ncol = 3, labeller = labeller(Group = facet_labelsGroup)) +
+geom_bar(aes(y = ..prop..), position = position_dodge(), stat = "count") + 
+scale_y_continuous(breaks = seq(0, 1, .1), labels = scales::percent, name = "Percentage of group") +
+scale_x_continuous(breaks = seq(0, 1, .2), name = "Proportion of completed surveys 2010 to 2017 in which participant reported being religious") +
+theme_bw() +
+theme(#axis.title.x=element_blank(),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10),
+      strip.text.x = element_text(size = 12),
+      legend.position="none")
+
+hist_relprop
+ggsave(file="Hist_RelProp.pdf", width = 210, height = 150, units = "mm")
+```
+
+# Figure 2 - Panel of church attendance trajectories
+```{r}
+
+PointData <- read_excel("Groupwise LGM results 4.xlsx", sheet = "Graphing parameters MD")
+
+LGCData <- read_excel("Groupwise LGM results 4.xlsx", sheet = "LGC MD")
+
+PointData$Group <- NA
+for (i in 1:nrow(PointData)) {
+  if (substr(PointData$Point[i],1,1) == "A") {
+          PointData$Group[i] <- "Non"
+  } else if (substr(PointData$Point[i],1,1) == "B") { 
+          PointData$Group[i] <- "Sporadic"
+  } else if (substr(PointData$Point[i],1,1) == "C") { 
+          PointData$Group[i] <- "Consistent"
+  }
+}
+
+PointData$Year <- NA
+for (i in 1:nrow(PointData)) {
+    PointData$Year[i] <- as.numeric(paste0("20",substr(PointData$Point[i],2,3), sep = ""))
+}
+
+ PointDataN <-  PointData %>%
+  filter(Group == "Non")
+
+ PointDataS <-  PointData %>%
+  filter(Group == "Sporadic")
+
+ PointDataC <-  PointData %>%
+  filter(Group == "Consistent")
+
+####
+ 
+LGCData$Annot <- NA
+LGCData$FontFace <- NA
+for (i in 1:nrow(LGCData)) {
+  if(LGCData$ParSig[i] <= .001) { #if slope parameter is sig
+    LGCData$Annot[i] <- "***"
+    LGCData$FontFace[i] <- "bold"
+  } else if (LGCData$ParSig[i] <= .01) { 
+    LGCData$Annot[i] <- "**"
+    LGCData$FontFace[i] <- "bold"
+  }  else if (LGCData$ParSig[i] <= .05) {
+    LGCData$Annot[i] <- "*"
+    LGCData$FontFace[i] <- "bold"
+  } else if (LGCData$ParSig[i] > .05) {
+    LGCData$Annot[i] <- ""
+    LGCData$FontFace[i] <- "plain"
+  }
+}
+
+for (i in 1:nrow(LGCData)) {
+  if (LGCData$Group[i] == "A") {
+          LGCData$Group[i] <- "Non"
+  } else if (LGCData$Group[i] == "B") {
+          LGCData$Group[i] <- "Sporadic"
+  } else if (LGCData$Group[i] == "C") { 
+          LGCData$Group[i] <- "Consistent"
+  }
+}
+
+LGCDataN <- LGCData %>%
+  filter(Group == "Non")
+
+LGCDataS <- LGCData %>%
+  filter(Group == "Sporadic")
+
+LGCDataC <- LGCData %>%
+  filter(Group == "Consistent")
+
+```
+
+## Non-attenders
+```{r}
+ylimL <- 0.5
+ylimH <- 1
+ybL <- 0.5
+ybH <- 1
+bint <- .05
+
+#colours: http://sape.inf.usi.ch/quick-reference/ggplot2/colour
+
+GroupName_N <- "Non-attenders\n(n = 3,535)"
+
+line_N <-  ggplot(PointDataN) +
+    geom_line(data = PointDataN, size = 1.2, 
+              aes(x = Year, y = Estimate), colour = "#08519c") + #dark blue
+    geom_ribbon(data = PointDataN, 
+                aes(x = Year, ymin=Estimate-1.96*SE, ymax=Estimate+1.96*SE), alpha = 0.3, 
+                color = "#4292c6", fill = "#4292c6") + #fill lighter
+    geom_text(aes(y = 0.98, x = 2010, label = GroupName_N), 
+              colour = "black", hjust = "left", size = 6) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "I_m",], 
+              aes(y = 0.70, x = 2010, 
+              label = paste0("Intcpt mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "S_m",], 
+              aes(y = 0.68, x = 2010, 
+              label = paste0("Slope mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "I_v",], 
+              aes(y = 0.66, x = 2010, 
+              label = paste0("Intcpt var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "S_v",], 
+              aes(y = 0.64, x = 2010, 
+              label = paste0("Slope var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+  
+    coord_cartesian(xlim = c(2010,2017), ylim = c(ylimL, ylimH)) +
+    scale_y_continuous(breaks=seq(ybL, ybH, bint)) +
+    scale_x_continuous(breaks=seq(2010,2017,1)) + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 14))
+
+ggsave(line_N, file="Lineplot_Non-attenders_NoMax.pdf", width = 210, height = 210, units = "mm")
+
+```
+
+
+## Sporadic attenders
+```{r}
+GroupName_S <- "Sporadic attenders\n(n = 1,662)"
+
+line_S <-  ggplot(PointDataS) +
+    geom_line(data = PointDataS, size = 1.2, 
+              aes(x = Year, y = Estimate), colour = "#08519c") + #dark blue
+    geom_ribbon(data = PointDataS, 
+                aes(x = Year, ymin=Estimate-1.96*SE, ymax=Estimate+1.96*SE), alpha = 0.3, 
+                color = "#4292c6", fill = "#4292c6") + #fill lighter
+    geom_text(aes(y = 0.98, x = 2010, label = GroupName_S), 
+              colour = "black", hjust = "left", size = 6) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "I_m",], 
+              aes(y = 0.70, x = 2010, 
+              label = paste0("Intcpt mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "S_m",], 
+              aes(y = 0.68, x = 2010, 
+              label = paste0("Slope mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "I_v",], 
+              aes(y = 0.66, x = 2010, 
+              label = paste0("Intcpt var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "S_v",], 
+              aes(y = 0.64, x = 2010, 
+              label = paste0("Slope var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+  
+    coord_cartesian(xlim = c(2010,2017), ylim = c(ylimL, ylimH)) +
+    scale_y_continuous(breaks=seq(ybL, ybH, bint)) +
+    scale_x_continuous(breaks=seq(2010,2017,1)) + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 14))
+
+ggsave(line_S, file="Lineplot_Sporadic_NoMax.pdf", width = 210, height = 210, units = "mm")
+
+```
+
+
+
+
+```{r}
+GroupName_C <- "Consistent attenders\n(n = 2,442)"
+
+line_C <-  ggplot(PointDataC) +
+    geom_line(data = PointDataC, size = 1.2, 
+              aes(x = Year, y = Estimate), colour = "#08519c") + #dark blue
+    geom_ribbon(data = PointDataC, 
+                aes(x = Year, ymin=Estimate-1.96*SE, ymax=Estimate+1.96*SE), alpha = 0.3, 
+                color = "#4292c6", fill = "#4292c6") + #fill lighter
+    geom_text(aes(y = 0.98, x = 2010, label = GroupName_C), 
+              colour = "black", hjust = "left", size = 6) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "I_m",], 
+              aes(y = 0.70, x = 2010, 
+              label = paste0("Intcpt mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "S_m",], 
+              aes(y = 0.68, x = 2010, 
+              label = paste0("Slope mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "I_v",], 
+              aes(y = 0.66, x = 2010, 
+              label = paste0("Intcpt var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "S_v",], 
+              aes(y = 0.64, x = 2010, 
+              label = paste0("Slope var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+  
+    coord_cartesian(xlim = c(2010,2017), ylim = c(ylimL, ylimH)) +
+    scale_y_continuous(breaks=seq(ybL, ybH, bint)) +
+    scale_x_continuous(breaks=seq(2010,2017,1)) + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 14))
+
+ggsave(line_C, file="Lineplot_Consistent_NoMax.pdf", width = 210, height = 210, units = "mm")
+```
+
+
+## Arrange in grid
+```{r}
+g <- grid.arrange(grobs = list(line_N, line_S, line_C), nrow = 1, ncol = 3)
+ggsave(file="GroupLGC_AllGraphs_NoMax.pdf", g, width = 350, height = 210, units = "mm")
+```
+
+
+# Including participants with max 9 church attendance
+## Read in txt file and load packages
+```{r}
+#NZAll <- read.table(file = "NZAVS Longitudinal Mplus Base Dataset.txt")
+
+MPlus <- read.table("ALT-SR CHURCH DATA DESCR 18.txt")
+MPlus2 <- read.table("ALT-SR CHURCH DATA OUTPUT 18.txt") #21 vars, subnum 20th
+
+```
+
+MPLUS ORDER OF VARIABLES - descr
+    AGE_T02
+    GENDER
+    EUR
+    ETHCAT
+    RELICHT2
+    RELICHT3
+    RELICHT4
+    RELICHT5
+    RELICHT6
+    RELICHT7
+    RELICHT8
+    RELICHT9
+    T01
+    T02
+    T03
+    T04
+    T05
+    T06
+    T07
+    T08
+    T09
+    RELIGT1
+    RELIGT2
+    RELIGT3
+    RELIGT4
+    RELIGT5
+    RELIGT6
+    RELIGT7
+    RELIGT8
+    RELIGT9
+    X_T2
+    X_T3
+    X_T4
+    X_T5
+    X_T6
+    X_T7
+    X_T8
+    X_T9
+    Y_T2
+    Y_T3
+    Y_T4
+    Y_T5
+    Y_T6
+    Y_T7
+    Y_T8
+    Y_T9
+    AVCHAT
+    NEUFIR29
+    K6FIR29
+    FIRHLT29
+    DEPRMERG
+    GROUP
+    FIRRELID
+    CHSUM29
+    ATT1PROP
+    SUBNUM
+    
+Mplus order of variables - output
+    X_T2
+    X_T3
+    X_T4
+    X_T5
+    X_T6
+    X_T7
+    X_T8
+    X_T9
+    Y_T2
+    Y_T3
+    Y_T4
+    Y_T5
+    Y_T6
+    Y_T7
+    Y_T8
+    Y_T9
+    CONTROL1
+    CONTROL2
+    CONTROL3
+    CONTROL4
+    SUBNUM
+    GROUP
+
+## Create new dataset so as to always be able to revert back to the original
+```{r}
+
+NZAllM1 <- MPlus
+
+IDs <- MPlus2$V21
+NZAllM2 <- dplyr::filter(MPlus, V56 %in% IDs)
+
+names(NZAllM2) <- c("AgeT2", "Gender", "Euro", "EthCat", 
+                    "ChAttT2", "ChAttT3", "ChAttT4", "ChAttT5", "ChAttT6", "ChAttT7", "ChAttT8", "ChAttT9",
+                    "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09",
+                    "ReligT1", "ReligT2", "ReligT3", "ReligT4", "ReligT5", "ReligT6", "ReligT7", "ReligT8", "ReligT9",
+                    "NT2", "NT3", "NT4", "NT5", "NT6", "NT7", "NT8", "NT9",
+                    "MDT2", "MDT3", "MDT4", "MDT5", "MDT6", "MDT7", "MDT8", "MDT9",
+                    "AverageChurchAtt", "NeuFirst29", "MDFirst29", "HealthFirst29",
+                    "DeprFirst29", "Group", "RelIDFir29", 
+                    "ChAttNonMissing29", "PropChAttGT1", "Subnum")
+
+NZAllM2 <- NZAllM2 %>%
+  mutate_at(.vars = vars("AgeT2", "Gender", "Euro", "EthCat", 
+                    "ChAttT2", "ChAttT3", "ChAttT4", "ChAttT5", "ChAttT6", "ChAttT7", "ChAttT8", "ChAttT9",
+                    "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09",
+                    "ReligT1", "ReligT2", "ReligT3", "ReligT4", "ReligT5", "ReligT6", "ReligT7", "ReligT8", "ReligT9",
+                    "NT2", "NT3", "NT4", "NT5", "NT6", "NT7", "NT8", "NT9",
+                    "MDT2", "MDT3", "MDT4", "MDT5", "MDT6", "MDT7", "MDT8", "MDT9",
+                    "AverageChurchAtt", "NeuFirst29", "MDFirst29", "HealthFirst29", 
+                    "DeprFirst29", "Group", "RelIDFir29", 
+                    "ChAttNonMissing29", "PropChAttGT1", "Subnum"),
+  .funs = funs(ifelse(. == 999, NA, .))) 
+
+
+NZAllM2$Gender <- factor(NZAllM2$Gender, ordered = T)
+levels(NZAllM2$Gender) = c("Woman","Man") 
+NZAllM2$Euro <- factor(NZAllM2$Euro, ordered = T)
+levels(NZAllM2$Euro) = c("No","Yes") 
+NZAllM2$Group <- factor(NZAllM2$Group, ordered = T)
+levels(NZAllM2$Group) = c("Non-attenders", "Sporadic attenders", "Consistent attenders") 
+
+
+NZAllM2$ReligT2notna <- NA
+NZAllM2$ReligT2notna[!is.na(NZAllM2$ReligT2)] <- 1
+
+NZAllM2$ReligT3notna <- NA
+NZAllM2$ReligT3notna[!is.na(NZAllM2$ReligT3)] <- 1
+
+NZAllM2$ReligT4notna <- NA
+NZAllM2$ReligT4notna[!is.na(NZAllM2$ReligT4)] <- 1
+
+NZAllM2$ReligT5notna <- NA
+NZAllM2$ReligT5notna[!is.na(NZAllM2$ReligT5)] <- 1
+
+NZAllM2$ReligT6notna <- NA
+NZAllM2$ReligT6notna[!is.na(NZAllM2$ReligT6)] <- 1
+
+NZAllM2$ReligT7notna <- NA
+NZAllM2$ReligT7notna[!is.na(NZAllM2$ReligT7)] <- 1
+
+NZAllM2$ReligT8notna <- NA
+NZAllM2$ReligT8notna[!is.na(NZAllM2$ReligT8)] <- 1
+
+NZAllM2$ReligT9notna <- NA
+NZAllM2$ReligT9notna[!is.na(NZAllM2$ReligT9)] <- 1
+
+NZAllM2$ReligTotnotna <- NA
+NZAllM2$ReligTotnotna <- rowSums(NZAllM2[,c("ReligT2notna", "ReligT3notna", "ReligT4notna", "ReligT5notna", 
+                                            "ReligT6notna", "ReligT7notna", "ReligT8notna", "ReligT9notna")], na.rm = T)
+
+NZAllM2$ReligSum29 <- rowSums(NZAllM2[,c("ReligT2", "ReligT3", "ReligT4", "ReligT5", 
+                                        "ReligT6", "ReligT7", "ReligT8", "ReligT9")], na.rm = T)
+
+
+NZAllM2$PropRel29 <- NZAllM2$ReligSum29/NZAllM2$ReligTotnotna
+
+#table(NZAllM2$T02, exclude = NULL)
+#table(NZAllM2$T03, exclude = NULL)
+#table(NZAllM2$T04, exclude = NULL)
+#table(NZAllM2$T05, exclude = NULL)
+#table(NZAllM2$T06, exclude = NULL) #-1 n = 10
+#table(NZAllM2$T07, exclude = NULL) #-1 n = 31
+#table(NZAllM2$T08, exclude = NULL) #-1 n = 92
+#table(NZAllM2$T09, exclude = NULL) #-1 n = 102
+
+NZAllM2 <- NZAllM2 %>%
+  mutate_at(.vars = vars(
+                    "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09"),
+  .funs = funs(ifelse(. == -1, 0, .))) 
+
+
+NZAllM2$TSUM29 <- rowSums(NZAllM2[,c("T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09")], na.rm = T)
+
+```
+
+# Figure 2 Annotated histogram
+```{r}
+table(NZAllM2$PropChAttGT1)
+table(NZAllM2$Group)
+
+hist_gr1att <- ggplot(NZAllM2, aes(x=PropChAttGT1)) +
+  geom_bar() +
+  geom_text(stat='count', aes(label=..count..), vjust=-1, size = 4, angle = 35, hjust = 0) +
+  geom_segment(aes(x = .125, y = 2000, xend = 0.52, yend = 2000), colour = "gray48", size = 0.5) +
+  geom_segment(aes(x = 0.55, y = 2000, xend = 1, yend = 2000), colour = "gray48", size = 0.5) +
+  geom_text(aes(label= "3535", x = 0.05, y = 2500), size = 5, colour = "gray48", angle = 35) +
+  geom_text(aes(label= "1662", x = 0.3125, y = 2100), size = 5, colour = "gray48", angle = 35) +
+  geom_text(aes(label= "2442", x = 0.7855, y = 2100), size = 5, colour = "gray48", angle = 35) +
+  coord_cartesian(ylim = c(0,3000), xlim = c(0,1.0)) +
+  scale_y_continuous(breaks = seq(0, 3000, 200), name = "No. of participants\n") +
+  scale_x_continuous(breaks = seq(0, 1, .1), 
+                   name = "\nProportion of surveys in which church attedance was reported at least once in the preceding month") +
+  theme_bw() +
+  theme(#axis.title.x=element_blank(),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10),
+      strip.text.x = element_text(size = 12),
+      legend.position="none")
+hist_gr1att 
+ggsave(file="Hist_ChurchAttendanceProportion_Max9.pdf", width = 270, height = 210, units = "mm")
+
+```
+
+# Table 1 Descriptives and ANOVA/chi-square results
+
+```{r}
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$AgeT2, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Age.xlsx", row.names = F)
+aovModel <- aov(AgeT2 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #non-sig
+etaSquared(aovModel, type = 2)
+leveneTest(AgeT2 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$AgeT2 ~ NZAllM2$Group) #non-sig
+
+mytable <- table(NZAllM2$Gender, NZAllM2$Group)
+prop.table(mytable, margin = 2)
+associationTest(~ Gender + Group, data = NZAllM2) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$DeprFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Depriv.xlsx", row.names = F)
+aovModel <- aov(DeprFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(DeprFirst29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$DeprFirst29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$HealthFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Health.xlsx", row.names = F)
+aovModel <- aov(HealthFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(HealthFirst29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$HealthFirst29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$AverageChurchAtt, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_AvChAtt.xlsx", row.names = F)
+aovModel <- aov(AverageChurchAtt ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(AverageChurchAtt ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$AverageChurchAtt ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$NeuFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_Neurot.xlsx", row.names = F)
+aovModel <- aov(NeuFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #marginally sig
+etaSquared(aovModel, type = 2)
+leveneTest(NeuFirst29 ~ Group, data = NZAllM2) #fine
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$NeuFirst29 ~ NZAllM2$Group) #marginally sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$MDFirst29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_MD.xlsx", row.names = F)
+aovModel <- aov(MDFirst29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(MDFirst29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$MDFirst29 ~ NZAllM2$Group) #sig
+
+mytable <- table(NZAllM2$Euro, NZAllM2$Group)
+prop.table(mytable, margin = 2)
+associationTest(~ Euro + Group, data = NZAllM2) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$PropRel29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_PropRel.xlsx", row.names = F)
+aovModel <- aov(PropRel29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(PropRel29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni")
+kruskal.test(NZAllM2$PropRel29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$RelIDFir29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_RelID.xlsx", row.names = F)
+aovModel <- aov(RelIDFir29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(RelIDFir29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$RelIDFir29 ~ NZAllM2$Group) #sig
+
+descr <- dplyr::bind_rows(describeBy(x = NZAllM2$TSUM29, group = NZAllM2$Group))
+descr
+#write.xlsx(descr, "descr_TSUM.xlsx", row.names = F)
+table(NZAllM2$TSUM29, exclude = NULL)
+aovModel <- aov(NZAllM2$TSUM29 ~ Group, data = NZAllM2)
+summary(aovModel)
+Anova(aovModel, type = 2) #sig
+etaSquared(aovModel, type = 2)
+leveneTest(NZAllM2$TSUM29 ~ Group, data = NZAllM2) #unequal variances
+posthocPairwiseT(aovModel, p.adjust.method = "bonferroni") #consistent to sporadic most notable diff
+kruskal.test(NZAllM2$TSUM29 ~ NZAllM2$Group) #sig
+
+```
+
+# Supp figure - histogram of PropRel29
+```{r}
+table(NZAllM2$Group)
+facet_labelsGroup <- c("Non-attenders" = "Non-attenders\nn = 3,535", "Sporadic attenders" = "Sporadic attenders\nn = 1,586", "Consistent attenders" = "Consistent attenders\nn = 1,995")
+
+hist_relprop <- ggplot(NZAllM2, aes(x = PropRel29))+
+coord_cartesian(ylim = c(0,1.0), xlim = c(0,1.0)) +
+facet_wrap(~ Group, ncol = 3, labeller = labeller(Group = facet_labelsGroup)) +
+geom_bar(aes(y = ..prop..), position = position_dodge(), stat = "count") + 
+scale_y_continuous(breaks = seq(0, 1, .1), labels = scales::percent, name = "Percentage of group") +
+scale_x_continuous(breaks = seq(0, 1, .2), name = "Proportion of completed surveys 2010 to 2017 in which participant reported being religious") +
+theme_bw() +
+theme(#axis.title.x=element_blank(),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10),
+      strip.text.x = element_text(size = 12),
+      legend.position="none")
+
+hist_relprop
+ggsave(file="Hist_RelProp.pdf", width = 210, height = 150, units = "mm")
+```
+
+# Figure 2 - Panel of church attendance trajectories
+```{r}
+
+PointData <- read_excel("Groupwise LGM results 5.xlsx", sheet = "Graphing parameters MD")
+
+LGCData <- read_excel("Groupwise LGM results 5.xlsx", sheet = "LGC MD")
+
+PointData$Group <- NA
+for (i in 1:nrow(PointData)) {
+  if (substr(PointData$Point[i],1,1) == "A") {
+          PointData$Group[i] <- "Non"
+  } else if (substr(PointData$Point[i],1,1) == "B") { 
+          PointData$Group[i] <- "Sporadic"
+  } else if (substr(PointData$Point[i],1,1) == "C") { 
+          PointData$Group[i] <- "Consistent"
+  }
+}
+
+PointData$Year <- NA
+for (i in 1:nrow(PointData)) {
+    PointData$Year[i] <- as.numeric(paste0("20",substr(PointData$Point[i],2,3), sep = ""))
+}
+
+ PointDataN <-  PointData %>%
+  filter(Group == "Non")
+
+ PointDataS <-  PointData %>%
+  filter(Group == "Sporadic")
+
+ PointDataC <-  PointData %>%
+  filter(Group == "Consistent")
+
+####
+ 
+LGCData$Annot <- NA
+LGCData$FontFace <- NA
+for (i in 1:nrow(LGCData)) {
+  if(LGCData$ParSig[i] <= .001) { #if slope parameter is sig
+    LGCData$Annot[i] <- "***"
+    LGCData$FontFace[i] <- "bold"
+  } else if (LGCData$ParSig[i] <= .01) { 
+    LGCData$Annot[i] <- "**"
+    LGCData$FontFace[i] <- "bold"
+  }  else if (LGCData$ParSig[i] <= .05) {
+    LGCData$Annot[i] <- "*"
+    LGCData$FontFace[i] <- "bold"
+  } else if (LGCData$ParSig[i] > .05) {
+    LGCData$Annot[i] <- ""
+    LGCData$FontFace[i] <- "plain"
+  }
+}
+
+for (i in 1:nrow(LGCData)) {
+  if (LGCData$Group[i] == "A") {
+          LGCData$Group[i] <- "Non"
+  } else if (LGCData$Group[i] == "B") {
+          LGCData$Group[i] <- "Sporadic"
+  } else if (LGCData$Group[i] == "C") { 
+          LGCData$Group[i] <- "Consistent"
+  }
+}
+
+LGCDataN <- LGCData %>%
+  filter(Group == "Non")
+
+LGCDataS <- LGCData %>%
+  filter(Group == "Sporadic")
+
+LGCDataC <- LGCData %>%
+  filter(Group == "Consistent")
+
+```
+
+## Non-attenders
+```{r}
+ylimL <- 0.5
+ylimH <- 1
+ybL <- 0.5
+ybH <- 1
+bint <- .05
+
+#colours: http://sape.inf.usi.ch/quick-reference/ggplot2/colour
+
+GroupName_N <- "Non-attenders\n(n = 3,535)"
+
+line_N <-  ggplot(PointDataN) +
+    geom_line(data = PointDataN, size = 1.2, 
+              aes(x = Year, y = Estimate), colour = "#08519c") + #dark blue
+    geom_ribbon(data = PointDataN, 
+                aes(x = Year, ymin=Estimate-1.96*SE, ymax=Estimate+1.96*SE), alpha = 0.3, 
+                color = "#4292c6", fill = "#4292c6") + #fill lighter
+    geom_text(aes(y = 0.98, x = 2010, label = GroupName_N), 
+              colour = "black", hjust = "left", size = 6) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "I_m",], 
+              aes(y = 0.70, x = 2010, 
+              label = paste0("Intcpt mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "S_m",], 
+              aes(y = 0.68, x = 2010, 
+              label = paste0("Slope mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "I_v",], 
+              aes(y = 0.66, x = 2010, 
+              label = paste0("Intcpt var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataN[LGCDataN$Parameter == "S_v",], 
+              aes(y = 0.64, x = 2010, 
+              label = paste0("Slope var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+  
+    coord_cartesian(xlim = c(2010,2017), ylim = c(ylimL, ylimH)) +
+    scale_y_continuous(breaks=seq(ybL, ybH, bint)) +
+    scale_x_continuous(breaks=seq(2010,2017,1)) + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 14))
+
+ggsave(line_N, file="Lineplot_Non-attenders_Max9.pdf", width = 210, height = 210, units = "mm")
+
+```
+
+
+## Sporadic attenders
+```{r}
+GroupName_S <- "Sporadic attenders\n(n = 1,586)"
+
+line_S <-  ggplot(PointDataS) +
+    geom_line(data = PointDataS, size = 1.2, 
+              aes(x = Year, y = Estimate), colour = "#08519c") + #dark blue
+    geom_ribbon(data = PointDataS, 
+                aes(x = Year, ymin=Estimate-1.96*SE, ymax=Estimate+1.96*SE), alpha = 0.3, 
+                color = "#4292c6", fill = "#4292c6") + #fill lighter
+    geom_text(aes(y = 0.98, x = 2010, label = GroupName_S), 
+              colour = "black", hjust = "left", size = 6) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "I_m",], 
+              aes(y = 0.70, x = 2010, 
+              label = paste0("Intcpt mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "S_m",], 
+              aes(y = 0.68, x = 2010, 
+              label = paste0("Slope mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "I_v",], 
+              aes(y = 0.66, x = 2010, 
+              label = paste0("Intcpt var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataS[LGCDataS$Parameter == "S_v",], 
+              aes(y = 0.64, x = 2010, 
+              label = paste0("Slope var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace),
+              colour = "black",
+              hjust = "left", size = 5) +
+  
+    coord_cartesian(xlim = c(2010,2017), ylim = c(ylimL, ylimH)) +
+    scale_y_continuous(breaks=seq(ybL, ybH, bint)) +
+    scale_x_continuous(breaks=seq(2010,2017,1)) + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 14))
+
+ggsave(line_S, file="Lineplot_Sporadic_Max9.pdf", width = 210, height = 210, units = "mm")
+
+```
+
+
+
+
+```{r}
+GroupName_C <- "Consistent attenders\n(n = 1,995)"
+
+line_C <-  ggplot(PointDataC) +
+    geom_line(data = PointDataC, size = 1.2, 
+              aes(x = Year, y = Estimate), colour = "#08519c") + #dark blue
+    geom_ribbon(data = PointDataC, 
+                aes(x = Year, ymin=Estimate-1.96*SE, ymax=Estimate+1.96*SE), alpha = 0.3, 
+                color = "#4292c6", fill = "#4292c6") + #fill lighter
+    geom_text(aes(y = 0.98, x = 2010, label = GroupName_C), 
+              colour = "black", hjust = "left", size = 6) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "I_m",], 
+              aes(y = 0.70, x = 2010, 
+              label = paste0("Intcpt mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "S_m",], 
+              aes(y = 0.68, x = 2010, 
+              label = paste0("Slope mean (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "I_v",], 
+              aes(y = 0.66, x = 2010, 
+              label = paste0("Intcpt var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+    geom_text(data = LGCDataC[LGCDataC$Parameter == "S_v",], 
+              aes(y = 0.64, x = 2010, 
+              label = paste0("Slope var (Std. err.) = ", round(ParVal,3), 
+                             " (", round(ParSE,3), ")", Annot), fontface = FontFace), 
+              colour = "black",
+              hjust = "left", size = 5) +
+  
+    coord_cartesian(xlim = c(2010,2017), ylim = c(ylimL, ylimH)) +
+    scale_y_continuous(breaks=seq(ybL, ybH, bint)) +
+    scale_x_continuous(breaks=seq(2010,2017,1)) + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      legend.position="none",
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 14))
+
+ggsave(line_C, file="Lineplot_Consistent_Max9.pdf", width = 210, height = 210, units = "mm")
+```
+
+
+## Arrange in grid
+```{r}
+g <- grid.arrange(grobs = list(line_N, line_S, line_C), nrow = 1, ncol = 3)
+ggsave(file="GroupLGC_AllGraphs_Max9.pdf", g, width = 350, height = 210, units = "mm")
+```

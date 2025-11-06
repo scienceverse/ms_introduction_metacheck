@@ -1,0 +1,86 @@
+---
+title: "S1"
+output: html_document
+---
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+#loading packages
+library('dplyr')
+library(psych)
+library(ggplot2)
+library(jtools)
+library('interactions')
+library(ltm)
+library(car)
+library(MBESS)
+
+#loading data
+BR <- read.csv("~/Study 1 Data.csv")
+
+```
+
+#Key Variable Names
+ * IS = Incentive Salience manipulation condition (1 = high, -1 = low)
+ * Charity = Prosocial Motivation manipulation condition (1 = high, -1 = low)
+ * ISMC = Incentive Salience manipulation check (7-point scale)
+ * PMMC = Prosocial Motivation manipulation check (7-point scale)
+ * DV_likely = Donation likelihood (7-point scale)
+
+#Demographic
+```{r}
+#Gender and age
+BR$gender <- factor(BR$gender)
+levels(BR$gender) <- c('female', 'non-binary', 'male')
+BR  %>% count(gender)
+describe(BR[, c("age", "PMMC")], range=TRUE)
+```
+
+#Manpulation check
+```{r}
+#Incentive salience
+t.test(ISMC ~ IS, data=BR, var.equal=TRUE)
+tapply(BR$ISMC,BR$IS,sd) #SD
+BR  %>% count(IS)
+ci.smd(ncp= 4.3847, n.1=399, n.2=409, conf.level=.95) #ISMC
+
+#One-sample for IS: all above the midpoint
+with(BR%>%filter(IS==1), t.test(ISMC, mu=4))
+with(BR%>%filter(IS==-1), t.test(ISMC, mu=4))
+
+#Low IS condition's median
+BR.low <- BR%>%filter(IS==-1)
+median(BR.low$ISMC)
+
+#Charity manipulation
+t.test(PMMC ~ Charity, data=BR, var.equal=TRUE)
+tapply(BR$PMMC,BR$Charity,sd) #SD
+BR  %>% count(Charity)
+ci.smd(ncp= 10.63, n.1=405, n.2=403, conf.level=.95) #CharityMC
+
+#Reliability for Charity MC
+PMMC <- as.data.frame(cbind(BR$PMMC_1,BR$PMMC_2,BR$PMMC_3))
+cronbach.alpha(PMMC, CI=FALSE)
+```
+# Donation Likelihood DV
+```{r}
+m1 = glm(DV_likely ~ IS*Charity, data=BR)
+summ(m1, digit=4)
+sim_slopes(m1, pred=IS, modx = Charity, digits = 5)
+```
+Means and SDs
+```{r}
+Means.Table<-BR %>%
+  group_by(Charity, IS) %>%
+  summarise(N=n(),
+            Means=mean(DV_likely),
+            SD=sd(DV_likely),
+            SE=SD/N^.5)
+print(Means.Table)
+```
+Graph
+```{r}
+BR %>%
+  ggplot(aes(x = Charity, y = DV_likely, color = factor(IS))) +
+  geom_smooth(method = "glm", se = FALSE) +
+  labs(title = "", x = "PM", color = "Inc Salience")
+```

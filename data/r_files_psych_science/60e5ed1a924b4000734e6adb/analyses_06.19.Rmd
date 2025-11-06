@@ -1,0 +1,984 @@
+---
+title: "Untitled"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Workspace  
+## Packages  
+```{r}
+library(knitr)
+library(kableExtra)
+library(qgraph)
+library(Amelia)
+library(psych)
+library(gimme)
+library(plyr)
+library(tidyverse)
+```
+# Data  
+```{r}
+wd <- "~/Box/network/other projects/planned missing"
+```
+
+## Baseline Trait Data  
+```{r}
+baseline_codebook <- sprintf("%s/baseline_items.xlsx", wd) %>% 
+  readxl::read_xlsx(sheet = "codebook")
+baseline <- sprintf("%s/data/baseline/baseline_5.20.19.csv", wd) %>% 
+  read_csv() %>%
+  filter(!row_number() %in% c(1,2))
+```
+
+```{r}
+cols <- baseline_codebook$`New #`
+baseline_facets <- baseline %>% select(SID, one_of(cols)) %>%
+  gather(key = item, value = t_value, -SID, na.rm = T) %>%
+  left_join(baseline_codebook %>% select(item = `New #`, Reverse, Facet)) %>%
+  filter(grepl("BFI", item)) %>%
+  separate(item, c("inventory", "Trait", "item"), sep = "_") %>%
+  mutate(t_value = as.numeric(t_value), 
+         t_value = ifelse(Reverse == -1, reverse.code(-1, t_value, mini = 1, maxi = 5), t_value)) %>%
+  group_by(Trait, Facet, SID) %>%
+  summarize(t_value = mean(t_value, na.rm = T))
+```
+
+## Baseline State Data
+### Big 5 Item-Level Data  
+```{r}
+state_codebook <- sprintf("%s/ESM_items.xlsx", wd) %>% readxl::read_xlsx(., sheet = "codebook")
+
+load(sprintf("%s/data/esm/clean_data_w1_2019-05-10.RData", wd))
+
+# make the long form data wide and keep only participants where N >= P
+BFI.wide <- BFI %>% filter(!is.na(item) & type == "BFI2") %>%  
+  select(-trial_index, -trait, -facet, -answer) %>%
+  spread(key = item, value = responses2) %>%
+  mutate_at(vars(A1:O9), funs(as.numeric)) %>%
+  group_by(SID) %>%
+  filter(n() >= 15)
+
+# small workaround for participants with no variability. Given the tiny amount of jitter,
+# they won't correlate with anything, but everything will, at least, run
+jitter_fun <- function(df){
+  z <- apply(df, 2, function(x)sum(!is.na(x)))
+  df <- df[,z > 1]
+  sd_fun <- function(x){if(sd(x, na.rm = T) == 0) jitter(x, amount = runif(1,0,.05)) else x}
+  df2 <- data.frame(apply(df, 2, sd_fun))
+  colnames(df2) <- colnames(df2)
+  return(df2)
+}
+
+# Create a count variable for each participant
+BFI.wide <- 
+  BFI.wide %>%
+  group_by(SID) %>%
+  arrange(SID, Date, Hour, Minute) %>%
+  mutate(all_beeps = seq(1, n(),1))
+
+# add the teeny jitter if there's no variability
+BFI.wide <- BFI.wide %>%
+  select(SID, all_beeps, A1:O9) %>%
+  group_by(SID) %>%
+  nest() %>%
+  mutate(data2 = map(data, possibly(jitter_fun, NA_real_))) %>%
+  filter(!is.na(data2)) %>%
+  unnest(data2, .drop = T) %>%
+  ungroup() %>%
+  mutate(SID = as.character(SID)) %>%
+  full_join(BFI.wide %>% select(SID, Date, Hour, Minute, Day, HourBlock, all_beeps))
+
+BFI.wide %>% 
+  filter(SID == "032901") %>% 
+  select(SID, Date, Hour, A1, A2:A9, A10:A12, C1, C2:A9, C10:A12, 
+         E1, E2:E9, E10:A12, N1, N2:N9, N10:N12, O1, O2:O9, O10:O12) %>% 
+  mutate_if(is.numeric, round, 0) %>%
+  write.csv(., file = sprintf("%s/data/sample_raw.csv", wd), row.names = F, na = "")
+```
+
+### BFI Facet-Level Data  
+```{r}
+# save a vector of the short facet names for later
+short.facets <- state_codebook %>% 
+  filter(type == "BFI2") %>% 
+  select(Facet, shrtFacet) %>% 
+  distinct() %>%
+  separate(shrtFacet, c("trait", "shrtFacet2"), remove = F)
+
+# create a data frame that has facet level, instead of item level, data
+# also reverse code before compositing the items (within person, within time) into facets
+(BFI.facet <- BFI.wide %>%
+  gather(key = item, value = value, A1:O9, na.rm = T) %>%
+  left_join(state_codebook %>% select(item = Item, trait = Trait, facet = Facet, reverse)) %>%
+  mutate(value = ifelse(is.na(reverse), value, as.numeric(mapvalues(round(value), 1:5, 5:1)))) %>%
+  group_by(SID, all_beeps, facet, trait, Date, Hour, HourBlock, Day) %>%
+  summarize(value = mean(value, na.rm = T)) %>% 
+  ungroup() %>%
+  filter(!is.na(facet)) %>%
+  mutate(value = ifelse(is.nan(value) == T, NA_real_, value), # if all are NA, it spits out NaN, not NA
+         facet2 = mapvalues(facet, short.facets$Facet, short.facets$shrtFacet)) %>%
+  select(SID, all_beeps, facet2, value, Date, Hour, HourBlock, Day) %>%
+  spread(key = facet2, value = value)) # make facets wide again
+
+BFI.facet %>% 
+  filter(SID == "032901") %>% 
+  select(SID, Date, Hour, A_Cmpn:O_IntCur) %>% 
+  mutate_if(is.numeric, round, 0) %>%
+  write.csv(., file = sprintf("%s/data/facet_raw.csv", wd), row.names = F, na = "")
+```
+
+### Big 5 Trait-Level Data  
+```{r}
+BFI.trait <- BFI.wide %>%
+  gather(key = item, value = value, A1:O9, na.rm = T) %>%
+  left_join(state_codebook %>% select(item = Item, trait = Trait, facet = Facet, reverse)) %>%
+  mutate(value = ifelse(is.na(reverse), value, as.numeric(mapvalues(round(value), 1:5, 5:1)))) %>%
+  group_by(SID, all_beeps, trait, Date, Hour, HourBlock, Day) %>%
+  summarize(value = mean(value, na.rm = T)) %>%
+  ungroup() %>%
+  filter(!is.na(trait)) %>%
+  mutate(value = ifelse(is.nan(value) == T, NA_real_, value),
+         trait =  substr(trait, 1, 1)) %>%
+  select(SID, all_beeps, trait, value, Date, Hour, HourBlock, Day) %>%
+  spread(key = trait, value = value) # make facets wide again
+```
+
+
+### Multiple Imputation
+```{r}
+set.seed(27)
+BFI.mi <- data.frame(unclass(BFI.facet %>% select(-(Date:Day)))) %>%
+  amelia(., m = 1, ts = "all_beeps", cs = "SID") 
+
+BFI.mi <- BFI.mi$imputations[[1]] %>%
+  full_join(BFI.facet %>% select(SID, all_beeps, Date:Day))
+
+BFI.mi %>% 
+  filter(SID == "032901") %>% 
+  select(SID, Date, Hour, A_Cmpn:O_IntCur) %>% 
+  mutate_if(is.numeric, round, 0) %>%
+  write.csv(., file = sprintf("%s/data/facet_mi.csv", wd), row.names = F, na = "")
+
+state_facets <- BFI.mi %>%
+  group_by(SID) %>% 
+  summarise_at(vars(A_Cmpn:O_IntCur), mean, na.rm = T) %>%
+  gather(Facet, s_value, -SID) %>%
+  separate(Facet, c("Trait", "item"), sep = "_", remove = F) %>%
+  mutate(Facet = mapvalues(Facet, state_codebook$shrtFacet, state_codebook$Facet, warn_missing = F)) %>%
+  select(-item)
+
+BFI.trait.mi <- BFI.mi %>%
+  gather(item, value, A_Cmpn:O_IntCur)  %>%
+  separate(item, c("trait", "item")) %>%
+  group_by(SID, trait, all_beeps, Date, Hour, HourBlock, Day) %>% 
+  summarize(value = mean(value, na.rm = T)) %>%
+  spread(trait,value)
+```
+
+### Situations Data  
+```{r}
+# change situations data to wide
+sit.wide <- unique(sit %>% filter(!is.na(item)) %>%
+  select(-trial_index, -item, -facet, -answer)) %>%
+  rename(item = trait) %>%
+  group_by(item, type, SID, Date, Hour, Minute) %>% 
+  summarize(responses2 = mean(as.numeric(responses2))) %>%
+  spread(key = item, value = responses2) %>%
+  mutate_at(vars(AnxSWk:TV), funs(as.numeric)) %>%
+  mutate(interact = rowSums(cbind(intFam, intFrnd), na.rm = T),
+         interact = as.numeric(mapvalues(interact, 0:2, c(0,1,1), warn_missing = F))) %>%
+  arrange(SID, Date, Hour, Minute) %>%
+  group_by(SID) %>%
+  mutate(all_beeps = seq(1,n(),1)) %>%
+  select(SID, all_beeps, prcrst, lonely)
+```
+
+# Tests of Planned Missing Data
+## Facet-Level Correlations  
+```{r}
+st.tr.dat <- BFI.mi %>%
+  select(SID, Day, HourBlock, A_Cmpn:O_IntCur) %>%
+  mutate(type = "ESM Imputed") %>%
+  full_join(BFI.facet %>% select(SID, Day, HourBlock, A_Cmpn:O_IntCur) %>%
+              mutate(type = "ESM Raw")) %>%
+  gather(key = Trait, value = s_value, A_Cmpn:O_IntCur, na.rm = T) %>%
+  separate(Trait, c("Trait", "Facet"), sep = "_") %>%
+  unite(Facet, Trait, Facet, remove = F) %>%
+  mutate(Facet = mapvalues(Facet, short.facets$shrtFacet, short.facets$Facet)) %>%
+  left_join(baseline_facets)
+
+st_tr_cor <- st.tr.dat %>%
+  group_by(SID, Day, HourBlock, type, Trait) %>%
+  summarize_at(vars(s_value, t_value), mean, na.rm = T) %>%
+  mutate(Facet = "Overall") %>%
+  ungroup() %>%
+  full_join(st.tr.dat) %>%
+  group_by(SID, type, Trait, Facet) %>%
+  summarize_at(vars(s_value, t_value), mean, na.rm = T) %>%
+  mutate(Overall = ifelse(Facet == "Overall", "Overall", "Facets")) %>%
+  group_by(SID, type, Overall) %>%
+  summarize(r= cor(s_value, t_value, use = "pairwise")) %>%
+  ungroup() %>%
+  filter(!is.na(r)) 
+
+
+st_tr_cor %>%
+  ggplot(aes(x = r)) +
+    geom_density(aes(fill = Overall), alpha = .3) +
+    scale_x_continuous(limits = c(-1,1), breaks =  seq(-1, 1, .5)) +
+    scale_fill_manual(values = c("gray3", "blue")) +
+    geom_vline(aes(xintercept = 0), linetype = "dashed") +
+    labs(x = "Ipsative State-Trait Correlation", y = "Density", fill = NULL) +
+    facet_wrap(~type, nrow = 2) +
+    theme_classic() +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2), color = "black"),
+            axis.title = element_text(face = "bold", size = rel(1.2)),
+            legend.text = element_text(face = "bold", size = rel(1.2)),
+            legend.title = element_text(face = "bold", size = rel(1.2)),
+            strip.background = element_rect(fill = "black"),
+            strip.text = element_text(face = "bold", size = rel(1.5), color = "white"),
+            strip.placement = "outside",
+            legend.position = "bottom")
+ggsave(sprintf("%s/results/plots/profile_consistency.png", wd), width = 5, height = 6)
+
+st_tr_cor %>%
+  summarise(r = fisherz2r(mean(fisherz(r))))
+
+st.tr.dat %>%
+  group_by(SID, type, Trait) %>%
+  summarize_at(vars(s_value, t_value), mean, na.rm = T) %>%
+  gather(key = source, value = value, s_value, t_value, na.rm = T) %>%
+  mutate(source = mapvalues(source, c("s_value", "t_value"), c("State", "Trait"),
+                            warn_missing = F),
+         Trait = factor(Trait, levels = rev(c("E", "A", "C", "N", "O")))) %>%
+  filter(SID == "031501") %>%
+  ggplot(aes(x = Trait, y = value)) +
+    geom_line(aes(linetype = source, group = source)) +
+    geom_point(aes(color = source), size = 3, shape = 15) +
+    scale_color_manual(values = c("blue", "black")) +
+    scale_y_continuous(limits = c(1,5), breaks = seq(1,5,1)) +
+    labs(x = NULL, y = "Mean Rating", color = "Source", linetype = "Source") +
+    coord_flip() +
+    facet_grid(~type) +
+    theme_classic() +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2), color = "black"),
+          axis.text.y = element_text(size = rel(2)),
+            axis.title = element_text(face = "bold", size = rel(1.2)),
+            legend.text = element_text(face = "bold", size = rel(1.2)),
+            legend.title = element_text(face = "bold", size = rel(1.2)),
+            strip.background = element_rect(fill = "black"),
+            strip.text = element_text(face = "bold", size = rel(1.5), color = "white"),
+            strip.placement = "outside",
+            legend.position = "bottom")
+  ggsave(sprintf("%s/results/plots/sample_profile.png", wd), width = 4, height = 6)
+
+st.tr.dat %>%
+  group_by(SID, Day, HourBlock, type, Trait) %>%
+  summarize_at(vars(s_value, t_value), mean, na.rm = T) %>%
+  mutate(Facet = "Overall") %>%
+  ungroup() %>%
+  full_join(st.tr.dat) %>%
+  mutate(overall = ifelse(Facet == "Overall", "Overall", "Facets")) %>%
+  group_by(overall, type, SID) %>%
+  summarise(r = cor(s_value, t_value, use = "pairwise")) %>%
+  ungroup() %>%
+  filter(!is.na(r)) 
+
+state_facets %>%
+  left_join(baseline_facets) %>%
+  group_by(SID, Trait) %>%
+  summarize_at(vars(s_value, t_value), mean, na.rm = T) %>%
+  group_by(Trait) %>%
+  summarise(r = cor(s_value, t_value, use = "pairwise"))
+```
+
+```{r}
+tab_fun <- function(x){
+  tmp <- broom::tidy(x) %>%
+    mutate(term = mapvalues(term, c("sd_(Intercept).SID", "sd_Observation.Residual"),
+                            c("tau_00", "sigma")))
+  confint(x, oldNames = F) %>% data.frame %>%
+    rownames_to_column("term") %>%
+    mutate(term = mapvalues(term, "sd_(Intercept)|SID", "tau_00")) %>%
+    setNames(c("term", "lower", "upper")) %>%
+    full_join(tmp)
+}
+
+nested.cnvrgnc <- st.tr.dat %>%
+  group_by(SID, Day, HourBlock, type, Trait) %>%
+  summarize_at(vars(s_value, t_value), mean, na.rm = T) %>%
+  mutate(Facet = "Overall") %>%
+  ungroup() %>%
+  full_join(st.tr.dat) %>%
+  group_by(type, Trait, Facet) %>% 
+  # mutate_at(vars(s_value, t_value), ~as.numeric(scale(.))) %>%
+  nest() %>%
+  mutate(m = map(data, ~lme4::lmer(s_value ~ t_value + (1 | SID), data = .)),
+         tab = map(m, tab_fun))
+
+nested.cnvrgnc %>% 
+  unnest(tab) %>%
+  filter(term == "t_value") %>%
+  select(-(std.error:group)) %>%
+  mutate(Facet = factor(Facet, levels = c("Overall", short.facets$Facet)),
+         overall = ifelse(Facet == "Overall", "y", "n")) %>%
+  ggplot(aes(x = Facet, y = estimate, group = type)) + 
+    geom_line() +
+    geom_hline(aes(yintercept = 0), linetype = "dashed") +
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = .1) +
+    geom_point(aes(size = estimate, color = overall), shape = 15) +
+    scale_y_continuous(limits = c(-.5, .53), breaks = seq(-.5, .5, .25)) +
+    scale_size(guide = "none") +
+    scale_color_manual(values = c("black", "blue"), guide = "none") +
+    facet_grid(Trait ~ type, scales = "free_y", switch = "y") +
+    labs(x = NULL, y = "Estimated State-Trait Convergence") +
+    coord_flip() +
+    theme_classic() +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2), color = "black"),
+            axis.title = element_text(face = "bold", size = rel(1.2)),
+            legend.text = element_text(face = "bold"),
+            legend.title = element_text(face = "bold", size = rel(1.2)),
+            strip.background = element_rect(fill = "black"),
+            strip.text = element_text(face = "bold", size = rel(1.5), color = "white"),
+            strip.placement = "outside",
+            legend.position = "bottom")
+ggsave(sprintf("%s/results/plots/convergence.png", wd), width = 7, height = 7)
+```
+
+
+## Covariance Matrices
+
+
+## Within-Person Structure  
+### Prepare Data  
+```{r}
+BFI.trait <- BFI.trait %>% left_join(sit.wide) %>% ungroup()
+BFI.trait.mi <- BFI.trait.mi %>% left_join(sit.wide) %>% ungroup()
+BFI.mi <- BFI.mi %>% left_join(sit.wide) %>% ungroup()
+BFI.facet <- BFI.facet %>% left_join(sit.wide) %>% ungroup()
+```
+
+
+```{r, eval = F}
+new_path_fun <- function(model, wave, comp, mi){
+  if(!"data" %in% list.files(wd)) {dir.create(sprintf("%s/data", wd))}
+  if(!"results" %in% list.files(wd)) {dir.create(sprintf("%s/results", wd))}
+  file <- sprintf("%s_%s_%s_w%s", model, comp, mi, wave)
+  if(!file %in% list.files(sprintf("%s/data", wd))) {dir.create(sprintf("%s/data/%s", wd, file))}
+  if(!file %in% list.files(sprintf("%s/results", wd))) {dir.create(sprintf("%s/results/%s", wd, file))}
+}
+
+# function to create data files for each person
+write_fun <- function(sid, model, Wave, comp, mi){
+  if(comp == "bf"){if(mi == "mi"){x <- BFI.trait.mi} else{x <- BFI.trait}}
+  if(comp == "facet"){if(mi == "mi"){x <- BFI.mi} else{x <- BFI.facet}}
+  if(comp == "bf"){cols <- c("E", "A", "C", "N", "O")} else{cols <- short.facets$shrtFacet}
+  if(sid %in% (BFI.mi)$SID){
+  x <- x %>% 
+    filter(SID == sid) %>%
+    arrange(SID, Day, HourBlock) %>%
+    select(one_of(c(cols, model))) %>%
+    data.frame
+  
+  if(model != "null"){
+    if(sd(x[,model], na.rm = T) == 0){
+      replace <- c(0,1)[!0:1 %in% unique(x[,model])]
+      x[sample(1:nrow(x), 2), model] <- replace
+    }
+    if(any(table(x[,model]) == 1)){
+      replace <- c(0,1)[which(table(x[,model]) <= 1)]
+      x[sample(1:nrow(x), 2), model] <- replace
+    }
+  }
+  write.csv(x, file = sprintf("%s/data/%s_%s_%s_w%s/%s.csv", wd, model, comp, mi, Wave, sid), row.names = F)
+  }
+}
+
+dat.wide <- BFI.mi %>% full_join(sit.wide)
+
+# write files for each person for gimme
+crossing(model = c("null", "lonely", "prcrst"),
+         wave = 1,
+         mi = c("mi", "raw"),
+         comp = c("bf", "facet")) %>%
+  mutate(dir = pmap(list(model, wave, comp, mi), new_path_fun)) %>%
+  full_join(crossing(SID = unique((dat.wide %>% group_by(SID) %>% summarize(n = n()) %>% filter(n > 15))$SID), wave = 1)) %>%
+  mutate(data = pmap(list(SID, model, wave, comp, mi), write_fun))
+```
+
+### Run Models  
+```{r, eval = F}
+# function to run gimme for different models
+gimme_fun <- function(model, wave, comp, mi){
+  print(model)
+  fit <- gimme(         # can use "gimme" or "gimmeSEM"
+  data = sprintf("%s/data/%s_%s_%s_w%s", wd, model,comp, mi, wave),  # source directory where your data are 
+  out = sprintf("%s/results/%s_%s_%s_w%s", wd, model, comp, mi, wave),# output directory where you'd like your output to go
+  sep = ",",           # how data are separated. "" for space; "," for comma, "/t" for tab-delimited
+  header = TRUE,          # TRUE or FALSE, is there a header
+  ar = TRUE,          # TRUE (default) or FALSE, start with autoregressive paths open
+  plot = FALSE,        # TRUE (default) or FALSE, generate plots
+  subgroup = FALSE,   # TRUE or FALSE (default), cluster individuals based on similarities in effects
+  paths = NULL,       # option to list paths that will be group-level (semi-confirmatory)
+  groupcutoff = .75  # the proportion that is considered the majority at the group level
+)
+  save(fit, file = sprintf("%s/results/gimme_%s_%s_%s_w%s.RData", wd, model, comp, mi, wave))
+  return(TRUE)
+}
+
+# data frame for keeping things tidy
+gimme_nested <- crossing(
+  model = c("null", "prcrst", "lonely"), 
+  wave = 1,
+  comp = c("bf", "facet"),
+  mi = "mi"
+  ) %>%
+  filter(model == "lonely" & comp == "bf") %>%
+  mutate(gimme = pmap(list(model, wave, comp, mi), gimme_fun))
+```
+
+### Load Results  
+```{r}
+var_fun <- function(model, comp){
+  if (comp == "bf"){if(model == "null"){c("E", "A", "C", "N", "O")} else{c("E", "A", "C", "N", "O", model)}}
+  else {if(model == "null"){short.facets$shrtFacet} else{c(short.facets$shrtFacet, model)}}
+}
+
+load_fun <- function(model, wave,  comp, mi, vars){
+  sprintf("%s/results/gimme/%s_%s_%s_w%s/indivPathEstimates.csv", wd, model, comp, mi, wave) %>% 
+    read_csv() %>%
+    mutate(type = ifelse(grepl("lag", dv) | grepl("lag", iv), "Lagged", "Contemporaneous"),
+           file = as.character(file)) %>%
+    filter(level != "group") %>%
+    select(SID = file, from = iv, to = dv, value = beta, type) %>%
+    full_join(crossing(SID = .$SID, from = vars, to = vars, type = "Contemporaneous") %>%
+    full_join(crossing(SID = .$SID, from = paste(vars, "lag", sep=""), to = vars, type = "Lagged"))) %>%
+    filter(!is.na(type)) %>%
+    mutate(value = ifelse(is.na(value), 0, value)) %>%
+    arrange(SID) 
+}
+
+subs <- list.files(sprintf("%s/results/gimme/null_facet_mi_w1/individual", wd)) %>% 
+  str_remove_all(., "[a-z A-Z.]")
+
+gimme_nested <- crossing(
+  model = c("null", "lonely", "prcrst"),
+  wave = 1,
+  comp = c("bf", "facet"),
+  mi = "mi") %>%
+  mutate(vars = map2(model, comp, var_fun)) %>%
+  mutate(fit = pmap(list(model, wave, comp, mi, vars), load_fun)) %>%
+  unnest(fit, .drop = T) %>%
+  select(-vars) %>%
+  group_by(model, SID, wave, type, comp, mi) %>%
+  nest() %>% 
+  pivot_wider(names_from = type, values_from = data)
+
+
+PDC_fun <- function(df, model, vars){
+  df <- df %>% 
+    # full_join(crossing(from = paste(vars, "lag", sep = ""), to = vars)) %>%
+    mutate(from = str_remove_all(from, "lag")) %>%
+    mutate_at(vars(from, to), ~factor(., levels = vars)) %>%
+    spread(to, value) %>% 
+    mutate_at(vars(-from), ~ifelse(is.na(.), 0, .)) %>%
+    unclass() %>% data.frame() 
+  rownames(df) <- df$from
+  df <- df %>% select(-from)
+}
+
+PCC_fun <- function(df, model, vars){
+  df <- df %>% 
+    # full_join(crossing(from = vars, to = vars)) %>%
+    mutate_at(vars(from, to), ~factor(., levels = vars)) %>%
+    arrange(from) %>%
+    spread(to, value) %>% 
+    mutate_at(vars(-from), ~ifelse(is.na(.), 0, .)) %>%
+    unclass() %>% data.frame()
+  rownames(df) <- df$from
+  df <- df %>% select(-from)
+  df <- as.matrix(df)
+  PCC <- apply(simplify2array(list(df, t(df))), 1:2, mean)
+  diag(PCC) <- NA
+  PCC <- data.frame(PCC)
+}
+
+long_fun <- function(df){df %>% mutate(from = rownames(.)) %>% gather(key = to, value = value, -from)}
+
+centrality_fun <- function(x){
+  centrality_auto(data.frame(x))$node.centrality %>%
+    data.frame() %>%
+    mutate(var = rownames(.))
+}
+
+gimme_nested <- gimme_nested %>%
+  mutate(vars = map2(model, comp, var_fun),
+         PDC = pmap(list(Lagged, model, vars), PDC_fun),
+         PCC = pmap(list(Contemporaneous, model, vars), PCC_fun),
+         Lagged = map(PDC, long_fun),
+         Contemporaneous = map(PCC, long_fun),
+         centrality = map(Contemporaneous, centrality_fun))
+```
+
+### Prediction Plots  
+```{r}
+pro_plot_fun <- function(df, SID){
+  df <- df %>%
+    mutate(model = mapvalues(model, c("lonely", "prcrst"), c("Loneliness", "Procrastination"))) %>%
+    filter(model == "Procrastination") 
+    p <- df %>% 
+      ggplot(aes(x = facet, y = value)) +
+      geom_hline(aes(yintercept = 0), linetype = "dashed") +
+      geom_point(aes(size = abs(value), color =  comp), shape = "square") +
+      scale_size_continuous(limits = c(0, 1), range = c(2, 6)) +
+      scale_color_manual(values = c("blue", "white")) +
+      scale_y_continuous(limits = c(-.75, .75), breaks = seq(-.5, .5, .5)) +
+      labs(x = NULL, y = "Relationship Strength", title = sprintf("Participant %s", SID)) +
+      coord_flip() +
+      facet_grid(trait~model, scale = "free_y", switch = "y") +
+      theme_classic() +
+      theme(legend.position = "none",
+            axis.text = element_text(face = "bold", size = rel(1.2), color = "black"),
+            # axis.text.y = element_text(size = rel(2)),
+            axis.title = element_text(face = "bold", size = rel(1.2)),
+            legend.text = element_text(face = "bold", size = rel(1.2)),
+            legend.title = element_text(face = "bold", size = rel(1.2)),
+            strip.background = element_rect(fill = "black"),
+            strip.text = element_text(face = "bold", size = rel(1.5), color = "white"),
+            strip.placement = "outside",
+            plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+}
+
+gimme_nested_pro <- gimme_nested %>%
+  filter(model == "prcrst") %>%
+  group_by(SID) %>% filter(n() == 2) %>%
+  unnest(Contemporaneous) %>%
+  mutate(value = ifelse(is.na(value), 0, value)) %>%
+  filter(from %in% c("lonely", "prcrst") | to %in% c("lonely", "prcrst")) %>%
+  mutate(dir =  ifelse(from == model, "from", "to"),
+         trait = ifelse(from == model, to, from)) %>%
+  separate(trait, c("trait", "facet"), sep = "_") %>%
+  mutate(facet = ifelse(is.na(facet), "Overall", facet),
+         facet = factor(facet, levels = c(short.facets$shrtFacet2, "Overall")),
+         trait = factor(trait, levels = c("E", "A", "C", "N", "O"))) %>%
+  filter(dir == "to") %>%
+  group_by(SID, mi) %>%
+  nest() %>%
+  mutate(c_plot = map2(data, SID, pro_plot_fun),
+         all_plot = map(c_plot, function(p){p + geom_line(aes(group = model)) + scale_color_manual(values = c("blue", "black"))}))
+
+library(animation)
+
+loop.animate <- function() {
+    lapply(1:nrow(gimme_nested_pro), function(i) {
+        print(gimme_nested_pro$c_plot[[i]])
+    })
+}
+
+# create GIF of all edges
+# saveGIF(loop.animate(), interval = .25, movie.name="procrastination_profile_pred_comp_only.gif", ani.width = 300, ani.height = 600,
+#         imgdir = sprintf("%s/results/plots", wd))
+
+loop.animate <- function() {
+    lapply(1:nrow(gimme_nested_pro), function(i) {
+        print(gimme_nested_pro$all_plot[[i]])
+    })
+}
+
+# create GIF of all edges
+# saveGIF(loop.animate(), interval = .25, movie.name="procrastination_profile_pred.gif", ani.width = 300, ani.height = 600,
+#         imgdir = sprintf("%s/results/plots", wd))
+
+(gimme_nested_pro %>% filter(SID == "110101"))$c_plot[[1]]
+ggsave(filename = sprintf("%s/results/plots/idio_pred_prcrst_110101_comp_only.png", wd), width = 4, height = 6)
+(gimme_nested_pro %>% filter(SID == "110101"))$all_plot[[1]]
+ggsave(filename = sprintf("%s/results/plots/idio_pred_prcrst_110101.png", wd), width = 4, height = 6)
+```
+
+```{r}
+p <- gimme_nested_pro %>% 
+  unnest(data, .drop = T) %>% 
+  filter(model == "prcrst") %>%
+  mutate(model = "Procrastination") %>%
+  filter(value != 0) %>%
+  group_by(mi, model, wave, comp, trait, facet) %>%
+  summarize(n = n())  %>%
+  ggplot(aes(x = facet, y = n)) +
+      geom_bar(aes(fill = comp), position = "dodge", stat = "identity") +
+      coord_flip() +
+      facet_grid(trait~model, scale = "free_y", switch = "y") +
+      scale_fill_manual(values = c("blue", "white")) +
+      labs(x = NULL, y = "Frequency of Nonzero\nRelationships") +
+      theme_classic() +
+      theme(legend.position = "none",
+            axis.text = element_text(face = "bold", size = rel(1.2), color = "black"),
+            # axis.text.y = element_text(size = rel(2)),
+            axis.title = element_text(face = "bold", size = rel(1.2)),
+            legend.text = element_text(face = "bold", size = rel(1.2)),
+            legend.title = element_text(face = "bold", size = rel(1.2)),
+            strip.background = element_rect(fill = "black"),
+            strip.text = element_text(face = "bold", size = rel(1.5), color = "white"),
+            strip.placement = "outside",
+            plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+p
+ggsave(filename = sprintf("%s/results/plots/idio_pred_prcrst_freq_comp_only.png", wd), width = 4, height = 6)
+
+p + scale_fill_manual(values = c("blue", "black")) 
+ggsave(filename = sprintf("%s/results/plots/idio_pred_prcrst_freq.png", wd), width = 4, height = 6)
+```
+
+## P-factor v. R-factor  
+```{r}
+r_fun <- function(x){
+  y <- x %>% select(-SID) %>% as.matrix()
+  rownames(y) <- x$SID
+  cor(y, use = "pairwise")
+}
+set.seed(14)
+nested.strctr <- BFI.mi %>%
+  select(-(Date:Day)) %>%
+  mutate(type = "MI") %>%
+  full_join(BFI.facet %>% 
+              select(SID, all_beeps, A_Cmpn:O_IntCur) %>% 
+              mutate(type = "Facets")) %>%
+  group_by(SID, type) %>%
+  summarize_at(vars(-all_beeps), list(mean), na.rm = T) %>%
+  full_join(baseline_facets %>% ungroup() %>%
+              mutate(Facet = mapvalues(Facet, short.facets$Facet, short.facets$shrtFacet)) %>% 
+              select(-Trait) %>% spread(Facet, t_value) %>%
+              mutate(type = "Trait")) %>%
+  arrange(SID) %>%
+  group_by(type) %>%
+  nest() %>%
+  mutate(r = map(data, r_fun),
+         fa = map2(r, data, ~fa(.x, nfactors = 5, n.obs = nrow(.y), rotate = "oblimin")))
+
+```
+
+### Big 5 Recovery  
+```{r}
+clean_loadings <- function(x){
+  x$loadings %>%
+    unclass %>%
+    data.frame %>%
+    setNames(str_replace(colnames(.), "MR", "F")) %>%
+    rownames_to_column("Indicator") %>%
+    tbl_df %>%
+    gather(key = factor, value = loading, -Indicator) %>%
+    separate(Indicator, c("Trait", "Facet"), sep = "_")
+}
+
+colnames(nested.strctr$fa[[1]]$loadings) <- paste("MR", c("4", "2", "5", "1", "3"), sep = "_")
+colnames(nested.strctr$fa[[2]]$loadings) <- paste("MR", c("4", "3", "1", "5", "2"), sep = "_")
+colnames(nested.strctr$fa[[3]]$loadings) <- paste("MR", c("1", "4", "3", "5", "2"), sep = "_")
+
+nested.strctr %>%
+  mutate(loadings = map(fa, clean_loadings),
+         type = mapvalues(type, unique(type), c("ESM Raw", "ESM Imputed", "Baseline Trait")),
+                type = factor(type, levels = c("Baseline Trait", "ESM Raw", "ESM Imputed"))) %>%
+  unnest(loadings, .drop = T) %>%
+  mutate(Trait = factor(Trait, levels = c("E", "A", "C", "N", "O")))  %>%
+  ggplot(aes(x = factor, y = Facet, fill = abs(loading))) +
+      geom_raster() +
+      scale_fill_gradient2(low = "white", high = "red", limits = c(0,1),
+                           breaks = seq(0,1,.5)) +
+      geom_text(aes(label = round(loading, 2)), fontface = "bold") +
+      labs(x = "EFA-Derived Factors", y = "Putative Factors", fill = "Loading") +
+      facet_grid(Trait~type, scales = "free", switch = "y") +
+      theme_classic() +
+      theme(axis.text = element_text(face = "bold", size = rel(1.2), color = "black"),
+            axis.title = element_text(face = "bold", size = rel(1.2)),
+            legend.text = element_text(face = "bold"),
+            legend.title = element_text(face = "bold", size = rel(1.2)),
+            strip.background = element_rect(fill = "black"),
+            strip.text = element_text(face = "bold", size = rel(1.5), color = "white"),
+            strip.placement = "outside",
+            legend.position = "bottom")
+ggsave(sprintf("%s/results/plots/efa_loadings.png", wd), width = 8, height = 8)
+```
+
+
+### Factor Congruence
+```{r}
+colnames(nested.strctr$fa[[1]]$loadings) <- paste("ESM Raw", c("N", "O", "E", "C", "A"), sep = "_")
+colnames(nested.strctr$fa[[2]]$loadings) <- paste("ESM Imputed", c("A", "O", "E", "N", "C"), sep = "_")
+colnames(nested.strctr$fa[[3]]$loadings) <- paste("Baseline Trait", c("E", "C", "O", "N", "A"), sep = "_")
+
+cols = cell_spec(
+    c("E", "A", "C", "N", "O"), color = "white", bold = T, font_size = 30,
+    background = c("darkorange", "goldenrod", "blue", "darkgreen", "purple")
+  )
+
+cong <- factor.congruence(nested.strctr$fa)
+cong[upper.tri(cong, diag = T)] <- NA
+cong %>% data.frame %>%
+  rownames_to_column("V1") %>%
+  gather(V2, cong, -V1, na.rm = T) %>%
+  separate(V1, c("Type1", "Trait1"), sep = "_") %>%
+  separate(V2, c("Type2", "Trait2"), sep = "_") %>%
+  filter(Type1 != Type2 & Trait1 == Trait2) %>% 
+  select(-Trait2) %>%
+  mutate(Trait1 = factor(Trait1, levels = c("E", "A", "C", "N", "O")),
+         Type2 = str_replace(Type2, "[.]", " ")) %>%
+  mutate_at(vars(Type1, Type2), list(~sprintf("<strong>%s</strong>",.))) %>%
+  # mutate_at(vars(Type1, Type2), list(~mapvalues(., unique(.), c("ESM Imputed", ""))))
+  spread(Trait1, cong) %>%
+  kable(., "html", booktabs = T, escape = F,
+        col.names = c("", "", cols)) %>%
+  kable_styling(full_width = F) %>%
+  row_spec(c(1,3), background = "lightyellow")
+```
+
+## P-Technique  
+```{r}
+BFI.mi %>% select(SID:O_IntCur) %>% mutate(type = "MI") %>%
+  full_join(BFI.facet %>% select(SID, all_beeps, A_Cmpn:O_IntCur) %>%mutate(type = "Raw")) %>%
+  group_by(SID, type) %>% 
+  nest() %>%
+  mutate(fa = map(data, ~fa(.nfactor = 7)))
+```
+
+
+# Ancillary Plots  
+## Big 5 and ESM  
+```{r}
+tribble(
+  ~Inventory, ~Frequency,
+  "Mini Markers", 1,
+  "12-item CSE", 2,
+  "Adapted BFI", 2,
+  "Big Five Adjectives", 3, 
+  "Adapted NEO", 3, 
+  "Adapted TIPI", 4, 
+  "Developed their own", 10, 
+  "Adapted Goldberg", 10
+) %>%
+  mutate(Inventory = fct_inorder(Inventory)) %>%
+  ggplot(aes(x = Inventory, y = Frequency, fill = Inventory)) +
+    geom_bar(stat = "identity", position = "dodge", color = "black") +
+    geom_text(aes(label = Frequency), nudge_y = -.5, color = "white", 
+              fontface = "bold", size = 6) +
+    scale_y_continuous(limits = c(0,10), breaks = seq(0,10,2)) +
+    labs(x = NULL) +
+    coord_flip() +
+    theme_classic() +
+    theme(legend.position = "none",
+          axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)))
+ggsave(file = sprintf("%s/results/plots/ESM_freq.png", wd), width = 6, height = 7)
+```
+
+```{r}
+tribble(
+  ~Inventory, ~Frequency,
+  "IPIP NEO", 300,
+  "NEO-PI R", 240,
+  "HEXACO", 100,
+  "BFAS", 100,
+  "BFI-2",  60,
+  "IPIP Big 5 Markers",  50,
+  "BFI", 44,
+  "Mini IPIP", 20,
+  "BFI-S", 15,
+  "TIPI", 10
+) %>%
+  mutate(Inventory = rev(fct_inorder(rev(Inventory)))) %>%
+  ggplot(aes(x = Inventory, y = Frequency, fill = Inventory)) +
+    geom_bar(stat = "identity", position = "dodge", color = "black") +
+    geom_text(aes(label = Frequency), nudge_y = 15, color = "black", 
+              fontface = "bold", size = 4) +
+    # scale_y_continuous(limits = c(0,10), breaks = seq(0,10,2)) +
+    labs(x = NULL) +
+    coord_flip() +
+    theme_classic() +
+    theme(legend.position = "none",
+          axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)))
+ggsave(file = sprintf("%s/results/plots/scale_length.png", wd), width = 6, height = 7)
+```
+
+## The Personality Space  
+```{r}
+big5.g <- list(A = 1:3, C = 4:6, E = 7:9, N = 10:12, O = 13:15)
+qg <- baseline_facets %>% ungroup() %>%
+    mutate(Facet = mapvalues(Facet, short.facets$Facet, short.facets$shrtFacet)) %>% 
+    select(-Trait) %>% 
+    spread(Facet, t_value) %>%
+    select(-SID) %>%
+    setNames(paste(rep(c("A", "C", "E", "N", "O"), each = 3), rep(1:3, times = 3), 
+        sep = "")) %>%
+    cor(., use = "pairwise") %>%
+    qgraph(.
+           , layout = "circle"
+           , edge.color = "black"
+           , edge.width = .25
+           , label.font = 2
+           , label.fill.horizontal = 1
+           , label.fill.vertical = 1
+           , label.color = "white"
+           , border.width = 3
+           , groups = big5.g
+           , legend = F)
+
+qg$graphAttributes$Nodes$color <- rep(c("darkorange2", "goldenrod2", "blue", "springgreen3", "mediumpurple"), each = 3)
+qg$graphAttributes$Nodes$label.color[qg$graphAttributes$Nodes$color %in% c("darkorange2", "goldenrod2")] <- "black"
+plot(qg)
+```
+
+```{r}
+big5.g <- list(A = 1, C = 2, E = 3, N = 4, O = 5)
+qg <- baseline_facets %>% ungroup() %>%
+  group_by(SID, Trait) %>%
+  summarise(t_value = mean(t_value, na.rm = T)) %>%
+  ungroup() %>%
+  spread(Trait, t_value) %>%
+  select(-SID) %>%
+  setNames(c("A", "C", "E", "N", "O")) %>%
+    cor(., use = "pairwise") %>%
+    qgraph(.
+           , layout = "circle"
+           , edge.color = "black"
+           , edge.width = .25
+           , label.font = 2
+           , label.fill.horizontal = 1
+           , label.fill.vertical = 1
+           , label.color = "white"
+           , node.
+           , border.width = 3
+           , groups = big5.g
+           , legend = F)
+
+qg$graphAttributes$Nodes$color <- c("darkorange2", "goldenrod2", "blue", "springgreen3", "mediumpurple")
+qg$graphAttributes$Nodes$label.color[qg$graphAttributes$Nodes$color %in% c("darkorange2", "goldenrod2")] <- "black"
+plot(qg)
+```
+
+```{r}
+big5.g <- list(E = 1, A = 2, C = 3, N = 4, O = 5, prcrst = 6)
+qg <- gimme_nested %>% 
+  filter(SID == "101809" & model == "prcrst" & comp == "bf") %>%
+  unnest(Contemporaneous) %>%
+  select(from, to, value) %>% 
+    qgraph(.
+           , layout = "circle"
+           , edge.color = "black"
+           , edge.width = .25
+           , label.font = 2
+           , label.fill.horizontal = 1
+           , label.fill.vertical = 1
+           , label.color = "white"
+           , border.width = 3
+           , groups = big5.g
+           , legend = F)
+
+qg$graphAttributes$Nodes$color <- c("blue", "darkorange2", "goldenrod2", "springgreen3", "mediumpurple", "white")
+qg$graphAttributes$Nodes$label.color[qg$graphAttributes$Nodes$color %in% c("darkorange2", "goldenrod2", "white")] <- "black"
+plot(qg)
+```
+
+
+```{r}
+big5.g <- list(A = 1:3, C = 4:6, E = 7:9, N = 10:12, O = 13:15)
+qg <- gimme_nested %>% 
+  filter(SID == "101809" & model == "null" & comp == "facet") %>%
+  unnest(Contemporaneous) %>%
+  mutate_at(vars(from, to), funs(mapvalues(., c(short.facets$shrtFacet, "prcrst"), c(paste(short.facets$trait, rep(1:3, times = 5), sep = ""), "prcrst")))) %>%
+  select(from, to, value) %>% 
+    qgraph(.
+           , layout = "circle"
+           , edge.color = "black"
+           , edge.width = .25
+           , label.font = 2
+           , label.fill.horizontal = 1
+           , label.fill.vertical = 1
+           , label.color = "white"
+           , border.width = 3
+           , groups = big5.g
+           , legend = F)
+
+qg$graphAttributes$Nodes$color <- rep(c("darkorange2", "goldenrod2", "blue", "springgreen3", "mediumpurple"), each = 3)
+qg$graphAttributes$Nodes$label.color[qg$graphAttributes$Nodes$color %in% c("darkorange2", "goldenrod2")] <- "black"
+plot(qg)
+```
+
+```{r}
+big5.g <- list(A = 1:3, C = 4:6, E = 7:9, N = 10:12, O = 13:15, prcrst = 16)
+qg <- gimme_nested %>% 
+  filter(SID == "101809" & model == "prcrst" & comp == "facet") %>%
+  unnest(Contemporaneous) %>%
+  mutate_at(vars(from, to), funs(mapvalues(., c(short.facets$shrtFacet, "prcrst"), c(paste(short.facets$trait, rep(1:3, times = 5), sep = ""), "prcrst")))) %>%
+  select(from, to, value) %>% 
+    qgraph(.
+           , layout = "circle"
+           , edge.color = "black"
+           , edge.width = .25
+           , label.font = 2
+           , label.fill.horizontal = 1
+           , label.fill.vertical = 1
+           , label.color = "white"
+           , border.width = 3
+           , groups = big5.g
+           , legend = F)
+
+qg$graphAttributes$Nodes$color <- rep(c("darkorange2", "goldenrod2", "blue", "springgreen3", "mediumpurple", "white"), each = 3)
+qg$graphAttributes$Nodes$label.color[qg$graphAttributes$Nodes$color %in% c("darkorange2", "goldenrod2", "white")] <- "black"
+plot(qg)
+```
+
+
+```{r}
+big5.g <- list(E = 1, A = 2, C = 3, N = 4, O = 5, prcrst = 6)
+qg <- gimme_nested %>% 
+  filter(SID == "101809" & model == "null" & comp == "bf") %>%
+  unnest(Contemporaneous) %>%
+  select(from, to, value) %>% 
+    qgraph(.
+           , layout = "circle"
+           , edge.color = "black"
+           , edge.width = .25
+           , label.font = 2
+           , label.fill.horizontal = 1
+           , label.fill.vertical = 1
+           , label.color = "white"
+           , border.width = 3
+           , groups = big5.g
+           , legend = F)
+
+qg$graphAttributes$Nodes$color <- c("blue", "darkorange2", "goldenrod2", "springgreen3", "mediumpurple")
+qg$graphAttributes$Nodes$label.color[qg$graphAttributes$Nodes$color %in% c("darkorange2", "goldenrod2")] <- "black"
+plot(qg)
+```
+
+```{r}
+big5.g <- list(E = 1, A = 2, C = 3, N = 4, O = 5, prcrst = 6)
+qg <- gimme_nested %>% 
+  filter(SID == "101809" & model == "prcrst" & comp == "bf") %>%
+  unnest(Contemporaneous) %>%
+  select(from, to, value) %>% 
+    qgraph(.
+           , layout = "circle"
+           , edge.color = "black"
+           , edge.width = .25
+           , label.font = 2
+           , label.fill.horizontal = 1
+           , label.fill.vertical = 1
+           , label.color = "white"
+           , border.width = 3
+           , groups = big5.g
+           , legend = F)
+
+qg$graphAttributes$Nodes$color <- c("blue", "darkorange2", "goldenrod2", "springgreen3", "mediumpurple", "white")
+qg$graphAttributes$Nodes$label.color[qg$graphAttributes$Nodes$color %in% c("darkorange2", "goldenrod2", "white")] <- "black"
+plot(qg)
+```
+
+
+
+
+## Visualizing Planned Missing  
+```{r}
+BFI.facet %>% select(-(Date:Day)) %>% mutate_at(vars(-SID, -all_beeps), list(round), 2)%>% View
+BFI.mi %>% select(-(Date:Day)) %>% mutate_at(vars(-SID, -all_beeps), list(round), 2)%>% View
+```
+

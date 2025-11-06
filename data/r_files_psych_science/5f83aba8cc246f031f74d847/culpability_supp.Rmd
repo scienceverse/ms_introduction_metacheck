@@ -1,0 +1,937 @@
+---
+title: "Feelings_of_Culpability_Supplementary_Material"
+output:
+  pdf_document: default
+  html_notebook: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+# Authors: Maayan Malter, Sonia Kim, Janet Metcalfe (Final Code Update: Oct 12, 2020)
+
+# Install and load packages
+```{r, packages}
+library('easypackages')
+packages(c('devtools', 'corrr', 'psych', 'car', 'dplyr', 'sjstats', 'lsr', 'DescTools', 
+           'lsmeans', 'effsize', 'lme4', 'lmerTest', 'tidyverse', 'janitor', 'here', 
+           'tidyr', 'stringr', 'effects', 'ggplot2'))
+```
+# Create a theme to make APA style graphs
+```{r, theme}
+apatheme=theme_bw()+
+  theme(panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        text=element_text(family='Times'))
+```
+
+# Experiment 1: Main effect of Agency
+## Load the data
+```{r, data1}
+study1 <- read_csv(here::here("1morality.csv")) %>%
+  clean_names %>%
+  glimpse()
+```
+## Demographics
+```{r, demographics1}
+mean(study1$age)
+sd(study1$age)
+table(study1$gender)
+```
+## Create dictionary of codes
+### Agency (0: Noagency, 1: Agency)
+### Decision Type (0: Deontological, 1: Utilitarian)
+### Attention (0: Not paying attention, 1: Paying attention)
+### Recall (0: Can’t recall, 1: Can recall)
+### Redo (0: identically, 1: differently)
+### Time for Experiment 2 (0: Immediate, 1: Time lag)
+
+## Create categorical variable for conditions
+```{r, categorical1}
+# Agency
+study1$agency <- factor(study1$agency, labels = c("Low Agency", "High Agency"))
+is.factor(study1$agency)
+table(study1$agency)
+# Decision
+study1$decision <- factor(study1$decision, labels = c("Deontological", "Utilitarian"))
+is.factor(study1$decision)
+table(study1$decision)
+```
+
+
+## Moral culpability score
+### See how well the five items hold together
+```{r, alphafive1}
+# Cronbach's alpha for all five questions
+allfive <- as.matrix(cbind(study1$feel, study1$upset, study1$responsible, 
+                           study1$guilty, study1$regret))
+psych::alpha(allfive, keys=NULL,cumulative=FALSE, title=NULL, max=10,na.rm = TRUE,
+             check.keys=TRUE,n.iter=1,delete=TRUE,use="pairwise",warnings=TRUE,n.obs=NULL)
+summary(allfive)
+```
+### If we drop feel and keep upset:
+```{r, alphafour1}
+fourq <- as.matrix(cbind(study1$upset, study1$responsible, study1$guilty, study1$regret))
+psych::alpha(fourq, keys=NULL,cumulative=FALSE, title=NULL, max=10,na.rm = TRUE,
+             check.keys=TRUE,n.iter=1,delete=TRUE,use="pairwise",warnings=TRUE,n.obs=NULL)
+```
+### If we also drop upset:
+```{r, alphathree1}
+threecog <- as.matrix(cbind(study1$responsible, study1$guilty, study1$regret))
+psych::alpha(threecog, keys=NULL,cumulative=FALSE, title=NULL, max=10,na.rm = TRUE,
+             check.keys=TRUE,n.iter=1,delete=TRUE,use="pairwise",warnings=TRUE,n.obs=NULL)
+```
+### This gives us the highest alpha and conceptually groups the more cognitive questions about moral culpability together and the questions about affective responses together.
+### Thus we create a variable 'moral' which is the average of the three items retained (done in the data file)
+
+## Means, SDs, and ANOVAs for each item individually
+### (1) General Feelings (higher score means more positive)
+```{r, feel1}
+# mean and sd
+group_by(study1, study1$decision, study1$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(feel, na.rm = TRUE),
+    sd = sd(feel, na.rm = TRUE)
+  )
+
+# anova
+feel1dv.aov <- aov(feel ~ agency*decision, data = study1)
+Anova(feel1dv.aov)
+# effect size
+etaSquared(feel1dv.aov, type = 3, anova = FALSE) 
+# post hoc scheffe
+PostHocTest(aov(feel ~ agency*decision, data = study1), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Feel1Plot <- ggplot(study1, aes(x=decision, y=feel, fill=agency, group=agency)) 
+Feel1Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Programming Type", y = "Feelings", fill = "agency", 
+       title = "General Feelings about Programming the Car") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+### (2) Upset (higher score means more upset)
+```{r, upset1}
+# mean and sd
+group_by(study1, study1$agency, study1$decision) %>%
+  summarise(
+    count = n(),
+    mean = mean(upset, na.rm = TRUE),
+    sd = sd(upset, na.rm = TRUE)
+  )
+
+# anova
+upset1dv.aov <- aov(upset ~ agency*decision, data = study1)
+Anova(upset1dv.aov)
+# effect size
+etaSquared(upset1dv.aov, type = 3, anova = FALSE) 
+# Post hoc scheffe
+PostHocTest(aov(upset ~ agency*decision, data = study1), method = "scheffe", 
+            conf.level = .95)
+
+#plot
+Upset1Plot <- ggplot(study1, aes(x=decision, y=upset, fill=agency, group=agency)) 
+Upset1Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Programming Type", y = "Upset", fill = "agency", 
+       title = "Feeling Upset about the Outcome") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+### (3) Responsibility
+```{r, responsbility1}
+#mean and sd
+group_by(study1, study1$decision, study1$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(responsible, na.rm = TRUE),
+    sd = sd(responsible, na.rm = TRUE)
+  )
+
+#anova
+responsible1dv.aov <- aov(responsible ~ agency*decision, data = study1)
+Anova(responsible1dv.aov, type = "III")
+# effect size
+etaSquared(responsible1dv.aov, type = 3, anova = FALSE) 
+# Post hoc scheffe
+PostHocTest(aov(responsible ~ agency*decision, data = study1), method = "scheffe", 
+            conf.level = .95)
+
+#plot
+Responsiblity1Plot <- ggplot(study1, aes(x=decision, y=responsible, fill=agency, group=agency)) 
+Responsiblity1Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Programming Type", y = "Responsiblity", fill = "agency", 
+       title = "Felt Responsiblity about the Outcome") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+### (4) Guilt
+```{r, guilt1}
+# mean and sd
+group_by(study1, study1$decision, study1$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(guilty, na.rm = TRUE),
+    sd = sd(guilty, na.rm = TRUE)
+  )
+
+# anova
+guilt1dv.aov <- aov(guilty ~ agency*decision, data = study1)
+Anova(guilt1dv.aov, type = "III")
+# effect size
+etaSquared(guilt1dv.aov, type = 3, anova = FALSE) 
+# post hoc scheffe
+PostHocTest(aov(guilty ~ agency*decision, data = study1), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Guilt1Plot <- ggplot(study1, aes(x=decision, y=guilty, fill=agency, group=agency)) 
+Guilt1Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Programming Type", y = "Guilt", fill = "agency", 
+       title = "Felt Guilt about the Outcome") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+### (5) Regret
+```{r, regret1}
+# mean and sd
+group_by(study1, study1$decision, study1$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(regret, na.rm = TRUE),
+    sd = sd(regret, na.rm = TRUE)
+  )
+
+# anova
+regret1dv.aov <- aov(regret ~ agency*decision, data = study1)
+Anova(regret1dv.aov, type = "III")
+# effect size
+etaSquared(regret1dv.aov, type = 3, anova = FALSE) 
+# post hoc scheffe
+PostHocTest(aov(regret ~ agency*decision, data = study1), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Regret1Plot <- ggplot(study1, aes(x=decision, y=regret, fill=agency, group=agency)) 
+Regret1Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Programming Type", y = "Regret", fill = "agency", 
+       title = "Felt Regret about Programming the Car") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+## ANOVA for aggregate scores
+### ANOVAs for five-item aggregate and four-item aggregate
+```{r, fivefour}
+study1$aggfive <- (study1$feel + study1$upset + study1$responsible + study1$guilty 
+                   + study1$regret)/5
+fivedv.aov <- aov(aggfive ~ agency*decision, data = study1)
+Anova(fivedv.aov, type = "III")
+
+study1$aggfour <- (study1$upset + study1$responsible + study1$guilty + study1$regret)/4
+fourdv.aov <- aov(aggfour ~ agency*decision, data = study1)
+Anova(fourdv.aov, type = "III")
+```
+#### We also did this in excel so there is a variable named "moral" that is the exact same as this variable named "threeitem" and therefore either are fine to use in analyses and will have the same results.
+```{r}
+# average of the three
+threeitem <- (study1$responsible + study1$guilty + study1$regret)/3
+```
+### Main analysis of moral culpability 
+#### Means, SDs, ANOVA, partial eta squared (effect size), Post Hoc Scheffe test, plot 
+```{r, moral1}
+# mean and sd
+group_by(study1, study1$agency, study1$decision) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+
+# anova
+moral1dv.aov <- aov(moral ~ agency*decision, data = study1)
+Anova(moral1dv.aov, type = "III")
+# effect size
+etaSquared(moral1dv.aov, type = 3, anova = TRUE) 
+# post hoc scheffe
+PostHocTest(aov(moral ~ agency*decision, data = study1), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Moral1Plot <- ggplot(study1, aes(x=decision, y=moral, fill=agency, group=agency)) 
+Moral1Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Programming Type", y = "Moral Culpability", fill = "Agency", 
+       title = "Moral Culpability") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+
+## Logistic regression for redo
+### Redo: Whether they would program the car differently when they have a chance to do it over.
+```{r, redo1}
+# For variable 'redo', 0 means they would program it the same 
+# while 1 means they would program differently.
+redoreg <- glm(redo ~ agency*decision, family = "binomial", data = study1)
+summary(redoreg)
+```
+
+# Experiment 2: Replication and inclusion of temporal distance
+
+## Load data
+```{r, data2}
+study2 <- read_csv(here::here("2moralitytime.csv")) %>%
+  clean_names %>%
+  glimpse()
+```
+
+## Demographics
+```{r, demographics2}
+mean(study2$age)
+sd(study2$age)
+table(study2$gen)
+```
+
+## Make categorical variables
+```{r, categorical2}
+# Agency
+study2$agency <- factor(study2$agency, labels = c("Low Agency", "High Agency"))
+is.factor(study2$agency)
+table(study2$agency)
+# Decision
+study2$decision <- factor(study2$decision, labels = c("Deontological", "Utilitarian"))
+is.factor(study2$decision)
+table(study2$decision)
+# Temporal
+study2$temporal <- factor(study2$temporal, labels = c("Immediate", "Five Years"))
+is.factor(study2$temporal)
+table(study2$temporal)
+```
+
+## Cronbach's alpha for three items
+```{r, alphathree2}
+timecog <- as.matrix(cbind(study2$responsible, study2$guilty, study2$regret))
+psych::alpha(timecog, keys=NULL,cumulative=FALSE, title=NULL, max=10, na.rm = TRUE,
+             check.keys=TRUE,n.iter=1,delete=TRUE,use="pairwise",warnings=TRUE,n.obs=NULL)
+```
+## Marginal means and full factorial means for moral culpability
+```{r, means2}
+group_by(study2, study2$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study2, study2$decision) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study2, study2$temporal) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study2, study2$decision, study2$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study2, study2$temporal, study2$decision, study2$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+```
+## ANOVA for moral culpability
+```{r, moral2}
+#anova
+moral2dv.aov <- aov(moral ~ agency*decision*temporal, data = study2)
+Anova(moral2dv.aov, type = "III")
+# effect size
+etaSquared(moral2dv.aov, type = 3, anova = FALSE) # Effect size
+# post hoc scheffe
+PostHocTest(aov(moral ~ agency*decision, data = study2), method = "hsd", 
+            conf.level = .95)
+```
+
+
+## ANOVA for individual items
+```{r}
+#General Feelings
+feel2dv.aov <- aov(feel~ agency*decision*temporal, data = study2)
+Anova(feel2dv.aov, type = "III")
+
+#Upset
+upset2dv.aov <- aov(upset ~ agency*decision*temporal, data = study2)
+Anova(upset2dv.aov, type = "III")
+
+#Responsibility
+res2dv.aov <- aov(responsible ~ agency*decision*temporal, data = study2)
+Anova(res2dv.aov, type = "III")
+
+#Guilt
+guilt2dv.aov <- aov(guilty ~ agency*decision*temporal, data = study2)
+Anova(guilt2dv.aov, type = "III")
+
+#Regret
+regret2dv.aov <- aov(regret ~ agency*decision*temporal, data = study2)
+Anova(regret2dv.aov, type = "III")
+```
+
+
+# Experiment 3: Predictions of other people's feelings (within-subjects)
+
+## Load data
+## We have the original data as "3moralitypredict.csv" while we use the identical data in long-format for the purpose of this analyses, with the name "3moralitypredict2.csv"
+```{r, data3}
+study3 <- read_csv(here::here("3moralitypredict2.csv")) %>%
+  clean_names %>%
+  glimpse()
+```
+### Data must be in long format and was cleaned and organized in excel although this could also be done using the dplyr package.
+
+## Means and SDs
+```{r, means3}
+group_by(study3, agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+```
+
+## Paired t-test
+```{r, ttest3}
+pairt <- t.test(moral ~ agency, data = study3, paired = TRUE)
+pairt
+```
+
+## Alternatively we can do this analysis with a linear mixed effects regression (LMER, with the lmerTest package)
+```{r, lmertest3}
+result<-lmer(moral ~ agency + (1|id), data = study3)
+summary(result)
+```
+
+## Cohen's D effect size
+```{r, effectsize3}
+cohen.d(study3$moral, study3$agency, pooled=TRUE, paired=TRUE, na.rm=FALSE,
+        hedges.correction = FALSE, conf.level = 0.95, noncentral = FALSE)
+```
+
+## LMER tests for each item
+```{r}
+# responsibility
+reslmer<-lmer(responsible ~ agency + (1|id), data = study3)
+summary(reslmer)
+
+# guilt
+guiltlmer<-lmer(guilty ~ agency + (1|id), data = study3)
+summary(guiltlmer)
+
+# regret
+regretlmer<-lmer(regret ~ agency + (1|id), data = study3)
+summary(regretlmer)
+```
+
+# Experiment 4: Test vantage point explanation
+
+## Load data
+```{r, data4}
+study4 <- read_csv(here::here("4moralitythirdperson.csv")) %>%
+  clean_names %>%
+  glimpse()
+```
+
+## Demographics
+```{r, demographics4}
+mean(study4$age)
+sd(study4$age)
+table(study4$gender)
+```
+
+## Create categorical variable for conditions
+```{r, categorical4}
+# Agency
+study4$agency <- factor(study4$agency, labels = c("Low Agency", "High Agency"))
+is.factor(study4$agency)
+table(study4$agency)
+# Decision
+study4$decision <- factor(study4$decision, labels = c("Deontological", "Utilitarian"))
+is.factor(study1$decision)
+table(study4$decision)
+```
+
+## First-person judgment of imagining how Alex would feel
+### Moral Culpability: Means, SDs and ANOVA
+```{r, moral4}
+# mean and sds
+group_by(study4, study4$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study4, study4$decision) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study4, study4$agency, study4$decision) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+
+# anova
+moral4dv.aov <- aov(moral ~ agency*decision, data = study4)
+Anova(moral4dv.aov, type = "III")
+# effect size
+etaSquared(moral4dv.aov, type = 3, anova = TRUE) 
+# post hoc scheffe
+PostHocTest(aov(moral ~ agency*decision, data = study4), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Moral4Plot <- ggplot(study4, aes(x=decision, y=moral, fill=agency, group=agency)) 
+Moral4Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Programming Type", y = "Moral Culpability", fill = "Agency", 
+       title = "Moral Culpability") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+### ANOVAs for individual items
+```{r}
+# general feelings
+feel4dv.aov <- aov(feel ~ agency*decision, data = study4)
+Anova(feel4dv.aov, type = "III")
+
+# upset
+upset4dv.aov <- aov(upset ~ agency*decision, data = study4)
+Anova(upset4dv.aov, type = "III")
+
+# responsibility
+res4dv.aov <- aov(responsible ~ agency*decision, data = study4)
+Anova(res4dv.aov, type = "III")
+
+# guilt
+guilt4dv.aov <- aov(guilty ~ agency*decision, data = study4)
+Anova(guilt4dv.aov, type = "III")
+
+# regret
+regret4dv.aov <- aov(regret ~ agency*decision, data = study4)
+Anova(regret4dv.aov, type = "III")
+```
+
+## Third-person: How responsible do you think Alex is? 
+### Mean, SD, and ANOVA
+```{r, thirdpersonmean4}
+# mean and sd
+group_by(study4, study4$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(youresponsible, na.rm = TRUE),
+    sd = sd(youresponsible, na.rm = TRUE)
+  )
+group_by(study4, study4$decision) %>%
+  summarise(
+    count = n(),
+    mean = mean(youresponsible, na.rm = TRUE),
+    sd = sd(youresponsible, na.rm = TRUE)
+  )
+group_by(study4, study4$agency, study4$decision) %>%
+  summarise(
+    count = n(),
+    mean = mean(youresponsible, na.rm = TRUE),
+    sd = sd(youresponsible, na.rm = TRUE)
+  )
+
+# anova
+thirdperson4dv.aov <- aov(youresponsible ~ agency*decision, data = study4)
+summary(thirdperson4dv.aov)
+Anova(thirdperson4dv.aov, type = "III")
+# effect size
+etaSquared((thirdperson4dv.aov), type = 3, anova = FALSE) 
+# post hoc scheffe
+PostHocTest(aov(youresponsible ~ agency*decision, data = study4), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+YouRes4Plot <- ggplot(study4, aes(x=decision, y=youresponsible, fill=agency, group=agency)) 
+YouRes4Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Programming Type", y = "Third Person Judgment of Alex", fill = "Agency", 
+       title = "Moral Culpability") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+## Load data in long format
+```{r, data4long4}
+study4within <- read_csv(here::here("moralstudy4withinresp.csv")) %>%
+  clean_names %>%
+  glimpse()
+```
+
+## Categorical Long Format Data
+```{r, categoricallong4}
+# Agency
+study4within$agency <- factor(study4within$agency, labels = c("Low Agency", "High Agency"))
+is.factor(study4within$agency)
+table(study4within$agency)
+# Decision
+study4within$decision <- factor(study4within$decision, 
+                                labels = c("Deontological", "Utilitarian"))
+is.factor(study4within$decision)
+table(study4within$decision)
+# Perspective
+study4within$persp <- factor(study4within$persp, labels = c("Field", "Observer"))
+is.factor(study4within$persp)
+table(study4within$persp)
+```
+
+## Mixed Effects Regression
+```{r, withinreg4}
+# mixed effects regression
+Withresp<-lmer(wresp ~ agency*persp*decision + (1|response_id), data = study4within)
+summary(Withresp)
+
+# posthoc test scheffe
+PostHocTest(aov(wresp ~ persp*decision, data = study4within), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+PerspPlot <- ggplot(study4within, aes(x=persp, y=wresp, fill=agency, group=agency)) 
+PerspPlot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Perspective", y = "Evaluation of Responsiblity", fill = "agency", 
+       title = "Effects of Perspective and Agency on Evaluations of Responsibility") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+
+# Experiment 5: COVID scenarios
+
+## Load data
+```{r, data5}
+study5 <- read_csv(here::here("5covid.csv")) %>%
+  clean_names %>%
+  glimpse()
+```
+
+## Demographics
+```{r, demographics5}
+# age
+mean(study5$age)
+sd(study5$age)
+
+# gender
+table(study5$gen)
+```
+
+## Codes are identical from previous studies, but decisions are re-defined
+### Decision (0: Stricter measure or "Keep closed", 1: Looser measure or "Reopen")
+
+## Make categorical variables
+```{r, categorical5}
+# Agency
+study5$agency <- factor(study5$agency, labels = c("Low Agency", "High Agency"))
+is.factor(study5$agency)
+table(study5$agency)
+# Decision
+study5$decision <- factor(study5$decision, labels = c("Strict", "Lenient"))
+is.factor(study5$decision)
+table(study5$decision)
+# Scenario
+study5$scenario <-factor(study5$scenario, labels = c("Scneario1", "Scenario2"))
+is.factor(study5$scenario)
+table(study5$scenario)
+```
+
+## Check the percentage of strict vs. lenient option in each condition
+```{r}
+# By agency
+choice<-table(study5$agency, study5$decision)
+choice
+
+# By agency and scenario
+choicebyscen<-table(study5$agency, study5$decision, study5$scenario)
+choicebyscen
+```
+
+## Cronbach's alpha for three items
+```{r, alphathree5}
+culpability <- as.matrix(cbind(study5$responsible, study5$guilty, study5$regret))
+psych::alpha(culpability, keys=NULL,cumulative=FALSE, title=NULL, max=10,na.rm = TRUE,
+             check.keys=TRUE,n.iter=1,delete=TRUE,use="pairwise",warnings=TRUE,n.obs=NULL)
+```
+## Marginal means and full factorial means for moral culpability
+```{r, means5}
+group_by(study5, study5$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study5, study5$decision) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study5, study5$scenario) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study5, study5$agency, study5$decision) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+group_by(study5, study5$agency, study5$decision, study5$scenario) %>%
+  summarise(
+    count = n(),
+    mean = mean(moral, na.rm = TRUE),
+    sd = sd(moral, na.rm = TRUE)
+  )
+```
+
+## ANOVA for moral culpability
+```{r, moral5}
+# anova
+moral5dv.aov <- aov(moral ~ agency*decision*scenario, data = study5)
+Anova(moral5dv.aov, type = "III")
+# effect size
+etaSquared(moral5dv.aov, type = 3, anova = FALSE) # Effect size
+# post hoc scheffe
+PostHocTest(aov(moral ~ agency*decision*scenario, data = study5), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Moral5Plot <- ggplot(study5, aes(x=decision, y=moral, fill=agency, group=agency)) 
+Moral5Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  facet_wrap(~scenario) +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Policy Type", y = "Culpability", fill = "Agency", 
+       title = "Feelings of Culpability about Policy Implementation") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+
+## ANOVAs for individual items
+### (1) General Feelings (higher score means more positive)
+```{r, feel5}
+# mean and sd
+group_by(study5, study5$decision, study5$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(feel, na.rm = TRUE),
+    sd = sd(feel, na.rm = TRUE)
+  )
+
+# anova
+feel5dv.aov <- aov(feel ~ agency*decision, data = study5)
+Anova(feel5dv.aov, type = "III")
+# effect size
+etaSquared(feel5dv.aov, type = 3, anova = FALSE) 
+# post hoc scheffe
+PostHocTest(aov(feel ~ agency*decision, data = study5), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Feel5Plot <- ggplot(study5, aes(x=decision, y=feel, fill=agency, group=agency)) 
+Feel5Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Policy Type", y = "General Feelings", fill = "Agency", 
+       title = "General Feelings about Policy Implementation") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+### (2) Responsibility
+```{r, responsibility5}
+# mean and sd
+group_by(study5, study5$decision, study5$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(responsible, na.rm = TRUE),
+    sd = sd(responsible, na.rm = TRUE)
+  )
+
+# anova
+responsible5dv.aov <- aov(responsible ~ agency*decision, data = study5)
+Anova(responsible5dv.aov, type = "III")
+# effect size
+etaSquared(responsible5dv.aov, type = 3, anova = FALSE) 
+# post hoc scheffe
+PostHocTest(aov(responsible ~ agency*decision, data = study5), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Responsible5Plot <- ggplot(study5, aes(x=decision, y=responsible, fill=agency, group=agency)) 
+Responsible5Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Policy Type", y = "Felt Responsibility", fill = "Agency", 
+       title = "Felt Responsibility about Outcome") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+### (3) Guilt
+```{r, guilt5}
+# mean and sd
+group_by(study5, study5$decision, study5$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(guilty, na.rm = TRUE),
+    sd = sd(guilty, na.rm = TRUE)
+  )
+
+# anova
+guilty5dv.aov <- aov(guilty ~ agency*decision, data = study5)
+Anova(guilty5dv.aov, type = "III")
+# effect size
+etaSquared(guilty5dv.aov, type = 3, anova = FALSE) 
+# post hoc scheffe
+PostHocTest(aov(guilty ~ agency*decision, data = study5), method = "scheffe",
+            conf.level = .95)
+
+# plot
+Guilt5Plot <- ggplot(study5, aes(x=decision, y=guilty, fill=agency, group=agency)) 
+Guilt5Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Policy Type", y = "Felt Guilt", fill = "Agency", 
+       title = "Felt Guilt about Outcome") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+### (4) Regret
+```{r, regret5}
+# mean and sd
+group_by(study5, study5$decision, study5$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(regret, na.rm = TRUE),
+    sd = sd(regret, na.rm = TRUE)
+  )
+
+# anova
+regret5dv.aov <- aov(regret ~ agency*decision, data = study5)
+Anova(regret5dv.aov, type = "III")
+# effect size
+etaSquared(regret5dv.aov, type = 3, anova = FALSE) 
+# post hoc scheffe
+PostHocTest(aov(regret ~ agency*decision, data = study5), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Regret5Plot <- ggplot(study5, aes(x=decision, y=regret, fill=agency, group=agency)) 
+Regret5Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Policy Type", y = "Felt Regret", fill = "Agency", 
+       title = "Felt Regret about Policy Implementation") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+
+##Third Person Judgment of Responsibility
+```{r, thirdperson5}
+# mean and sd
+group_by(study5, study5$decision, study5$agency) %>%
+  summarise(
+    count = n(),
+    mean = mean(thirdperson, na.rm = TRUE),
+    sd = sd(thirdperson, na.rm = TRUE)
+  )
+
+# anova
+thirdperson5dv.aov <- aov(thirdperson ~ agency*decision, data = study5)
+Anova(thirdperson5dv.aov, type = "III")
+# effect size
+etaSquared(thirdperson5dv.aov, type = 3, anova = FALSE) 
+# post hoc scheffe
+PostHocTest(aov(thirdperson ~ agency*decision, data = study5), method = "scheffe", 
+            conf.level = .95)
+
+# plot
+Thirdperson5Plot <- ggplot(study5, aes(x=decision, y=thirdperson, fill=agency, group=agency)) 
+Thirdperson5Plot + 
+  stat_summary(position="dodge", geom = "bar") +
+  stat_summary(position= position_dodge(width = .9), geom = "errorbar", width = 0.3) + 
+  labs(x = "Policy Type", y = "Third Person Responsibility", fill = "Agency", 
+       title = "Third Person Judgment of Responsibility") + 
+  theme(legend.position = "top") + 
+  ylim(0,7) +
+  theme_minimal() + apatheme +
+  ggthemes::scale_fill_economist()
+```
+
+### Redo
+```{r, redo5}
+redo5reg <- glm(redo ~ agency*decision, family = "binomial", data = study5)
+summary(redo5reg)
+```
+
+## Including political affiliation into the main ANOVA
+```{r}
+# anova
+moralpol.lm <- lm(moral ~ agency*decision*scenario*political2, data = study5)
+summary(moralpol.lm)
+# effect size
+etaSquared(moralpol.lm, type = 3, anova = FALSE) 
+```

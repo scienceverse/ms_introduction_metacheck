@@ -1,0 +1,747 @@
+---
+title: "Hakim et al. (2019) - an attempt at reproduction of analyses"
+author: "Deborah Apthorp"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: vingette
+---
+
+
+``` {r setup, include=FALSE}
+
+library(readr)
+library(plotrix)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(reshape2)
+library(broom)
+library(purrr)
+library(Hmisc)
+library(jmv)
+
+library(kableExtra)
+
+options(knitr.kable.NA = '')
+```
+
+
+
+```{css, include=FALSE, echo = FALSE}
+
+# Some CSS to make pretty tables for the jmv output 
+
+pre.jamovitable{
+color:black;
+background-color: white;
+margin-bottom: 35px;
+}
+```
+
+```{r table function, include=FALSE, echo = FALSE}
+jtable<-function(jobject,digits=3) {
+snames<-sapply(jobject$columns,function(a) a$title)
+asDF<-jobject$asDF
+tnames<-unlist(lapply(names(asDF) ,function(n) snames[[n]]))
+names(asDF)<-tnames
+kableExtra::kable(asDF,"html",
+table.attr='class="jmv-results-table-table"',
+row.names = F,
+digits=3)
+}
+```
+
+``` {r import data, include = FALSE}
+
+CDA <- read_csv ("Aggregate_CDA_4SPSS_ALLtrials_clean.csv")
+
+Alpha <- read_csv("Aggregate_Alpha_4SPSS_ALLtrials_clean.csv")
+
+PupilDilation <- read_csv("PupilDilation_DataAverages_clean.csv") # Read the CSV (make sure this is in the working directory)
+
+
+PupilDilationLong <- melt(PupilDilation,
+                     # ID variables - all the variables to keep but not split apart on
+                     id.vars=c("ID", "exp"),
+                     # The source columns
+                     measure.vars=c("wm_Allexp","att_allexp"),
+                     # Name of the destination column that will identify the original
+                     # column that the measurement came from
+                     variable.name = "Task",
+                     value.name="PupilDilation"
+)
+
+levels(PupilDilationLong$Task)[levels(PupilDilationLong$Task)=="wm_Allexp"] <- "Working Memory"
+levels(PupilDilationLong$Task)[levels(PupilDilationLong$Task)=="att_allexp"] <- "Attention"
+
+
+
+```
+## Introduction
+
+This paper reports a set of EEG experiments examining the neural focus of attention in a working memory task. There was a LOT of data associated with this paper, which seemed at first to be quite comprehensive and well organised. However, it was not possible to download any of the EEG data, possibly because the files were too large. I was able to download the MATLAB files, though, and managed after a little tinkering to reproduce most of the plots with that code. From the Excel files provided, it was also possible to reproduce most of the statistical analyses in the paper, although the data were a little messy and no statistical analysis code was provided. Below I summarise all of the analyses in the paper in order, and provide the code for my replications. 
+
+
+## Effect of experiment
+
+The first set of analyses reported in the paper is concerning the effect of experiment across all the variables - this just presents the very basic interaction results with a set of RM ANOVAs on the data with Experiment as a factor. The paper states: 
+
+> "For this purpose, we ran repeated measures analyses of variance (ANOVAs) for each analysis — CDA, alpha power, and pupil size—with the within-subjects factors task (WM, attention) and set size (two items, four items) and the between-subjects factor experiment (1, 2)."
+
+For the pupil dilation data, there is not actually enough data to reproduce this analysis, as the data does not provide separate columns for set size. However, for the CDA and alpha power analyses these analyses could be conducted. (For alpha power, laterality should also have been mentioned as a factor.)
+
+For convenience, I used jamovi for these analyses, but they can be reproduced by downloading the jmv package. 
+
+### CDA 
+
+From the paper: 
+
+> "For the CDA analysis, there was a significant three-way interaction of laterality, set size, and experiment, $F(1, 95) = 6.73$, $p = .01$, $\eta^2_p = .07$. " 
+
+This can be seen as reproduced in the table below. 
+
+
+```{r interaction analysis - CDA, results='asis', echo = FALSE}
+
+CDA_interaction_analysis <- jmv::anovaRM(
+    data = CDA,
+    rm = list(
+        list(
+            label="Laterality",
+            levels=c("Contra", "Ipsi")),
+        list(
+            label="Task",
+            levels=c("WM", "ATT")),
+        list(
+            label="Set size",
+            levels=c("2", "4"))),
+    rmCells = list(
+        list(
+            measure="E1E2E3E4_contra_wm2",
+            cell=c("Contra", "WM", "2")),
+        list(
+            measure="E1E2E3E4_contra_wm4",
+            cell=c("Contra", "WM", "4")),
+        list(
+            measure="E1E2E3E4_contra_att2",
+            cell=c("Contra", "ATT", "2")),
+        list(
+            measure="E1E2E3E4_contra_att4",
+            cell=c("Contra", "ATT", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_wm2",
+            cell=c("Ipsi", "WM", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_wm4",
+            cell=c("Ipsi", "WM", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_att2",
+            cell=c("Ipsi", "ATT", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_att4",
+            cell=c("Ipsi", "ATT", "4"))),
+    bs = Experiment_1a1b_2a2b,
+    effectSize = "partEta",
+    rmTerms = ~ Laterality + Task + `Set size` + Laterality:Task + Laterality:`Set size` + Task:`Set size` + Laterality:Task:`Set size`,
+    bsTerms = ~ Experiment_1a1b_2a2b)
+
+
+
+
+cat("<pre class='jamovitable'>")
+print(jtable(CDA_interaction_analysis$rmTable))
+cat("</pre>")
+
+cat("<pre class='jamovitable'>")
+print(jtable(CDA_interaction_analysis$bsTable))
+cat("</pre>")
+
+
+```
+
+From the paper: 
+
+>"To further delineate this three-way interaction, we ran follow-up ANOVAs with the factors laterality (contralaterality, ipsilaterality) and set size (two items, four items), separately for Experiment 1 and Experiment 2. These follow-up analyses revealed that there was a significant interaction of laterality and set size for Experiment 2, $F(1, 48) = 16.88$, $p < .001$, $\eta^2_p = .26$, but not for Experiment 1, $F(1, 47) = 0.08$, $p = .78$, $\eta^2_p = .002$". 
+
+These analyses can be seen as reproduced in the tables below. 
+
+#### Experiment 1
+
+```{r CDA Experiment 1 analysis, results='asis', echo = FALSE}
+
+CDA.Exp1 <- CDA[CDA$Experiment_1a1b_2a2b == "E1",]
+
+CDA.Exp1.Analysis <- jmv::anovaRM(
+    data = CDA.Exp1,
+    rm = list(
+        list(
+            label="Laterality",
+            levels=c("Contra", "Ipsi")),
+        list(
+            label="Task",
+            levels=c("WM", "ATT")),
+        list(
+            label="Set size",
+            levels=c("2", "4"))),
+    rmCells = list(
+        list(
+            measure="E1E2E3E4_contra_wm2",
+            cell=c("Contra", "WM", "2")),
+        list(
+            measure="E1E2E3E4_contra_wm4",
+            cell=c("Contra", "WM", "4")),
+        list(
+            measure="E1E2E3E4_contra_att2",
+            cell=c("Contra", "ATT", "2")),
+        list(
+            measure="E1E2E3E4_contra_att4",
+            cell=c("Contra", "ATT", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_wm2",
+            cell=c("Ipsi", "WM", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_wm4",
+            cell=c("Ipsi", "WM", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_att2",
+            cell=c("Ipsi", "ATT", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_att4",
+            cell=c("Ipsi", "ATT", "4"))),
+    effectSize = "partEta",
+    rmTerms = ~ Laterality + Task + `Set size` + Laterality:Task + Laterality:`Set size` + Task:`Set size` + Laterality:Task:`Set size`)
+
+cat("<pre class='jamovitable'>")
+print(jtable(CDA.Exp1.Analysis$rmTable))
+cat("</pre>")
+
+#cat("<pre class='jamovitable'>")
+#print(jtable(CDA.Exp1.Analysis$bsTable))
+#cat("</pre>")
+
+```
+
+#### Experiment 2
+
+```{r CDA Experiment 2 analysis, results = 'asis', echo = FALSE}
+CDA.Exp2 <- CDA[CDA$Experiment_1a1b_2a2b == "E2",]
+
+CDA.Exp2.Analysis<- jmv::anovaRM(
+    data = CDA.Exp2,
+    rm = list(
+        list(
+            label="Laterality",
+            levels=c("Contra", "Ipsi")),
+        list(
+            label="Task",
+            levels=c("WM", "ATT")),
+        list(
+            label="Set size",
+            levels=c("2", "4"))),
+    rmCells = list(
+        list(
+            measure="E1E2E3E4_contra_wm2",
+            cell=c("Contra", "WM", "2")),
+        list(
+            measure="E1E2E3E4_contra_wm4",
+            cell=c("Contra", "WM", "4")),
+        list(
+            measure="E1E2E3E4_contra_att2",
+            cell=c("Contra", "ATT", "2")),
+        list(
+            measure="E1E2E3E4_contra_att4",
+            cell=c("Contra", "ATT", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_wm2",
+            cell=c("Ipsi", "WM", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_wm4",
+            cell=c("Ipsi", "WM", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_att2",
+            cell=c("Ipsi", "ATT", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_att4",
+            cell=c("Ipsi", "ATT", "4"))),
+    effectSize = "partEta",
+    rmTerms = ~ Laterality + Task + `Set size` + Laterality:Task + Laterality:`Set size` + Task:`Set size` + Laterality:Task:`Set size`)
+
+cat("<pre class='jamovitable'>")
+print(jtable(CDA.Exp2.Analysis$rmTable))
+cat("</pre>")
+
+
+```
+
+### Pupil dilation 
+
+For pupil dilation, we can at least see that there is no main effect of experiment and no interaction between task and experiment. However, the paper states that there was an interaction. I think the data for pupil dilation is incorrect? Also, we do not have data for the two different set sizes here, so this ANOVA excludes the set size factor. 
+
+
+```{r interaction analysis - pupil dilation, results='asis', echo = FALSE}
+pupilResults <- jmv::anovaRM(
+    data = PupilDilation,
+    rm = list(
+        list(
+            label="Task",
+            levels=c("WM", "ATT"))),
+    rmCells = list(
+        list(
+            measure="wm_Allexp",
+            cell="WM"),
+        list(
+            measure="att_allexp",
+            cell="ATT")),
+    bs = exp,
+    rmTerms = ~ Task,
+    bsTerms = ~ exp)
+
+
+cat("<pre class='jamovitable'>")
+print(jtable(pupilResults$rmTable))
+cat("</pre>")
+
+cat("<pre class='jamovitable'>")
+print(jtable(pupilResults$bsTable))
+cat("</pre>")
+
+```
+
+
+## CDA
+
+I was able to download and run the MATLAB code for the CDA time course and violin plots. I had a little trouble at first, as the code included a line to load an EEG file that I was unable to download, but it turned out that this line was unnecessary to running the code. 
+
+
+```{r CDAfig, echo=FALSE, out.width = "90%", fig.align="center", fig.cap  = "\\label{fig:CDAfig} The figure produced by the authors' provided MATLAB code shows data from both experiments as well as the combined data." }
+
+knitr::include_graphics('CDA.png')
+```
+
+I was also able to download the Excel files with the data from which the statistics were calculated. Although the data were a little unstructured and messy, it was fairly clear from the labels which were the important variables for the analysis. 
+
+From the paper: 
+
+> " Using all data from Experiments 1 and 2 together, we ran a repeated measures ANOVA with the factors task (WM, attention) and set size (two items, four items). This analysis revealed significant main effects of laterality, $F(1, 96) = 74.41, p < .001, \eta^2_p = .44$, and set size, $F(1, 96) = 33.27, p < .001, \eta^2_p = .26$."
+
+This can be seen as reproduced if we just repeat the analysis in Table 1 above, but without the between-subjects variable of Experiment in the model. 
+
+They also say: 
+
+> "Thus, the first important finding was a significant two-way interaction between laterality and task, $F(1, 96) = 81.27, p < .001, \eta^2_p = .46$ , which reflected a greater laterality effect in the WM task than in the attention task"
+
+And this can also be seen in the table below. 
+
+```{r CDA_mainAnalysis, results='asis', echo = FALSE, fig.cap = "CDA main ANOVA table"}
+
+CDA_mainAnalysis<- jmv::anovaRM(
+    data = CDA,
+    rm = list(
+        list(
+            label="Laterality",
+            levels=c("Contra", "Ipsi")),
+        list(
+            label="Task",
+            levels=c("WM", "ATT")),
+        list(
+            label="Set size",
+            levels=c("2", "4"))),
+    rmCells = list(
+        list(
+            measure="E1E2E3E4_contra_wm2",
+            cell=c("Contra", "WM", "2")),
+        list(
+            measure="E1E2E3E4_contra_wm4",
+            cell=c("Contra", "WM", "4")),
+        list(
+            measure="E1E2E3E4_contra_att2",
+            cell=c("Contra", "ATT", "2")),
+        list(
+            measure="E1E2E3E4_contra_att4",
+            cell=c("Contra", "ATT", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_wm2",
+            cell=c("Ipsi", "WM", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_wm4",
+            cell=c("Ipsi", "WM", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_att2",
+            cell=c("Ipsi", "ATT", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_att4",
+            cell=c("Ipsi", "ATT", "4"))),
+    bs = Experiment_1a1b_2a2b,
+    effectSize = "partEta",
+    rmTerms = ~ Laterality + Task + `Set size` + Laterality:Task + Laterality:`Set size` + Task:`Set size` + Laterality:Task:`Set size`)
+
+cat("<pre class='jamovitable'>")
+print(jtable(CDA_mainAnalysis$rmTable))
+cat("</pre>")
+
+cat("<pre class='jamovitable'>")
+print(jtable(CDA_mainAnalysis$bsTable))
+cat("</pre>")
+
+```
+
+They then go on to say, 
+
+> "To confirm this impression, we ran a follow-up two-way paired-samples t test that compared contralateral and ipsilateral activity separately for the WM and attention tasks and each set size (WM Set Size 2, WM Set Size 4, attention Set Size 2, attention Set Size 4). This analysis revealed that CDA was significantly more lateralized in the WM task (Set Size 2: $M = −0.38$ $\mu V, SD = 0.44$; Set Size 4: $M = −0.54$  $\mu V$, $SD = 0.54$) than in the attention task (Set Size 2: $M = −0.09$ $\mu V, SD = 0.34$; Set Size 4: $M = −0.10$ $\mu V, SD = 0.37$) for both set sizes—Set Size 2: $t(98) = −6.71, p < .001$; Set Size 4: $t(98) = −8.57, p < .001$. We note, however, that there was reliable lateralized activity for both tasks, $p ≤ .007$" 
+
+However, I could not quite reproduce these results. It seems that, on inspection, there were a couple of cells below the main data where means and SDs had been computed for these columns, and they had accidentally been included in the calculations (hence the different DF for these tests - 98 instead of 96). However, when those cells are removed, the results are very close and not different in direction. 
+
+```{r CDA follow-up t-tests, results='asis', echo = FALSE}
+
+cda_followup <- jmv::ttestPS(
+    data = CDA,
+    pairs = list(
+        list(
+            i1="E1E2E3E4_CmI_WMss2",
+            i2="E1E2E3E4_CmI_ATTss2"),
+        list(
+            i1="E1E2E3E4_CmI_WMss4",
+            i2="E1E2E3E4_CmI_ATTss4")),
+    desc = TRUE)
+
+cat("<pre class='jamovitable'>")
+print(jtable(cda_followup$ttest))
+cat("</pre>")
+
+cat("<pre class='jamovitable'>")
+print(jtable(cda_followup$desc))
+cat("</pre>")
+```
+
+They then go on to say: 
+
+> Another key finding was that the number of items in the sample array had a selective impact on CDA in the WM task, while CDA in the attention task showed no reliable effect. This impression was verified by a reliable triple interaction among task, laterality, and set size, $F(1, 96) = 8.75, p = .004, \eta^2_p = .08$. As Figure 3 shows, CDA was set-size dependent in the WM task but not in the attention task.
+
+This can also be seen in the ANOVA table above. 
+
+They go on to do follow-up analyses for each task (WM and attention) as separate ANOVAs: 
+
+> To characterize the triple interaction, we ran separate follow-up repeated measures ANOVAs for each task (WM, attention) with the factors laterality (contralaterality, ipsilaterality) and set size (two items, four items). This analysis revealed that there was a significant interaction of laterality and set size for the WM task, $F(1, 96) = 14.39, p < .001, \eta^2_p = .13$, but not the attention task, $F(1, 96) = 0.07, p = .79, \eta^2_p = .001$.
+
+These can be seen as reproduced below. 
+
+### Working memory ANOVA
+
+```{r WM ANOVA, results = 'asis', echo = FALSE}
+WM_anova <- jmv::anovaRM(
+    data = CDA,
+    rm = list(
+        list(
+            label="Laterality",
+            levels=c("Contra", "Ipsi")),
+        list(
+            label="Set size",
+            levels=c("2", "4"))),
+    rmCells = list(
+        list(
+            measure="E1E2E3E4_contra_wm2",
+            cell=c("Contra", "2")),
+        list(
+            measure="E1E2E3E4_contra_wm4",
+            cell=c("Contra", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_wm2",
+            cell=c("Ipsi", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_wm4",
+            cell=c("Ipsi", "4"))),
+    effectSize = "partEta",
+    rmTerms = ~ Laterality + `Set size` + Laterality:`Set size`,
+    emMeans = ~ Laterality:`Set size`,
+    emmPlots = FALSE)
+
+cat("<pre class='jamovitable'>")
+print(jtable(WM_anova$rmTable))
+cat("</pre>")
+
+```
+
+
+
+### Attention ANOVA 
+
+
+```{r ATT ANOVA, results = 'asis', echo = FALSE}
+ATT_anova <- jmv::anovaRM(
+    data = CDA,
+    rm = list(
+        list(
+            label="Laterality",
+            levels=c("Contra", "Ipsi")),
+        list(
+            label="Set size",
+            levels=c("2", "4"))),
+    rmCells = list(
+        list(
+            measure="E1E2E3E4_contra_att2",
+            cell=c("Contra", "2")),
+        list(
+            measure="E1E2E3E4_contra_att4",
+            cell=c("Contra", "4")),
+        list(
+            measure="E1E2E3E4_ipsi_att2",
+            cell=c("Ipsi", "2")),
+        list(
+            measure="E1E2E3E4_ipsi_att4",
+            cell=c("Ipsi", "4"))),
+    effectSize = "partEta",
+    rmTerms = ~ Laterality + `Set size` + Laterality:`Set size`,
+    emMeans = ~ Laterality:`Set size`,
+    emmPlots = FALSE)
+
+cat("<pre class='jamovitable'>")
+print(jtable(ATT_anova$rmTable))
+cat("</pre>")
+
+```
+
+To follow this up, they report mean differences here: 
+
+ > Thus, while data from the WM task showed that CDA amplitude was larger for Set Size 4 ($M = −0.55$ $\mu V$, $SD = 0.54$) than for Set Size 2 ($M = −0.39$ µ$\mu V$, $SD = 0.44$), data from the attention task showed no evidence of a difference in CDA amplitude between Set Size 2 ($M = −0.10$ $\mu V$, $SD = 0.34$) and Set Size 4 ($M = −0.11$ $\mu V$, $SD = 0.37$)
+ 
+ This can be found in the variables "CmI" for the two tasks and set sizes: 
+ 
+``` {r descriptives C minus I,  echo = FALSE}
+jmv::descriptives(
+    data = CDA,
+    vars = vars(E1E2E3E4_CmI_WMss2, E1E2E3E4_CmI_WMss4, E1E2E3E4_CmI_ATTss2, E1E2E3E4_CmI_ATTss4),
+    n = FALSE,
+    missing = FALSE,
+    median = FALSE,
+    sd = TRUE,
+    min = FALSE,
+    max = FALSE)
+
+#cat("<pre class='jamovitable'>")
+#print(jtable(CmI_descriptives$descriptives))
+#cat("</pre>")
+```
+
+## Lateralised alpha
+
+For the Alpha data, I was also able to get the MATLAB code to work, and it produced separate figures for each experiment as well as the two combined (the bottom row of the figure below). 
+
+```{r Alphafig, echo=FALSE, out.width = "95%", fig.align="center", fig.cap  = "\\label{fig:Alphafig} The figure produced by the authors' provided MATLAB code shows data for lateralised alpha activity from both experiments as well as the combined data." }
+
+knitr::include_graphics('Alpha.png')
+
+```
+
+I was able to reproduce all of the analyses from the paper for the lateralised Alpha power variables from the Excel data provided. 
+
+> We confirmed these impressions with a repeated measures ANOVA on average alpha power with the factors laterality (contralaterality, ipsilaterality), task (attention, WM) and set size (two items, four items). This analysis revealed a significant main effect of laterality, $F(1, 96) = 45.57, p < .001, \eta^2_p = .32$, and a significant interaction between laterality and set size, $F(1, 96) = 9.75, p = .002, \eta^2_p = .09$.
+
+
+```{r Alpha power main ANOVA, results = 'asis', echo = FALSE}
+AlphaPowerAnalysis <- jmv::anovaRM(
+    data = Alpha,
+    rm = list(
+        list(
+            label="Laterality",
+            levels=c("Contra", "Ipsi")),
+        list(
+            label="Task",
+            levels=c("WM", "ATT")),
+        list(
+            label="Set size",
+            levels=c("2", "4"))),
+    rmCells = list(
+        list(
+            measure="E1a1b_2a2b_contra_wm2",
+            cell=c("Contra", "WM", "2")),
+        list(
+            measure="E1a1b_2a2b_contra_wm4",
+            cell=c("Contra", "WM", "4")),
+        list(
+            measure="E1a1b_2a2b_contra_att2",
+            cell=c("Contra", "ATT", "2")),
+        list(
+            measure="E1a1b_2a2b_contra_att4",
+            cell=c("Contra", "ATT", "4")),
+        list(
+            measure="E1a1b_2a2b_ipsi_wm2",
+            cell=c("Ipsi", "WM", "2")),
+        list(
+            measure="E1a1b_2a2b_ipsi_wm4",
+            cell=c("Ipsi", "WM", "4")),
+        list(
+            measure="E1a1b_2a2b_ipsi_att2",
+            cell=c("Ipsi", "ATT", "2")),
+        list(
+            measure="E1a1b_2a2b_ipsi_att4",
+            cell=c("Ipsi", "ATT", "4"))),
+    effectSize = "partEta",
+    depLabel = "Alpha",
+    rmTerms = ~ Laterality + Task + `Set size` + Laterality:Task + Laterality:`Set size` + Task:`Set size` + Laterality:Task:`Set size`)
+
+cat("<pre class='jamovitable'>")
+print(jtable(AlphaPowerAnalysis$rmTable))
+cat("</pre>")
+```
+The authors followed up with paired t-tests: 
+
+> Paired-samples t tests confirmed that this interaction reflected a stronger lateralization of alpha power in the Set Size 2 condition ($M = −12.24$ $\mu V^2$, $SD = 17.17$) than in the Set Size 4 condition ($M = −10.04$ $\mu V^2$, $SD = 16.06$), $t(96) = −3.123, p = .002$.
+
+This can be reproduced from the variables ending in "bothTasks": 
+
+```{r Alpha paired t-tests both tasks, results = 'asis', echo = FALSE}
+Alpha_followup <- jmv::ttestPS(
+    data = Alpha,
+    pairs = list(
+        list(
+            i1="E1E2E3E4_CmI_SS2_bothTasks",
+            i2="E1E2E3E4_CmI_SS4_bothTasks")),
+    wilcoxon = FALSE,
+    norm = TRUE,
+    meanDiff = TRUE,
+    desc = TRUE)
+
+Alpha_followup_w <- jmv::ttestPS(
+    data = Alpha,
+    pairs = list(
+        list(
+            i1="E1E2E3E4_CmI_SS2_bothTasks",
+            i2="E1E2E3E4_CmI_SS4_bothTasks")),
+    students = FALSE,
+    wilcoxon = TRUE)
+
+cat("<pre class='jamovitable'>")
+print(jtable(Alpha_followup$desc))
+cat("</pre>")
+
+cat("<pre class='jamovitable'>")
+print(jtable(Alpha_followup$ttest))
+cat("</pre>")
+```
+
+
+(Strictly speaking a Wilcoxon test should have been used since normality was violated, but the result is much the same.)
+
+```{r alpha followup Wilcoxon, results = 'asis', echo = FALSE}
+cat("<pre class='jamovitable'>")
+print(jtable(Alpha_followup$norm))
+cat("</pre>")
+
+cat("<pre class='jamovitable'>")
+print(jtable(Alpha_followup_w$ttest))
+cat("</pre>")
+```
+
+
+> "Our analysis also revealed a significant interaction between laterality and task, $F(1, 96) = 27.22, p < .001, \eta^2_p = .22$, which reflected the greater lateralization of alpha power in the WM task than in the attention task.
+
+This can be seen in the ANOVA table above. 
+
+They followed up with another paired t-test: 
+
+> This impression was confirmed with a two-way paired-samples t test that revealed a significant difference in alpha power lateralization between the WM task ($M = −7.79$ $\mu V^2$, $SD = 11.61$) and the attention task ($M = −3.35$ $\mu V^2$, $SD = 5.69$), $t(96) = −5.22, p < .001$
+
+This is reproduced below using the variables ending in "bothSS": 
+
+```{r Alpha paired t-test 2,  results= 'asis', echo = FALSE}
+
+alpha_followup <- jmv::ttestPS(
+    data = Alpha,
+    pairs = list(
+        list(
+            i1="E1E2E3E4_CmI_WM_bothSS",
+            i2="E1E2E3E4_CmI_ATT_bothSS")),
+    meanDiff = FALSE,
+    effectSize = FALSE,
+    desc = TRUE,
+    plots = FALSE)
+
+cat("<pre class='jamovitable'>")
+print(jtable(alpha_followup$ttest))
+cat("</pre>")
+
+cat("<pre class='jamovitable'>")
+print(jtable(alpha_followup$desc))
+cat("</pre>")
+
+
+```
+
+
+
+## Pupil dilation 
+
+### Plots
+
+It is not possible to reproduce the time course plot with the raw code provided - the data are there, but it's difficult to reproduce the plot. 
+
+For the summary plot, we used the Excel data provided in the file "PupilDilation_DataAverages". 
+
+The results from the paper present the pupil dilation collapsed across set size (2 and 4) for the two tasks (working memory and attention). The plot looks much the same as in the paper: 
+
+
+```{r fig.width=6, fig.height=6, fig.align='center', echo= FALSE}
+s <- ggplot(PupilDilationLong, aes(Task, PupilDilation))
+
+s + geom_violin(aes(fill = Task))+ 
+  geom_point(aes(group = ID), color = 'black', alpha = 0.9)+ 
+  geom_line(aes(group = ID), color = 'gray', alpha = 0.6) +
+  ylab("Pupil Dilation (a.u.)") + 
+  xlab("Task") + 
+  ylim(-200, 400) +
+  scale_fill_manual(values=alpha(c('royalblue3','#910C00'), .7))+
+  theme_classic() 
+```
+
+### T-tests 
+
+
+However, the paired t-test returns a different result! 
+
+From the paper: 
+
+> "This analysis revealed a greater level of pupil dilation in the attention task (M = 0.63 arbitrary units, SD = 1.89) than in the WM task (M = 0.29 arbitrary units, SD = 2.20), t(87) = −3.13, p = .002"
+
+
+```{r compute t-test, include = TRUE}
+
+res <- t.test(PupilDilation ~ Task, data = PupilDilationLong, paired = TRUE)
+
+
+tab <- map_df(list(res), tidy)
+
+```
+
+
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(tab)
+```
+
+
+It is hard to see how the mean and SD could be correct for this data in the paper. There must be a different dataset for the stats? 
+
+
+### Update 
+
+I did actually manage to get the code working, apart from two lines which called a missing function (called indiSEM.m) to plot the shaded error bars. So here it is without the error bars: 
+
+```{r Eyefig, echo=FALSE, out.width = "95%", fig.align="center", fig.cap  = "\\label{fig:Eyefig} The figure produced by the authors' provided MATLAB code shows data for pupil dilation from both experiments as well as the combined data. The error bars could not be plotted as they were calling a missing function called indiSEM.m" }
+
+knitr::include_graphics('PupilDilation_all.png')
+
+```
+
+
+Clearly the last subfigure matches the data from the Excel file plotted above, so that is nice, but it still doesn't solve the problem of the reported t-test above. 
+
+
+# Overall summary
+
+There were a LOT of data for this paper, and I could not download all of it (the EEG data proved particularly problematic). However, the MATLAB files downloaded OK, and I was able to reproduce almost all of the plots from the paper, which was nice (there was just one function missing). The folder structure made sense, and the code was commented in a reasonably comprehensible way. 
+
+The Excel files (not CSV files, although they were in a folder called CSV!) were also fairly comprehensible although they were very messy, with data from each experiment in the first few columns and then compliled in columns further over, with a few duplicate variables here and there, and no readme about which variables were which. There was no SPSS syntax or R code, but it was reasonably straightforward to reproduce all of the analyses in jamovi/R. The only discrepancies were in the pupil dilation data, where I could not reproduce the statistical results at all, and in the t-tests of the CDA data, where it was evident an error had been made by including values for the means and standard deviations of four columns which had been accidentally included in the Excel sheet. 
+

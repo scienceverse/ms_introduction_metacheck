@@ -1,0 +1,255 @@
+# Plot
+
+## Regression Parameters
+
+```{r plot-regression-parameters, fig.width=12, fig.height=12}
+tmp <- rbind(
+  brms::posterior_samples(fit0, pars = "^b_|^sd_") %>%
+    as.data.table() %>%
+    melt(measure.vars = names(.)),
+  brms::bayes_R2(fit0, summary = FALSE) %>%
+    as.data.table() %>%
+    melt(measure.vars = names(.))
+) %>%
+  # replace multiple `_`
+  .[, variable := gsub("[_]{2,}", "_", variable)] %>%
+  # recode R2 variables
+  .[, variable := sub("R2(.*)", "model;\\1;r2", variable)] %>%
+  # convert sd_code and sd_study
+  .[, variable := sub("sd_code_(.*?)_Intercept", "sdcode_\\1_sdInterceptCode", variable)] %>%
+  # make sure there are three parts in variable
+  .[, variable := sub("(.*?)_(.*?)_(.*)", "\\1;\\2;\\3", variable)] %>%
+  # split variable into multiple columns
+  .[
+    ,
+    (c("level", "dv", "parameter")) := tstrsplit(
+      variable,
+      split = ";",
+      fixed = TRUE
+    )
+  ] %>%
+  # use a factor to rename variables
+  .[,
+    `:=`(
+      dv = factor(
+        dv,
+        levels = c("pitch", "intensity", "speechrate", "jitter", "shimmer"),
+        labels = c("Fundamental Frequency", "Voice Intensity", "Speech Rate", "Jitter", "Shimmer")
+      ),
+      parameter_desc = factor(
+        parameter,
+        levels = c(
+          "sdInterceptCode", "r2",
+          "abf_pm_z:stressed_pm_z", "abf_pmc_z:stressed_pmc_z",
+          "abf_pm_z", "abf_pmc_z",
+          "stressed_pm_z", "stressed_pmc_z",
+          "panas_neg_pm_z", "panas_neg_pmc_z",
+          "panas_pos_pm_z", "panas_pos_pmc_z",
+          "sci_pm_z",
+          "sun_vs_workwork",
+          "workhour_pm_z", "workhour_pmc_z",
+          "age_pm_z",
+          "gendermale", "genderfemale"
+        ),
+        labels = c(
+          "sd(Intercept)", "R^{2}",
+          "EWS × Perceived Stress", "EWS × Perceived Stress",
+          "EWS", "EWS",
+          "Perceived Stress", "Perceived Stress",
+          "Negative Mood", "Negative Mood",
+          "Positive Mood", "Positive Mood",
+          "Long-Term Stressors",
+          "Sunday vs. Workday",
+          "Working Hours", "Working Hours",
+          "Age",
+          "Male", "Female"
+        )
+      )
+    )
+  ]
+
+# create single plots
+p1 <- ggplot(
+  tmp[level == "b" & parameter %in% c("gendermale", "genderfemale")],
+  aes(x = parameter_desc, y = value)
+) +
+  ggdist::stat_pointinterval(
+    .width = c(meta$ci_inner, meta$ci_outer),
+    point_colour = "blue",
+    point_size = 2,
+    shape = 18,
+    point_interval = ggdist::mean_qi
+  ) +
+  facet_grid(
+    cols = vars(dv),
+    scales = "free"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Gender-Specific Intercepts"
+  ) +
+  papaja::theme_apa() +
+  theme(
+    plot.title = element_text(hjust = .5),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.major.y = element_line(
+      linetype = "dashed",
+      color = "grey",
+      size = .2
+    )
+  )
+
+p2 <- ggplot(
+  tmp[level == "b" & !(parameter %in% c("gendermale", "genderfemale")) &
+    endsWith(parameter, "pm_z")],
+  aes(x = parameter_desc, y = value)
+) +
+  geom_hline(yintercept = 0, colour = "grey") +
+  ggdist::stat_pointinterval(
+    .width = c(meta$ci_inner, meta$ci_outer),
+    point_colour = "blue",
+    point_size = 2,
+    shape = 18,
+    point_interval = ggdist::mean_qi
+  ) +
+  facet_grid(
+    cols = vars(dv),
+    scales = "free"
+  ) +
+  coord_flip() +
+  labs(
+    title = paste0("Between-Participant Parameters (N = ", summary(fit0)$ngrps$code, ")")
+  ) +
+  papaja::theme_apa() +
+  theme(
+    plot.title = element_text(hjust = .5),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    strip.background = element_blank(),
+    strip.text.x = element_blank(),
+    panel.grid.major.y = element_line(
+      linetype = "dashed",
+      color = "grey",
+      size = .2
+    )
+  )
+
+p3 <- ggplot(
+  tmp[level == "b" & !(parameter %in% c("gendermale", "genderfemale")) &
+    !endsWith(parameter, "pm_z")],
+  aes(x = parameter_desc, y = value)
+) +
+  geom_hline(yintercept = 0, colour = "grey") +
+  ggdist::stat_pointinterval(
+    .width = c(meta$ci_inner, meta$ci_outer),
+    point_colour = "blue",
+    point_size = 2,
+    shape = 18,
+    point_interval = ggdist::mean_qi
+  ) +
+  facet_grid(
+    cols = vars(dv),
+    scales = "free"
+  ) +
+  coord_flip() +
+  labs(
+    title = paste0(
+      "Within-Participant Parameters (", 
+      summary(fit0)$nobs,
+      " observations)"
+    )
+  ) +
+  papaja::theme_apa() +
+  theme(
+    plot.title = element_text(hjust = .5),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    strip.background = element_blank(),
+    strip.text.x = element_blank(),
+    panel.grid.major.y = element_line(
+      linetype = "dashed",
+      color = "grey",
+      size = .2
+    )
+  )
+
+p4 <- ggplot(
+  tmp[level %in% c("sdcode")],
+  aes(x = parameter_desc, y = value)
+) +
+  ggdist::stat_pointinterval(
+    .width = c(meta$ci_inner, meta$ci_outer),
+    point_colour = "blue",
+    point_size = 2,
+    shape = 18,
+    point_interval = ggdist::mean_qi
+  ) +
+  facet_grid(
+    cols = vars(dv),
+    scales = "free"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Variance of Intercepts Between Participants"
+  ) +
+  papaja::theme_apa() +
+  theme(
+    plot.title = element_text(hjust = .5),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    strip.background = element_blank(),
+    strip.text.x = element_blank(),
+    panel.grid.major.y = element_line(
+      linetype = "dashed",
+      color = "grey",
+      size = .2
+    )
+  )
+
+p5 <- ggplot(
+  tmp[level == "model"],
+  aes(x = parameter_desc, y = value)
+) +
+  ggdist::stat_pointinterval(
+    .width = c(meta$ci_inner, meta$ci_outer),
+    point_colour = "blue",
+    point_size = 2,
+    shape = 18,
+    point_interval = ggdist::mean_qi
+  ) +
+  facet_grid(
+    cols = vars(dv)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    labels = c("0", ".25", ".5", ".75", "1")
+  ) +
+  scale_x_discrete(labels = scales::label_parse()) +
+  coord_flip() +
+  labs(
+    title = "Explained Variance"
+  ) +
+  papaja::theme_apa() +
+  theme(
+    plot.title = element_text(hjust = .5),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    strip.background = element_blank(),
+    strip.text.x = element_blank(),
+    panel.grid.major.y = element_line(
+      linetype = "dashed",
+      color = "grey",
+      size = .2
+    )
+  )
+
+# combine plots
+ggpubr::ggarrange(
+  p1, p2, p3, p4, p5,
+  nrow = 5,
+  ncol = 1,
+  align = "v",
+  heights = c(2, 4, 4, 1, 1)
+)
+```

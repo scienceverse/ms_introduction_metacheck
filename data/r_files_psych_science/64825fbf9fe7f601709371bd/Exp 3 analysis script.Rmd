@@ -1,0 +1,672 @@
+---
+title: "Suppression in perceptual grouping (capture probe)"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r}
+# Clear the workspace and console.
+rm(list = ls(all.names = TRUE)) 
+cat("\f")
+
+# Library packages
+library(ggplot2)
+library(dplyr)
+library(rstatix)
+library(lsr)
+```
+
+```{r}
+# read individual subject's csv file and compile
+FilesList = list.files(pattern = "\\.csv$")
+mergeddata <- data.frame()
+for (i in 1:length(FilesList)) {
+  fname=FilesList[i]
+  subi <- read.csv(fname)
+  subi <- subset(subi, trials.thisN >= 0, select = c("distractorpresence", "targetloc45", "targetdistractorcongruency", "search_resp.corr", "search_resp.rt", "participant", "trialtype", "probe_response", "targetletter", "distractorletter", "neutralletter1", "neutralletter2", "neutralletter3","distractorshape","circleletter","diamondletter","squareletter","hexagonletter", "circleloc","diamondloc","squareloc","hexagonloc"))
+  mergeddata <- rbind(mergeddata, subi)
+}
+```
+
+```{r}
+# #-------------------------------------Probe Trial Data cleaning--------------------------------------------
+
+# create new data frame for probe trials
+probedata <- subset(mergeddata, mergeddata$trialtype == "probe")
+
+# Assign a non-letter filler item for stimuli not appeared
+probedata$distractorletter[which(probedata$distractorpresence == 0)] <- 0
+probedata$neutralletter3[which(probedata$distractorpresence == 1)] <- 0
+
+# test what letters were reported for each stimulus
+for (j in 1:nrow(probedata)){
+probe_resp<- probedata$probe_response[j]
+probedata$seetarget[j] <- grepl(probedata$targetletter[j], probe_resp, fixed = TRUE)
+probedata$seedistractor[j] <- grepl(probedata$distractorletter[j], probe_resp, fixed = TRUE)
+probedata$seeneutral1[j] <- grepl(probedata$neutralletter1[j], probe_resp, fixed = TRUE)
+probedata$seeneutral2[j] <- grepl(probedata$neutralletter2[j], probe_resp, fixed = TRUE)
+probedata$seeneutral3[j] <- grepl(probedata$neutralletter3[j], probe_resp, fixed = TRUE)
+# recode response to 1 & 0
+probedata$seetarget[j] <- ifelse(probedata$seetarget[j] == TRUE, 1, 0)
+probedata$seedistractor[j] <- ifelse(probedata$seedistractor[j] == TRUE, 1, 0)
+probedata$seeneutral1[j] <- ifelse(probedata$seeneutral1[j] == TRUE, 1, 0)
+probedata$seeneutral2[j] <- ifelse(probedata$seeneutral2[j] == TRUE, 1, 0)
+probedata$seeneutral3[j] <- ifelse(probedata$seeneutral3[j] == TRUE, 1, 0)
+
+# calculate the number of letters reported on each trial
+probedata$num_letter[j] <- ifelse(nchar(probe_resp)/5 >= 1, nchar(probe_resp)/5, 0)
+}
+
+# create empty data frame
+probealldata <- data.frame()
+targetratealldata <- data.frame()
+# calculate mean letter report rate by subject
+for (i in unique(probedata$participant)) {
+# create data frame for individual subjects
+distractorpresencei <- probedata$distractorpresence[which(probedata$participant == i)]
+targetloci <- probedata$targetloc45[which(probedata$participant == i)]
+seetargeti <- probedata$seetarget[which(probedata$participant == i)]
+seedistractori <- probedata$seedistractor[which(probedata$participant == i)]
+seeneutral1i <- probedata$seeneutral1[which(probedata$participant == i)]
+seeneutral2i <- probedata$seeneutral2[which(probedata$participant == i)]
+seeneutral3i <- probedata$seeneutral3[which(probedata$participant == i)]
+probesubi <- data.frame(distractorpresencei,targetloci,seetargeti,seedistractori,seeneutral1i,seeneutral2i,seeneutral3i)
+
+# target report rate
+# dis present, same object
+TargetRate_dispre_same <- mean(probesubi$seetargeti[which(probesubi$distractorpresencei == 1 & probesubi$targetloci == "sameobject")])
+# dis present, same object
+TargetRate_dispre_other <- mean(probesubi$seetargeti[which(probesubi$distractorpresencei == 1 & probesubi$targetloci == "otherobject")])
+# dis present, far
+TargetRate_dispre_far <- mean(probesubi$seetargeti[which(probesubi$distractorpresencei == 1 & probesubi$targetloci == "far")])
+# dis absent
+TargetRate_disabs <- mean(probesubi$seetargeti[which(probesubi$distractorpresencei == 0)])
+# overall dis pre mean
+TargetRate_premean <- mean(c(TargetRate_dispre_same,TargetRate_dispre_other,TargetRate_dispre_far))
+
+# distractor report rate
+# dis present (only)
+DistractorRate <- mean(probesubi$seedistractori[which(probesubi$distractorpresencei == 1)])
+
+# neutral letter 1 report rate
+# dis present
+Neutral1Rate_dispre <- mean(probesubi$seeneutral1i[which(probesubi$distractorpresencei == 1)])
+# dis absent
+Neutral1Rate_disabs <- mean(probesubi$seeneutral1i[which(probesubi$distractorpresencei == 0)])
+
+# neutral letter 2 report rate
+# dis present
+Neutral2Rate_dispre <- mean(probesubi$seeneutral2i[which(probesubi$distractorpresencei == 1)])
+# dis absent
+Neutral2Rate_disabs <- mean(probesubi$seeneutral2i[which(probesubi$distractorpresencei == 0)])
+
+# neutral letter 3 report rate
+# dis absent (only)
+Neutral3Rate <- mean(probesubi$seeneutral3i[which(probesubi$distractorpresencei == 0)])
+
+# Average neutral letter report rate
+# dis present (average across Neutral shape 1 & 2)
+meanNeutralRate_dispre <- mean(c(Neutral1Rate_dispre, Neutral2Rate_dispre))
+# dis absent (average across Neutral shape 1, 2, & 3)
+meanNeutralRate_disabs <- mean(c(Neutral1Rate_disabs, Neutral2Rate_disabs, Neutral3Rate))
+
+# overall report rate (including incorrect reports)
+overallRate <- mean(probedata$num_letter[which(probedata$participant == i)])
+dispresentRate <- mean(probedata$num_letter[which(probedata$participant == i & probedata$distractorpresence == 1)])
+disabsentRate <- mean(probedata$num_letter[which(probedata$participant == i & probedata$distractorpresence == 0)])
+
+# probe report accuracy
+correctRecallTotal <- sum(c(probesubi$seetargeti, probesubi$seedistractori,probesubi$seeneutral1i, probesubi$seeneutral2i,probesubi$seeneutral3i))
+meanRate <- correctRecallTotal / nrow(probesubi)
+
+subID <- i
+distractorPresence <- c(1,0,1,1,0)
+probeStimuli <- c("target","target","distractor","neutral","neutral")
+reportRate <- c(TargetRate_premean,TargetRate_disabs,DistractorRate,meanNeutralRate_dispre,meanNeutralRate_disabs)
+subimean <- data.frame(subID,distractorPresence,probeStimuli,reportRate, overallRate, meanRate, dispresentRate, disabsentRate)
+# only include subjects who can recall on average at least 0.8 probe letter per trial
+subimean$subinclude <- ifelse(mean(meanRate) > 1, 1, 0)
+
+probealldata <- rbind(probealldata, subimean)
+
+}
+```
+
+```{r}
+#------------------Location-wise letter report rate (regardless of whether location contains target)----------
+# determine distractor location
+probedata$distractorloc[probedata$distractorpresence == 1 & probedata$distractorshape == "circle"] <- probedata$circleloc[probedata$distractorpresence == 1 & probedata$distractorshape == "circle"]
+probedata$distractorloc[probedata$distractorpresence == 1 & probedata$distractorshape == "diamond"] <- probedata$diamondloc[probedata$distractorpresence == 1 & probedata$distractorshape == "diamond"]
+probedata$distractorloc[probedata$distractorpresence == 1 & probedata$distractorshape == "square"] <- probedata$squareloc[probedata$distractorpresence == 1 & probedata$distractorshape == "square"]
+probedata$distractorloc[probedata$distractorpresence == 1 & probedata$distractorshape == "hexagon"] <- probedata$hexagonloc[probedata$distractorpresence == 1 & probedata$distractorshape == "hexagon"]
+
+# Determine same-object letter
+# Distractor at top location
+topcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[0, 4.74]"
+probedata$sameletter[topcon & probedata$circleloc == "[-4.74, 0]"] <- probedata$circleletter[topcon & probedata$circleloc == "[-4.74, 0]"]
+probedata$sameletter[topcon & probedata$diamondloc == "[-4.74, 0]"] <- probedata$diamondletter[topcon & probedata$diamondloc == "[-4.74, 0]"]
+probedata$sameletter[topcon & probedata$squareloc == "[-4.74, 0]"] <- probedata$squareletter[topcon & probedata$squareloc == "[-4.74, 0]"]
+probedata$sameletter[topcon & probedata$hexagonloc == "[-4.74, 0]"] <- probedata$hexagonletter[topcon & probedata$hexagonloc == "[-4.74, 0]"]
+# Distractor at right location
+rightcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[4.74, 0]"
+probedata$sameletter[rightcon & probedata$circleloc == "[0, -4.74]"] <- probedata$circleletter[rightcon & probedata$circleloc == "[0, -4.74]"]
+probedata$sameletter[rightcon & probedata$diamondloc == "[0, -4.74]"] <- probedata$diamondletter[rightcon & probedata$diamondloc == "[0, -4.74]"]
+probedata$sameletter[rightcon & probedata$squareloc == "[0, -4.74]"] <- probedata$squareletter[rightcon & probedata$squareloc == "[0, -4.74]"]
+probedata$sameletter[rightcon & probedata$hexagonloc == "[0, -4.74]"] <- probedata$hexagonletter[rightcon & probedata$hexagonloc == "[0, -4.74]"]
+# Distractor at bottom location
+bottomcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[0, -4.74]"
+probedata$sameletter[bottomcon & probedata$circleloc == "[4.74, 0]"] <- probedata$circleletter[bottomcon & probedata$circleloc == "[4.74, 0]"]
+probedata$sameletter[bottomcon & probedata$diamondloc == "[4.74, 0]"] <- probedata$diamondletter[bottomcon & probedata$diamondloc == "[4.74, 0]"]
+probedata$sameletter[bottomcon & probedata$squareloc == "[4.74, 0]"] <- probedata$squareletter[bottomcon & probedata$squareloc == "[4.74, 0]"]
+probedata$sameletter[bottomcon & probedata$hexagonloc == "[4.74, 0]"] <- probedata$hexagonletter[bottomcon & probedata$hexagonloc == "[4.74, 0]"]
+# Distractor at left location
+leftcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[-4.74, 0]"
+probedata$sameletter[leftcon & probedata$circleloc == "[0, 4.74]"] <- probedata$circleletter[leftcon & probedata$circleloc == "[0, 4.74]"]
+probedata$sameletter[leftcon & probedata$diamondloc == "[0, 4.74]"] <- probedata$diamondletter[leftcon & probedata$diamondloc == "[0, 4.74]"]
+probedata$sameletter[leftcon & probedata$squareloc == "[0, 4.74]"] <- probedata$squareletter[leftcon & probedata$squareloc == "[0, 4.74]"]
+probedata$sameletter[leftcon & probedata$hexagonloc == "[0, 4.74]"] <- probedata$hexagonletter[leftcon & probedata$hexagonloc == "[0, 4.74]"]
+
+# Determine different-object-near letter
+# Distractor at top location
+topcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[0, 4.74]"
+probedata$otherletter[topcon & probedata$circleloc == "[4.74, 0]"] <- probedata$circleletter[topcon & probedata$circleloc == "[4.74, 0]"]
+probedata$otherletter[topcon & probedata$diamondloc == "[4.74, 0]"] <- probedata$diamondletter[topcon & probedata$diamondloc == "[4.74, 0]"]
+probedata$otherletter[topcon & probedata$squareloc == "[4.74, 0]"] <- probedata$squareletter[topcon & probedata$squareloc == "[4.74, 0]"]
+probedata$otherletter[topcon & probedata$hexagonloc == "[4.74, 0]"] <- probedata$hexagonletter[topcon & probedata$hexagonloc == "[4.74, 0]"]
+# Distractor at right location
+rightcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[4.74, 0]"
+probedata$otherletter[rightcon & probedata$circleloc == "[0, 4.74]"] <- probedata$circleletter[rightcon & probedata$circleloc == "[0, 4.74]"]
+probedata$otherletter[rightcon & probedata$diamondloc == "[0, 4.74]"] <- probedata$diamondletter[rightcon & probedata$diamondloc == "[0, 4.74]"]
+probedata$otherletter[rightcon & probedata$squareloc == "[0, 4.74]"] <- probedata$squareletter[rightcon & probedata$squareloc == "[0, 4.74]"]
+probedata$otherletter[rightcon & probedata$hexagonloc == "[0, 4.74]"] <- probedata$hexagonletter[rightcon & probedata$hexagonloc == "[0, 4.74]"]
+# Distractor at bottom location
+bottomcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[0, -4.74]"
+probedata$otherletter[bottomcon & probedata$circleloc == "[-4.74, 0]"] <- probedata$circleletter[bottomcon & probedata$circleloc == "[-4.74, 0]"]
+probedata$otherletter[bottomcon & probedata$diamondloc == "[-4.74, 0]"] <- probedata$diamondletter[bottomcon & probedata$diamondloc == "[-4.74, 0]"]
+probedata$otherletter[bottomcon & probedata$squareloc == "[-4.74, 0]"] <- probedata$squareletter[bottomcon & probedata$squareloc == "[-4.74, 0]"]
+probedata$otherletter[bottomcon & probedata$hexagonloc == "[-4.74, 0]"] <- probedata$hexagonletter[bottomcon & probedata$hexagonloc == "[-4.74, 0]"]
+# Distractor at left location
+leftcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[-4.74, 0]"
+probedata$otherletter[leftcon & probedata$circleloc == "[0, -4.74]"] <- probedata$circleletter[leftcon & probedata$circleloc == "[0, -4.74]"]
+probedata$otherletter[leftcon & probedata$diamondloc == "[0, -4.74]"] <- probedata$diamondletter[leftcon & probedata$diamondloc == "[0, -4.74]"]
+probedata$otherletter[leftcon & probedata$squareloc == "[0, -4.74]"] <- probedata$squareletter[leftcon & probedata$squareloc == "[0, -4.74]"]
+probedata$otherletter[leftcon & probedata$hexagonloc == "[0, -4.74]"] <- probedata$hexagonletter[leftcon & probedata$hexagonloc == "[0, -4.74]"]
+
+# Determine different-object-far letter
+# Distractor at top location
+topcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[0, 4.74]"
+probedata$farletter[topcon & probedata$circleloc == "[0, -4.74]"] <- probedata$circleletter[topcon & probedata$circleloc == "[0, -4.74]"]
+probedata$farletter[topcon & probedata$diamondloc == "[0, -4.74]"] <- probedata$diamondletter[topcon & probedata$diamondloc == "[0, -4.74]"]
+probedata$farletter[topcon & probedata$squareloc == "[0, -4.74]"] <- probedata$squareletter[topcon & probedata$squareloc == "[0, -4.74]"]
+probedata$farletter[topcon & probedata$hexagonloc == "[0, -4.74]"] <- probedata$hexagonletter[topcon & probedata$hexagonloc == "[0, -4.74]"]
+# Distractor at right location
+rightcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[4.74, 0]"
+probedata$farletter[rightcon & probedata$circleloc == "[-4.74, 0]"] <- probedata$circleletter[rightcon & probedata$circleloc == "[-4.74, 0]"]
+probedata$farletter[rightcon & probedata$diamondloc == "[-4.74, 0]"] <- probedata$diamondletter[rightcon & probedata$diamondloc == "[-4.74, 0]"]
+probedata$farletter[rightcon & probedata$squareloc == "[-4.74, 0]"] <- probedata$squareletter[rightcon & probedata$squareloc == "[-4.74, 0]"]
+probedata$farletter[rightcon & probedata$hexagonloc == "[-4.74, 0]"] <- probedata$hexagonletter[rightcon & probedata$hexagonloc == "[-4.74, 0]"]
+# Distractor at bottom location
+bottomcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[0, -4.74]"
+probedata$farletter[bottomcon & probedata$circleloc == "[0, 4.74]"] <- probedata$circleletter[bottomcon & probedata$circleloc == "[0, 4.74]"]
+probedata$farletter[bottomcon & probedata$diamondloc == "[0, 4.74]"] <- probedata$diamondletter[bottomcon & probedata$diamondloc == "[0, 4.74]"]
+probedata$farletter[bottomcon & probedata$squareloc == "[0, 4.74]"] <- probedata$squareletter[bottomcon & probedata$squareloc == "[0, 4.74]"]
+probedata$farletter[bottomcon & probedata$hexagonloc == "[0, 4.74]"] <- probedata$hexagonletter[bottomcon & probedata$hexagonloc == "[0, 4.74]"]
+# Distractor at left location
+leftcon <- probedata$distractorpresence == 1 & probedata$distractorloc == "[-4.74, 0]"
+probedata$farletter[leftcon & probedata$circleloc == "[4.74, 0]"] <- probedata$circleletter[leftcon & probedata$circleloc == "[4.74, 0]"]
+probedata$farletter[leftcon & probedata$diamondloc == "[4.74, 0]"] <- probedata$diamondletter[leftcon & probedata$diamondloc == "[4.74, 0]"]
+probedata$farletter[leftcon & probedata$squareloc == "[4.74, 0]"] <- probedata$squareletter[leftcon & probedata$squareloc == "[4.74, 0]"]
+probedata$farletter[leftcon & probedata$hexagonloc == "[4.74, 0]"] <- probedata$hexagonletter[leftcon & probedata$hexagonloc == "[4.74, 0]"]
+
+# test what letters were reported on each trial
+for (j in 1:nrow(probedata)){
+probe_resp <- probedata$probe_response[j]
+# same object letter
+probedata$seesame[j] <- grepl(probedata$sameletter[j], probe_resp, fixed = TRUE)
+# different-object-near letter
+probedata$seeother[j] <- grepl(probedata$otherletter[j], probe_resp, fixed = TRUE)
+# different-object-far letter
+probedata$seefar[j] <- grepl(probedata$farletter[j], probe_resp, fixed = TRUE)
+# singleton distractor letter
+probedata$seedistractor[j] <- ifelse(probedata$distractorpresence[j] == 1, grepl(probedata$distractorletter[j], probe_resp, fixed = TRUE), NA)
+
+# recode response to 0 or 1
+probedata$seesame[j] <- ifelse(probedata$seesame[j] == TRUE, 1, 0)
+probedata$seeother[j] <- ifelse(probedata$seeother[j] == TRUE, 1, 0)
+probedata$seefar[j] <- ifelse(probedata$seefar[j] == TRUE, 1, 0)
+probedata$seedistractor[j] <- ifelse(probedata$seedistractor[j] == TRUE, 1, 0)
+
+}
+
+# create empty data frame
+letterlocalldata <- data.frame()
+
+# calculate mean letter report rate by subject
+for (i in unique(probedata$participant)) {
+  # same object letter
+  seesamei <- probedata$seesame[which(probedata$participant == i)]
+  # different-object-near letter
+  seeotheri <- probedata$seeother[which(probedata$participant == i)]
+  # different-object-far letter
+  seefari <- probedata$seefar[which(probedata$participant == i)]
+  # singleton distractor letter
+  seedistractori <- probedata$seedistractor[which(probedata$participant == i)]
+  
+  # same object letter
+  seesamemeani <- mean(seesamei, na.rm = TRUE)
+  # different-object-near letter
+  seeothermeani <- mean(seeotheri, na.rm = TRUE)
+  # different-object-far letter
+  seefarmeani <- mean(seefari, na.rm = TRUE)
+  # singleton distractor letter
+  seedistractormeani <- mean(seedistractori, na.rm = TRUE)
+  
+  subID <- i
+  letterloc <- c("same","different-object-near","different-object-far","distractor")
+  reportRate <- c(seesamemeani, seeothermeani, seefarmeani, seedistractormeani)
+  subimean <- data.frame(subID,letterloc,reportRate)
+  
+  letterlocalldata <- rbind(letterlocalldata, subimean)
+
+}
+```
+
+```{r}
+# #-------------------------------------Search Trial Data cleaning--------------------------------------------
+# Data trimming for individual subject
+searchalldata <- data.frame()
+# create new data frame for search trials
+searchdata <- subset(mergeddata, mergeddata$trialtype == "search")
+
+list <- unique(searchdata$participant)
+for (i in list) {
+
+# Create dataframe for the ith subject
+distractorpresencei <- searchdata$distractorpresence[which(searchdata$participant == i)]
+targetloci <- searchdata$targetloc45[which(searchdata$participant == i)]
+targetdistractorcongruencyi <- searchdata$targetdistractorcongruency[which(searchdata$participant == i)]
+searchACCi <- searchdata$search_resp.corr[which(searchdata$participant == i)]
+searchRTi <- searchdata$search_resp.rt[which(searchdata$participant == i)]
+
+# Data trimming
+# same object
+# cell condition data
+same_raw <- ifelse(targetloci == "sameobject" & searchACCi == 1, searchRTi, NA)
+# means and SDs
+same_mean <- mean(same_raw, na.rm = TRUE)
+same_sd <- sd(same_raw, na.rm = TRUE)
+# trim data
+same_trimmed <- ifelse(same_raw > same_mean - 2*same_sd & same_raw < same_mean + 2*same_sd, same_raw, NA)
+
+# different object near
+# cell condition data
+other_raw <- ifelse(targetloci == "otherobject" & searchACCi == 1, searchRTi, NA)
+# means and SDs
+other_mean <- mean(other_raw, na.rm = TRUE)
+other_sd <- sd(other_raw, na.rm = TRUE)
+# trim data
+other_trimmed <- ifelse(other_raw > other_mean - 2*other_sd & other_raw < other_mean + 2*other_sd, other_raw, NA)
+
+# different object far
+# cell condition data
+far_raw <- ifelse(targetloci == "far" & searchACCi == 1, searchRTi, NA)
+# means and SDs
+far_mean <- mean(far_raw, na.rm = TRUE)
+far_sd <- sd(far_raw, na.rm = TRUE)
+# trim data
+far_trimmed <- ifelse(far_raw > far_mean - 2*far_sd & far_raw < far_mean + 2*far_sd, far_raw, NA)
+
+# distractor absent
+# cell condition data
+absence_raw <- ifelse(distractorpresencei == 0 & searchACCi == 1, searchRTi, NA)
+# means and SDs
+absence_mean <- mean(absence_raw, na.rm = TRUE)
+absence_sd <- sd(absence_raw, na.rm = TRUE)
+# trim data
+absence_trimmed <- ifelse(absence_raw > absence_mean - 2*absence_sd & absence_raw < absence_mean + 2*absence_sd, absence_raw, NA)
+
+# distractor present
+# cell condition data
+presence_raw <- ifelse(distractorpresencei == 1 & searchACCi == 1, searchRTi, NA)
+# means and SDs
+presence_mean <- mean(presence_raw, na.rm = TRUE)
+presence_sd <- sd(presence_raw, na.rm = TRUE)
+# trim data
+presence_trimmed <- ifelse(presence_raw > presence_mean - 2*presence_sd & presence_raw < presence_mean + 2*presence_sd, presence_raw, NA)
+
+# Trial Inclusion
+trialinclude <- ifelse(same_trimmed | other_trimmed | far_trimmed | absence_trimmed, 1, NA)
+proptrimmed_total <- 1 - sum(trialinclude, na.rm = T)/length(trialinclude)
+proptrimmed_ACC <- 1 - mean(searchACCi)
+proptrimmed_RT <- proptrimmed_total - proptrimmed_ACC
+
+# Cell mean RT after trimming
+same_rt <- mean(same_trimmed, na.rm=TRUE)
+other_rt <- mean(other_trimmed, na.rm=TRUE)
+far_rt <- mean(far_trimmed, na.rm=TRUE)
+absence_rt <- mean(absence_trimmed, na.rm=TRUE)
+presence_rt <- mean(presence_trimmed, na.rm=TRUE)
+# Cell mean accuracy after trimming
+same_acc <- mean(searchACCi[which(targetloci == "sameobject")])
+other_acc <- mean(searchACCi[which(targetloci == "otherobject")])
+far_acc <- mean(searchACCi[which(targetloci == "far")])
+absence_acc <- mean(searchACCi[which(distractorpresencei == 0)])
+presence_acc <- mean(searchACCi[which(distractorpresencei == 1)])
+
+# subjects who showed suppression
+suppressionindex <- ifelse(presence_rt < absence_rt, 1, 0)
+
+subID <- i
+trialtype <- c('sameobject', 'different-object-near', 'different-object-far', 'disabsent', 'dispresent')
+RT <- c(same_rt, other_rt, far_rt, absence_rt, presence_rt)
+ACC <- c(same_acc, other_acc, far_acc, absence_acc, presence_acc)
+subimean <- data.frame(subID, trialtype, RT, ACC, proptrimmed_RT, proptrimmed_ACC, suppressionindex)
+subimean$subinclude <- ifelse(mean(searchACCi) > 0.8, 1, 0)
+
+#Add the ith subject's data to a combined dataframe
+searchalldata <- rbind(searchalldata, subimean)
+
+}
+
+# remove subjects who didn't meet criteria
+include <- searchalldata$subID[which(searchalldata$subinclude == 1)]
+probeinclude <- probealldata$subID[which(probealldata$subinclude == 1)]
+searchcleandata <- searchalldata[which(searchalldata$subID %in% intersect(include, probeinclude)),]
+probecleandata <- probealldata[which(probealldata$subID %in% intersect(include, probeinclude)),]
+letterloccleandata <- letterlocalldata[which(letterlocalldata$subID %in% intersect(include, probeinclude)),]
+
+# overall search accuracy
+mean(searchalldata$ACC)
+
+# proportion trial abandoned
+# by RT criteria
+mean(searchcleandata$proptrimmed_RT)
+# by ACC == 0
+mean(searchcleandata$proptrimmed_ACC)
+
+# recode for graphing
+searchcleandata$RT <- searchcleandata$RT*1000
+searchcleandata$ACC <- searchcleandata$ACC*100
+searchcleandata$trialtype[which(searchcleandata$trialtype == "dispresent")] <- "present"
+searchcleandata$trialtype[which(searchcleandata$trialtype == "disabsent")] <- "absent"
+searchcleandata$trialtype[which(searchcleandata$trialtype == "sameobject")] <- "same-object"
+probecleandata$distractorPresence <- as.character(probecleandata$distractorPresence)
+probecleandata$distractorPresence[which(probecleandata$distractorPresence == "1")] <- "present"
+probecleandata$distractorPresence[which(probecleandata$distractorPresence == "0")] <- "absent"
+probecleandata$reportRate <- probecleandata$reportRate*100
+letterloccleandata$reportRate <- letterloccleandata$reportRate*100
+
+# summary statistics
+# overall probe accuracy
+mean(probecleandata$overallRate)
+mean(probecleandata$meanRate)
+mean(probecleandata$dispresentRate)
+mean(probecleandata$disabsentRate)
+
+# view summary statistics table
+searchcleandata %>% group_by(trialtype) %>% summarise(meanrt = mean(RT), meanacc = mean(ACC))
+probecleandata %>% group_by(probeStimuli, distractorPresence) %>% summarise(meanrate = mean(reportRate))
+letterloccleandata %>% group_by(letterloc) %>% summarise(meanrate = mean(reportRate))
+```
+
+
+```{r}
+
+# #-------------------------------------Search Task Figures-------------------------------------------            
+# RT plot for distractor presence
+ggplot(data=searchcleandata[which(searchcleandata$trialtype == "present"|searchcleandata$trialtype =="absent"),], aes(x=trialtype, y=RT, fill = trialtype))+
+      stat_summary(fun="mean", geom="bar", position=position_dodge(), width = 0.5)+
+      scale_y_continuous(breaks=c(seq(600,750,20))) +
+      coord_cartesian( ylim = c(600,750)) +
+      ylab("Reation Time (ms)")+ 
+      xlab("Distractor Presence")+ 
+      ggtitle("Reaction time as a function of distractor presence") + 
+    theme(axis.text = element_text(size = 15)) + theme(axis.title = element_text(size = 15)) +
+  scale_fill_manual(values=c("dodgerblue","forestgreen"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+# RT plot for target location
+ggplot(data=searchcleandata[which(searchcleandata$trialtype == "same-object"|searchcleandata$trialtype =="different-object-near"|searchcleandata$trialtype =="different-object-far"),], aes(x=trialtype, y=RT, fill = trialtype))+
+      stat_summary(fun="mean", geom="bar", position=position_dodge(), width = 0.5)+
+      scale_y_continuous(breaks=c(seq(600,750,20))) +
+      coord_cartesian( ylim = c(600,750)) +
+      ylab("Reation Time (ms)")+ 
+      xlab("Target Location Relative to Distractor")+ 
+      ggtitle("Reaction time as a function of the relative location of target to distractor") + 
+    theme(axis.text = element_text(size = 10)) + theme(axis.title = element_text(size = 15)) +
+  scale_fill_manual(values=c("gold","orange","red"))+ 
+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+# Accuracy plot for distractor presence
+ggplot(data=searchcleandata[which(searchcleandata$trialtype == "present"|searchcleandata$trialtype =="absent"),], aes(x=trialtype, y=ACC, fill = trialtype))+
+      stat_summary(fun="mean", geom="bar", position=position_dodge(), width = 0.5)+
+      scale_y_continuous(breaks=c(seq(90,100, 2))) +
+      coord_cartesian( ylim = c(90,100)) +
+      ylab("Accuracy (%)")+ 
+      xlab("Distractor Presence")+ 
+      ggtitle("Accurac as a function of distractor presence") + 
+    theme(axis.text = element_text(size = 15)) + theme(axis.title = element_text(size = 15)) +
+  scale_fill_manual(values=c("dodgerblue","forestgreen"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+# Accuracy plot for target location
+ggplot(data=searchcleandata[which(searchcleandata$trialtype == "same-object"|searchcleandata$trialtype =="different-object-near"|searchcleandata$trialtype =="different-object-far"),], aes(x=trialtype, y=ACC, fill = trialtype))+
+      stat_summary(fun="mean", geom="bar", position=position_dodge(), width = 0.5)+
+      scale_y_continuous(breaks=c(seq(90,100, 2))) +
+      coord_cartesian( ylim = c(90,100)) +
+      ylab("Accuracy (%)")+ 
+      xlab("Target Location Relative to Distractor")+ 
+      ggtitle("Accuracy as a function of the relative location of target to distractor")+
+    theme(axis.text = element_text(size = 10)) + 
+  scale_fill_manual(values=c("gold","orange","red"))+
+  theme(axis.title = element_text(size = 8)) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+# #-------------------------------------Probe Task Figures-------------------------------------------
+
+# Probe recall rate for all stimuli
+ggplot(data=probecleandata, aes(x=probeStimuli, y=reportRate, fill=distractorPresence))+
+      stat_summary(fun.y="mean", geom="bar", color = "black", size = 1, position=position_dodge(), width = 0.5)+
+      scale_y_continuous(breaks=c(seq(10,45,5))) +
+      coord_cartesian( ylim = c(10,45)) +
+      ylab("Probe Report Rate (percentage)")+ 
+      xlab("Probe Stimulus Type")+ 
+      ggtitle("probe report rate as a function of stimulus type and distractor presence (probe trials)")+
+  scale_fill_manual(values=c("darkseagreen2","lightsalmon"))+
+    theme(axis.text = element_text(size = 15))+
+  theme(axis.title = element_text(size = 15))+ 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black", size = 1))
+
+# Probe reacll rate for location (regardless of containing the target or not)
+ggplot(data=letterloccleandata, aes(x=factor(letterloc, order = T, levels = c('same','different-object-near','different-object-far','distractor')), y=reportRate, fill = letterloc))+
+      stat_summary(fun.y="mean", geom="bar", color = "black", size = 1, position=position_dodge(), width = 0.5)+
+      scale_y_continuous(breaks=c(seq(20,40,2))) +
+      coord_cartesian( ylim = c(20,40)) +
+      ylab("Probe Report Rate (%)")+ 
+      xlab("Probe Letter Location")+ 
+      ggtitle("probe report rate as a function of letter location and distractor presence (probe trials)")+
+  scale_fill_manual(values=c("gray","#BCD2EE","red","lightgoldenrod2"))+
+    theme(axis.text = element_text(size = 9)) +  
+  theme(axis.title = element_text(size = 15)) + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black", size = 1))
+```
+
+```{r}
+# --------------------------------- Statistical Analysis ----------------------------------
+# ------------------------------------For Search task-----------------------------------
+# ANOVA for Search RT
+RT.aov <- anova_test(
+  data = searchcleandata[searchcleandata$trialtype != "dispresent",], dv = RT, wid = subID,
+  within = trialtype, effect.size = "pes"
+  )
+get_anova_table(RT.aov)
+
+# ANOVA for Search accuracy
+ACC.aov <- anova_test(
+  data = searchcleandata[searchcleandata$trialtype != "dispresent",], dv = ACC, wid = subID,
+  within = trialtype, effect.size = "pes"
+  )
+get_anova_table(ACC.aov)
+
+# --------comparing same and different-object-near--------------------
+
+# t-test in RT comparing same and different-object-near locations
+t_sameother_RT <- t.test(searchcleandata$RT[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "different-object-near")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "different-object-near")], paired = TRUE) 
+t_sameother_RT
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='different-object-near')$RT ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='different-object-near')$trialtype, method = "paired")
+
+# t-test  in accuracy comparing same and different-object-near locations
+t_sameother_ACC <- t.test(searchcleandata$ACC[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "different-object-near")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "different-object-near")], paired = TRUE) 
+t_sameother_ACC
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='different-object-near')$ACC ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='different-object-near')$trialtype, method = "paired")
+
+# --------comparing same and different-object-far--------------------
+
+# t-test in RT comparing same and different-object-far locations
+t_sameother_RT <- t.test(searchcleandata$RT[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "different-object-far")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "different-object-far")], paired = TRUE) 
+t_sameother_RT
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='different-object-far')$RT ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='different-object-far')$trialtype, method = "paired")
+
+# t-test  in accuracy comparing same and different-object-far locations
+t_sameother_ACC <- t.test(searchcleandata$ACC[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "different-object-far")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "different-object-far")], paired = TRUE) 
+t_sameother_ACC
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='different-object-far')$ACC ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='different-object-far')$trialtype, method = "paired")
+
+# --------comparing different-object-near and different-object-far--------------------
+
+# t-test in RT comparing different-object-near and different-object-far locations
+t.test(searchcleandata$RT[which(searchcleandata$trialtype == "different-object-far" | searchcleandata$trialtype == "different-object-near")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "different-object-far" | searchcleandata$trialtype == "different-object-near")], paired = TRUE) 
+
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='different-object-far' | searchcleandata$trialtype=='different-object-near')$RT ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='different-object-far' | searchcleandata$trialtype=='different-object-near')$trialtype, method = "paired")
+
+# t-test  in accuracy comparing different-object-near and different-object-far locations
+t.test(searchcleandata$ACC[which(searchcleandata$trialtype == "different-object-far" | searchcleandata$trialtype == "different-object-near")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "different-object-far" | searchcleandata$trialtype == "different-object-near")], paired = TRUE) 
+
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='different-object-far' | searchcleandata$trialtype=='different-object-near')$ACC ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='different-object-far' | searchcleandata$trialtype=='different-object-near')$trialtype, method = "paired")
+
+# --------comparing distractor present and absent--------------------
+
+# t-test in RT comparing distractor present and absent
+t_distractorpresence_RT <- t.test(searchcleandata$RT[which(searchcleandata$trialtype == "present" | searchcleandata$trialtype == "absent")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "present" | searchcleandata$trialtype == "absent")], paired = TRUE) 
+t_distractorpresence_RT
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='absent' | searchcleandata$trialtype=='present')$RT ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='absent' | searchcleandata$trialtype=='present')$trialtype, method = "paired")
+
+# t-test  in accuracy comparing distractor present and absent
+t_distractorpresence_ACC <- t.test(searchcleandata$ACC[which(searchcleandata$trialtype == "present" | searchcleandata$trialtype == "absent")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "present" | searchcleandata$trialtype == "absent")], paired = TRUE) 
+t_distractorpresence_ACC
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='absent' | searchcleandata$trialtype=='present')$ACC ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='absent' | searchcleandata$trialtype=='present')$trialtype, method = "paired")
+
+
+#-------- comparing location conditions to distractor absent--------
+# t-test in RT comparing distractor absent and same-object
+t_abssame_RT <- t.test(searchcleandata$RT[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "absent")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "absent")], paired = TRUE) 
+t_abssame_RT
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='absent')$RT ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='absent')$trialtype, method = "paired")
+# t-test in RT comparing distractor absent and different-object-near
+t_absdiff_RT <- t.test(searchcleandata$RT[which(searchcleandata$trialtype == "different-object-near" | searchcleandata$trialtype == "absent")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "different-object-near" | searchcleandata$trialtype == "absent")], paired = TRUE) 
+t_absdiff_RT
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='different-object-near' | searchcleandata$trialtype=='absent')$RT ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='different-object-near' | searchcleandata$trialtype=='absent')$trialtype, method = "paired")
+# t-test in RT comparing distractor absent and different-object-far
+t.test(searchcleandata$RT[which(searchcleandata$trialtype == "different-object-far" | searchcleandata$trialtype == "absent")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "different-object-far" | searchcleandata$trialtype == "absent")], paired = TRUE) 
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='different-object-far' | searchcleandata$trialtype=='absent')$RT ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='different-object-far' | searchcleandata$trialtype=='absent')$trialtype, method = "paired")
+
+# t-test in ACC comparing distractor absent and same-object
+t_abssame_ACC <- t.test(searchcleandata$ACC[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "absent")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "same-object" | searchcleandata$trialtype == "absent")], paired = TRUE) 
+t_abssame_ACC
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='absent')$ACC ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='same-object' | searchcleandata$trialtype=='absent')$trialtype, method = "paired")
+# t-test in ACC comparing distractor absent and different-object-near
+t_absdiff_ACC <- t.test(searchcleandata$ACC[which(searchcleandata$trialtype == "different-object-near" | searchcleandata$trialtype == "absent")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "different-object-near" | searchcleandata$trialtype == "absent")], paired = TRUE) 
+t_absdiff_ACC
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='different-object-near' | searchcleandata$trialtype=='absent')$ACC ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='different-object-near' | searchcleandata$trialtype=='absent')$trialtype, method = "paired")
+# t-test in ACC comparing distractor absent and different-object-far
+t.test(searchcleandata$ACC[which(searchcleandata$trialtype == "different-object-far" | searchcleandata$trialtype == "absent")] ~ searchcleandata$trialtype[which(searchcleandata$trialtype == "different-object-far" | searchcleandata$trialtype == "absent")], paired = TRUE) 
+cohensD(subset(searchcleandata,searchcleandata$trialtype =='different-object-far' | searchcleandata$trialtype=='absent')$ACC ~ 
+         subset(searchcleandata,searchcleandata$trialtype =='different-object-far' | searchcleandata$trialtype=='absent')$trialtype, method = "paired")
+
+# ------------------------------------For Probe task-----------------------------------
+
+# ANOVA for Probe accuracy for all 3 types of stimuli (when distractor present)
+probeACC_dispre.aov <- anova_test(
+  data = probecleandata[which(probecleandata$distractorPresence == "present"),], dv = reportRate, wid = subID,
+  within = probeStimuli
+  )
+get_anova_table(probeACC_dispre.aov)
+
+# ANOVA for Probe accuracy between target and neutral
+probeACC_disabs.aov <- anova_test(
+  data = probecleandata[which(probecleandata$probeStimuli != "distractor"),], dv = reportRate, wid = subID,
+  within = c(probeStimuli, distractorPresence)
+  )
+get_anova_table(probeACC_disabs.aov)
+
+# comparing distractor probe recall rate vs. neutral
+t_disneutral_ACC <- t.test(probecleandata$reportRate[which(probecleandata$distractorPresence == "present" & probecleandata$probeStimuli != "target")] ~ probecleandata$probeStimuli[which(probecleandata$distractorPresence == "present" & probecleandata$probeStimuli != "target")], paired = TRUE) 
+t_disneutral_ACC
+cohensD(subset(probecleandata,probecleandata$distractorPresence =='present' & probecleandata$probeStimuli != "target")$reportRate ~ 
+         subset(probecleandata,probecleandata$distractorPresence =='present' & probecleandata$probeStimuli != "target")$probeStimuli, method = "paired")
+
+# location-wise comparison (excluding the distractor location; regardless of whether that location contained the target)
+probelocation.aov <- anova_test(
+  data = letterloccleandata[letterloccleandata$letterloc != "distractor",], dv = reportRate, wid = subID,
+  within = letterloc, effect.size = "pes"
+  )
+get_anova_table(probelocation.aov)
+
+# location-wise comparison: same vs. different-near loc letter recall rate
+t.test(letterloccleandata$reportRate[which(letterloccleandata$letterloc == "same" | letterloccleandata$letterloc == "different-object-near")] ~ letterloccleandata$letterloc[which(letterloccleandata$letterloc == "same" | letterloccleandata$letterloc == "different-object-near")], paired = TRUE) 
+cohensD(subset(letterloccleandata,letterloccleandata$letterloc == "same" | letterloccleandata$letterloc == "different-object-near")$reportRate ~ 
+         subset(letterloccleandata,letterloccleandata$letterloc == "same" | letterloccleandata$letterloc == "different-object-near")$letterloc, method = "paired")
+
+# location-wise comparison: same vs. different-far loc letter recall rate
+t.test(letterloccleandata$reportRate[which(letterloccleandata$letterloc == "same" | letterloccleandata$letterloc == "different-object-far")] ~ letterloccleandata$letterloc[which(letterloccleandata$letterloc == "same" | letterloccleandata$letterloc == "different-object-far")], paired = TRUE) 
+cohensD(subset(letterloccleandata,letterloccleandata$letterloc == "same" | letterloccleandata$letterloc == "different-object-far")$reportRate ~ 
+         subset(letterloccleandata,letterloccleandata$letterloc == "same" | letterloccleandata$letterloc == "different-object-far")$letterloc, method = "paired")
+
+# location-wise comparison (regardless of target): different-near vs. different-far loc letter recall rate
+t.test(letterloccleandata$reportRate[which(letterloccleandata$letterloc == "different-object-near" | letterloccleandata$letterloc == "different-object-far")] ~ letterloccleandata$letterloc[which(letterloccleandata$letterloc == "different-object-near" | letterloccleandata$letterloc == "different-object-far")], paired = TRUE) 
+cohensD(subset(letterloccleandata,letterloccleandata$letterloc == "different-object-near" | letterloccleandata$letterloc == "different-object-far")$reportRate ~ 
+         subset(letterloccleandata,letterloccleandata$letterloc == "different-object-near" | letterloccleandata$letterloc == "different-object-far")$letterloc, method = "paired")
+
+# Probe report rate by rectangle
+rectangledata <- data.frame()
+for (i in unique(letterloccleandata$subID)) {
+  
+disrectangleratei <- letterloccleandata$reportRate[letterloccleandata$letterloc == "distractor" & letterloccleandata$subID == i] + letterloccleandata$reportRate[letterloccleandata$letterloc == "same" & letterloccleandata$subID == i]
+
+neutralrectangleratei <- letterloccleandata$reportRate[letterloccleandata$letterloc == "different-object-near" & letterloccleandata$subID == i] + letterloccleandata$reportRate[letterloccleandata$letterloc == "different-object-far" & letterloccleandata$subID == i]
+
+subID <- i
+rectangle <- c('disrectangle', 'neutralrectanglerate')
+reportRate <- c(disrectangleratei, neutralrectangleratei)
+rectanglesubidata <- data.frame(subID, rectangle, reportRate)
+rectangledata <- rbind(rectangledata, rectanglesubidata)
+
+}
+
+t.test(rectangledata$reportRate ~ rectangledata$rectangle, paired = TRUE) 
+cohensD(rectangledata$reportRate ~ rectangledata$rectangle, method = "paired")
+```
+
+

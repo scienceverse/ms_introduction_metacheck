@@ -1,0 +1,428 @@
+---
+title: "Search for the unknown - ordial number and saccades analysis (German)"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE, warning=FALSE, message= FALSE}
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(reshape2)
+library(tibble)
+library(devtools)
+library(ggtextures)
+library(grid)
+library(magick)
+library(lsr)
+library(effectsize)
+
+options("scipen" = 999)
+```
+
+```{r echo=FALSE, warning=FALSE, message= FALSE}
+
+# read files
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+df_fix_reveal = read.csv("German_df_reveal.csv")
+df_fix_contingent = read.csv("German_df_contingent.csv")
+df_fix_color = read.csv("German_df_color.csv")
+
+#params 
+sub_vec = unique(df_fix_reveal$RECORDING_SESSION_LABEL)
+nsub = length(sub_vec)
+```
+
+```{r echo=FALSE, warning=FALSE, message= FALSE}
+# Revealed block - create dataframes for the ordinal number 
+df_visits = matrix(NA, nrow = 1, ncol = 8)
+df_israeli = matrix(NA, nrow = 1, ncol = 6)
+for (s in sub_vec){
+  cur_sub = df_fix_reveal[df_fix_reveal$RECORDING_SESSION_LABEL == s,]
+  for (t in unique(cur_sub$TRIAL_INDEX)){
+    cur_trial =  cur_sub[cur_sub$TRIAL_INDEX == t,]
+    cur_german = unique(cur_trial$german_loc)
+    cur_israli = unique(cur_trial$israeli_loc)
+    cur_soa = unique(cur_trial$soa_reveal)
+    
+    visit_IA = c()
+    prev_sac_amp = c()
+    for (i in 1:nrow(cur_trial)){
+      if(!(as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[i])) %in% visit_IA)){
+        visit_IA = append(visit_IA, as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[i])))
+        prev_sac_amp = append(prev_sac_amp, as.numeric(as.character(cur_trial$PREVIOUS_SAC_AMPLITUDE_manual[i])))
+      }
+    }
+    
+    if (cur_israli %in% visit_IA){
+      israeli_visit = which(visit_IA==cur_israli)
+      prev_sac_amp_israeli = prev_sac_amp[israeli_visit]
+      look_at =TRUE
+    }else{
+      israeli_visit = (seq(1,5)[(length(visit_IA)+1):5])[sample(5-length(visit_IA))[1]]
+      prev_sac_amp_israeli = NA
+      look_at =FALSE
+    }
+ 
+    df_visits = rbind(df_visits, cbind(rep(s, length(visit_IA)),
+                                       rep(t, length(visit_IA)), 
+                                       visit_IA,
+                                       1:length(visit_IA),
+                                       prev_sac_amp,
+                                       rep(cur_german,length(visit_IA)),
+                                       rep(cur_israli,length(visit_IA)),
+                                       rep(cur_soa,length(visit_IA))))
+    
+    df_israeli = rbind(df_israeli, cbind(s, t, israeli_visit, cur_soa, look_at, prev_sac_amp_israeli))
+  }
+}
+
+df_visits = df_visits[-1,]
+df_visits = as.data.frame(df_visits)
+colnames(df_visits) = c("sub", "trial", "visit_IA", "visit_index", "prev_sac_amp", 
+                        "german_IA", "israeli_IA", "soa")
+df_visits$familiar = ifelse(df_visits$german_IA==df_visits$visit_IA,1,0)
+
+df_israeli = df_israeli[-1,]
+df_israeli = as.data.frame(df_israeli)
+df_israeli$israeli_visit = as.numeric(as.character(df_israeli$israeli_visit))
+colnames(df_israeli) = c("sub", "trial", "visit_israeli", "soa", "look_at", "prev_sac_amp")
+
+```
+
+
+```{r echo=FALSE, warning=FALSE, message= FALSE}
+# Color block - create dataframe for the ordinal number 
+df_fix_color = df_fix_color[!df_fix_color$CURRENT_FIX_INTEREST_AREA_ID=='.',]
+df_visits_color = matrix(NA, nrow = 1, ncol = 6)
+for (s in sub_vec){
+  cur_sub = df_fix_color[df_fix_color$RECORDING_SESSION_LABEL == s,]
+  for (t in unique(cur_sub$TRIAL_INDEX)){
+    cur_trial =  cur_sub[cur_sub$TRIAL_INDEX == t,]
+    cur_color = unique(cur_trial$color_loc)
+    cur_soa = unique(cur_trial$soa_color)
+    
+    visit_IA_color = c()
+    for (i in 1:nrow(cur_trial)){
+      if(!(as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[i])) %in% visit_IA_color)){
+        visit_IA_color = append(visit_IA_color, as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[i])))
+      }
+    }
+    
+    df_visits_color = rbind(df_visits_color, cbind(rep(s, length(visit_IA_color)),
+                                       rep(t, length(visit_IA_color)), 
+                                       visit_IA_color,
+                                       1:length(visit_IA_color),
+                                       rep(cur_color,length(visit_IA_color)),
+                                       rep(cur_soa,length(visit_IA_color))))
+    
+  }
+}
+
+df_visits_color = df_visits_color[-1,]
+df_visits_color = as.data.frame(df_visits_color)
+colnames(df_visits_color) = c("sub", "trial", "visit_IA_color", "visit_index", "color_IA", "soa")
+df_visits_color$visit_index = (as.numeric(as.character(df_visits_color$visit_index)))
+df_visits_color$target = ifelse(df_visits_color$color_IA==df_visits_color$visit_IA_color,1,0)
+
+```
+
+
+```{r echo=FALSE, warning=FALSE, message= FALSE}
+# Gaze contingen block - create dataframes for the ordinal number 
+df_fix_contingent = df_fix_contingent[!df_fix_contingent$CURRENT_FIX_INTEREST_AREA_ID=='.',]
+df_visits_contingent = matrix(NA, nrow = 1, ncol = 6)
+df_contingent_israel = matrix(NA, nrow = 1, ncol = 5)
+
+for (s in sub_vec){
+  cur_sub = df_fix_contingent[df_fix_contingent$RECORDING_SESSION_LABEL == s,]
+  for (t in unique(cur_sub$TRIAL_INDEX)){
+    cur_trial =  cur_sub[cur_sub$TRIAL_INDEX == t,] 
+    cur_contingent = unique(cur_trial$german_loc_con) # loc of target
+    cur_israel = unique(cur_trial$israeli_loc_con)
+    cur_soa = unique(cur_trial$soa_con)
+    
+    visit_IA_con = c()
+    for (i in 1:nrow(cur_trial)){
+      if(!(as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[i])) %in% visit_IA_con)){
+        visit_IA_con = append(visit_IA_con, as.numeric(as.character(cur_trial$CURRENT_FIX_INTEREST_AREA_ID[i])))
+      }
+    }
+    
+    if (cur_israel %in% visit_IA_con){
+      israel_visit_con = which(visit_IA_con==cur_israel)
+      look_at =TRUE
+    }else{
+      israel_visit_con = (seq(1,5)[(length(visit_IA_con)+1):5])[sample(5-length(visit_IA_con))[1]]
+      look_at =FALSE
+    }
+
+    df_visits_contingent = rbind(df_visits_contingent, cbind(rep(s, length(visit_IA_con)),
+                                                   rep(t, length(visit_IA_con)), 
+                                                   visit_IA_con,
+                                                   1:length(visit_IA_con),
+                                                   rep(cur_contingent,length(visit_IA_con)),
+                                                   rep(cur_soa,length(visit_IA_con))))
+    df_contingent_israel = rbind(df_contingent_israel, cbind(s, t, israel_visit_con, cur_soa, look_at))
+
+  }
+}
+
+df_visits_contingent = df_visits_contingent[-1,]
+df_visits_contingent = as.data.frame(df_visits_contingent)
+colnames(df_visits_contingent) = c("sub", "trial", "visit_IA_con", "visit_index", "con_IA", "soa")
+df_visits_contingent$visit_IA_con = as.numeric(as.character(df_visits_contingent$visit_IA_con))
+df_visits_contingent$target = ifelse(df_visits_contingent$con_IA==df_visits_contingent$visit_IA_con,1,0)
+
+df_contingent_israel = df_contingent_israel[-1,]
+df_contingent_israel = as.data.frame(df_contingent_israel)
+df_contingent_israel$israel_visit_con = as.numeric(as.character(df_contingent_israel$israel_visit_con))
+colnames(df_contingent_israel) = c("sub", "trial", "visit_israel_con", "soa", "look_at")
+
+```
+
+```{r echo=FALSE, warning=FALSE, message= FALSE}
+## create dataframes for the mean ordinal number, for each block
+
+# reveal - famiiar face
+df_reveal = df_visits %>% 
+  group_by(sub, soa, familiar, trial) %>% 
+  dplyr::summarise(mean_serial_num = min(as.numeric(as.character(visit_index))))
+df_reveal_familiar = df_reveal[df_reveal$familiar==1,]
+
+df_reveal_mean = df_reveal_familiar %>% group_by(sub, soa) %>%
+  dplyr::summarise(serial_num = mean(mean_serial_num))
+visit_500 = as.matrix(df_reveal_mean[df_reveal_mean$soa==500,"serial_num"])
+visit_1500 = as.matrix(df_reveal_mean[df_reveal_mean$soa==1500,"serial_num"])
+
+df_reveal_mean = df_reveal_familiar %>% group_by(sub) %>%
+  dplyr::summarise(serial_num = mean(mean_serial_num))
+
+# reveal - other group familiar face
+df_israeli_mean = df_israeli %>% 
+  group_by(sub) %>% 
+  dplyr::summarise(serial_num = mean(visit_israeli))
+
+# color
+df_color = df_visits_color %>% 
+  group_by(sub, target, trial) %>% 
+  dplyr::summarise(serial_num = min(as.numeric(as.character(visit_index))))
+df_color_target = df_color[df_color$target==1,]
+df_color_target_mean = df_color_target %>% group_by(sub) %>% summarise(serial_num = mean(serial_num))
+
+# contingent - familiar face
+df_con = df_visits_contingent %>% 
+  group_by(sub, target, trial) %>% 
+  dplyr::summarise(serial_num = min(as.numeric(as.character(visit_index))))
+df_con_target = df_con[df_con$target==1,]
+df_con_target_mean = df_con_target %>% group_by(sub) %>% dplyr::summarise(serial_num = mean(serial_num))
+
+# contingent - familiar face of other group
+df_israeli_con_mean = df_contingent_israel %>% 
+  group_by(sub) %>% 
+  summarise(serial_num = mean(visit_israel_con, na.rm = T))
+
+```
+
+# analysis of ordinal number
+
+```{r}
+
+# reveal block - ordinal number of the familiar face vs. expected value (3) 
+t.test(df_reveal_mean$serial_num, mu = 3)
+cohens_d(df_reveal_mean$serial_num - 3)
+
+# reveal block - ordinal number of the familiar face vs. ordinal number of the other group familiar face
+t.test(df_reveal_mean$serial_num, df_israeli_mean$serial_num, paired = T)
+cohens_d(df_reveal_mean$serial_num, df_israeli_mean$serial_num, paired = T)
+
+# reveal block vs. gaze contingent block
+t.test(df_reveal_mean$serial_num, df_con_target_mean$serial_num, paired = T)
+cohens_d (df_reveal_mean$serial_num, df_con_target_mean$serial_num, paired = T)
+
+# reveal block - ordinal number of the familiar face according to display time of the cross
+t.test(visit_1500,visit_500, paired = T)
+cohens_d (as.numeric(visit_1500), as.numeric(visit_500),paired = T)
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message= FALSE}
+# plot ordinal number
+Israel_flag = "Blue_white.png"
+German_flag = "German_flag.png"
+Israel_con = "Blue_white_con.png"
+German_con = "German_flag_con.png"
+
+block = c("reveal","reveal","contingent","contingent")
+condition = c("Israeli reveal", "German reveal","Israeli contingent", "German contingent")
+t_criti = qt(0.975, df = nsub-1)
+
+df_graph = tibble(block  =factor(block),
+                  condition = factor(condition, levels = condition),
+                      value = c(mean(df_israeli_mean$serial_num),
+                                mean(df_reveal_mean$serial_num),
+                                mean(df_israeli_con_mean$serial_num),
+                                mean(df_con_target_mean$serial_num)),
+                      sd = c(sd(df_israeli_mean$serial_num)/sqrt(nsub),
+                             sd(df_reveal_mean$serial_num)/sqrt(nsub),
+                             sd(df_israeli_con_mean$serial_num)/sqrt(nsub),
+                             sd(df_con_target_mean$serial_num)/sqrt(nsub)),
+                      image = list(image_read(Israel_flag),image_read(German_flag),
+                                   image_read(Israel_con),image_read(German_con)))
+
+ggplot(df_graph, aes(x=condition, y=value, image = image)) +
+  geom_textured_col(img_width = unit(0.5, "null"))+
+  geom_errorbar(aes(ymin = value - (t_criti*sd), ymax = value+(t_criti*sd)), width = 0.25) +
+  theme_minimal() + 
+  coord_cartesian (ylim =c(2.5,3.3)) +
+  ylab ("Serial number") +
+  xlab ("Condition")+
+  theme (axis.title.y = element_text(size=16, margin=margin(0,20,0,0)),
+         axis.title.x = element_text(size=16, margin=margin(20,0,0,0)),
+         axis.text.y = element_text(size = 12),
+         axis.text.x = element_text(size = 12), legend.position = "top",
+         legend.title = element_text(size = 12))+
+    guides(fill = guide_legend(title.position="top"))+
+  geom_hline(yintercept=3, linetype="dashed", 
+                color = "black", size=1)
+
+```
+
+
+```{r}
+# analyze the distrbution of the ordinal numbers
+
+# ordinal number distrbution vs. a uniform distrbution
+df_chi = df_reveal_familiar %>% group_by (mean_serial_num) %>%
+  summarise(n_t = n())
+chisq.test(df_chi$n_t)
+
+# proportion of first visits vs. expected proportion (0.2) 
+df_hist = df_reveal_familiar %>% group_by(sub, mean_serial_num) %>%
+  dplyr::summarise(count_serial = n())
+df_sum_sub = df_hist %>% group_by(sub) %>% dplyr:: summarise(n_sub = sum(count_serial))
+
+df_hist = merge(df_hist,df_sum_sub)
+
+df_hist$prop = df_hist$count_serial/df_hist$n_sub
+df_hist$serial_num = as.factor(df_hist$mean_serial_num)
+df_first = df_hist[df_hist$serial_num==1,]
+
+t.test(df_first$prop, mu = 0.2)
+cohens_d(df_first$prop - 0.2)
+
+```
+
+
+```{r}
+# plot the distrbution of ordinal numbers
+df_hist_across = df_hist %>% group_by(serial_num) %>% dplyr:: summarise(prop_sub = mean(prop),
+                                                                        sd_prop = sd(prop)/ sqrt(nsub))
+t_criti = qt(0.975, df = nsub-1)
+
+ggplot(data =df_hist_across, aes(x = serial_num, y = prop_sub, fill = serial_num)) +
+  geom_col(position = position_dodge(0.9))  + 
+  theme_light()+
+  geom_hline(yintercept = 0.2, linetype="dashed") + 
+  geom_errorbar(aes(ymin = prop_sub-(t_criti*sd_prop), ymax = prop_sub+(t_criti*sd_prop)), width = 0.25) +
+    scale_fill_manual(values = c("#AD143C", "#DB7093","#E6D6FF",
+                      "#87CEEB","#6495ED"))
+```
+
+# analysis of saccades amplitude
+
+```{r}
+# remove out of range saccades
+df_visits = df_visits[complete.cases(df_visits$prev_sac_amp),]
+df_visits = df_visits[as.numeric(as.character(df_visits$prev_sac_amp))<26,]
+```
+
+```{r}
+# qqplot for saccades amplitude before enterint the familiar face vs. before entering the familiar face of the other group
+familir_q = quantile(as.numeric(as.character(df_visits$prev_sac_amp)), p = seq(0.01,0.999,0.001), na.rm = T)
+other_familir_q = quantile(as.numeric(as.character(df_israeli$prev_sac_amp)), p = seq(0.01,0.999,0.001), na.rm = T)
+df_q = data.frame(familir_q = familir_q,
+           other_familir_q = other_familir_q)
+ggplot(df_q, aes(x = familir_q, y = other_familir_q))+
+  geom_abline(slope = 1, intercept = 0, color = "grey", size = 1.5)+
+  geom_point(color = "#AD143C", size = 5, alpha = 0.4)+
+  theme_minimal()+
+  labs(x = "Familair face",
+       y = "Other group familiar face")
+
+```
+
+
+```{r}
+# create summerized dataframes for saccade's analysis
+include_first_visit = T # whether to analyze all trials (T) or remove trials in which the first saccade was towards the target (F)
+
+if(include_first_visit){
+  df_sac = df_visits %>% 
+  group_by(sub, familiar) %>% 
+  summarise(sac_mean = mean(as.numeric(as.character(prev_sac_amp)), na.rm = T))
+  
+  df_sac_israeli = df_israeli %>% 
+  group_by(sub) %>% 
+  summarise(sac_mean = mean(as.numeric(as.character(prev_sac_amp)), na.rm = T))
+  
+}else{
+  df_visits_no_first = df_visits[as.numeric(as.character(df_visits$visit_index))>1,]
+  df_sac = df_visits_no_first %>% 
+  group_by(sub, familiar) %>% 
+  summarise(sac_mean = mean(as.numeric(as.character(prev_sac_amp)), na.rm = T))
+  
+  df_israeli_no_first = df_israeli[!df_israeli$visit_israeli==1,]
+  df_sac_israeli = df_israeli_no_first %>% 
+  group_by(sub) %>% 
+  summarise(sac_mean = mean(as.numeric(as.character(prev_sac_amp)), na.rm = T))
+  
+}
+
+```
+
+```{r}
+# analysis of saccade's amplitude
+df_sac_familiar = df_sac[df_sac$familiar==1,]
+sac_familiar =  as.numeric(as.character(df_sac_familiar$sac_mean))
+sac_israeli = as.numeric(as.character(df_sac_israeli$sac_mean))
+
+t.test(sac_familiar, sac_israeli, paired = T)
+cohens_d(sac_familiar, sac_israeli, paired = T)
+```
+
+
+```{r}
+# bar plot - saccades
+Israel_flag = "Blue_white.png"
+German_flag = "German_flag.png"
+grey_rect = "grey.png"
+
+t_criti = qt(0.975, df = nsub-1)
+condition = c("Israeli familiar", "German familiar")
+
+df_graph = tibble(condition = factor(condition, levels = condition),
+                      value = c(mean(sac_israeli),
+                                mean(sac_familiar)),
+                  sd = c(sd(sac_israeli)/sqrt(nsub),
+                             sd(sac_familiar)/sqrt(nsub)),
+                  image = list(image_read(Israel_flag),image_read(German_flag)))
+
+ggplot(df_graph, aes(x=condition, y=value, image = image)) +
+  geom_textured_col(img_width = unit(0.5, "null"))+
+  geom_errorbar(aes(ymin = value - (t_criti*sd), ymax = value+(t_criti*sd)), width = 0.25) +
+  theme_minimal() + 
+  coord_cartesian (ylim =c(9,10.5)) +
+  ylab ("Mean saccade length") +
+  xlab ("Condition")+
+  theme (axis.title.y = element_text(size=16, margin=margin(0,20,0,0)),
+         axis.title.x = element_text(size=16, margin=margin(20,0,0,0)),
+         axis.text.y = element_text(size = 12),
+         axis.text.x = element_text(size = 12), legend.position = "top",
+         legend.title = element_text(size = 12))+
+    guides(fill = guide_legend(title.position="top"))
+
+```

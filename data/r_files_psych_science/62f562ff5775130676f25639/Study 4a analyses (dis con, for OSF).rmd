@@ -1,0 +1,105 @@
+---
+title: "Pilot to Study 4 Analyses (dis con)"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# --------------------------------------------------------------------
+# Set Environment and load packages
+# --------------------------------------------------------------------
+
+rm(list=ls())
+options(stringsAsFactors = FALSE)
+
+if("pacman" %in% installed.packages() == FALSE) {install.packages("pacman")}
+pacman::p_load(psych,
+               ggplot2,
+               tidyverse,
+               magrittr,
+               foreign,
+               ggcorrplot,
+               Hmisc,
+               afex,
+               lsmeans,
+               rstatix,
+               effectsize,
+               cocor,
+               sjPlot,
+               sjmisc)
+
+# Set your own wd here
+setwd("")
+
+# --------------------------------------------------------------------
+# Read in data
+# --------------------------------------------------------------------
+load("./Pilot to Study 4 cleaned and recoded (dis con).rda")
+
+# Filter out partiicpants who met the exclusion criteria from the pre-registration. Note that we want to only filter out problem = 1 because problem = N/A for condition "not sick"
+merged_df %<>% filter(problem == 0 | is.na(problem))
+
+# center predictors
+merged_df$severity_final_c = c(scale(merged_df$severity_final,
+                                     center=TRUE, scale=TRUE))
+merged_df$trans_risk_c = c(scale(merged_df$trans_risk, center=TRUE, scale=TRUE))
+merged_df$centrality_c = c(scale(merged_df$centrality, center=TRUE, scale=TRUE))
+merged_df$salience_c = c(scale(merged_df$salience, center=TRUE, scale=TRUE))
+merged_df$cur_stigma_c = c(scale(merged_df$cur_stigma, center=TRUE, scale=TRUE))
+merged_df$concern_co_c = c(scale(merged_df$concern_co, center=TRUE, scale=TRUE))
+
+# Sick df
+sick_df <- filter(merged_df, condition == "sick")
+
+# Not sick df
+notsick_df <- filter(merged_df, condition == "notsick")
+```
+
+## Pre-registered primary analyses
+
+```{r descriptives}
+psych::describeBy(select(merged_df, trans_risk, severity_final, centrality, salience, cur_stigma, conceal_co, conceal_str, concern_co, concern_str), merged_df$condition)
+
+# Number of people who reported never concealing
+table(merged_df$conceal_co, merged_df$condition)
+```
+
+```{r correlations}
+# severity X concealment, sick
+cor.test(sick_df$severity_final, sick_df$conceal_co)
+
+# severity X concealment, healthy
+cor.test(notsick_df$severity_final, notsick_df$conceal_co)
+
+# Compare correlations
+cocor.indep.groups(cor(sick_df$severity_final, sick_df$conceal_co),
+                   cor(notsick_df$severity_final, notsick_df$conceal_co),
+                   nrow(sick_df),
+                   nrow(notsick_df))
+```
+
+```{r multiple regression}
+# Concealment
+concealco_lm <- lm(conceal_co ~ severity_final_c * condition, data = merged_df)
+summary(concealco_lm)
+
+ggplot(merged_df, aes(x = severity_final, y = conceal_co, fill = condition)) +
+  geom_point(aes(color = condition), alpha = .25) +
+  geom_smooth(method = "lm") +
+  labs(title = "Concealment likelihood by symptom severity")
+
+simple_slopes(concealco_lm)
+
+# Adding in covid concern as a covariate
+concealCOVcon_lm <- lm(conceal_co ~ concern_co_c + severity_final_c * condition,
+                       data = merged_df)
+
+summary(concealCOVcon_lm)
+```
+
+```{r demo}
+table(merged_df$gender)
+table(merged_df$race)
+psych::describe(merged_df$age)
+```

@@ -1,0 +1,704 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(geoR)
+library(optimx)
+library(ggplot2)
+library(compiler)
+library(doParallel)
+library(parallel)
+
+source("Base.TD.R")
+source("TD.Decay.R")
+source("TD.AsymLR.R")
+source("TD.AsymLR_Decay.R")
+fullDf <- read.csv("fullDf.csv")
+allCents <- read.csv("allPosCents.csv")
+levels(fullDf$valFeed) <- c("Pos", "Neg")
+```
+
+```{r}
+setwd("~/Google Drive/Volumes/Research Project/Social Evaluative Feedback fMRI/Behavioral Data Analysis/RL Models/")
+source("NewD.TD.R")
+source("TD.AsymLR.R")
+source("TD.AsymLR_NewD.R")
+source("TD.AsymLR_NewD_SA.R")
+source("TD.5ClustLR.R")
+```
+
+
+```{r}
+cBase.TD <- cmpfun(Base.TD)
+cNewD.TD <- cmpfun(NewD.TD)
+cTD.AsymLR <- cmpfun(TD.AsymLR)
+cTD.AsymLR_NewD <- cmpfun(TD.AsymLR_NewD)
+cTD.AsymLR_NewD_SA <- cmpfun(TD.AsymLR_NewD_SA)
+cTD.5ClustLR <- cmpfun(TD.5ClustLR)
+cOptimx <- cmpfun(optimx)
+set.seed(132)
+```
+
+# Quality Check
+
+```{r}
+uIds <- unique(fullDf$subID)
+mat <- matrix(nrow=length(uIds), ncol=9)
+for(j in 1:length(uIds) ){
+  i <- uIds[j]
+  subDf <- subset(fullDf, subID==i)
+  
+  # identical responses over 70%?
+  repe <- any(prop.table(table(subDf$selfRespT1)) > .70)
+  great <- max( prop.table(table(subDf$selfRespT1)) )
+  propNA <- sum(is.na(subDf$selfRespT1)) / length(subDf$selfRespT1)
+  # proportion of missing responses over 15%?
+  if(propNA > .15){
+    manyNA <- 1
+  }else{
+    manyNA <- 0
+  }
+  
+  repe2 <- any(prop.table(table(subDf$selfRespT2)) > .70)
+  great2 <- max( prop.table(table(subDf$selfRespT2)) )
+  propNA2 <- sum(is.na(subDf$selfRespT2)) / length(subDf$selfRespT2)
+  if(propNA2 > .15){
+    manyNA2 <- 1
+  }else{
+    manyNA2 <- 0
+  }
+  
+  mat[j,] <- c(i, great, repe, propNA, manyNA, great2, repe2, propNA2, manyNA2)
+}
+```
+
+# Base Model
+
+```{r}
+
+  set.seed(132)
+  fullDf <- fullDf[!is.na(fullDf$selfRespT1),] # Remove missing responses; data will not fit with missing responses included
+  fullDf <- fullDf[order(fullDf$subID, fullDf$trialTotalT1),] # Sort by trials for trial-by-trial learning
+  uIds <- unique(fullDf$subID)
+  x = c("subID", "LR", "LL", "k", "n", "BIC", "AIC")
+  k = 1
+
+  core<-detectCores()
+  cl <- parallel::makeCluster(core-2, setup_strategy = "sequential")
+  setDefaultCluster(cl=cl)
+  registerDoParallel(cl)
+  clusterExport(cl, list("cBase.TD"))
+  clusterExport(cl, list("x"))
+  clusterExport(cl, list("k"))
+  clusterExport(cl, list("fullDf"))
+  
+result<-foreach(i=uIds, .combine = rbind.data.frame, .export=c('cBase.TD', 'cOptimx', 'fullDf', 'x', 'k'), .packages = c("compiler", "optimx")) %dopar% {
+  paramDf <- as.data.frame(matrix(ncol = 7))
+  names(paramDf) <- x
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  SSE <- function(lr){ sum((subDf$selfRespT1  - (cBase.TD(subDf$trialTotalT1,subDf$clustType,subDf$feedback,4,lr)$Value))^2) } # Set objective function for SSE
+  (output <- optimx(par = c(.04), method = c("L-BFGS-B"), fn = SSE, lower = 0, upper = 1)) # Set parameters for optimization
+  paramDf$subID <- i
+  paramDf$LR <- output$p1
+  paramDf$k <- k
+  paramDf$n <- nrow(subDf)
+  paramDf$LL <- output$value
+  paramDf$BIC <- nrow(subDf) * log(output$value/nrow(subDf)) + k * log(nrow(subDf)) # Compute BIC
+  paramDf$AIC <- 2 * k + nrow(subDf) * log(output$value/nrow(subDf))
+  paramDf
+    
+}
+stopCluster(cl)  
+Base.ParamDf <- result
+```
+
+# Decay Model
+
+```{r}
+
+  set.seed(132)
+  fullDf <- fullDf[!is.na(fullDf$selfRespT1),] # Remove missing responses; data will not fit with missing responses included
+  fullDf <- fullDf[order(fullDf$subID, fullDf$trialTotalT1),] # Sort by trials for trial-by-trial learning
+  uIds <- unique(fullDf$subID)
+  x = c("subID", "LR", "Dec", "LL", "k", "n", "BIC", "AIC")
+  k = 2
+
+  core<-detectCores()
+  cl <- parallel::makeCluster(core-2, setup_strategy = "sequential")
+  setDefaultCluster(cl=cl)
+  registerDoParallel(cl)
+  clusterExport(cl, list("cNewD.TD"))
+  clusterExport(cl, list("x"))
+  clusterExport(cl, list("k"))
+  clusterExport(cl, list("fullDf"))
+  
+result<-foreach(i=uIds, .combine = rbind.data.frame, .export=c('cNewD.TD', 'cOptimx', 'fullDf', 'x', 'k'), .packages = c("compiler", "optimx")) %dopar% {
+  paramDf <- as.data.frame(matrix(ncol = 8))
+  names(paramDf) <- x
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  SSE <- function(param){ sum((subDf$selfRespT1  - (cNewD.TD(subDf$trialTotalT1,subDf$clustType,subDf$feedback,4,param)$Value))^2) } # Set objective function for SSE
+  (output <- optimx(par = c(.04,.99), method = c("L-BFGS-B"), fn = SSE, lower = c(0,.7), upper = c(1,1) )) # Set parameters for optimization
+  paramDf$subID <- i
+  paramDf$LR <- output$p1
+  paramDf$Dec <- output$p2
+  paramDf$k <- k
+  paramDf$n <- nrow(subDf)
+  paramDf$LL <- output$value
+  paramDf$BIC <- nrow(subDf) * log(output$value/nrow(subDf)) + k * log(nrow(subDf)) # Compute BIC
+  paramDf$AIC <- 2 * k + nrow(subDf) * log(output$value/nrow(subDf))
+  paramDf
+    
+}
+stopCluster(cl)  
+NewD.ParamDf <- result
+```
+
+# Five Learning Rates (per Probability) with Decay
+
+```{r}
+
+  set.seed(132)
+  fullDf <- fullDf[!is.na(fullDf$selfRespT1),] # Remove missing responses; data will not fit with missing responses included
+  fullDf <- fullDf[order(fullDf$subID, fullDf$trialTotalT1),] # Sort by trials for trial-by-trial learning
+  uIds <- unique(fullDf$subID)
+  x = c("subID", "lr9", "lr7", "lr5", "lr3", "lr1", "Dec", "LL", "k", "n", "BIC", "AIC")
+  k = 6
+
+  core<-detectCores()
+  cl <- parallel::makeCluster(core-2, setup_strategy = "sequential")
+  setDefaultCluster(cl=cl)
+  registerDoParallel(cl)
+  clusterExport(cl, list("cTD.5ClustLR"))
+  clusterExport(cl, list("x"))
+  clusterExport(cl, list("k"))
+  clusterExport(cl, list("fullDf"))
+  
+result<-foreach(i=uIds, .combine = rbind.data.frame, .export=c('cTD.5ClustLR', 'cOptimx', 'fullDf', 'x', 'k'), .packages = c("compiler", "optimx")) %dopar% {
+  paramDf <- as.data.frame(matrix(ncol = length(x) ))
+  names(paramDf) <- x
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  SSE <- function(param){ sum((subDf$selfRespT1  - (cTD.5ClustLR(subDf$trialTotalT1,subDf$clustType,subDf$feedback,4,param)$Value))^2) } # Set objective function for SSE
+  (output <- optimx(par = c(.04,.04,.04,.04,.04,.99), method = c("L-BFGS-B"), fn = SSE, lower = c(0,0,0,0,0,.7), upper = c(1,1,1,1,1,1) )) # Set parameters for optimization
+  paramDf$subID <- i
+  paramDf$lr9 <- output$p1
+  paramDf$lr7 <- output$p2
+  paramDf$lr5 <- output$p3
+  paramDf$lr3 <- output$p4
+  paramDf$lr1 <- output$p5
+  paramDf$Dec <- output$p6
+  paramDf$k <- k
+  paramDf$n <- nrow(subDf)
+  paramDf$LL <- output$value
+  paramDf$BIC <- nrow(subDf) * log(output$value/nrow(subDf)) + k * log(nrow(subDf)) # Compute BIC
+  paramDf$AIC <- 2 * k + nrow(subDf) * log(output$value/nrow(subDf))
+  paramDf
+    
+}
+stopCluster(cl)  
+ClustLR_ParamDf <- result
+```
+
+# Asymmetrical Learning Model
+
+```{r}
+
+  set.seed(132)
+  fullDf <- fullDf[!is.na(fullDf$selfRespT1),] # Remove missing responses; data will not fit with missing responses included
+  fullDf <- fullDf[order(fullDf$subID, fullDf$trialTotalT1),] # Sort by trials for trial-by-trial learning
+  uIds <- unique(fullDf$subID)
+  x = c("subID", "posLR", "negLR", "LL", "k", "n", "BIC", "AIC")
+  k = 2
+
+  core<-detectCores()
+  cl <- parallel::makeCluster(core-2, setup_strategy = "sequential")
+  setDefaultCluster(cl=cl)
+  registerDoParallel(cl)
+  clusterExport(cl, list("cTD.AsymLR"))
+  clusterExport(cl, list("x"))
+  clusterExport(cl, list("k"))
+  clusterExport(cl, list("fullDf"))
+  
+result<-foreach(i=uIds, .combine = rbind.data.frame, .export=c('cTD.AsymLR', 'cOptimx', 'fullDf', 'x', 'k'), .packages = c("compiler", "optimx")) %dopar% {
+  paramDf <- as.data.frame(matrix(ncol = 8))
+  names(paramDf) <- x
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  SSE <- function(param){ sum((subDf$selfRespT1  - (cTD.AsymLR(subDf$trialTotalT1,subDf$clustType,subDf$feedback,4,param)$Value))^2) } # Set objective function for SSE
+  (output <- optimx(par = c(.04, .04), method = c("L-BFGS-B"), fn = SSE, lower = c(0, 0), upper = c(1,1))) # Set parameters for optimization
+  paramDf$subID <- i
+  paramDf$posLR <- output$p1
+  paramDf$negLR <- output$p2
+  paramDf$k <- k
+  paramDf$n <- nrow(subDf)
+  paramDf$LL <- output$value
+  paramDf$BIC <- nrow(subDf) * log(output$value/nrow(subDf)) + k * log(nrow(subDf)) # Compute BIC
+  paramDf$AIC <- 2 * k + nrow(subDf) * log(output$value/nrow(subDf))
+  paramDf
+    
+}
+stopCluster(cl)  
+AsymLR.ParamDf <- result
+```
+
+# Asymmetrical Learning with Decay Model
+
+```{r}
+
+  set.seed(132)
+  fullDf <- fullDf[!is.na(fullDf$selfRespT1),] # Remove missing responses; data will not fit with missing responses included
+  fullDf <- fullDf[order(fullDf$subID, fullDf$trialTotalT1),] # Sort by trials for trial-by-trial learning
+  uIds <- unique(fullDf$subID)
+  x = c("subID", "posLR", "negLR", "decay", "LL", "k", "n", "BIC", "AIC")
+  k = 3
+
+  core<-detectCores()
+  cl <- parallel::makeCluster(core-2, setup_strategy = "sequential")
+  setDefaultCluster(cl=cl)
+  registerDoParallel(cl)
+  clusterExport(cl, list("cTD.AsymLR_NewD"))
+  clusterExport(cl, list("x"))
+  clusterExport(cl, list("k"))
+  clusterExport(cl, list("fullDf"))
+  
+result<-foreach(i=uIds, .combine = rbind.data.frame, .export=c('cTD.AsymLR_NewD', 'cOptimx', 'fullDf', 'x', 'k'), .packages = c("compiler", "optimx")) %dopar% {
+  paramDf <- as.data.frame(matrix(ncol = 9))
+  names(paramDf) <- x
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  SSE <- function(param){ sum((subDf$selfRespT1  - (cTD.AsymLR_NewD(subDf$trialTotalT1,subDf$clustType,subDf$feedback,4,param)$Value))^2) } # Set objective function for SSE
+  (output <- optimx(par = c(.04, .04, .99), method = c("L-BFGS-B"), fn = SSE, lower = c(0, 0, .7), upper = c(1,1,1))) # Set parameters for optimization
+  paramDf$subID <- i
+  paramDf$posLR <- output$p1
+  paramDf$negLR <- output$p2
+  paramDf$decay <- output$p3
+  paramDf$k <- k
+  paramDf$n <- nrow(subDf)
+  paramDf$LL <- output$value
+  paramDf$BIC <- nrow(subDf) * log(output$value/nrow(subDf)) + k * log(nrow(subDf)) # Compute BIC
+  paramDf$AIC <- 2 * k + nrow(subDf) * log(output$value/nrow(subDf))
+  paramDf
+    
+}
+stopCluster(cl)  
+AsymLR_Decay.ParamDf <- result
+```
+
+# Asymmetrical Learning with Decay and Constant Feedback Sensitivity
+
+```{r}
+
+  set.seed(132)
+  fullDf <- fullDf[!is.na(fullDf$selfRespT1),] # Remove missing responses; data will not fit with missing responses included
+  fullDf <- fullDf[order(fullDf$subID, fullDf$trialTotalT1),] # Sort by trials for trial-by-trial learning
+  uIds <- unique(fullDf$subID)
+  x = c("subID", "posLR", "negLR", "Decay", "LL", "k", "n", "BIC", "AIC")
+  k = 3
+
+  core<-detectCores()
+  cl <- parallel::makeCluster(core-2, setup_strategy = "sequential")
+  setDefaultCluster(cl=cl)
+  registerDoParallel(cl)
+  clusterExport(cl, list("cTD.AsymLR_NewD_SA"))
+  clusterExport(cl, list("x"))
+  clusterExport(cl, list("k"))
+  clusterExport(cl, list("fullDf"))
+  
+result<-foreach(i=uIds, .combine = rbind.data.frame, .export=c('cTD.AsymLR_NewD_SA', 'cOptimx', 'fullDf', 'x', 'k'), .packages = c("compiler", "optimx")) %dopar% {
+  paramDf <- as.data.frame(matrix(ncol = length(x) ))
+  names(paramDf) <- x
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  SSE <- function(param){ sum((subDf$selfRespT1  - (cTD.AsymLR_NewD_SA(subDf$trialTotalT1,subDf$clustType,subDf$feedback,4,sigP=c(0,0),param)$Value))^2) } # Set objective function for SSE
+  (output <- optimx(par = c(.04, .04, .99), method = c("L-BFGS-B"), fn = SSE, lower = c(0, 0, .7), upper = c(1,1,1))) # Set parameters for optimization
+  paramDf$subID <- i
+  paramDf$posLR <- output$p1
+  paramDf$negLR <- output$p2
+  paramDf$Decay <- output$p3
+  paramDf$k <- k
+  paramDf$n <- nrow(subDf)
+  paramDf$LL <- output$value
+  paramDf$BIC <- nrow(subDf) * log(output$value/nrow(subDf)) + k * log(nrow(subDf)) # Compute BIC
+  paramDf$AIC <- 2 * k + nrow(subDf) * log(output$value/nrow(subDf))
+  paramDf
+    
+}
+stopCluster(cl)  
+AsymLRDecayFSfix_ParamDf <- result
+```
+
+# Asymmetrical Learning with Decay and Free Feedback Sensitivity
+
+```{r}
+
+  set.seed(132)
+  fullDf <- fullDf[!is.na(fullDf$selfRespT1),] # Remove missing responses; data will not fit with missing responses included
+  fullDf <- fullDf[order(fullDf$subID, fullDf$trialTotalT1),] # Sort by trials for trial-by-trial learning
+  uIds <- unique(fullDf$subID)
+  x = c("subID", "posLR", "negLR", "Decay", "slope", "LL", "k", "n", "BIC", "AIC")
+  k = 4
+
+  core<-detectCores()
+  cl <- parallel::makeCluster(core-2, setup_strategy = "sequential")
+  setDefaultCluster(cl=cl)
+  registerDoParallel(cl)
+  clusterExport(cl, list("cTD.AsymLR_NewD_SA"))
+  clusterExport(cl, list("x"))
+  clusterExport(cl, list("k"))
+  clusterExport(cl, list("fullDf"))
+  
+result<-foreach(i=uIds, .combine = rbind.data.frame, .export=c('cTD.AsymLR_NewD_SA', 'cOptimx', 'fullDf', 'x', 'k'), .packages = c("compiler", "optimx")) %dopar% {
+  paramDf <- as.data.frame(matrix(ncol = length(x) ))
+  names(paramDf) <- x
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  SSE <- function(param){ sum((subDf$selfRespT1  -                              (cTD.AsymLR_NewD_SA(subDf$trialTotalT1,subDf$clustType,subDf$feedback,4,sigP=c(1,0),param)$Value))^2) } # Set objective function for SSE
+  (output <- optimx(par = c(.04, .04, .99, 1), method = c("L-BFGS-B"), fn = SSE, lower = c(0, 0, .7, .5), upper = c(1,1,1,9))) # Set parameters for optimization
+  paramDf$subID <- i
+  paramDf$posLR <- output$p1
+  paramDf$negLR <- output$p2
+  paramDf$Decay <- output$p3
+  paramDf$slope <- output$p4
+  paramDf$k <- k
+  paramDf$n <- nrow(subDf)
+  paramDf$LL <- output$value
+  paramDf$BIC <- nrow(subDf) * log(output$value/nrow(subDf)) + k * log(nrow(subDf)) # Compute BIC
+  paramDf$AIC <- 2 * k + nrow(subDf) * log(output$value/nrow(subDf))
+  paramDf
+    
+}
+stopCluster(cl)  
+AsymLRDecayFS_OLS_ParamDf <- result
+```
+
+# Final Model Ridge Penalized at Lambda=.15
+
+```{r}
+
+  priorsM <- c(mean(AsymLRDecayFS_OLS_ParamDf$posLR), mean(AsymLRDecayFS_OLS_ParamDf$negLR), mean(AsymLRDecayFS_OLS_ParamDf$Decay), mean(AsymLRDecayFS_OLS_ParamDf$slope))
+  priorsSD <- c(sd(AsymLRDecayFS_OLS_ParamDf$posLR), sd(AsymLRDecayFS_OLS_ParamDf$negLR), sd(AsymLRDecayFS_OLS_ParamDf$Decay), sd(AsymLRDecayFS_OLS_ParamDf$slope))
+  zScore <- function(input, m, s){
+    output<-(input - m)/s
+    return(output)
+  }
+  zScore <- cmpfun(zScore)
+
+  set.seed(132)
+  fullDf <- fullDf[!is.na(fullDf$selfRespT1),] # Remove missing responses; data will not fit with missing responses included
+  fullDf <- fullDf[order(fullDf$subID, fullDf$trialTotalT1),] # Sort by trials for trial-by-trial learning
+  uIds <- unique(fullDf$subID)
+  x = c("subID", "posLR", "negLR", "Decay", "slope", "LL", "k", "n", "BIC", "AIC")
+  k = 4
+  #priorsSD <- 
+  lambda <- .15
+
+  core<-detectCores()
+  cl <- parallel::makeCluster(core-2, setup_strategy = "sequential")
+  setDefaultCluster(cl=cl)
+  registerDoParallel(cl)
+  clusterExport(cl, list("cTD.AsymLR_NewD_SA"))
+  clusterExport(cl, list("x"))
+  clusterExport(cl, list("k"))
+  clusterExport(cl, list("fullDf"))
+  clusterExport(cl, list("priorsM"))
+  clusterExport(cl, list("priorsSD"))
+  clusterExport(cl, list("lambda"))
+  
+result<-foreach(i=uIds, .combine = rbind.data.frame, .export=c('cTD.AsymLR_NewD_SA', 'cOptimx', 'fullDf', 'x', 'k', 'priorsM', 'priorsSD', 'lambda'), .packages = c("compiler", "optimx", "scales")) %dopar% {
+  paramDf <- as.data.frame(matrix(ncol = length(x)))
+  names(paramDf) <- x
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  SSE <- function(param){ (sum((subDf$selfRespT1  -                              (cTD.AsymLR_NewD_SA(subDf$trialTotalT1,subDf$clustType,subDf$feedback,4,sigP=c(1,0),param)$Value))^2)) + lambda * sum( c( ( zScore(param[1], priorsM[1], priorsSD[1] ) )^2, ( zScore(param[2], priorsM[2], priorsSD[2] ) )^2, (  zScore(param[3], priorsM[3], priorsSD[3] ) )^2, (  zScore(param[4], priorsM[4], priorsSD[4] ) )^2 )) } # Set objective function for SSE
+  (output <- optimx(par = c(.04, .04, .99, 1), method = c("L-BFGS-B"), fn = SSE, lower = c(0, 0, 0, .5), upper = c(1,1,1,9 ))) # Set parameters for optimization
+  paramDf$subID <- i
+  paramDf$posLR <- output$p1
+  paramDf$negLR <- output$p2
+  paramDf$Decay <- output$p3
+  paramDf$slope <- output$p4
+  paramDf$k <- k
+  paramDf$n <- nrow(subDf)
+  paramDf$LL <- output$value
+  paramDf$BIC <- nrow(subDf) * log(output$value/nrow(subDf)) + k * log(nrow(subDf)) # Compute BIC
+  paramDf$AIC <- 2 * k + nrow(subDf) * log(output$value/nrow(subDf))
+  paramDf
+    
+}
+stopCluster(cl)  
+AsymLRDecayFS_Ridge_ParamDf <- result
+```
+
+# Model compare
+
+```{r}
+names <- c("Base", "Decay", "Asym", "AsymDecay", "5LR", "AsymDecayFS", "AsymDecayFSfree")
+AIClist <- c(sum(Base.ParamDf$AIC), sum(NewD.ParamDf$AIC), sum(AsymLR.ParamDf$AIC), sum(AsymLR_Decay.ParamDf$AIC), sum(ClustLR_ParamDf$AIC), sum(AsymLRDecayFSfix_ParamDf$AIC), sum(AsymLRDecayFS_OLS_ParamDf$AIC) )
+AIClist2 <- cbind(data.frame("Model" = names, "AIC" = AIClist))
+#BIClist2 <- cbind(data.frame("Model" = names, "BIC" = BIClist))
+#write.csv(BIClist2, "BIClist.csv", row.names = FALSE)
+write.csv(AIClist2, "AIClist.csv", row.names = FALSE)
+write.csv(AsymLRDecayFS_Ridge_ParamDf, "AsymLR_Decay.ParamDf.csv", row.names = FALSE)
+library(corrr)
+library(ggplot2)
+library(dplyr)
+```
+
+# Load ind diffs
+
+```{r}
+indDiff <- read.csv("FeedPilot_Scored.csv")
+indDiff<-indDiff[c(1,253:254,264:ncol(indDiff))]
+```
+
+# Correlation data frames
+
+```{r}
+setwd("~/Google Drive/Volumes/Research Project/Social Evaluative Feedback Pilot/Data Analysis/Testing")
+AsymLR.corDf <- merge(AsymLRDecayFS_Ridge_ParamDf, indDiff, by = "subID")
+write.csv(AsymLR.corDf, "AsymLR.corDf.csv", row.names = FALSE)
+x <- AsymLR.corDf[c(3,11:ncol(AsymLR.corDf))] %>% 
+  correlate() %>% 
+  focus(negLR)
+negLR_AsymLR_corDf <- x[order(-x$negLR),]
+write.csv(negLR_AsymLR_corDf, "negLR.corDf.csv", row.names = FALSE)
+
+#x <- AsymLR.corDf[c(2,265:291)] %>%
+x <- AsymLR.corDf[c(2,11:ncol(AsymLR.corDf))] %>% 
+  correlate() %>% 
+  focus(posLR)
+posLR_AsymLR_corDf <- x[order(-x$posLR),]
+write.csv(posLR_AsymLR_corDf, "posLR.corDf.csv", row.names = FALSE)
+
+
+x <- AsymLR.corDf[c(4,11:ncol(AsymLR.corDf))] %>% 
+  correlate() %>% 
+  focus(Decay)
+decay_AsymLR_corDf <- x[order(-x$Decay),]
+write.csv(decay_AsymLR_corDf, "decay.corDf.csv", row.names = FALSE)
+
+x <- AsymLR.corDf[c(5,11:ncol(AsymLR.corDf))] %>% 
+  correlate() %>% 
+  focus(slope)
+slope_AsymLR_corDf <- x[order(-x$slope),]
+write.csv(slope_AsymLR_corDf, "slope.corDf.csv", row.names = FALSE)
+```
+
+# Organize
+
+```{r}
+AsymLR.ParamDfPlotDf<-AsymLRDecayFS_Ridge_ParamDf[2:3]
+AsymLR.ParamDfPlotDf<-stack(AsymLR.ParamDfPlotDf)
+write.csv(AsymLR.ParamDfPlotDf, "AsymLR_Dec.PlotDf.csv", row.names = FALSE)
+```
+
+# Leave-one-out procedure
+
+```{r}
+LOO_Df <- data.frame() # Initialize empty dataframe for full RL output
+uIds <- unique(fullDf$subID)
+ParamDf <- AsymLRDecayFS_Ridge_ParamDf
+for(i in uIds){
+  
+  LOO.Param <- subset(ParamDf, subID!=i)
+  LOO_LR.Pos <- mean(LOO.Param$posLR)
+  LOO_LR.Neg <- mean(LOO.Param$negLR)
+  LOO_Decay <- mean(LOO.Param$Decay)
+  LOO_Slope <- mean(LOO.Param$slope)
+  
+  #########################################
+  # RUN RL MODEL WITH FITTED PARAMETERS #
+  # Can keep as is #
+  #########################################
+  
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  subOut <- cTD.AsymLR_NewD_SA(subDf$trialTotalT1,subDf$clustType,subDf$feedback,4,sigP=c(1,0), c(LOO_LR.Pos, LOO_LR.Neg, LOO_Decay, LOO_Slope)) # Produce RL output with fitted parameters
+  subOut <- cbind(subOut, subID = i) # Append column for subject ID for this RL output
+  LOO_Df <- rbind(LOO_Df, subOut) # Append dataframe of subject RL output to full RL dataframe
+  
+  
+}
+
+names(LOO_Df)[1]<-"TDcount"
+names(LOO_Df)[2]<-"trialInCluster"
+names(LOO_Df)[3]<-"trialTotalT1"
+names(LOO_Df)[4]<-"weight.90"
+names(LOO_Df)[5]<-"weight.70"
+names(LOO_Df)[6]<-"weight.50"
+names(LOO_Df)[7]<-"weight.30"
+names(LOO_Df)[8]<-"weight.10"
+names(LOO_Df)[9]<-"predError"
+names(LOO_Df)[10]<-"valEst"
+tBt_Df <- merge(fullDf, LOO_Df, by= c("subID", "trialTotalT1"), all.x = TRUE)
+tBt_Df <- tBt_Df[order(tBt_Df$subID, tBt_Df$trialTotalT1),]
+```
+
+# Last SE for each cluster saved for re-evaluations
+
+```{r}
+fullTDdf <- data.frame() # Initialize empty dataframe for full RL output
+uIds <- unique(fullDf$subID)
+ParamDf <- AsymLRDecayFS_Ridge_ParamDf
+for(i in uIds){
+  
+  subParam <- subset(ParamDf, subID==i)
+  curParam<-subParam[2:5]
+  
+  #########################################
+  # RUN RL MODEL WITH FITTED PARAMETERS #
+  # Can keep as is #
+  #########################################
+  
+  subDf <- subset(fullDf, subID == i) # Subset participant data
+  subOut <- cTD.AsymLR_NewD_SA(subDf$trialTotalT1, subDf$clustType, subDf$feedback, 4,sigP=c(1,0), curParam) # Produce RL output with fitted parameters
+  subOut <- cbind(subOut, subID = i) # Append column for subject ID for this RL output
+  fullTDdf <- rbind(fullTDdf, subOut) # Append dataframe of subject RL output to full RL dataframe
+  
+  
+}
+
+names(fullTDdf)[1]<-"TDcount"
+names(fullTDdf)[2]<-"trialInCluster"
+names(fullTDdf)[3]<-"trialTotalT1"
+names(fullTDdf)[4]<-"weight.90"
+names(fullTDdf)[5]<-"weight.70"
+names(fullTDdf)[6]<-"weight.50"
+names(fullTDdf)[7]<-"weight.30"
+names(fullTDdf)[8]<-"weight.10"
+names(fullTDdf)[9]<-"predError"
+names(fullTDdf)[10]<-"valEst"
+fullTDdf <- merge(fullDf, fullTDdf, by= c("subID", "trialTotalT1"), all.x = TRUE)
+fullTDdf <- fullTDdf[order(fullTDdf$subID, fullTDdf$trialTotalT1),]
+
+```
+
+
+```{r}
+fullTDdf <- fullTDdf[order(fullTDdf$subID, fullTDdf$clustType, fullTDdf$trialInCluster),]
+uIds <- unique(fullTDdf$subID)
+uClust <- unique(fullTDdf$clustType)
+fullTDdf$valEstF <- NA
+for(i in uIds){
+  subDf <- fullTDdf[fullTDdf$subID==i,]
+  for(j in uClust){
+    clustDf <- subDf[subDf$clustType==j,]
+    clustDf <- clustDf[!is.na(clustDf$selfRespT1),]
+    maxTrial <- max(clustDf$TDcount)
+    column <- (grep("trialInCluster",colnames(fullTDdf)) + j)
+    maxVal <- clustDf[clustDf$TDcount == maxTrial, column]
+    fullTDdf$valEstF[fullTDdf$subID == i & fullTDdf$clustType==j] <- maxVal
+  }
+}
+fullTDdf <- fullTDdf[order(fullTDdf$subID, fullTDdf$trialTotalT1),]
+
+```
+
+# Integrate network features
+
+```{r}
+names(allCents)[1] <- "Trait"
+fullTDdf2 <- merge(fullTDdf, allCents[c("Trait","outDegree","inDegree","between","eigen","close","efficiency","transitivity","pageRank")], by = "Trait", all.x = TRUE)
+fullTDdf2 <- merge(fullTDdf2, indDiff, by = "subID", all.x = TRUE)
+tBt_Df <- merge(tBt_Df, allCents[c("Trait","outDegree","inDegree","between","eigen","close","efficiency","transitivity","pageRank")], by = "Trait", all.x = TRUE)
+tBt_Df2 <- merge(tBt_Df, indDiff, by = "subID", all.x = TRUE)
+fullTDdf2 <- fullTDdf2[order(fullTDdf2$subID, fullTDdf2$trialTotalT1),]
+tBt_Df2 <- tBt_Df2[order(tBt_Df2$subID, tBt_Df2$trialTotalT1),]
+```
+
+# Write CSVs
+
+```{r}
+write.csv(fullTDdf2, "fullTDdf.csv", row.names = FALSE)
+write.csv(tBt_Df2, "trialBytrial.Df.csv", row.names = FALSE)
+```
+
+# Aggregate dataframes
+
+```{r}
+timeDf <- fullTDdf2[c("subID","clustType","valFeed","selfRespT1","selfRespT2", "changeScore")]
+timeDf2 <- data.frame(timeDf[1:2], stack(timeDf[4:5]))
+timeDf2 <- timeDf2[order(timeDf2$subID),]
+timeDf3 <- timeDf2[complete.cases(timeDf2), ]
+timeDf4 <- data.frame(timeDf[c(1,3)], timeDf[6])
+timeDf4 <- timeDf4[order(timeDf4$subID),]
+timeDf5 <- timeDf4[complete.cases(timeDf4), ]
+library(Rmisc)
+summaryChange<-summarySE(timeDf3, measurevar="values", groupvars=c("clustType","ind"))
+write.csv(summaryChange, "summaryChange.csv", row.names = FALSE)
+summaryFeed<-summarySE(timeDf5, measurevar="changeScore", groupvars=c("valFeed"))
+write.csv(summaryFeed, "summaryFeed.csv", row.names = FALSE)
+```
+
+```{r}
+agDf <- data.frame(matrix(ncol = 6, nrow = 0))
+x <- c("subID", "cluster", "T1", "T2", "T1V","T2V")
+colnames(agDf) <- x
+uIds <- unique(fullTDdf$subID)
+uCl <- unique(fullTDdf$clustType)
+for(i in uIds){
+  for(j in uCl){
+    avT1<-mean(fullTDdf$selfRespT1[fullTDdf$subID==i & fullTDdf$clustType==j], na.rm = TRUE)
+    avT2<-mean(fullTDdf$selfRespT2[fullTDdf$subID==i & fullTDdf$clustType==j], na.rm = TRUE)
+    T1V<-var(fullTDdf$selfRespT1[fullTDdf$subID==i & fullTDdf$clustType==j], na.rm = TRUE)
+    T2V<-var(fullTDdf$selfRespT2[fullTDdf$subID==i & fullTDdf$clustType==j], na.rm = TRUE)
+    agDf <- rbind(agDf, data.frame(subID=i, cluster=j, T1=avT1, T2=avT2, T1V=T1V, T2V=T2V))
+  }
+}
+
+agVDf <- data.frame(matrix(ncol = 5, nrow = 0))
+x <- c("subID", "valFeed", "T1", "T2", "Change")
+colnames(agVDf) <- x
+uIds <- unique(fullTDdf$subID)
+uCl <- unique(fullTDdf$clustType)
+for(i in uIds){
+  for(j in 1:2){
+    avT1<-mean(fullTDdf$selfRespT1[fullTDdf$subID==i & fullTDdf$valFeed==j], na.rm = TRUE)
+    avT2<-mean(fullTDdf$selfRespT2[fullTDdf$subID==i & fullTDdf$valFeed==j], na.rm = TRUE)
+    ch<-mean(fullTDdf$changeScore[fullTDdf$subID==i & fullTDdf$valFeed==j], na.rm = TRUE)
+    agVDf <- rbind(agVDf, data.frame(subID=i, valFeed=j, T1=avT1, T2=avT2, Change=ch))
+  }
+}
+```
+
+```{r}
+wideT1 <- reshape(agDf[1:3], idvar=c("subID"), timevar="cluster", direction="wide")
+wideT2 <- reshape(agDf[c(1:2,4)], idvar=c("subID"), timevar="cluster", direction="wide")
+```
+
+```{r}
+agTimeDf <- data.frame(agDf[1:2], stack(agDf[3:4]))
+summaryAgChange <- summarySE(agTimeDf, measurevar="values", groupvars=c("cluster","ind"))
+summaryAgVChange <- summarySE(agVDf, measurevar="Change", groupvars=c("valFeed"))
+
+setwd("~/Google Drive/Volumes/Research Project/Social Evaluative Feedback Pilot/Data Analysis/Testing/")
+write.csv(summaryAgChange, "summaryAgChange.csv", row.names = FALSE)
+write.csv(summaryAgVChange, "summaryAgVChange.csv", row.names = FALSE)
+write.csv(agDf, "agDf.csv", row.names = FALSE)
+write.csv(agVDf, "agVDf.csv", row.names = FALSE)
+write.csv(agTimeDf, "agTDf.csv", row.names = FALSE)
+```
+
+```{r}
+paramPlot <- Rmisc::summarySE(AsymLR.ParamDfPlotDf, measurevar="values", groupvars=c("ind"))
+out<-psych::describeBy(AsymLR.ParamDfPlotDf$values, group = AsymLR.ParamDfPlotDf$ind)
+median <- c(out$negLR$median, out$posLR$median)
+paramPlot <- cbind(paramPlot, data.frame(median))
+names(paramPlot)[3] <- "mean"
+```
+
+```{r}
+setwd("~/Google Drive/Volumes/Research Project/Social Evaluative Feedback Pilot/Data Analysis/Testing/")
+write.csv(paramPlot, "paramPlot.csv", row.names = FALSE)
+```
+
+# Correlation Tables
+
+```{r}
+library(apaTables)
+apa.cor.table(AsymLR.corDf[c(2:5,11:ncol(AsymLR.corDf))], filename="Cor_APA.doc", table.number=1)
+
+apa.cor.table(AsymLR.corDf[c("posLR","Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")], filename="Cor_PosLR_APA.doc", table.number=1)
+
+apa.cor.table(AsymLR.corDf[c("negLR","Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")], filename="Cor_NegLR_APA.doc", table.number=1)
+
+apa.cor.table(AsymLR.corDf[c("Decay","Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")], filename="Cor_Decay_APA.doc", table.number=1)
+
+apa.cor.table(AsymLR.corDf[c("slope","Status","RS","MAIA.All","LSA","SM","BDI","SCC","SING.Ind","SING.Inter","DS","SE","BF.EXT","BF.AGR","BF.CON","BF.OPE","BF.NEG")], filename="Cor_FS_APA.doc", table.number=1)
+
+apa.cor.table(AsymLRDecayFS_Ridge_ParamDf[2:5], filename="Cor_Params_APA.doc", table.number=1)
+```

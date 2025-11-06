@@ -1,0 +1,1142 @@
+---
+title: "Ego-Depletion RRR Frequentist Analyses"
+author: "Sophie Lohmann, Dolores Albarracin"
+date: "Last updated: `r format(Sys.Date(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    toc: yes
+header-includes:
+ \usepackage{booktabs}
+ \usepackage{float}
+ \floatplacement{figure}{H}
+---
+
+```{r intro, message = FALSE, warning = FALSE, echo = FALSE}
+# set the following two parameters for the rest of the script: 
+exclusion = TRUE
+# TRUE excludes participants marked for exclusion
+# FALSE uses the full sample for all analyses
+ref_level = "Depletion" 
+# when "Depletion" is selected, higher effect sizes mean more of a depletion effect (i.e., worse performance in the depletion group)
+# when "Nondepletion" is selected, higher effect sizes mean higher values in the depletion group
+
+library(knitr)
+library(kableExtra)
+opts_chunk$set(message = FALSE, warning = FALSE, fig.align = "center")
+kable = function(data, ...) { # overriding function to make booktabs = TRUE default
+  knitr::kable(data, booktabs = TRUE, ...)
+}
+# options(knitr.table.format = 'html') 
+# for PDF report, use knitr.table.format = 'markdown' and change html_document in the header to pdf_document
+options(knitr.kable.NA = '')
+```
+
+Version: `r ifelse(exclusion, "Reduced", "Full")` sample; the `r ifelse(ref_level == "Depletion", "depletion", "non-depletion")` condition was used as reference level, so that higher effect sizes mean `r ifelse(ref_level == "Depletion", "lower", "higher")` values in the depletion than in the non-depletion group.
+
+
+```{r setup, echo = FALSE}
+# loading necessary packages:
+library(reghelper)
+library(tidyverse)
+library(ggplot2)
+library(psych)
+library(lavaan)
+library(metafor)
+library(beeswarm)
+library(lmerTest)
+library(compute.es)
+library(data.table)
+library(nlme)
+library(sjstats)
+library(readxl)
+
+# Custom functions for formatting the results
+print.ci = function(low, high){
+  paste0("[", 
+         sprintf("%.02f", low), ", ", 
+         sprintf("%.02f", high), "]")
+}
+print.reg.SE = function(b, SE, p = character(0)){
+  paste0(sprintf("%.02f", b), " (", 
+         sprintf("%.02f", SE), ") ", p)
+}
+print.pstars = function(p){
+  ifelse(p >= .05, "   ",
+         ifelse(p >= .01, "  *", 
+                ifelse(p >= .001, " **", "***")))
+}
+
+# Custom function: Meta-analysis results
+  # dv: name of dv as string
+  # name: name to print on the output and the graph as a string (optional)
+  # funnel: whether a funnel plot should be produced
+  # select: supply a string to use in subset() if only part of the dataset should be used (e.g., "task_version == 'Writing Task'")
+matab_fun = function(dv, name = NULL, funnel = FALSE, select = NULL){
+  if(is.null(name)) name = dv
+  data = eval(parse(text = paste("subset(labdata[[dv]], ", select, ")")))
+  
+  # random-effects meta-analysis (no moderators)
+  rma_RE = rma(yi = d, vi = var.d, slab = lab, data = data)
+    # add the total participant count to the output
+  rma_RE$N = sum(data$N.total)
+  # fixed-effects meta-analysis (no moderators)
+  rma_FE = rma(yi = d, vi = var.d, slab = lab, data = data, method = "FE")
+  
+if(funnel){
+  # Funnel plot
+  fplot = funnel(rma_RE, back = "gray90", xlab = "Cohen's d")
+  title(paste("Funnel plot of", name))
+  if(length(fplot$y) == nrow(labdata[[1]])){
+    points(fplot$y[which(data$task_version == "Writing Task")] ~ 
+             fplot$x[which(data$task_version == "Writing Task")], 
+           col = "gray50", pch = 16)
+    legend("topright", c("E", "Writing"), col = c("black", "gray50"), pch = 16)
+  }
+}
+  matab = with(rma_RE, 
+                  data.frame(name, k, N, 
+                             rma_FE$b, rma_FE$ci.lb, rma_FE$ci.ub,
+                             b, ci.lb, ci.ub, I2))
+  rownames(matab) = c()
+  colnames(matab) = c("Variable", "k", "N", "FE: Average effect", "FE.CI.low", "FE.CI.high","RE: Average effect", "RE.CI.low", "RE.CI.high", "I2")
+  matab$FE.CI = print.ci(matab$FE.CI.low, matab$FE.CI.high)
+  matab$RE.CI = print.ci(matab$RE.CI.low, matab$RE.CI.high)
+  return(matab)
+}
+
+# Custom function: Meta-analysis results with continuous moderator
+  # dv: name of dv as string
+  # mod_name: name of moderator as string
+  # name: name to print on the output and the graph as a string (optional)
+  # funnel: whether a funnel plot should be produced
+  # select: supply a string to use in subset() if only part of the dataset should be used (e.g., "task_version == 'Writing Task'")
+matab_contmod_fun = function(dv, mod_name, name = NULL, funnel = FALSE, select = NULL){ 
+  if(is.null(name)) name = dv
+  data = eval(parse(text = paste("subset(labdata[[dv]], ", select, ")")))
+  mod = data[mod_name]
+  
+  # random-effects meta-analysis (with moderators)
+  ma_mod = rma(yi = d, vi = var.d, slab = lab, data = data, mods = mod)
+  ma_mod$N = sum(data$N.total)
+  
+  matab_mod = with(ma_mod, 
+                   data.frame(name, mod_name, k, N, 
+                              b[1], ci.lb[1], ci.ub[1], 
+                              b[2], ci.lb[2], ci.ub[2], 
+                              I2))
+  rownames(matab_mod) = c()
+  colnames(matab_mod) = c("Variable", "Moderator", "k", "N", "RE: Intercept", "RE.Int.CI.low", "RE.Int.CI.high","RE: Moderator", "RE.Mod.CI.low", "RE.Mod.CI.high", "I2")
+  matab_mod$RE.Intercept.CI = print.ci(matab_mod$RE.Int.CI.low, matab_mod$RE.Int.CI.high)
+  matab_mod$RE.Moderator.CI = print.ci(matab_mod$RE.Mod.CI.low, matab_mod$RE.Mod.CI.high)
+  matab_mod$I2 = paste0(sprintf("%.02f", matab_mod$I2), "%")
+  return(matab_mod)
+}
+
+```
+
+```{r datacleaning, echo=FALSE}
+# reading the data:
+dat = read_excel("new exclusion codes depletion mega dataset May 25 2020.xlsx", col_types = "text")
+colnames(dat)[which(colnames(dat) == "lab...1")] = "lab"
+dat$lab[which(dat$lab == "e.j. masicampo")] = "Wake Forest Group" # authors wish to be identified as a team instead of a single PI
+dat = type_convert(dat)
+
+# setting the reference level for condition:
+if(ref_level == "Nondepletion") dat$condition = factor(dat$condition1non, levels = c(1, 2), labels = c("Nondepletion", "Depletion"))
+if(ref_level == "Depletion") dat$condition = factor(dat$condition1non, levels = c(2, 1), labels = c("Depletion", "Nondepletion"))
+
+dat$task_version = factor(dat$task_version1writing, levels = c(2, 1), labels = c("E Task", "Writing Task"))
+
+# converting variables that were wrongly read as character vectors:
+dat = mutate_at(dat, vars(DV_new, itw, 
+                          new_figtime.secs.st, new_fig.sheets.st, newfigcomb.st, 
+                          newfig.sheets.raw, newfig.time.secs.raw,
+                          cet.resc.sum, cet.resc.avg, cet.resc.avg.ST), 
+                as.numeric)
+dat$lab = factor(dat$lab)
+
+# excluding blank rows (those who have a blank ID):
+dat = dat[which(!is.na(dat$OrignalOrder)),]
+
+# first removing the standardized variables from the dataset to recalculate them from scratch in the next step, so that they are standardized on ALL cases, regardless of whether exclusion=TRUE:
+dat = select(dat, -c("cet.resc.avg.ST", "new_fig.sheets.st", "new_figtime.secs.st",
+                     "effortful.ST", "tired.ST", "fatigued.ST",  "frustrated.ST", 
+                     "difficult.ST", "motivated.ST", "do.well.ST"))
+
+# standardizing variables
+dat = dat %>%
+  select(OrignalOrder, new_excl_all,
+         cet.resc.avg, newfig.sheets.raw, newfig.time.secs.raw, 
+         effortful, tired, fatigued, frustrated, 
+         difficult, motivated, do.well) %>%
+  # scale to M = 0, SD = 1:
+  mutate_at(vars(-OrignalOrder, -new_excl_all), ~as.vector(scale(.))) %>%
+  set_names(c("OrignalOrder", "new_excl_all", 
+              "cet.resc.avg.ST", "new_fig.sheets.st", "new_figtime.secs.st",
+              "effortful.ST", "tired.ST", "fatigued.ST",  "frustrated.ST", 
+              "difficult.ST", "motivated.ST", "do.well.ST")) %>%
+  # merge back into the original dataset:
+  right_join(dat, by = c("OrignalOrder", "new_excl_all"))
+
+# recalculating newfigcomb.st and DV_new based on the newly standardized variables:
+dat$newfigcomb.st = dat$new_fig.sheets.st + dat$new_figtime.secs.st
+dat$DV_new = ifelse(is.na(dat$newfigcomb.st), dat$cet.resc.avg.ST, dat$newfigcomb.st)
+
+# excluding participants:
+n_exclusions = length(which(dat$new_excl_all == 1)) # nr of exclusions
+prop_exclusions = length(which(dat$new_excl_all == 1))/nrow(dat)
+if(isTRUE(exclusion)) dat = dat[which(dat$new_excl_all == 0),] # excluding values
+
+
+# creating composite scores using pairwise deletion (i.e., still using the remaining values even if one value is missing for a particular person)
+dat$motivation = rowMeans(dat[, c("motivated.ST", "do.well.ST")], na.rm = TRUE)
+dat$motivationindex_UNST = rowMeans(dat[, c("motivated", "do.well")], na.rm = TRUE)
+dat$fatigued.comp = rowMeans(dat[, c("tired.ST", "fatigued.ST")], na.rm = TRUE)
+dat$fatigueindex_UNST = rowMeans(dat[, c("tired", "fatigued")], na.rm = TRUE)
+dat$manipcheck = rowMeans(dat[, c("effortful.ST", "difficult.ST")], na.rm = TRUE)
+dat$manipcheck_UNST = dat$effortindex_UNST = rowMeans(dat[, c("effortful", "difficult")], na.rm = TRUE)
+
+# saving names of to-be-analyzed DVs
+# all DVs:
+dvcols = c("DV_new", "manipcheck", "frustrated.ST", "motivation", "effortful.ST", "difficult.ST", "tired.ST", "fatigued.ST", "motivated.ST", "do.well.ST", "fatigued.comp", "new_figtime.secs.st", "new_fig.sheets.st", "newfigcomb.st", "cet.resc.avg", "cet.resc.avg.ST")
+# those DVs that apply to only one task type:
+singletask = c("cet.resc.avg", "cet.resc.avg.ST", "new_figtime.secs.st", "new_fig.sheets.st", "newfigcomb.st")
+# those that apply to multiple task types:
+multitask = setdiff(dvcols, singletask)
+dat$fatigued.comp.quartiles = 
+  cut(dat$fatigued.comp, breaks = quantile(dat$fatigued.comp, na.rm = TRUE), include.lowest = TRUE)
+
+# Centering / contrast-coding variables:
+pub_count_labmean = mean(aggregate(dat$pub_count, by = list(dat$lab), FUN = mean)$x)
+dat$pub_count_centered = dat$pub_count - pub_count_labmean
+rm(pub_count_labmean)
+dat$Video_averaged[which(dat$Video_averaged == "#DIV/0!")] = NA
+dat$Video_averaged = as.numeric(dat$Video_averaged)
+dat$Video_averaged_centered = as.vector(scale(dat$Video_averaged, scale = FALSE))
+dat$itw_centered = as.vector(scale(dat$itw, scale = FALSE))
+dat$bscs_centered = as.vector(scale(dat$bscs, scale = FALSE))
+dat$hakemp_new_centered = as.vector(scale(dat$hakemp_ave, scale = FALSE))
+dat$task_version_contrast = ifelse(dat$task_version == "E Task", -0.5, 0.5)
+
+# Moderators:
+mods = c("task_version_contrast", "pub_count_centered", "itw_centered", "bscs_centered", "hakemp_new_centered", "fatigued.comp", "frustrated.ST", "manipcheck", "Video_averaged_centered", "PI_number_published_dpltn_studies", "N.America")
+names_mods = c("Task version (contrast-coded)", "Publication count (centered)", "ITW (centered)", "BSCS (centered)", "HAKEMP (centered)", "Fatigued", "Frustrated", "Manipulation check", "Video codings (centered)", "PI # published depletion studies", "North America")
+
+# create 2x2 table of fatigued.ST to show control condition differences
+fatigued_output = reshape2::dcast(dat, task_version ~ condition, value.var = "fatigued.ST", mean, na.rm = TRUE)
+```
+
+```{r manipchecks, eval = FALSE, echo = FALSE}
+# Custom function: Manipulation check
+  # dv: name of DV as a string
+  # var.equal: passed to t.test(), set to TRUE for compatibility with SPSS t-test
+manipcheck = function(dv, var.equal = FALSE){
+  x = colSums(table(dat[[dv]], dat$condition))
+  ttest = t.test(reformulate("condition", dv), dat, var.equal = var.equal)
+  d = round(d.ci(
+    t2d(ttest$statistic, 
+        x["Nondepletion"], x["Depletion"]),
+    n1 = x["Nondepletion"], x["Depletion"]), 2)
+  
+  list(
+    descr = rbind(tapply(dat[[dv]], dat$condition, function(x) sum(!is.na(x))),
+                  tapply(dat[[dv]], dat$condition, mean, na.rm = TRUE),
+                  tapply(dat[[dv]], dat$condition, sd, na.rm = TRUE)),
+    ttest = paste0("t(", round(ttest$parameter, 2), ") = ", round(ttest$statistic, 2), ", p = ", round(ttest$p.value, 3)),
+    d = paste0("d = ", d[2], " [", d[1], ", ", d[3], "]")
+  )
+}
+  
+manipcheck("manipcheck")
+manipcheck("manipcheck", var.equal = TRUE)
+
+manipcheck("fatigued.comp")
+manipcheck("fatigued.comp", var.equal = TRUE)
+# reminder: dat$fatigued.comp = rowMeans(dat[, c("tired.ST", "fatigued.ST")], na.rm = TRUE)
+
+manipcheck("frustrated.ST")
+manipcheck("frustrated.ST", var.equal = TRUE)
+```
+
+```{r, echo = FALSE}
+scale_alphas = c(
+  select(dat, starts_with("itw"), -itw, -itw_centered) %>%
+    mutate_all(as.numeric) %>%
+    filter_all(any_vars(!is.na(.))) %>% # drop rows with only missing values
+    reverse.code(c(-1, -1, 1, 1, -1, 1), items = ., 1, 6) %>%
+    ( function(x) alpha(x)$total$raw_alpha),
+  select(dat, starts_with("bscs"), -bscs, -bscs_centered) %>%
+    mutate_all(as.numeric) %>%
+    filter_all(any_vars(!is.na(.))) %>% # drop rows with only missing values
+    reverse.code(c(-1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1), items = ., 1, 5) %>%
+    ( function(x) alpha(x)$total$raw_alpha),
+  select(dat, starts_with("hakemp"), -hakemp_new, -hakemp_new_centered, -hakemp_ave) %>%
+    mutate_all(~ifelse(. %in% c("AB (chose both)", "?", "A?", "B?", ".", "999", "/", "AB"), 
+                       NA, .)) %>%
+    filter_all(any_vars(!is.na(.))) %>% # drop rows with only missing values
+    mutate_all(recode, `A` = 0, `B` = 1, `a` = 0, `b` = 1) %>%
+    reverse.code(c(1, 1, 1, -1, 1, 1, 1, -1, -1, 1, -1, -1), items = ., 0, 1) %>%
+    ( function(x) alpha(x)$total$raw_alpha)
+)
+
+scale_ns = c(select(dat, starts_with("itw"), -itw, -itw_centered) %>%
+    filter_all(any_vars(!is.na(.))) %>% nrow,
+  select(dat, starts_with("bscs"), -bscs, -bscs_centered) %>%
+    filter_all(any_vars(!is.na(.))) %>% nrow,
+  select(dat, starts_with("hakemp"), -hakemp_new, -hakemp_new_centered, -hakemp_ave) %>%
+    filter_all(any_vars(!is.na(.))) %>% nrow
+)
+
+names(scale_alphas) = c("ITW-M", "BSCS", "HAKEMP-Decision")
+
+kable_styling(kable(data.frame(scale_alphas, scale_ns, 
+                    map_dbl(dat[, c("itw", "bscs", "hakemp_new")], mean, na.rm = TRUE), 
+                    map_dbl(dat[, c("itw", "bscs", "hakemp_new")], sd, na.rm = TRUE)),
+                    col.names = c("Cronbach's Alpha", "N", "M", "SD"), digits = 3), full_width = FALSE, latex_options = "hold_position")
+```
+
+
+## Notes
+
+- These analyses are based on Cohen's d (not Hedges' g).
+- All outcome variables are *standardized* (mean and SD) and all continuous moderators are *centered* (mean, but not SD) for easier and more consistent interpretation. 
+- These analyses are based on `r ifelse(exclusion, paste0("only the ", 100*round(1-prop_exclusions, 2), "% of participants not marked for exclusion"), paste0("all ", nrow(dat), " participants, including those marked for exclusion"))`.
+- The control tasks were not equivalent, which made the interpretation of some findings challenging. For example, fatigued.ST was higher in the E task depletion than in the writing task depletion manipulation. However, because the nondepletion (control) conditions have such different values, Cohen's d suggests the opposite: That the writing task was more fatigue inducing (mean difference of depletion and nondepletion = `r sprintf("%.02f", fatigued_output[2, 3] - fatigued_output[2, 2])`) than the E task (mean difference = `r sprintf("%.02f", fatigued_output[1, 3] - fatigued_output[1, 2])`).
+
+```{r, echo = FALSE}
+kable_styling(kable(fatigued_output, digits = 2), full_width = FALSE, latex_options = "hold_position")
+```
+
+## Main Hypotheses ##
+
+### 1) Meta-analysis approach ###
+
+_Depletion < no depletion on the DV. If we see a statistically significant meta-analytic condition effect, such that depletion < nondepletion, we will infer that the depletion phenomenon is a reliable and replicable phenomenon. Conversely, if we do not find a significant meta-analytic effect, then we will conclude that depletion is not as robust and reliable as previously assumed._
+
+We conducted fixed-effects (FE) and random-effects (RE) meta-analyses on each lab's Cohen's d, representing the difference between the depletion and the non-depletion conditions. The funnel plot is based on the RE analyses. 
+
+```{r, echo=FALSE}
+## Summarizing data on the lab-level:
+
+# for each DV, get the lab-level M, SD, and N
+# create a smaller dataframe with only the variables of interest
+d = dat[, c("lab", "condition", "task_version", dvcols, mods[!is.element(mods, dvcols)])]
+d = as.data.table(reshape2::melt(d, measure.vars = c(dvcols, mods[!is.element(mods, dvcols)])))
+d1 = dcast(d, lab + task_version ~ variable, value.var = "value", mean, na.rm = TRUE)
+d1 = as.data.frame(d1)
+
+lablist = list()
+for(ii in seq_along(dvcols)){ # for each to-be-analyzed column, ...
+  col = dvcols[ii]
+
+  dd = d[which(d$variable == col),]
+  d2 = dcast(dd, lab ~ condition, value.var = "value", 
+             list(mean, sd, function(x, na.rm) length(which(!is.na(x)))), na.rm = TRUE)
+  # ... calculate M, SD, and N by condition, then assign descriptive variable names:
+  if(ref_level == "Nondepletion") colnames(d2) = c("lab", "Nondepletion_m", "Depletion_m", "Nondepletion_sd", "Depletion_sd", "Nondepletion_n", "Depletion_n")
+  if(ref_level == "Depletion") colnames(d2) = c("lab", "Depletion_m", "Nondepletion_m", "Depletion_sd", "Nondepletion_sd", "Depletion_n", "Nondepletion_n")
+  d2 = as.data.frame(d2)
+  
+  lablist[[ii]] = merge(d1, d2, by = "lab", all = TRUE)
+}
+names(lablist) = dvcols
+rm(col, d, d1, d2, dd, ii)
+
+## Effect size calculation:
+
+if(ref_level == "Depletion"){ # nondepletion minus depletion -> larger effect sizes indicate higher values in the nondepletion condition -> larger effect sizes mean MORE of a depletion effect
+  fct_effectsizes = function(x){
+    data.frame(
+      x[, colnames(lablist[[1]])[1:which(colnames(lablist[[1]]) == mods[length(mods)])]],
+      with(x, mes(Nondepletion_m, Depletion_m, 
+                  Nondepletion_sd, Depletion_sd, 
+                  Nondepletion_n, Depletion_n, 
+                  dig = 999, verbose = FALSE)[, c(1:5, 12:13)]))
+  }
+}
+if(ref_level == "Nondepletion"){ # effect sizes are depletion minus nondepletion -> larger effect sizes indicate higher values in the depletion condition -> larger effect sizes mean LESS of a depletion effect
+  fct_effectsizes = function(x){
+    data.frame(
+      x[, colnames(lablist[[1]])[1:which(colnames(lablist[[1]]) == mods[length(mods)])]],
+      with(x, mes(Depletion_m, Nondepletion_m, 
+                  Depletion_sd, Nondepletion_sd, 
+                  Depletion_n, Nondepletion_n, 
+                  dig = 999, verbose = FALSE)[, c(1:5, 12:13)]))
+  }
+}
+
+labdata = lapply(lablist, fct_effectsizes)
+# the "NaNs produced" warnings come from the effect sizes that were missing because not all variables were run in all labs
+
+```
+
+The next row presents Cohen's d effect sizes and 95% CIs from fixed- and random-effects meta-analyses. The I2 values are based on the RE analyses. 
+
+```{r, echo=FALSE}
+ma_main = matab_fun("DV_new", name = "Task Performance", funnel = TRUE)
+  
+kable_styling(kable(ma_main[c(1:4, 11, 7, 12, 10)], digits = 2, align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+```{r, echo=FALSE, fig.height=8}
+forest_data = labdata$DV_new[order(labdata$DV_new$d, decreasing = TRUE),]
+forest_data$lab = str_to_title(forest_data$lab) %>%
+  str_replace("E.j.", "E.J.") %>%
+  str_replace("Sander L. ", "Sander ") %>%
+  str_remove("Prof. Dr. ")
+forest_data$n = forest_data$n.1 + forest_data$n.2
+# write_csv(select(forest_data, lab, task_version, n, d, var.d), 
+#           ifelse(exclusion, "LabData_reduced.csv", "LabData_full.csv"))
+
+ma_forest = rma(yi = d, vi = var.d, slab = lab, data = forest_data)
+
+if(exclusion){
+  png("Performance_DV_Forest_reduced.png", width = 17, height = 20, units = "cm", res = 300, pointsize = 12)
+  forest(ma_forest, showweights = TRUE, top = 1.2, #main = "Forest plot of DV", 
+         ilab = forest_data$n, ilab.xpos = -1.8, ilab.pos = 2, xlab = "")
+  text(c(-3.95, -2.15, 0, 3.1, 5), 38, c("Lab", "N", "d [95% CI]", "Weight", "d [95% CI]"))
+  dev.off()
+} else{
+  png("Performance_DV_Forest_full.png", width = 17, height = 20, units = "cm", res = 300, pointsize = 12)
+  forest(ma_forest, showweights = TRUE, top = 1.2, #main = "Forest plot of DV", 
+         ilab = forest_data$n.1 + forest_data$n.2, ilab.xpos = -1.2, ilab.pos = 2, xlab = "")
+  text(c(-3.95, -1.5, 0, 2.3, 3.75), 38, c("Lab", "N", "d [95% CI]", "Weight", "d [95% CI]"))
+  dev.off()
+}
+
+```
+
+On average, there was no detectable performance difference between depletion and non-depletion conditions using meta-analytic procedures. It is therefore possible that the depletion effect is less robust and reliable than previously assumed.
+
+### 2) Bayes approach ###
+
+-/-
+
+### 3) Test of moderation by protocol on the DV ###
+
+_(Predicted to be ns). If there is no moderation by protocol, then we will conclude that the two protocols worked equivalently. If there is moderation, we will perform planned contrasts of depletion vs no depletion within protocol._ 
+
+We conducted meta-regression to examine this moderator. Protocol type was *contrast-coded* (-0.5: E task, 0.5: Writing task), so that the intercept represents the average effect across both protocol. Each row shows the results of a separate meta-analysis.
+
+```{r, echo = FALSE}
+# random-effects meta-analysis with task version as a moderator
+ma_taskversionmod = rma(yi = d, vi = var.d, slab = lab, data = labdata$DV_new,
+          mods = ifelse(task_version == "Writing Task", 0.5, -0.5)) # contrast coding
+          # mods = ifelse(task_version == "Writing Task", 1, 0)) # dummy coding
+ma_taskversionmod$N = sum(labdata$DV_new$N.total)
+
+
+## Creating the output table
+# Moderator: Task type
+
+ma_taskversionmod_output = with(ma_taskversionmod, data.frame("DV", k, N, 
+                              b[1], ci.lb[1], ci.ub[1], 
+                              b[2], ci.lb[2], ci.ub[2], 
+                              I2))
+rownames(ma_taskversionmod_output) = c()
+colnames(ma_taskversionmod_output) = c("Variable", "k", "N", "RE: Intercept", "RE.Int.CI.low", "RE.Int.CI.high",
+                     "RE: Moderator", "RE.Mod.CI.low", "RE.Mod.CI.high", "I2")
+ma_taskversionmod_output = ma_taskversionmod_output %>%
+  mutate(RE.Intercept.CI = print.ci(RE.Int.CI.low, RE.Int.CI.high),
+         RE.Moderator.CI = print.ci(RE.Mod.CI.low, RE.Mod.CI.high),
+         I2 = paste0(sprintf("%.02f", I2), "%"))
+  
+kable_styling(kable(ma_taskversionmod_output[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+In the meta-regression, protocol type was not a significant moderator, suggesting that the depletion effect was not noticeably different in the writing versus the E task.
+
+_If there is moderation, we will perform planned contrasts of depletion vs no depletion within protocol. If both are significant, we will conclude that one protocol shows the depletion effect more than the other. If one protocol shows a significant depletion < nondepletion condition effect and the other shows another pattern (i.e., a ns difference or a no depletion < depletion effect), we will conclude that one protocol is a robust demonstration of the depletion effect._
+
+Follow-up comparisons were not necessary as the type of protocol was not a significant moderator.
+
+### 4) Depletion condition > no depletion on manipulation check ### 
+
+_If we find that participants in the depletion condition, compared to the no depletion condition, report that the task was more effortful/difficult, we will conclude that the manipulation was effective. If we find no difference between conditions, then we will also consider possible moderating effects of protocol type when drawing conclusions about the effectiveness of the manipulations. If the manipulation checks don't show differences by condition and the key DVs do, we will interpret this as evidence that task difficulty and effort do not, as a depletion model would predict, play a role in impairing self-control in these paradigms._
+
+Self-reported difficulty and effort were therefore averaged into a single manipulation check index.
+
+The next row presents Cohen's d effect sizes and 95% CIs from fixed- and random-effects meta-analyses. The I2 values are based on the RE analyses. 
+
+```{r, echo=FALSE}
+ma_manipcheck_output = matab_fun("manipcheck", "Manipulation Check", funnel = TRUE)
+  
+kable_styling(kable(ma_manipcheck_output[c(1:4, 11, 7, 12, 10)], digits = 2, align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+```{r, echo=FALSE, fig.height=8}
+forest_data_mc = labdata$manipcheck[order(labdata$manipcheck$d, decreasing = TRUE),]
+forest_data_mc$lab = str_to_title(forest_data_mc$lab) %>%
+  str_replace("E.j.", "E.J.") %>%
+  str_replace("Sander L. ", "Sander ") %>%
+  str_remove("Prof. Dr. ")
+ma_forest_mc = rma(yi = d, vi = var.d, slab = lab, data = forest_data_mc)
+# png("effortful_forest.png", width = 675, height = 550, pointsize = 13)
+forest(ma_forest_mc, main = "Forest plot of the Manipulation Check")
+# dev.off()
+```
+
+The depletion manipulations appeared to be successful: On average, they were perceived as about 1.5 SD more effortful and difficult than their respective controls.
+
+### 5) Test of moderation by protocol on the manipulation check ###
+
+_(Predicted to be ns). If there is an interaction between protocol and depletion condition, we will use planned comparisons of depletion vs no depletion condition within protocol._
+
+We conducted meta-regression to examine this moderator. Protocol type was *contrast-coded* (-0.5: E task, 0.5: Writing task), so that the intercept represents the average effect across both protocols. 
+
+```{r, echo = FALSE}
+# random-effects meta-analysis with task version as a moderator
+ma_taskversionmod_manipcheck = rma(yi = d, vi = var.d, slab = lab, data = labdata$manipcheck,
+                                      mods = ifelse(task_version == "Writing Task", 0.5, -0.5)) # contrast coding
+                                      # mods = ifelse(task_version == "Writing Task", 1, 0))) # dummy coding
+ma_taskversionmod_manipcheck$N = sum(labdata$manipcheck$N.total)
+
+
+## Creating the output table
+# Moderator: Task type
+
+ma_taskversionmod_manipcheck_output = with(ma_taskversionmod_manipcheck, data.frame("Manipulation Check", k, N, 
+                              b[1], ci.lb[1], ci.ub[1], 
+                              b[2], ci.lb[2], ci.ub[2], 
+                              I2))
+rownames(ma_taskversionmod_manipcheck_output) = c()
+colnames(ma_taskversionmod_manipcheck_output) = c("Variable", "k", "N", "RE: Intercept", 
+                                                  "RE.Int.CI.low", "RE.Int.CI.high",
+                                                  "RE: Moderator", "RE.Mod.CI.low", "RE.Mod.CI.high", "I2")
+ma_taskversionmod_manipcheck_output = ma_taskversionmod_manipcheck_output %>%
+  mutate(RE.Intercept.CI = print.ci(RE.Int.CI.low, RE.Int.CI.high),
+         RE.Moderator.CI = print.ci(RE.Mod.CI.low, RE.Mod.CI.high),
+         I2 = paste0(sprintf("%.02f", I2), "%"))
+  
+kable_styling(kable(ma_taskversionmod_manipcheck_output[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+_If there is an interaction between protocol and depletion condition, we will use planned comparisons of depletion vs no depletion condition within protocol. If those comparisons reveal that one protocol shows a significant depletion effect whereas the other does not, then we will conclude that one protocol was more effective at manipulating self-control than the other and/or that one outcome measure was more sensitive. If there are two significant differences, in the context of the moderation result, then we also will conclude that both manipulations were powerful and/or outcome measures sensitive enough to detect a depletion effect, and that one protocol was more so than the other._
+
+```{r, echo=FALSE}
+ma_manipcheck_taskversionmod_output = rbind(
+  matab_fun("manipcheck", "Manipulation Check: Writing Task", select = "task_version == 'Writing Task'"),
+  matab_fun("manipcheck", "Manipulation Check: E Task", select = "task_version == 'E Task'"))
+
+kable_styling(kable(ma_manipcheck_taskversionmod_output[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position") %>%
+  column_spec(1, width = "3.2cm")
+```
+
+The two depletion tasks were clearly differentially effective at influencing feelings of effort and difficulty. The writing task was perceived as much more effortful than its control task, whereas the effort effect of the E task was also significant, but smaller.
+
+## Planned Exploratory Analyses ##
+
+### 1) Figure Tracing ###
+
+_Persistence and attempts are the two components of the figure tracing outcome. Research has shown these to be highly correlated (around r = .7). Our main hypothesis test combines the two, but we will also explore each component separately. We predict a main effect of condition on both number of attempts and persistence._
+
+```{r, echo=FALSE}
+ma_figuretracing_output = rbind(
+  matab_fun("new_fig.sheets.st", "Figure Sheets", select = "task_version == 'E Task'"),
+  matab_fun("new_figtime.secs.st", "Figure Time", select = "task_version == 'E Task'"))
+  
+kable_styling(kable(ma_figuretracing_output[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+Contrary to expectations of about _r_ = .70, in this sample the two standardized outcome measures of the figure tracing task were correlated only _r_ = `r round(cor(dat$new_figtime.secs.st, dat$new_fig.sheets.st, use = "p"), 2)`. Although there was a trend towards a depletion effect on both variables, only the effect on time was significant.
+
+
+### 2) Task Self-Report ###
+
+_1) Depletion > no depletion on index of ratings of feeling tired as well as fatigued (assuming alpha >= .70; if alpha is lower, these 2 ratings will be analyzed as separate DVs)._
+
+The standardized self-reports of tiredness and fatigue formed an internally consistent scale, $\alpha$ = `r round(alpha(dat[, c("fatigued.ST", "tired.ST")])$total$raw_alpha, 2)` and were therefore analyzed jointly in an index of fatigue.
+
+```{r, echo=FALSE}
+ma_fatigue_output = matab_fun("fatigued.comp", "Fatigue", funnel = TRUE)
+  
+kable_styling(kable(ma_fatigue_output[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+As expected, participants' self-reports of fatigue were significantly higher in the depletion conditions than in the non-depletion conditions.
+
+_2) Depletion > no depletion on ratings of feeling frustrated._
+
+```{r, echo=FALSE}
+ma_frustrated_output = matab_fun("frustrated.ST", "Frustration", funnel = TRUE)
+# matab_fun("frustrated.ST", "Frustration", select = "lab != 'kate sweeny'")
+  
+kable_styling(kable(ma_frustrated_output[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+On average, the depletion task was much more frustrating to participants than the corresponding non-depletion task. 
+
+```{r, echo=FALSE, eval=FALSE}
+# deprecated; data cleaning seems to have fixed this outlier and I no longer find it in the dataset:
+# The effect size may be particularly high through an outlier lab which had a _d_ of over 4, but based on only `r nrow(dat[which(dat$lab == "kate sweeny" & dat$condition == "Depletion"),])` participants in the depletion condition, but the effect remained significant when excluding this lab:
+  
+ma_frustrated_output2 = matab_fun("frustrated.ST", "Frustration", funnel = FALSE, select = "lab != 'kate sweeny'")
+  
+kable_styling(kable(ma_frustrated_output2[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+
+_3) Competing predictions: Depletion condition effect on index of self-reports of motivation and wanting to do well (assuming alpha  >= .70; otherwise items will be analyzed as separate DVs) will be either ns (according to resource model) or depletion < no depletion (according to process model)._
+
+The standardized self-reports of motivation and wanting to do well formed an internally consistent scale, $\alpha$ = `r round(alpha(dat[, c("motivated.ST", "do.well.ST")])$total$raw_alpha, 2)` and were therefore analyzed jointly in an index of motivation.
+
+```{r, echo=FALSE}
+ma_motivation_output = matab_fun("motivation", "Motivation", funnel = TRUE)
+  
+kable_styling(kable(ma_motivation_output[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+Participants' self-reported motivation was not noticeably different between the depletion and non-depletion conditions. If a depletion effect exists this would be evidence the resource model of depletion effects, however, given that there was no significant depletion effect using meta-analytic procedures, the result may not support either theory.
+
+Descriptives: Ms and SDs
+
+```{r, echo = FALSE}
+dat %>%
+  select(
+         effortindex_UNST, # the standardized version is called manipcheck
+         fatigueindex_UNST, frustrated, motivationindex_UNST) %>%
+  group_by(1) %>%
+  summarise_all(~sprintf("%.3f (%.3f)", mean(., na.rm = TRUE),
+                         sd(., na.rm = TRUE))) %>%
+  .[c(2, 1), -1] %>%
+  t %>%
+  kable %>% kable_styling(full_width = FALSE, latex_options = "hold_position")
+```
+
+
+### 3) Moderation by Task Self-Report ###
+
+_1) Significant depletion condition x index of effortful/difficult manipulation check (assuming alpha is >= .70; otherwise, each rating will be used as a separate moderator and therefore two models will be run). Prediction is that the depletion effect will be more pronounced for participants who reported that the manipulation task was more effortful/difficult._
+
+_2) Significant depletion condition x index of tired/fatigued (assuming alpha is >= .70; otherwise, each rating will be used as a separate moderator and therefore two models will be run). Prediction is that the depletion effect will be more pronounced for participants who reported that they felt more tired/fatigued by the manipulation task._
+
+_3) Significant depletion condition x index of frustrated. Prediction is that the depletion effect will be more pronounced for participants who reported that they felt more frustrated by the manipulation task._
+
+```{r, echo=FALSE}
+
+ma_feelingsmod_output = rbind(
+  matab_contmod_fun("DV_new", "manipcheck"),
+  matab_contmod_fun("DV_new", "fatigued.comp"),
+  matab_contmod_fun("DV_new", "frustrated.ST")
+)
+
+kable_styling(kable(ma_feelingsmod_output[c(1:5, 12, 8, 13, 11)], 
+                    digits = 2, align = c("l", "l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+Fatigue/tiredness was not a significant moderator of a depletion effect, and frustration was significant only in the reduced sample. Effort/difficulty (the manipulation check), however, reached significance, suggesting that with higher perceived effort, the depletion effect became smaller. This analysis, however, tested only whether average levels of the manipulation check in a given sample affected between-condition differences in performance in that sample, not whether between-condition differences in the manipulation check affected between-condition differences in performance (i.e., it did not test whether more effective manipulations were associated with higher depletion effects). To test this second, and potentially more interesting effect, we evaluated whether Cohen's _d_ of the manipulation check was a moderator of Cohen's _d_ of performance. This effect, however, did not reach significance:
+
+```{r, echo = FALSE}
+x = select(labdata$manipcheck, lab, d)
+colnames(x) = c("lab", "manipcheck_d")
+labdata$DV_new = merge(labdata$DV_new, x, by = "lab")
+kable_styling(kable(matab_contmod_fun("DV_new", "manipcheck_d")[c(1:5, 12, 8, 13, 11)], 
+                    digits = 2, align = c("l", "l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+rm(x)
+
+ggplot(labdata$DV_new, aes(x = manipcheck_d, y = d)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", color = "black") + 
+  labs(x = "Cohen's d of Differences in the Manipulation Check", y = "Cohen's d of Differences in Performance") +
+  theme_bw()
+```
+
+
+### 4) Moderation by individual differences ###
+
+_1) Condition x state/action orientation scores predicted to be significant: people with higher state orientation scores will show a greater depletion effect than others._
+
+_2) Condition x willpower beliefs predicted to be significant: people with lower willpower belief scores (i.e., those who endorse a belief that willpower is a limited resource) will show a greater depletion effect than others._
+
+_3) Condition x trait self-control scores. No firm prediction given diverse patterns observed in published literature._
+
+```{r, echo=FALSE}
+
+ma_traitsmod_output = rbind(
+  matab_contmod_fun("DV_new", "hakemp_new_centered"),
+  matab_contmod_fun("DV_new", "itw_centered"),
+  matab_contmod_fun("DV_new", "bscs_centered")
+)
+
+ma_traitsmod_output[c(1:5, 12, 8, 13, 11)] %>%
+  mutate(Moderator = factor(Moderator, mods, names_mods)) %>%
+  kable(digits = 2, 
+        align = c("l", "l", "r", "r", rep("c", 4), "r")) %>%
+  kable_styling(full_width = FALSE, latex_options = "hold_position") %>%
+  column_spec(2, width = "2cm")
+```
+
+None of the three variables (action/state orientation, implicit theories about willpower, trait self-control) were significant moderators of a depletion effect.
+	 
+### 5) Moderation by investigator/experimenter characteristics ###
+
+_1) Depletion condition x PI's experience publishing depletion studies. PIs with more experience predicted to have bigger depletion effects than those with less. This analysis will be a regression analysis with condition as one IV and # of published depletion studies as the moderator. Vohs and Schmeichel will independently count each PI's published depletion studies. Disagreements will be discussed in order to come to agreement._
+
+_2) Condition x PI's # of peer reviewed publications. Depletion effect is predicted to be bigger for labs with PIs who have published more. Peer reviewed publications will be taken from the CVs that PIs submitted when they signed up for the study. Vohs and Schmeichel will count and discussions will resolve disagreements._
+
+_3) Condition x experimenter status. Depletion effect is predicted to be bigger with Ph.D. student experimenters (versus other experimenters, such as masters students, professional lab managers, or undergrads)._
+
+_4) Condition x whether the experimenter knows the hypothesis - predicted to be ns. These data will be gathered by instructing experimenters to write their thoughts on the hypothesis, with specifics, after they have concluded data collection. Vohs and Schmeichel will code for degree of awareness - 0 (none) vs 1 (some) vs 2 (totally knows). Disagreements will be resolved by discussion._
+
+_5) Condition x ratings of experimenters' professionalism behavior in sample videotape predicted to be significant. Prediction is that depletion effects will be bigger for experimenters with higher ratings. The ratings of the experimenters' behavior will be obtained from videotapes of them running a sample participant, which will be coded. Four independent coders from the Vohs and Schmeichel labs will code experimenters' behavior on professionalism (1-5, where 1=not at all; 5=very much so), degree to which they stuck to the script (1-5, where 1=not at all; 5=very much so), ease and comfort in the role (1-5, where 1=not at all; 5=very much so). Ratings are expected to show high degrees of agreement (kappas > .70), and if so they will be averaged to form an index. For non-English speaking labs, the index will be the average of professionalism and ease in the role. If kappas are low, the items will be used as independent predictors._
+
+```{r, echo=FALSE}
+ma_labmod_output = rbind(
+  matab_contmod_fun("DV_new", "PI_number_published_dpltn_studies"),
+  matab_contmod_fun("DV_new", "pub_count_centered"),
+  matab_contmod_fun("DV_new", "Video_averaged_centered")
+)
+
+ma_labmod_output[c(1:5, 12, 8, 13, 11)] %>%
+  mutate(Moderator = factor(Moderator, mods, names_mods)) %>%
+  kable(digits = 2, 
+        align = c("l", "l", "r", "r", rep("c", 4), "r")) %>%
+  kable_styling(full_width = FALSE, latex_options = "hold_position") %>%
+  column_spec(2, width = "2cm")
+```
+
+The three video-coded indicators of experimenter professionalism formed an internally consistent scale, $\alpha$ = `r round(alpha(dat[, c("Video.Professionalism.Average", "Video.Script.Average", "Video.Ease.Average")])$total$raw_alpha, 2) ` and were therefore analyzed in a joint index of professionalism. Experimenter status as PhD student vs. other (3), experimenter knowledge of hypotheses (4) could not be analyzed as moderators because these variables are not available yet.
+
+Neither number of depletion publications (1), number of all publications (2), or experimenter professionalism (5) significantly moderated the depletion effect.
+
+
+### 6) Moderation by sample characteristics ###
+
+_1) Depletion condition x location: Prediction is that depletion effects will be stronger in North American samples versus other countries._
+
+
+```{r, echo=FALSE}
+ma_locationmod_output = rbind(
+  matab_contmod_fun("DV_new", "N.America")
+)
+
+kable_styling(kable(ma_locationmod_output[c(1:5, 12, 8, 13, 11)], digits = 2, 
+                    align = c("l", "l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+
+# matab_fun("DV_new", "DV", select = "N.America == 1")
+# matab_fun("DV_new", "DV", select = "N.America == 0")
+```
+
+There was no significant difference in task performance between labs in North America and other labs.
+
+## Exploratory Participant-Level Analyses ## 
+
+### 1) Main Effects ##
+
+We nested the individual-level data within lab in random-intercept mixed models to assess the effect of condition. 
+
+$$
+variable = \beta_{0j} + \beta_{1} depletion+\epsilon
+\\
+\textrm{Random intercept: } \beta_{0j} = \gamma_0 + \tau
+$$
+
+**Table 1** 
+Regression coefficients $\hat\beta_{1}$ for condition (0: non-depletion, 1: depletion), SE in parentheses. Each row represents a separate regression model.
+
+`*` *p* < .05, `**` *p* < .01, `***` *p* < .001
+
+
+```{r, echo=FALSE}
+# for each DV, run a simple multilevel regression with a random intercept for lab
+lmcols = c("DV_new", "manipcheck", "fatigued.comp", "motivation", 
+           "new_figtime.secs.st", "new_fig.sheets.st", "newfigcomb.st", "cet.resc.avg.ST")
+lm_list = lm_ci = list()
+for(ii in lmcols){
+  x = lmer(get(ii) ~ condition + (1|lab), data = dat)
+  lm_list[[ii]] = summary(x)
+  lm_ci[[ii]] = confint(x)
+}
+
+# extract the coefficients and their significance into x:
+lm_output = data.frame(lmcols, 
+               t(sapply(lm_list, function(x) x$coefficients[1,])), 
+               t(sapply(lm_list, function(x) x$coefficients[2,])),
+               sapply(lm_list, function(x) x$devcomp$dims["n"]))
+rownames(lm_output) = c()
+colnames(lm_output) = c("Variable", c(outer(c("b", "SE", "df", "t", "p"), c(".Int", ""), paste0)), "N")
+lm_output$Intercept = with(lm_output, print.reg.SE(b.Int, SE.Int, print.pstars(p.Int)))
+lm_output$Depletion.Effect = with(lm_output, print.reg.SE(b, SE, print.pstars(p)))
+ci1 = bind_rows(map(lm_ci, function(x) x[3,]))  # CIs of the intercept
+lm_output$Intercept.CI = print.ci(ci1[[1]], ci1[[2]])
+ci2 = bind_rows(map(lm_ci, function(x) x[4,]))  # CIs of the depletion effect
+lm_output$Depletion.CI = print.ci(ci2[[1]], ci2[[2]])
+rm(ci1, ci2, ii)
+
+kable_styling(kable(lm_output[c(1, 12, 13, 15, 14, 16)]), full_width = FALSE, latex_options = "hold_position", bootstrap_options = "striped")
+
+```
+
+Means and SDs: 
+```{r, echo = FALSE}
+dat %>%
+  select(condition, DV_new, 
+         newfigcomb.st, new_figtime.secs.st, new_fig.sheets.st,
+         cet.resc.avg.ST) %>%
+  group_by(condition) %>%
+  summarise_all(~sprintf("%.3f (%.3f)", mean(., na.rm = TRUE),
+                         sd(., na.rm = TRUE))) %>%
+  .[c(2, 1),] %>%
+  t %>%
+  kable %>% kable_styling(full_width = FALSE, latex_options = "hold_position")
+```
+
+
+In line with the meta-analytic results, task performance (DV) and motivation were not significantly impacted by depletion versus non-depletion condition. Also mirroring the meta-analytic results participants felt more fatigued, more frustrated, and like the task was more effortful when they were in the depletion condition.
+
+### 2) Moderator analyses ###
+
+Next, we tested *contrast-coded* task version and *mean-centered* publication count as lab-level moderators and *mean-centered* ITW, BSCS, hakemp_new, and fatigue scores as participant-level moderators. Again, each participant's data was nested within lab with a random intercept for labs.
+
+$$
+variable = \beta_{0j} + \beta_{1} depletion + \beta_{2} moderator + \beta_{3} depletion\times moderator+\epsilon
+\\
+\textrm{Random intercept: } \beta_{0j} = \gamma_0 + \tau
+$$
+
+Regression coefficients $\hat\beta_{1}$, $\hat\beta_{2}$, and $\hat\beta_{3}$, SE in parentheses. Task type was *contrast-coded* (-0.5: E task, 0.5: Writing task), so that the intercept represents the average effect across both tasks. Publication count and ITW, BSCS, and hakemp_new were *mean-centered*, so that the intercept represents the effect at the average value. Each row represents a separate regression model. 
+
+`*` *p* < .05, `**` *p* < .01, `***` *p* < .001
+```{r, echo = FALSE}
+# for each DV, run one multilevel model per moderator with a random intercept for lab
+# (unless the moderator was "task type" but the variable applies only to one task type, or unless the variable and the moderator were identical)
+
+lm_mod_output = data.frame(matrix(ncol = 14, nrow = 0))
+lm_mod_list = list()
+lm_mod_ci = list()
+for(mod in mods){ # for each combination of moderator... 
+  for(ii in lmcols){ # ... and DV ...
+    if(mod != "task_version_contrast" | !is.element(ii, singletask)){
+      if(!(mod == ii)){
+        x = lmer(get(ii) ~ condition * get(mod) + (1|lab), data = dat) # run a model
+        lm_mod_list[[length(lm_mod_list)+1]] = x
+        names(lm_mod_list)[length(lm_mod_list)] = paste(ii, mod, sep = "&")
+        m = summary(x)
+        if(ii == "DV_new") lm_mod_ci[[length(lm_mod_ci) + 1]] = confint(x)
+        lm_mod_output = rbind(lm_mod_output, 
+                              data.frame(ii, 
+                                         mod, 
+                                         t(c(t(m$coefficients[1:4, c(1:2, 5)]))),
+                                         m$devcomp$dims["n"]))
+    }}
+  }
+}
+
+# format the output to look better in the table:
+colnames(lm_mod_output) = c("Variable", "Moderator.Variable", 
+                            c(outer(c("b", "SE", "p"), c(".Intercept", ".Depl", ".Mod", ".Int"), FUN = paste0)),
+                            "N")
+lm_mod_output = lm_mod_output %>%
+  mutate(Moderator.Variable = as.character(Moderator.Variable),
+         Moderator.Variable = ifelse(Moderator.Variable == "task_version", 
+                                     "Writing task", Moderator.Variable),
+         Intercept.p = print.pstars(p.Intercept),
+         Intercept = print.reg.SE(b.Intercept, SE.Intercept, Intercept.p),
+         Depletion.p = print.pstars(p.Depl),
+         Depletion = print.reg.SE(b.Depl, SE.Depl, Depletion.p),
+         Moderator.p = print.pstars(p.Mod),
+         Moderator = print.reg.SE(b.Mod, SE.Mod, Moderator.p),
+         Interaction.p = print.pstars(p.Int),
+         Interaction = print.reg.SE(b.Int, SE.Int, Interaction.p),
+)
+
+lm_mod_output_table = lm_mod_output[, c("Moderator.Variable", "Variable", "Intercept", "Depletion", "Moderator", "Interaction", "N")]
+
+# kable_styling(kable(lm_mod_output_table, align = 'l'), full_width = FALSE, latex_options = "hold_position", bootstrap_options = "striped")
+
+# create output table for the main (performance) DV and supplement it with CIs
+lm_mod_output_table_2 = data.frame(filter(lm_mod_output, Variable == "DV_new"),
+                            CI.0 = (bind_rows(setNames(map(lm_mod_ci, function(x) x[3,]), mods))),
+                            CI.Cond = (bind_rows(setNames(map(lm_mod_ci, function(x) x[4,]), mods))),
+                            CI.Mod = (bind_rows(setNames(map(lm_mod_ci, function(x) x[5,]), mods))),
+                            CI.Int = (bind_rows(setNames(map(lm_mod_ci, function(x) x[6,]), mods))))
+lm_mod_output_table_2  %>%
+  mutate(b0 = sprintf("%.02f %s", b.Intercept, Intercept.p),
+         CI.0 = print.ci(CI.0.2.5.., CI.0.97.5..),
+         Condition = sprintf("%.02f %s", b.Depl, Depletion.p),
+         CI.Cond = print.ci(CI.Cond.2.5.., CI.Cond.97.5..),
+         Mod = sprintf("%.02f %s", b.Mod, Moderator.p),
+         CI.Mod = print.ci(CI.Mod.2.5.., CI.Mod.97.5..),
+         Int = sprintf("%.02f %s", b.Int, Interaction.p),
+         CI.Int = print.ci(CI.Int.2.5.., CI.Int.97.5..),
+         Moderator.Variable = factor(Moderator.Variable, mods, names_mods)) %>%
+  select(Moderator.Variable, N, b0, CI.0, Condition, CI.Cond,
+         Mod, CI.Mod, Int, CI.Int) %>%
+  set_names(c("Moderator", "N", "b", "CI", 
+              "b", "CI", "b", "CI", "b", "CI")) %>%
+  kable(align = "l") %>% kable_styling() %>%
+  column_spec(1, width = "2cm") %>%
+  add_header_above(c("", "", "Intercept" = 2, "Depletion" = 2, "Moderator" = 2, "Interaction" = 2))
+
+rm(ii, lm_mod_list, lm_mod_ci, mod, m, x)
+```
+
+The results show that the effects of the depletion manipulation were heavily impacted by task, as evidenced by the significant interaction coefficients. Publication count had significant but small effects. The individual difference variables, however, did not seem to be relevant moderators. Fatigue moderated self-report variables as well as task performance. 
+
+Labs in North America and with more published depletion studies obtained stronger manipulation checks, but not stronger depletion effects.
+
+The main performance DV was moderated only by fatigue. This interaction is plotted below (the lines represent linear regression lines with 95% confidence intervals) and simple slopes analyses are presented at the points at which significance changes and at all quartiles. The plot suggests that performance was worse in the depletion condition (= a depletion effect existed) when fatigue was high.
+
+```{r, echo = FALSE, fig.align="center"}
+dat %>%
+  mutate(condition = factor(condition, c("Depletion", "Nondepletion"), c("Depletion", "Non-depletion"))) %>%
+  ggplot(aes(x = fatigued.comp, y = DV_new, linetype = condition)) +
+  theme_bw() + 
+  scale_linetype_manual(values = c("dashed", "solid")) +
+  scale_color_manual(values = c("gray50", "black")) +
+  # scale_color_manual(values = c("green4", "red3")) +
+  # scale_fill_manual(values = c("lightgreen", "tomato1")) +
+  labs(x = "Fatigue Index", y = "Task Performance", linetype = "Condition") +
+  coord_cartesian(ylim = c(-1, 1)) +
+  # geom_point(size = 1.2, shape = 21, aes(fill = condition), color = "transparent") + 
+  geom_smooth(method = "lm", color = "black")
+ggsave(paste0("Fatigue.Cond.Interaction_", ifelse(exclusion, "reduced", "full"), ".png"),
+       width = 6, height = 5, dpi = "print")
+
+dat_fatigue = dat[which(!is.na(dat$DV_new) & !is.na(dat$fatigued.comp)),]
+dat_fatigue = as.data.frame(dat_fatigue) # simple_slopes doesn't work properly when the data frame is a tibble
+x = lme(fixed = DV_new ~ condition * fatigued.comp, random = ~ 1 | lab,
+          data = dat_fatigue)
+
+breaks = if(exclusion) c(0.15, 0.16) else c(0, 0.01)
+simple_slopes(x, levels = list(
+  condition = c("Nondepletion", "Depletion", "sstest"),
+  fatigued.comp = c(breaks, quantile(dat$fatigued.comp, na.rm = TRUE), "sstest")
+  )) %>% 
+  mutate(condition = ifelse(condition == "sstest", "Depletion-Nondepletion difference", condition),
+         Fatigue.Index = ifelse(fatigued.comp == "sstest", "Slope of fatigue index", 
+                                  as.character(round(as.numeric(fatigued.comp), 2)))) %>%
+  select(condition, Fatigue.Index, everything(), -fatigued.comp) %>%
+  kable(digits = c(NA, NA, 3, 2, 2, 0, 3)) %>% kable_styling(full_width = FALSE, latex_options = "hold_position")
+rm(dat_fatigue)
+```
+
+In the full sample (but not the reduced sample), video-rated experimenter professionalism was another moderator, the interaction is displayed graphically and in simple slopes analyses (presented at the points at which significance changes and at all quartiles) below.
+
+```{r, echo = FALSE, fig.align="center"}
+ggplot(data = dat, aes(x = Video_averaged_centered, y = DV_new, linetype = condition)) +
+  theme_bw() + 
+  scale_linetype_manual(values = c("dashed", "solid")) +
+  scale_color_manual(values = c("gray50", "black")) +
+  # scale_color_manual(values = c("green4", "red3")) +
+  # scale_fill_manual(values = c("lightgreen", "tomato1")) +
+  xlab("Experimenter Professionalism") + ylab("Task Performance") +
+  coord_cartesian(ylim = c(-0.50, 0.50)) +
+  # geom_point(size = 1.2, shape = 21, aes(fill = condition), color = "transparent") + 
+  geom_smooth(method = "lm", color = "black")
+ggsave(paste0("Professionalism.Cond.Interaction_", ifelse(exclusion, "reduced", "full"), ".png"), 
+       width = 6, height = 5, dpi = "print")
+
+dat_video = dat[which(!is.na(dat$DV_new) & !is.na(dat$Video_averaged_centered)),]
+dat_video = as.data.frame(dat_video) # simple_slopes doesn't work properly when the data frame is a tibble
+x = lme(fixed = DV_new ~ condition * Video_averaged_centered, random = ~ 1 | lab,
+          data = dat_video)
+
+breaks = if(exclusion) c(-0.08, -0.07) else c(0.05, 0.06)
+simple_slopes(x, levels = list(
+  condition = c("Nondepletion", "Depletion", "sstest"),
+  Video_averaged_centered = c(breaks, quantile(dat$Video_averaged_centered, na.rm = TRUE), "sstest")
+  )) %>% 
+  mutate(condition = ifelse(condition == "sstest", "Depletion-Nondepletion difference", condition),
+         Professionalism = ifelse(Video_averaged_centered == "sstest", "Slope of professionalism", 
+                                  as.character(round(as.numeric(Video_averaged_centered), 2)))) %>%
+  select(condition, Professionalism, everything(), -Video_averaged_centered) %>%
+  kable(digits = c(NA, NA, 2, 2, 2, 0, 3)) %>% kable_styling(full_width = FALSE, latex_options = "hold_position")
+rm(dat_video)
+```
+
+#### Condition x Task x Feeling interactions on Performance
+
+```{r, echo = FALSE}
+lm_3wayint_manip = lmer(DV_new ~ condition * task_version * manipcheck + (1|lab), data = dat)
+# confint(lm_3wayint_manip)
+ggplot(dat, aes(x = manipcheck, y = DV_new, linetype = condition)) + 
+  geom_smooth(method = "lm", color = "black") + 
+  facet_wrap(~ task_version) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
+  ylab("Task Performance") + xlab("Difficulty/Effort") + 
+  theme_bw()
+# ggsave("lm_3wayint_manipcheck.png", width = 6, height = 4)
+
+lm_3wayint_fatigued = lmer(DV_new ~ condition * task_version * fatigued.comp + (1|lab), data = dat)
+# confint(lm_3wayint_fatigued)
+ggplot(dat, aes(x = fatigued.comp, y = DV_new, linetype = condition)) + 
+  geom_smooth(method = "lm", color = "black") + 
+  facet_wrap(~ task_version) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
+  ylab("Task Performance") + xlab("Fatigue/Tiredness") + 
+  theme_bw()
+# ggsave("lm_3wayint_fatigued.png", width = 6, height = 4)
+
+lm_3wayint_frustrated = lmer(DV_new ~ condition * task_version * frustrated.ST + (1|lab), data = dat)
+# confint(lm_3wayint_frustrated)
+ggplot(dat, aes(x = frustrated.ST, y = DV_new, linetype = condition)) + 
+  geom_smooth(method = "lm", color = "black") + 
+  facet_wrap(~ task_version) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
+  ylab("Task Performance") + xlab("Frustration") + 
+  theme_bw()
+# ggsave("lm_3wayint_frustrated.png", width = 6, height = 4)
+```
+
+
+#### Moderating and Mediating Effects of Fatigue
+
+Finally, we tested if the depletion-nondepletion difference in fatigue.comp moderated the difference in DV. We did not find evidence of the _d_ for fatigue moderating the _d_ of the DV.
+
+```{r, echo = FALSE}
+# creating a smaller dataset that includes only "fatigued.comp" and "DV"
+ma_fatiguemod_data = merge(labdata$fatigued.comp[, c("lab", "d", "var.d")], 
+                labdata$DV_new[, c("lab", "d", "var.d")], by = "lab", suffixes = c(".fatigued.comp", ".DV_new"))
+# random-effects meta-analysis
+ma_fatiguemod = rma(yi = d.DV_new, vi = var.d.DV_new, mods = d.fatigued.comp, data = ma_fatiguemod_data)
+ma_fatiguemod$N = sum(labdata[["DV_new"]]$N.total)
+
+# extracting the coefficients and their CIs for the table:
+ma_fatiguemod_output = with(ma_fatiguemod, 
+              data.frame("DV", "fatigued.comp.d", k, N, 
+                         b[1], ci.lb[1], ci.ub[1], 
+                         b[2], ci.lb[2], ci.ub[2], 
+                         I2))
+# formatting the table to look better:
+rownames(ma_fatiguemod_output) = c()
+colnames(ma_fatiguemod_output) = c("Variable", "Moderator", "k", "N", "RE: Intercept", "RE.Int.CI.low", "RE.Int.CI.high","RE: Moderator", "RE.Mod.CI.low", "RE.Mod.CI.high", "I2")
+ma_fatiguemod_output$RE.Intercept.CI = print.ci(ma_fatiguemod_output$RE.Int.CI.low, ma_fatiguemod_output$RE.Int.CI.high)
+ma_fatiguemod_output$RE.Moderator.CI = print.ci(ma_fatiguemod_output$RE.Mod.CI.low, ma_fatiguemod_output$RE.Mod.CI.high)
+ma_fatiguemod_output$I2 = paste0(sprintf("%.02f", ma_fatiguemod_output$I2), "%")
+  
+kable_styling(kable(ma_fatiguemod_output[c(1:5, 12, 8, 13, 11)], digits = 2, 
+                    align = c("l", "l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+rm(ma_fatiguemod_data)
+```
+
+In a participant-level mediator analysis investigating the same idea (condition influencing fatigue influencing effortful.ST), we found evidence of a small mediation effect.
+
+```{r, echo = FALSE}
+# specifying the mediation model:
+model <- ' # direct effect
+             DV_new ~ c*condition
+           # mediator
+             fatigued.comp ~ a*condition
+             DV_new ~ b*fatigued.comp
+           # indirect effect (a*b)
+             ab := a*b
+           # total effect
+             total := c + (a*b)
+         '
+fit <- sem(model, data = dat)
+med = parameterEstimates(fit)
+
+# extracting the coefficients for the table:
+med = med[c(2, 3, 1, 7:8), c(4:5, 9:10)]
+colnames(med) = c("Parameter", "b", "ci.lb", "ci.ub")
+med$CI = print.ci(med$ci.lb, med$ci.ub)
+med$Parameter = c("Path a: Condition -> Fatigue", "Path b: Fatigue -> DV", 
+                  "Path c: Condition -> DV", "Indirect effect", "Total effect")
+row.names(med) = c()
+
+kable_styling(kable(med[c(1:2, 5)], digits = 2, align = c("l", "c", "c")), 
+              full_width = FALSE, latex_options = "hold_position", bootstrap_options = "striped")
+```
+
+## Exploratory performance and manipulation check meta-analyses
+
+```{r, echo = FALSE}
+ma_performance_output = rbind(
+  matab_fun("new_figtime.secs.st", "Figure Tracing: Duration", funnel = FALSE),
+  matab_fun("new_fig.sheets.st", "Figure Tracing: Nr of attempts", funnel = FALSE),
+  matab_fun("newfigcomb.st", "Figure Tracing: Combined", funnel = FALSE),
+  matab_fun("cet.resc.avg.ST", "CET", funnel = FALSE)
+)
+  
+kable_styling(kable(ma_performance_output[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position") %>%
+  column_spec(1, width = "3.2cm")
+
+```
+
+```{r, echo = FALSE}
+ma_manipcheckseparate_output = rbind(
+  matab_fun("difficult.ST", "Difficulty: All", funnel = TRUE),
+  matab_fun("difficult.ST", "Difficulty: Writing", select = "task_version == 'Writing Task'"),
+  matab_fun("difficult.ST", "Difficulty: E Task", select = "task_version == 'E Task'"),
+  matab_fun("effortful.ST", "Effort: All", funnel = TRUE),
+  matab_fun("effortful.ST", "Effort: Writing", select = "task_version == 'Writing Task'"),
+  matab_fun("effortful.ST", "Effort: E Task", select = "task_version == 'E Task'")
+)
+
+kable_styling(kable(ma_manipcheckseparate_output[c(1:4, 11, 7, 12, 10)], digits = 2, 
+                    align = c("l", "r", "r", rep("c", 4), "r")), full_width = FALSE, latex_options = "hold_position")
+```
+
+
+# Table 2
+
+```{r, echo = FALSE}
+Sample = c("Overall depletion effect", "Overall figure tracing performance", "Figure tracing duration", "Figure tracing attempts", "Cognitive Estimation Test")
+Sample_vars = c("DV_new", "newfigcomb.st", "new_figtime.secs.st", "new_fig.sheets.st", "cet.resc.avg.ST")
+Sample_vars_names = c("Task Performance", "Figure Tracing: Combined", "Figure Tracing: Duration", "Figure Tracing: Nr of attempts", "CET")
+Sample_datasets = list(ma_main, ma_performance_output, ma_performance_output, ma_performance_output, ma_performance_output, ma_performance_output)
+
+Table2 = tibble()
+for(ii in seq_along(Sample)){
+  ma_table = Sample_datasets[[ii]]
+  ma_results = ma_table[which(ma_table$Variable %in% c(Sample_vars[ii], Sample_vars_names[ii])), 
+                 c("N", "RE: Average effect", "RE.CI", "I2", "FE: Average effect", "FE.CI")]
+  lm_results = lm_output[which(lm_output$Variable == Sample_vars[ii]), c("b", "Depletion.CI")]
+  Table2 = bind_rows(Table2, 
+                     bind_cols(tibble(DV = Sample[ii], Sample = ifelse(exclusion, "Reduced", "Full")), 
+                               ma_results, 
+                               lm_results))
+}
+Table2 = Table2 %>%
+  mutate_at(vars(-DV, -Sample, -N), as.character) %>%
+  pivot_longer(c(-DV, -Sample, -N, -I2), names_to = "Term", values_to = "Value") %>%
+  mutate(Type = ifelse(str_detect(Term, "CI"), "CI", "b"),
+         Model = ifelse(str_detect(Term, "RE"), "RE", ifelse(str_detect(Term, "FE"), "FE", "MLM"))) %>%
+  select(-Term) %>%
+  pivot_wider(names_from = Type, values_from = Value) %>%
+  mutate(cilo = str_split(str_remove_all(CI, "[\\[\\]]"), ", ", simplify = TRUE)[,1],
+         cihi = str_split(str_remove_all(CI, "[\\[\\]]"), ", ", simplify = TRUE)[,2],
+         sig = ifelse((cilo <= 0 & cihi <= 0) | (cilo >= 0 & cihi >= 0), "*", ""),
+         b = sprintf("%.02f %s", as.numeric(b), sig),
+         I2 = sprintf("%.02f", as.numeric(I2))) %>%
+  select(-cilo, -cihi, -sig) %>%
+  pivot_wider(names_from = Model, values_from = c(b, CI)) %>%
+  select(DV, Sample, N, b_RE, CI_RE, I2, b_FE, CI_FE,b_MLM, CI_MLM)
+
+if(isTRUE(exclusion)){
+  Table2_reduced = Table2
+  save(Table2_reduced, file = "Table2_reduced")
+  if(file.exists("Table2_full")){
+    load("Table2_full")
+  } else{Table2_full = tibble()}
+} else{
+  Table2_full = Table2
+  save(Table2_full, file = "Table2_full")
+  if(file.exists("Table2_reduced")){
+    load("Table2_reduced")
+  } else{Table2_reduced = tibble()}
+}
+
+Table2 = bind_rows(Table2_reduced, Table2_full)
+Table2$DV = factor(Table2$DV, Sample)
+Table2 = Table2 %>%
+  arrange(DV) %>%
+  mutate(DV = ifelse(duplicated(DV), "", as.character(DV)))
+Table2 %>%
+  set_names(c("DV", "Sample", "N", "d", "CI", "I2", "d", "CI", "b", "CI")) %>%
+  kable() %>% kable_styling(full_width = FALSE, latex_options = "hold_position") %>%
+  add_header_above(c(rep("", 3), "Random-effects meta-analysis" = 3, "Fixed-effects meta-analysis" = 2, "Multi-level regression" = 2)) %>%
+  column_spec(1, width = "2.5cm")
+
+write.csv(Table2, "Table2.csv", row.names = FALSE)
+```

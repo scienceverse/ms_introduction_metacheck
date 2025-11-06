@@ -1,0 +1,771 @@
+---
+title: "Yousif et al. open data replication attempt"
+author: "Deborah Apthorp"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: vignette
+---
+
+
+
+``` {r setup, include=FALSE}
+
+library(readr)
+library(ggplot2)
+library(rcartocolor) # For colourblind-friendly palettes
+library(tidyverse)
+library(broom)
+library(dplyr)
+library(yarrr)
+library(tidyr)
+library(reshape2)
+library(purrr)
+library(Hmisc)
+library(afex)
+library(emmeans)
+library(readxl)
+library(kableExtra)
+
+options(knitr.kable.NA = '')
+```
+
+
+
+## Overview of available data
+
+This paper came with very, very raw data and little else. The main file is an Excel file called "Additive Area - Raw Data and Info.xlsx". The file contains several tabs with raw data for each experiment, a tab called "Stim Details" for each experiment with information about the stimuli, and an overall "readMe" and "Legend" tab. The "Legend" tab contains information about what each variable name means for each tab, and the "readme" tab contains meta-descriptions of what the tabs are, plus the line, "The 'Summary' tab explains how the raw data were analyzed" - but there is no "Summary" tab! 
+
+However, with a little wrangling I was able to extract some information from each tab. Note that, at least for Experiment 1, it seems as if there are only 95 subjects, contrary to the paper's assertion that there were 97; it is possible that one or two of the participant IDs were duplicates, as they were partially redacted in the data. 
+
+It seems as if there were seven conditions; Additive Area (1.3, 1.2, 1.1), True Area (1.3, 1.2, 1.1) and a condition where the ratio was 1, which does not seem to have been included in the ANOVA. 
+
+## Experiment 1 - Circles
+
+I was able to replicate the plots, more or less, after quite a lot of data wrangling. Oddly the reaction times in the file are approximately 1000ms longer than those in the plot. 
+
+### Figures
+
+```{r circles setup, echo=FALSE, results='asis'}
+
+Circles <- read_excel("Additive Area - Raw Data and Info.xlsx", 
+    sheet = "Exp 1 - Circles")
+# work out what type of trial it was
+
+Circles$trialDiff <- (Circles$aa - Circles$ta) # work out the difference between the aa and ta columns 
+
+Circles$Correct <- ifelse(Circles$whichCorrect == Circles$response, 1, 0) # was response correct
+
+# aggregate across trials for RT and correct responses
+Circles_RT <- aggregate(data=Circles, RT ~ id2 + trialDiff, FUN="mean")
+Circles_Correct <- aggregate(data=Circles, Correct ~ id2 + trialDiff, FUN="mean")
+
+# Work out additive area vs. true area condition (leave blank for ratio of 1)
+Circles_RT <- Circles_RT %>%
+    mutate(AreaCond = case_when(trialDiff > 0 ~ 'Additive',
+                                  trialDiff < 0 ~ 'True',
+                                  TRUE ~ 'Equal'))
+Circles_RT$areaRatio <- (abs(Circles_RT$trialDiff)+100)/100 # Gives the value for relative area as stated in the paper
+
+Circles_RT_anovaData <- filter(Circles_RT, AreaCond=='Additive' | AreaCond =='True')
+
+# Work out additive area vs. true area condition (leave blank for ratio of 1)
+Circles_Correct <- Circles_Correct %>%
+    mutate(AreaCond = case_when(trialDiff > 0 ~ 'Additive',
+                                  trialDiff < 0 ~ 'True',
+                                  TRUE ~ 'Equal'))
+Circles_Correct$areaRatio <- (abs(Circles_Correct$trialDiff)+100)/100 # Gives the value for relative area as stated in the paper
+
+Circles_Correct_anovaData <- filter(Circles_Correct, AreaCond=='Additive' | AreaCond =='True')
+
+#knitr::kable(head(Circles_summary, 10))
+```
+
+
+```{r exp1 ANOVAs, echo = FALSE, results = 'asis'}
+
+RT_ANOVA_analysis <- aov_ez("id2", "RT", Circles_RT_anovaData, within=c("AreaCond", "areaRatio"),
+                      factorize = TRUE)
+
+EM_Means_RT <- emmeans (RT_ANOVA_analysis, ~ AreaCond|areaRatio)
+
+Correct_ANOVA_analysis <- aov_ez("id2", "Correct", Circles_Correct_anovaData, within=c("AreaCond", "areaRatio"),
+                      factorize = TRUE)
+EM_Means_Correct <- emmeans (Correct_ANOVA_analysis, ~ AreaCond|areaRatio)
+
+# For plotting graphs as in the paper, including the "1" condition
+Total_ANOVA_analysis_RT <- aov_ez("id2", "RT", Circles_RT, within=c("trialDiff"),factorize = TRUE)
+EM_Means_Total_RT <- emmeans (Total_ANOVA_analysis_RT , ~ trialDiff)
+EMMeansTableTotalRT <- as.data.frame(EM_Means_Total_RT) # force ANOVA table into data frame
+
+EMMeansTableTotalRT <- EMMeansTableTotalRT %>%
+  mutate(AreaCond = case_when(trialDiff == 'X.30' ~ 'True Area',
+                              trialDiff == 'X.20' ~ 'True Area',
+                              trialDiff == 'X.10' ~ 'True Area',
+                              trialDiff == 'X30' ~ 'Additive Area',
+                              trialDiff == 'X20' ~ 'Additive Area',
+                              trialDiff == 'X10' ~ 'Additive Area',
+                              TRUE ~ 'Equal area'))
+
+
+# For plotting graphs as in the paper, including the "1" condition
+Total_ANOVA_analysis_Correct <- aov_ez("id2", "Correct", Circles_Correct, within=c("trialDiff"),factorize = TRUE)
+EM_Means_Total_Correct <- emmeans (Total_ANOVA_analysis_Correct , ~ trialDiff)
+EMMeansTableTotalCorrect <- as.data.frame(EM_Means_Total_Correct) # force ANOVA table into data frame
+
+EMMeansTableTotalCorrect <- EMMeansTableTotalCorrect %>%
+  mutate(AreaCond = case_when(trialDiff == 'X.30' ~ 'True Area',
+                              trialDiff == 'X.20' ~ 'True Area',
+                              trialDiff == 'X.10' ~ 'True Area',
+                              trialDiff == 'X30' ~ 'Additive Area',
+                              trialDiff == 'X20' ~ 'Additive Area',
+                              trialDiff == 'X10' ~ 'Additive Area',
+                              TRUE ~ 'Equal area'))
+```
+
+#### Proportion correct 
+
+```{r plot Exp 1 proportion correct TOTAL, echo = FALSE}
+
+p<- ggplot(EMMeansTableTotalCorrect, aes(x=trialDiff, y=emmean, fill=AreaCond)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) + # Add the bars and tell them where to go 
+   aes(x = reorder(trialDiff, desc(trialDiff)))+
+  geom_errorbar(aes(x=trialDiff, ymin=emmean-SE, ymax=emmean+SE), 
+                width=.2, position = position_dodge(.9)) + # add the error bars and tell them where to go 
+    coord_cartesian(ylim = c(0.4, 0.9))# make axis limits similar to the paper
+#print(p) # print the plot 
+# Finished bar plot - give it some nice labels 
+p+labs(x="Condition", y = "Proportion correct")+
+  
+ 
+  theme_classic()+
+  #ylim (0.4,0.9)#+ # Fix the y limits to be as in paper - not sure why this isn't working
+# change the theme to a classic sort of look
+
+  scale_fill_manual(values=c('green3','royalblue1', 'red2')) # change to match plot in paper
+
+```
+
+#### Reaction time 
+
+```{r plot Exp 1 RTs, echo = FALSE}
+
+p<- ggplot(EMMeansTableTotalRT, aes(x=trialDiff, y=emmean, fill=AreaCond)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) + # Add the bars and tell them where to go 
+  aes(x = reorder(trialDiff, desc(trialDiff)))+
+  geom_errorbar(aes(x=trialDiff, ymin=emmean-SE, ymax=emmean+SE), 
+                width=.2, position = position_dodge(.9)) +
+  coord_cartesian(ylim = c(2200, 2800))# add the error bars and tell them where to go 
+#print(p) # print the plot 
+# Finished bar plot - give it some nice labels 
+p+labs(x="Condition", y = "Mean Reaction time")+
+  theme_classic()+ 
+  scale_fill_manual(values=c('green3','royalblue1', 'red2')) # change to match plot in paper
+# change the theme to a classic sort of look
+#ylim(1800,4000)#+ # Fix the y limits to be the actual limits of the ratings
+#scale_fill_manual(values=c('green2','green2', 'green2', 'royalblue1', 'red2', 'red2', 'red2')) # change to match plot in paper
+
+```
+
+### ANOVA - proportion correct/'more'
+
+A repeated-measures ANOVA using the `ezanova' package in R produced similar but not identical results to those reported in the paper. The degrees of freedom are different, as I could only find the data for 95 subjects, and R has performed Greenhouse-Geisser corrections to correct for departures from shpericity, which also change the results and DF. Still, the general pattern is consistent with the paper. 
+
+From the paper: 
+
+>A repeated measures analysis of variance (ANOVA) conducted on accuracy with two factors (condition: additive area, true area; ratio: 1.10, 1.20, 1.30) revealed main effects of both condition, $F(1, 96) = 17.80, p < .001$, and ratio, $F(2, 95) = 24.43, p < .001$, as well as an interaction between the two, $F(2, 95) = 9.94, p < .001$.
+
+The ANOVA table and estimated marginal means are below. I have added a Pirate plot for extra dataviz joy. 
+
+```{r plot Exp 1 proportion correct ANOVA, echo = FALSE}
+
+RT_ANOVA_table<- as.data.frame(RT_ANOVA_analysis$anova_table)
+Correct_ANOVA_table<- as.data.frame(Correct_ANOVA_analysis$anova_table)
+
+Correct_ANOVA_table %>%
+  kable(caption = "ANOVA table, proportion correct results for Experiment 1 (circles)") %>%
+  kable_styling()
+
+EMMeansTableCorrect <- as.data.frame(EM_Means_Correct)
+EMMeansTableCorrect %>%
+  kable(caption = "Estimated marginal means table, proportion correct results for Experiment 1 (circles)") %>%
+  kable_styling()
+
+pirateplot(formula = Correct ~ AreaCond + areaRatio,
+           data = Circles_Correct_anovaData,
+           xlab = "Condition", #x label
+           ylab = "Proportion correct", # ylabel,
+           # ylim= c(0.4, 2.6),
+           par(tcl=.2), 
+           cex.axis = 1.2,
+           main = "Proportion correct - Experiment 1 (circles)", # uncomment this if you want a title
+           theme = 2, # uses one of the inbuilt themes
+           pal = "google", # colour palette 
+           inf.f.o = .6, # Turn up inf filling
+           bean.b.o = .2, # Turn down bean borders
+           bean.f.o = 0, # Turn down bean fill
+           quant = c(.1, .9), # 10th and 90th quantiles
+           point.o = .5, point.pch = 21,  point.bg = "white",   point.col = "black",
+           quant.col = "black"
+)
+
+
+
+```
+
+Post hoc analyses were carried out: 
+
+> "Post hoc tests revealed that overall performance was above chance in the additive-area condition, $t(96) = 10.88, p < .001, d = 1.11$. However, surprisingly, observers were unable to make discriminations on the basis of true area alone, $t(96) = 1.70, p = .09, d = 0.17$. Even in the trials with the biggest difference in area (1.30 ratio), observers were not above chance in their area discriminations, $t(96) = 1.93, p = .06, d = 0.20$.
+
+The results are roughly similar but not identical, as can be seen in the table below. 
+
+```{r post hoc analyses circles correct, echo = FALSE}
+
+Circles_Correct_Additive <- filter(Circles_Correct_anovaData, AreaCond=='Additive')
+Circles_Correct_Additive_mean <- aggregate(data=Circles_Correct_Additive, Correct ~ id2, FUN="mean")
+Circles_Correct_True <- filter(Circles_Correct_anovaData, AreaCond=='True')
+Circles_Correct_True_mean <- aggregate(data=Circles_Correct_True, Correct ~ id2, FUN="mean")
+Circles_Correct_True_1p3 <- filter(Circles_Correct_True, areaRatio=='1.3')
+
+Additive_postHoc <- t.test(Circles_Correct_Additive_mean$Correct, mu=.5)
+True_postHoc <- t.test(Circles_Correct_True_mean$Correct, mu=.5)
+True_postHoc_1p3 <- t.test(Circles_Correct_True_1p3$Correct, mu=.5)
+
+postHocTable_Circles_Correct <- map_df(list(Additive_postHoc, True_postHoc, True_postHoc_1p3), tidy)
+
+postHocTable_Circles_Correct %>%
+  kable(caption = 'Additive Area and True Area Post-Hoc Tests') %>%
+  kable_styling()
+
+```
+
+### ANOVA - reaction time
+
+I also carried out an ANOVA on the reaction time results as reported in the paper. As cen be seen from the graph, reaction time was heavily skewed, so I wonder if it was transformed somehow for the analysis. 
+
+From the paper: 
+
+> A separate ANOVA conducted on response times revealed a similar pattern, and post hoc tests confirmed that observers were more than 120 ms faster for the additive-area trials compared with the true-area trials, $t(96) = 4.88, p < .001, d = 0.50.$
+
+Again, the results are similar but not identical (see below). 
+
+```{r RT ANOVA, echo = FALSE}
+
+RT_ANOVA_table %>%
+  kable(caption = "ANOVA table, reaction times for Experiment 1 (circles)") %>%
+  kable_styling()
+
+EMMeansTableRT <- as.data.frame(EM_Means_RT)
+EMMeansTableRT %>%
+  kable(caption = "Estimated marginal means, reaction times for Experiment 1 (circles)") %>%
+  kable_styling()
+
+pirateplot(formula = RT ~ AreaCond + areaRatio,
+           data = Circles_RT_anovaData,
+           xlab = "Condition", #x label
+           ylab = "Reaction time (ms)", # ylabel,
+           # ylim= c(0.4, 2.6),
+           par(tcl=.2), 
+           cex.axis = 1.2,
+           main = "Reaction time", # uncomment this if you want a title
+           theme = 2, # uses one of the inbuilt themes
+           pal = "google", # colour palette 
+           inf.f.o = .6, # Turn up inf filling
+           bean.b.o = .2, # Turn down bean borders
+           bean.f.o = 0, # Turn down bean fill
+           quant = c(.1, .9), # 10th and 90th quantiles
+           point.o = .5, point.pch = 21,  point.bg = "white",   point.col = "black",
+           quant.col = "black"
+)
+
+
+
+Circles_RT_mean <- aggregate(data = Circles_RT_anovaData, RT ~ id2 + AreaCond, FUN="mean")
+
+Circles_RT_postHoc <- t.test(formula = RT~AreaCond, data = Circles_RT_mean,  paired = TRUE  )
+
+postHocTable_Circles_RT <- map_df(list(Circles_RT_postHoc), tidy)
+
+postHocTable_Circles_RT %>%
+  kable(caption = 'Additive Area and True Area Post-Hoc Test for reaction time') %>%
+  kable_styling()
+
+```
+
+The authors also say: 
+
+> "Because we did not explicitly manipulate number, we tested whether number could potentially explain these results. A linear regression with additive area, true area, and number as covariates revealed that additive area did predict observer responses ($p < .001$) but that neither true area ($p = .86$) nor number ($p = .23$) did". 
+
+It is not possible to replicate this analysis as it's not possible to work out what variables were used. I think we will need to contact the authors for this one. 
+
+## Experiment 2 - speeded circles
+
+The paper reports: 
+
+> To ensure that all observers spent roughly the same amount of time assessing the displays and that these judgments were, in fact, rapid approximations, we replicated Experiment 1, except that observers had only 700 ms to view the stimuli.
+
+Yet again, they report recuiting 100 obbservers of whom 3 did not complete a single trial. However, I could only find complete data for 96 observers (one was dropped from the analysis due to not completing all conditions). 
+
+```{r speeded circles setup, echo=FALSE, results='asis', warning= FALSE}
+SpeededCircles <- read_excel("Additive Area - Raw Data and Info.xlsx", 
+    sheet = "Exp 2 - Speeded Circles")
+# work out what type of trial it was
+
+SpeededCircles$trialDiff <- (SpeededCircles$aa - SpeededCircles$ta) # work out the difference between the aa and ta columns 
+
+SpeededCircles$Correct <- ifelse(SpeededCircles$whichCorrect == SpeededCircles$response, 1, 0) # was response correct
+
+# aggregate across trials for RT and correct responses
+SpeededCircles_RT <- aggregate(data=SpeededCircles, RT ~ id2 + trialDiff, FUN="mean")
+SpeededCircles_Correct <- aggregate(data=SpeededCircles, Correct ~ id2 + trialDiff, FUN="mean")
+
+# Work out additive area vs. true area condition (leave blank for ratio of 1)
+SpeededCircles_RT <- SpeededCircles_RT %>%
+    mutate(AreaCond = case_when(trialDiff > 0 ~ 'Additive',
+                                  trialDiff < 0 ~ 'True',
+                                  TRUE ~ 'Equal'))
+SpeededCircles_RT$areaRatio <- (abs(SpeededCircles_RT$trialDiff)+100)/100 # Gives the value for relative area as stated in the paper
+
+SpeededCircles_RT_anovaData <- filter(SpeededCircles_RT, AreaCond=='Additive' | AreaCond =='True')
+
+# Work out additive area vs. true area condition (leave blank for ratio of 1)
+SpeededCircles_Correct <- SpeededCircles_Correct %>%
+    mutate(AreaCond = case_when(trialDiff > 0 ~ 'Additive',
+                                  trialDiff < 0 ~ 'True',
+                                  TRUE ~ 'Equal'))
+SpeededCircles_Correct$areaRatio <- (abs(SpeededCircles_Correct$trialDiff)+100)/100 # Gives the value for relative area as stated in the paper
+
+SpeededCircles_Correct_anovaData <- filter(SpeededCircles_Correct, AreaCond=='Additive' | AreaCond =='True')
+
+```
+
+
+
+```{r exp2 ANOVAs, echo = FALSE, results = 'asis', warning=FALSE}
+
+RT_ANOVA_analysis_SC <- aov_ez("id2", "RT", SpeededCircles_RT_anovaData, within=c("AreaCond", "areaRatio"),
+                      factorize = TRUE)
+
+EM_Means_RT_SC <- emmeans (RT_ANOVA_analysis_SC, ~ AreaCond|areaRatio)
+
+Correct_ANOVA_analysis_SC <- aov_ez("id2", "Correct", SpeededCircles_Correct_anovaData, within=c("AreaCond", "areaRatio"),
+                      factorize = TRUE)
+EM_Means_Correct_SC <- emmeans (Correct_ANOVA_analysis_SC, ~ AreaCond|areaRatio)
+
+# For plotting graphs as in the paper, including the "1" condition
+Total_ANOVA_analysis_RT_SC <- aov_ez("id2", "RT", SpeededCircles_RT, within=c("trialDiff"),factorize = TRUE)
+EM_Means_Total_RT_SC <- emmeans (Total_ANOVA_analysis_RT_SC , ~ trialDiff)
+EMMeansTableTotalRT_SC <- as.data.frame(EM_Means_Total_RT_SC) # force ANOVA table into data frame
+
+EMMeansTableTotalRT_SC <- EMMeansTableTotalRT_SC %>%
+  mutate(AreaCond = case_when(trialDiff == 'X.30' ~ 'True Area',
+                              trialDiff == 'X.20' ~ 'True Area',
+                              trialDiff == 'X.10' ~ 'True Area',
+                              trialDiff == 'X30' ~ 'Additive Area',
+                              trialDiff == 'X20' ~ 'Additive Area',
+                              trialDiff == 'X10' ~ 'Additive Area',
+                              TRUE ~ 'Equal area'))
+
+
+# For plotting graphs as in the paper, including the "1" condition
+Total_ANOVA_analysis_Correct_SC <- aov_ez("id2", "Correct", SpeededCircles_Correct, within=c("trialDiff"),factorize = TRUE)
+EM_Means_Total_Correct_SC <- emmeans (Total_ANOVA_analysis_Correct_SC , ~ trialDiff)
+EMMeansTableTotalCorrect_SC <- as.data.frame(EM_Means_Total_Correct_SC) # force ANOVA table into data frame
+
+EMMeansTableTotalCorrect_SC <- EMMeansTableTotalCorrect_SC %>%
+  mutate(AreaCond = case_when(trialDiff == 'X.30' ~ 'True Area',
+                              trialDiff == 'X.20' ~ 'True Area',
+                              trialDiff == 'X.10' ~ 'True Area',
+                              trialDiff == 'X30' ~ 'Additive Area',
+                              trialDiff == 'X20' ~ 'Additive Area',
+                              trialDiff == 'X10' ~ 'Additive Area',
+                              TRUE ~ 'Equal area'))
+```
+
+
+#### Proportion correct (Experiment 2)
+
+The plot for proportion correct looks pretty similar to Figure 3a. 
+
+```{r plot Exp 2 proportion correct TOTAL, echo = FALSE}
+
+p<- ggplot(EMMeansTableTotalCorrect_SC, aes(x=trialDiff, y=emmean, fill=AreaCond)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) + # Add the bars and tell them where to go 
+   aes(x = reorder(trialDiff, desc(trialDiff)))+
+  geom_errorbar(aes(x=trialDiff, ymin=emmean-SE, ymax=emmean+SE), 
+                width=.2, position = position_dodge(.9)) + # add the error bars and tell them where to go 
+    coord_cartesian(ylim = c(0.4, 0.8))# make axis limits similar to the paper
+#print(p) # print the plot 
+# Finished bar plot - give it some nice labels 
+p+labs(x="Condition", y = "Proportion correct")+
+  
+ 
+  theme_classic()+
+  #ylim (0.4,0.9)#+ # Fix the y limits to be as in paper - not sure why this isn't working
+# change the theme to a classic sort of look
+
+  scale_fill_manual(values=c('green3','royalblue1', 'red2')) # change to match plot in paper
+
+```
+
+
+The authors do not report reaction times at all for this experiment. They also don't report the ANOVA, but I've done it anyway. The ANOVA table and estimated marginal means are below. I have added a Pirate plot for extra dataviz joy. 
+
+```{r plot Exp 2 proportion correct ANOVA, echo = FALSE}
+
+RT_ANOVA_table_SC<- as.data.frame(RT_ANOVA_analysis_SC$anova_table)
+Correct_ANOVA_table_SC<- as.data.frame(Correct_ANOVA_analysis_SC$anova_table)
+
+Correct_ANOVA_table_SC %>%
+  kable(caption = "ANOVA table, proportion correct results for Experiment 2 (circles)") %>%
+  kable_styling()
+
+EMMeansTableCorrect_SC <- as.data.frame(EM_Means_Correct_SC)
+EMMeansTableCorrect_SC %>%
+  kable(caption = "Estimated marginal means table, proportion correct results for Experiment 2 (speeded circles)") %>%
+  kable_styling()
+
+pirateplot(formula = Correct ~ AreaCond + areaRatio,
+           data = SpeededCircles_Correct_anovaData,
+           xlab = "Condition", #x label
+           ylab = "Proportion correct", # ylabel,
+           # ylim= c(0.4, 2.6),
+           par(tcl=.2), 
+           cex.axis = 1.2,
+           main = "Experiment 2 - Speeded Circles: Proportion correct", # uncomment this if you want a title
+           theme = 2, # uses one of the inbuilt themes
+           pal = "google", # colour palette 
+           inf.f.o = .6, # Turn up inf filling
+           bean.b.o = .2, # Turn down bean borders
+           bean.f.o = 0, # Turn down bean fill
+           quant = c(.1, .9), # 10th and 90th quantiles
+           point.o = .5, point.pch = 21,  point.bg = "white",   point.col = "black",
+           quant.col = "black"
+)
+
+
+```
+
+The authors only report the post-hoc tests here: 
+
+>Observers were more accurate in the additive-area condition than the true-area condition, $t(96) = 6.40,  p < .001, d = 0.65$, although there were no differences in response time (which is to be expected because observers were rushed), $t(96) = 1.60, p = .112, d = 0.50$. Observers were unable to make discriminations on the basis of true area alone, $t(96) = 1.26, p = .21, d = 0.13$.
+
+They also report a regression which it isn't possible to replicate: 
+
+> Once again, linear regression revealed that additive area significantly predicted observer responses ($p < .005$), whereas number did not ($p = .51$). True area was also a significant predictor in this model ($p = .035$), although in the opposite direction (i.e., observers were less likely to choose the option with more area). This latter result is likely driven by all the ratios for which true area was zero and additive area varied and thus should not be overinterpreted. Note that overall per-formance for the true-area trials did not significantly differ from chance ($p = .21$).
+
+```{r post-hoc tests Exp 2, echo = FALSE}
+EM_Means_Correct_SC_AreaCond <- emmeans (Correct_ANOVA_analysis_SC, ~ AreaCond)
+AreaTest_SC <- pairs(EM_Means_Correct_SC_AreaCond)
+
+EMMeansTableCorrect_SC_AreaCond <- as.data.frame(EM_Means_Correct_SC_AreaCond)
+EMMeansTableCorrect_SC_AreaCond %>%
+  kable(caption = "Estimated marginal means for area (averaging across area ratio), proportion correct results for Experiment 2 (speeded circles)") %>%
+  kable_styling()
+
+AreaTest_SC_table <- as.data.frame(AreaTest_SC)
+AreaTest_SC_table %>%
+  kable(caption = "Post hoc comparisons for area condition (averaging across area ratio), proportion correct results for Experiment 2 (speeded circles)") %>%
+  kable_styling()
+
+```
+
+
+## Experiment 3: Rectangles 
+
+
+This experiment did exactly the same as Experiment 1, except with rectangles (for no discernible reason other than that previous papers had always used disks). 
+
+Again, the authors report that 99 subjects completed the tasks. This time, that does actualy seem to be the case. Again, they do not report the ANOVA here but only post-hoc t-tests, along with a regression which cannot be replicated. 
+
+Interestingly, R warns us here that the results may be misleading due to involvement in interactions. 
+
+
+```{r rectangles setup, echo=FALSE, results='asis', warning = FALSE}
+
+Rectangles <- read_excel("Additive Area - Raw Data and Info.xlsx", 
+    sheet = "Exp 3 - Rectangles")
+# work out what type of trial it was
+
+Rectangles$trialDiff <- (Rectangles$aa - Rectangles$ta) # work out the difference between the aa and ta columns 
+
+Rectangles$Correct <- ifelse(Rectangles$whichCorrect == Rectangles$response, 1, 0) # was response correct
+
+# aggregate across trials for RT and correct responses
+Rectangles_RT <- aggregate(data=Rectangles, RT ~ id2 + trialDiff, FUN="mean")
+Rectangles_Correct <- aggregate(data=Rectangles, Correct ~ id2 + trialDiff, FUN="mean")
+
+# Work out additive area vs. true area condition (leave blank for ratio of 1)
+Rectangles_RT <- Rectangles_RT %>%
+    mutate(AreaCond = case_when(trialDiff > 0 ~ 'Additive',
+                                  trialDiff < 0 ~ 'True',
+                                  TRUE ~ 'Equal'))
+Rectangles_RT$areaRatio <- (abs(Rectangles_RT$trialDiff)+100)/100 # Gives the value for relative area as stated in the paper
+
+Rectangles_RT_anovaData <- filter(Rectangles_RT, AreaCond=='Additive' | AreaCond =='True')
+
+# Work out additive area vs. true area condition (leave blank for ratio of 1)
+Rectangles_Correct <- Rectangles_Correct %>%
+    mutate(AreaCond = case_when(trialDiff > 0 ~ 'Additive',
+                                  trialDiff < 0 ~ 'True',
+                                  TRUE ~ 'Equal'))
+Rectangles_Correct$areaRatio <- (abs(Rectangles_Correct$trialDiff)+100)/100 # Gives the value for relative area as stated in the paper
+
+Rectangles_Correct_anovaData <- filter(Rectangles_Correct, AreaCond=='Additive' | AreaCond =='True')
+
+#knitr::kable(head(Circles_summary, 10))
+```
+
+```{r exp3 ANOVAs, echo = FALSE, results = 'asis', warning=FALSE}
+
+
+Correct_ANOVA_analysis_rectangles <- aov_ez("id2", "Correct", Rectangles_Correct_anovaData, within=c("AreaCond", "areaRatio"),
+                      factorize = TRUE)
+EM_Means_Correct_rectangles <- emmeans (Correct_ANOVA_analysis_rectangles, ~ AreaCond|areaRatio)
+
+# For plotting graphs as in the paper, including the "1" condition
+Total_ANOVA_analysis_Correct_rectangles <- aov_ez("id2", "Correct", Rectangles_Correct, within=c("trialDiff"),factorize = TRUE)
+EM_Means_Total_Correct_rectangles <- emmeans (Total_ANOVA_analysis_Correct_rectangles , ~ trialDiff)
+EMMeansTableTotalCorrect_rectangles <- as.data.frame(EM_Means_Total_Correct_rectangles) # force ANOVA table into data frame
+
+EMMeansTableTotalCorrect_rectangles <- EMMeansTableTotalCorrect_rectangles %>%
+  mutate(AreaCond = case_when(trialDiff == 'X.30' ~ 'True Area',
+                              trialDiff == 'X.20' ~ 'True Area',
+                              trialDiff == 'X.10' ~ 'True Area',
+                              trialDiff == 'X30' ~ 'Additive Area',
+                              trialDiff == 'X20' ~ 'Additive Area',
+                              trialDiff == 'X10' ~ 'Additive Area',
+                              TRUE ~ 'Equal area'))
+
+```
+
+### Post-hoc t-tests - rectangles
+
+The authors report: 
+
+> Once again (see Fig. 3b), observers were more accurate in making discriminations on the basis of additive area rather than true area, $t(98) = 2.61, p = .01, d = 0.26$. Observers’ true-area discriminations were above chance, $t(98) = 4.88, p < .001, d = 0.49$, although they made the correct selection only $57%$ of the time. A linear regression revealed that whereas both additive area $(p < .005)$ and true area $(p < .05)$ significantly predicted observer responses, number did not $(p = .61)$.
+
+The regression, again, can't be replicated, but the t-tests can. However, none of the values are the same as those reported in the paper (except for the degrees of freedom, this time)
+
+Here's the t-test comparing the conditions, with the estimated marginal means table at the top: 
+
+
+```{r post-hoc tests Exp 3, echo = FALSE}
+EM_Means_Correct_rectangles_AreaCond <- emmeans (Correct_ANOVA_analysis_rectangles, ~ AreaCond)
+AreaTest_rectangles <- pairs(EM_Means_Correct_rectangles_AreaCond)
+
+EMMeansTableCorrect_rectangles_AreaCond <- as.data.frame(EM_Means_Correct_rectangles_AreaCond)
+EMMeansTableCorrect_rectangles_AreaCond %>%
+  kable(caption = "Estimated marginal means for area (averaging across area ratio), proportion correct results for Experiment 3 (rectangles)") %>%
+  kable_styling()
+
+AreaTest_rectangles_table <- as.data.frame(AreaTest_rectangles)
+AreaTest_rectangles_table %>%
+  kable(caption = "Post hoc comparisons for area condition (averaging across area ratio), proportion correct results for Experiment 3 (rectangles)") %>%
+  kable_styling()
+
+```
+
+And the one-sided t-tests are here - the True Area estimate is in the lower part of the table. Note that both the estimate and the t-value differ from those reported in the paper. 
+
+```{r post hoc analyses rectangles , echo = FALSE}
+
+Rectangles_Correct_Additive <- filter(Rectangles_Correct_anovaData, AreaCond=='Additive')
+Rectangles_Correct_Additive_mean <- aggregate(data=Rectangles_Correct_Additive, Correct ~ id2, FUN="mean")
+Rectangles_Correct_True <- filter(Rectangles_Correct_anovaData, AreaCond=='True')
+Rectangles_Correct_True_mean <- aggregate(data=Rectangles_Correct_True, Correct ~ id2, FUN="mean")
+
+Additive_postHoc_rectangles <- t.test(Rectangles_Correct_Additive_mean$Correct, mu=.5)
+True_postHoc_rectangles <- t.test(Rectangles_Correct_True_mean$Correct, mu=.5)
+
+
+postHocTable_Rectangles_Correct <- map_df(list(Additive_postHoc_rectangles, True_postHoc_rectangles), tidy)
+
+postHocTable_Rectangles_Correct %>%
+  kable(caption = 'Additive Area and True Area Post-Hoc Tests - comparing each condition to chance - Experiment 3') %>%
+  kable_styling()
+EMMeansTableCorrect_rectangles <- as.data.frame(EM_Means_Correct_rectangles)
+
+```
+
+
+#### Proportion correct (Experiment 3)
+Here's a replication of Figure 3b: 
+
+
+```{r replicate figure 3b, echo = FALSE}
+p<- ggplot(EMMeansTableTotalCorrect_rectangles, aes(x=trialDiff, y=emmean, fill=AreaCond)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) + # Add the bars and tell them where to go 
+   aes(x = reorder(trialDiff, desc(trialDiff)))+
+  geom_errorbar(aes(x=trialDiff, ymin=emmean-SE, ymax=emmean+SE), 
+                width=.2, position = position_dodge(.9)) + # add the error bars and tell them where to go 
+    coord_cartesian(ylim = c(0.4, 0.8))# make axis limits similar to the paper
+#print(p) # print the plot 
+# Finished bar plot - give it some nice labels 
+p+labs(x="Condition", y = "Proportion correct")+
+  
+ 
+  theme_classic()+
+  #ylim (0.4,0.9)#+ # Fix the y limits to be as in paper - not sure why this isn't working
+# change the theme to a classic sort of look
+
+  scale_fill_manual(values=c('green3','royalblue1', 'red2')) # change to match plot in paper
+
+
+
+```
+
+
+#### Extra analyses (Experiment 3)
+
+I've also included a Pirate plot for nicer visualisation of the data, as well as the full ANOVA table so you can see the interaction: 
+
+```{r exp 3 extra, echo = FALSE}
+
+Correct_ANOVA_table_rectangles<- as.data.frame(Correct_ANOVA_analysis_rectangles$anova_table)
+
+Correct_ANOVA_table_rectangles %>%
+  kable(caption = "ANOVA table, proportion correct results for Experiment 3 (rectangles)") %>%
+  kable_styling()
+
+EMMeansTableCorrect_rectangles <- as.data.frame(EM_Means_Correct_rectangles)
+EMMeansTableCorrect_rectangles %>%
+  kable(caption = "Estimated marginal means table, proportion correct results for Experiment 3 (rectangles)") %>%
+  kable_styling()
+
+pirateplot(formula = Correct ~ AreaCond + areaRatio,
+           data = Rectangles_Correct_anovaData,
+           xlab = "Condition", #x label
+           ylab = "Proportion correct", # ylabel,
+           # ylim= c(0.4, 2.6),
+           par(tcl=.2), 
+           cex.axis = 1.2,
+           main = "Experiment 3 - Rectangles: Proportion correct", # uncomment this if you want a title
+           theme = 2, # uses one of the inbuilt themes
+           pal = "google", # colour palette 
+           inf.f.o = .6, # Turn up inf filling
+           bean.b.o = .2, # Turn down bean borders
+           bean.f.o = 0, # Turn down bean fill
+           quant = c(.1, .9), # 10th and 90th quantiles
+           point.o = .5, point.pch = 21,  point.bg = "white",   point.col = "black",
+           quant.col = "black"
+)
+
+```
+
+
+## Experiment 4: Number Control
+
+Here, the authors report: 
+
+> Might these results be explained by a confound with number? The creation of the stimuli in Experiments 1 to 3 was constrained in such a way that number was partially confounded with additive area. In all three cases, differences in additive area predicted accuracy, whereas differences in number did not. In a stronger test, we constructed stimuli for which we could independently manipulate number.
+
+So here, numerosity was a factor (although I cannot find anywhere where the authors report WHAT the numerosity was), with three levels. This time there seem to have been only two ratios (1.15 and 1.25). However, the results in the Excel file to not seem to represent this in any way I can work out (they look very much the same as those for the previous experiment, with no extra column for numerosity). Thus I was completely unable to replicate these results. 
+
+
+
+## Experiment 5: Perimeter Control
+
+Here the authors report: 
+
+> The details of this experiment were identical to those of Experiment 2, except that we substituted perimeter for true area. We used ellipses in place of disks. In other words, additive area varied while perimeter was held constant, and perimeter varied while additive area was held constant (and both varied in 1.0, 1.1, 1.2, and 1.3 ratios).
+
+So the "true area" condition is replaced by "perimeter". 
+
+```{r exp 5 setup, echo=FALSE, results='asis', warning=FALSE}
+
+Ellipses <- read_excel("Additive Area - Raw Data and Info.xlsx", 
+    sheet = "Exp 5 - Ellipses")
+# work out what type of trial it was
+
+Ellipses$trialDiff <- (Ellipses$aa - Ellipses$perim) # work out the difference between the aa and ta columns 
+
+Ellipses$Correct <- ifelse(Ellipses$whichCorrect == Ellipses$response, 1, 0) # was response correct
+
+# aggregate across trials for RT and correct responses
+Ellipses_RT <- aggregate(data=Ellipses, RT ~ id2 + trialDiff, FUN="mean")
+Ellipses_Correct <- aggregate(data=Ellipses, Correct ~ id2 + trialDiff, FUN="mean")
+
+# Work out additive area vs. true area condition (leave blank for ratio of 1)
+Ellipses_RT <- Ellipses_RT %>%
+    mutate(AreaCond = case_when(trialDiff > 0 ~ 'Additive',
+                                  trialDiff < 0 ~ 'Perimeter',
+                                  TRUE ~ 'Equal'))
+Ellipses_RT$areaRatio <- (abs(Ellipses_RT$trialDiff)+100)/100 # Gives the value for relative area as stated in the paper
+
+Ellipses_RT_anovaData <- filter(Ellipses_RT, AreaCond=='Additive' | AreaCond =='Perimeter')
+
+# Work out additive area vs. true area condition (leave blank for ratio of 1)
+Ellipses_Correct <- Ellipses_Correct %>%
+    mutate(AreaCond = case_when(trialDiff > 0 ~ 'Additive',
+                                  trialDiff < 0 ~ 'Perimeter',
+                                  TRUE ~ 'Equal'))
+Ellipses_Correct$areaRatio <- (abs(Ellipses_Correct$trialDiff)+100)/100 # Gives the value for relative area as stated in the paper
+
+Ellipses_Correct_anovaData <- filter(Ellipses_Correct, AreaCond=='Additive' | AreaCond =='Perimeter')
+
+
+Correct_ANOVA_analysis_ellipses <- aov_ez("id2", "Correct", Ellipses_Correct_anovaData, within=c("AreaCond", "areaRatio"),
+                      factorize = TRUE)
+EM_Means_Correct_ellipses <- emmeans (Correct_ANOVA_analysis_ellipses, ~ AreaCond|areaRatio)
+
+#knitr::kable(head(Circles_summary, 10))
+```
+
+The authors seem to have run out of steam for plotting figures here, and only report the t-tests: 
+
+> Overall, observers were better at making discriminations on the basis of additive area than on the basis of perimeter, $t(98) = 10.31, p < .001, d = 1.04$. Observers were unable to make discriminations on the basis of perimeter alone, $t(98) = 0.99, p = .33, d = 0.10$.
+
+Once again, the degrees of freedom are different, indicating there were only 97 subjects in this analysis, and the t- and p-values are different from those reported in the paper. 
+
+```{r Experiment 5 t-tests, echo = FALSE}
+
+EM_Means_Correct_ellipses_AreaCond <- emmeans (Correct_ANOVA_analysis_ellipses, ~ AreaCond)
+AreaTest_ellipses <- pairs(EM_Means_Correct_ellipses_AreaCond)
+
+EMMeansTableCorrect_ellipses_AreaCond <- as.data.frame(EM_Means_Correct_ellipses_AreaCond)
+EMMeansTableCorrect_ellipses_AreaCond %>%
+  kable(caption = "Estimated marginal means for area (averaging across area ratio), proportion correct results for Experiment 5 (ellipses)") %>%
+  kable_styling()
+
+AreaTest_ellipses_table <- as.data.frame(AreaTest_ellipses)
+AreaTest_ellipses_table %>%
+  kable(caption = "Post hoc comparisons for area condition (averaging across area ratio), proportion correct results for Experiment 5 (ellipses)") %>%
+  kable_styling()
+
+Ellipses_Correct_Additive <- filter(Ellipses_Correct_anovaData, AreaCond=='Additive')
+Ellipses_Correct_Additive_mean <- aggregate(data=Ellipses_Correct_Additive, Correct ~ id2, FUN="mean")
+Ellipses_Correct_Perimeter <- filter(Ellipses_Correct_anovaData, AreaCond=='Perimeter')
+Ellipses_Correct_Perimeter_mean <- aggregate(data=Ellipses_Correct_Perimeter, Correct ~ id2, FUN="mean")
+
+Additive_postHoc_ellipses <- t.test(Ellipses_Correct_Additive_mean$Correct, mu=.5)
+Perimeter_postHoc_ellipses <- t.test(Ellipses_Correct_Perimeter_mean$Correct, mu=.5)
+
+
+postHocTable_Ellipses_Correct <- map_df(list(Additive_postHoc_ellipses, Perimeter_postHoc_ellipses), tidy)
+
+postHocTable_Ellipses_Correct %>%
+  kable(caption = 'Additive Area and Perimeter Post-Hoc Tests (comparing each condition to chance) - Experiment 5') %>%
+  kable_styling()
+
+```
+
+
+## Summary
+
+Overall, it was an immense amount of work to replicate these analyses, and in the end not a single one of my analyses came out the same as those in the paper. I estimate that I spent at least three full days on these analyses, probably more. It should not be this difficult to repeat analyses from a paper with supposedly open data. 
+
+Many analyses could not even be attempted because there was not enough information. I could not even attempt any of the reported regression analyses, or the analysis for Experiment 4 (where numerosity was manipulated)
+
+I would be very interested to know how the authors analysed the data for this experiment. Did they use R or some other proprietary software program? Why are the participant numbers different? Why are there no ANOVAs reported for any experiment other than Experiment 1? It is all very puzzling. 
+
+I would estimate that the average researcher would be completely unable to make sense of the "open data" provided with this paper. I really struggled with it and I teach statistical analysis and am fairly competent in R. 
+
+
+
+

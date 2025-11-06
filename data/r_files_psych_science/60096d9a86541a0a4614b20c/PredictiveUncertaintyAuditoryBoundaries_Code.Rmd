@@ -1,0 +1,307 @@
+---
+title: "Predictive uncertainty underlies auditory boundary perception"
+output:
+  html_document:
+    df_print: paged
+---
+
+#Load libraries
+```{r}
+
+library('ggplot2')
+library('plyr')
+library('dplyr')
+library('ez')
+library('tidyr')
+library('Rmisc')
+library('lme4')
+library('lmerTest')
+library('car')
+
+```
+
+#Exp 1
+
+## Load data
+```{r}
+
+# Set wd
+setwd()   # Add relevant directory
+
+exp1.data <- read.csv('Exp1_TargetNotes.csv')
+exp1.data$dwelltime <- as.numeric(as.character(exp1.data$dwelltime))
+
+
+```
+
+
+## Run ezanova
+```{r}
+exp1.by.subj <- ddply(exp1.data, c("subjID","entropy.status","phrase.status"),summarise,dwelltime=mean(dwelltime))
+
+exp1.anova <- ezANOVA(data=exp1.by.subj, dv=.(dwelltime),wid=.(subjID),within=.(entropy.status,phrase.status),return_aov = TRUE)
+
+exp1.anova
+
+```
+
+## Supplemental mixed effects models
+
+```{r}
+
+exp1.data$entropy.status.recode <-ifelse(exp1.data$entropy.status=='high', 1, -1)
+exp1.data$phrase.status.recode <-ifelse(exp1.data$phrase.status=='end', 1, -1)
+
+
+library(glmmTMB)
+
+#Model with raw data
+full.model <- glmmTMB(dwelltime ~ entropy.status.recode * phrase.status.recode + par.note.id +stim.order+(1|subjID)+(1|stim.name),data= exp1.data)
+
+summary(full.model)
+
+#Model with log data
+exp1.data$logDT <- log(exp1.data$dwelltime)
+
+#model
+log.model <- glmmTMB(logDT ~ entropy.status.recode * phrase.status.recode + par.note.id +stim.order+(1|subjID)+(1|stim.name),data= exp1.data)
+
+summary(log.model)
+
+#Model with gamma distribution
+gamma.model <- glmmTMB(dwelltime ~ entropy.status.recode * phrase.status.recode + par.note.id +stim.order+(1|subjID)+(1|stim.name),data= exp1.data, family=Gamma(link="log"))
+
+summary(gamma.model)
+```
+
+
+##Figure 2
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+
+
+#get avgs and within-subject confidence intervals
+dwelltime_norm <- normDataWithin(data=exp1.by.subj, idvar="subjID", measurevar="dwelltime")
+
+wsebs <- ddply(dwelltime_norm, c("phrase.status","entropy.status"), summarise, N = n_distinct(subjID), mean = mean(dwelltimeNormed), sd=sd(dwelltimeNormed), se=sd/sqrt(N), ci=qnorm(.975)*sd/sqrt(N))
+
+#get non-target average
+# Set wd
+setwd()     # Add relevant directory
+all.exp1 <- read.csv('Exp1_AllNotes.csv')
+nontargs <- subset(all.exp1,target.status=="n")
+nontarget.long <- gather(nontargs, subjID, dwelltime, DTS01_v1_NoOut:DTS38_NoOut, factor_key=TRUE)
+nontarg.complete <- nontarget.long[!is.na(nontarget.long$dwelltime), ]
+nontarg.complete$dwelltime <- as.numeric(as.character(nontarg.complete$dwelltime))
+
+val <- mean(nontarg.complete$dwelltime,na.rm=T)
+
+#plot 
+fig2.plot <- ggplot()+
+  geom_point(data=exp1.by.subj, aes(x = interaction(entropy.status,phrase.status), y=dwelltime, 
+                                 group=interaction(phrase.status,subjID), 
+                                 shape=factor(entropy.status),size=3.5),colour="grey88")+
+  geom_line(data=exp1.by.subj, aes(x = interaction(entropy.status,phrase.status), y=dwelltime,
+                  group=interaction(phrase.status,subjID),shape=factor(entropy.status),size=1),colour="grey88")+
+  geom_point(data=wsebs,
+             aes(x=interaction(entropy.status,phrase.status),y=mean,shape=factor(entropy.status),size=9),
+             colour="black")+
+  geom_errorbar(data=wsebs,aes(x=interaction(entropy.status,phrase.status),
+                              y=mean,ymin=mean-ci,ymax=mean+ci),width=.1) +
+  theme_bw()+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  #scale_y_continuous(limits=c(1,7),breaks=c(1,2,3,4,5,6,7))+
+  ylab("Dwell time (ms)") +
+  xlab("Boundary status")+
+  scale_shape_manual(values=c(16, 1),
+                     name="Entropy",
+                     breaks=c("high","low"),
+                     labels=c("High", "Low"))+
+  theme(axis.title.x = element_text(face="bold",size=18),
+        axis.text.x  = element_text(size=14))+
+  theme(axis.title.y = element_text(face="bold",size=18),
+        axis.text.y  = element_text(size=14))+
+  theme(legend.title=element_text(face="bold",size=18))+
+  theme(legend.text=element_text(size=14))+
+  geom_hline(yintercept=c(val), linetype="dotted")
+
+fig2.plot
+
+# Further layout-editing of Fig. 2 was performed in Microsoft PowerPoint
+
+
+```
+
+
+##Correlations with GMSI
+```{r}
+
+sep.by.entropy <- ddply(exp1.data, c("subjID","entropy.status"),summarise,dwelltime=mean(dwelltime))
+dt.effect <- spread(sep.by.entropy,entropy.status,dwelltime)
+
+# Import GMSI scores
+setwd()
+gmsi.all <- read.csv('GMSI_Exp1_Exp2.csv')
+gmsi.exp1 <- subset(gmsi.all, Experiment == "Exp1")
+gmsi.order <- gmsi.exp1[order(gmsi.exp1$SubjID),]
+
+# Bind dwell time data and GMSI scores 
+dt.gmsi <- cbind(dt.effect,gmsi.order)
+
+# Get entropy effect magnitude
+dt.gmsi$dwell.effect <- dt.gmsi$high-dt.gmsi$low
+
+# Correlations
+cor.test(dt.gmsi$dwell.effect,dt.gmsi$General,method="pearson")
+cor.test(dt.gmsi$dwell.effect,dt.gmsi$MusicTraining,method="pearson")
+cor.test(dt.gmsi$dwell.effect,dt.gmsi$ActiveEngagement, method="pearson")
+
+```
+
+
+# All tones analysis
+
+```{r}
+
+# Prepare data 
+data <- gather(all.exp1, subjID, dwelltime, DTS01_v1_NoOut:DTS38_NoOut, factor_key=TRUE)
+data$dwelltimelog <- log10(data$dwelltime)
+
+# Model 1: Null model with only note id 
+null.model = lmer(dwelltimelog ~ par.note.id + (par.note.id|subjID), data=data, control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e8)))
+Anova(null.model)
+
+# Model 2: Only IC
+IC.model = lmer(dwelltimelog ~ par.note.id + stim.IC + (par.note.id|subjID), data=data, control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e8)))
+Anova(IC.model)
+
+# Model 3: IC and entropy
+entropy.IC.model = lmer(dwelltimelog ~ par.note.id + stim.IC + stim.entropy.next + (par.note.id|subjID), data=data, control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e8)))
+Anova(entropy.IC.model)
+
+# Model comparison
+anova(null.model,IC.model,entropy.IC.model) 
+anova(entropy.IC.model)
+
+```
+
+
+
+# Exp 2
+## Load data
+
+```{r}
+
+# Set wd
+setwd()   # Add relevant directory
+exp2.data <- read.csv('Exp2_Data.csv')
+
+
+```
+
+## Clean data
+```{r}
+
+exp2.data$ratings <- as.numeric(as.character(exp2.data$ratings))
+
+
+# Omit 5 participants with uninterpretable data
+exp2.data <- subset(exp2.data, subjID!="compRater_S03")
+exp2.data <- subset(exp2.data, subjID!="compRater_S11")
+exp2.data <- subset(exp2.data, subjID!="compRater_24")
+exp2.data <- subset(exp2.data, subjID!="compRater_S10")
+exp2.data <- subset(exp2.data, subjID!="compRater_S29")
+
+```
+
+##Run ezanova
+
+```{r}
+
+exp2.by.subj <- ddply(exp2.data, c("subjID","entropy","position"),summarise,
+                      ratings=mean(ratings,na.rm=TRUE))
+
+exp2.anova <- ezANOVA(data=exp2.by.subj, dv=.(ratings),wid=.(subjID),within=.(entropy,position),return_aov = TRUE)
+
+exp2.anova
+
+
+```
+
+
+## Figure 3
+
+```{r}
+
+#get avgs and within-subject confidence intervals
+
+comp.exp2 <- normDataWithin(data=exp2.by.subj, idvar="subjID", measurevar="ratings")
+
+wsebs_exp2 <- ddply(comp.exp2, c("position","entropy"), summarise, N = n_distinct(subjID), mean = mean(ratingsNormed), sd=sd(ratingsNormed), se=sd/sqrt(N), ci=qnorm(0.975)*sd/sqrt(N))
+
+
+fig3.plot <- ggplot()+
+  geom_point(data=exp2.by.subj, aes(x = interaction(entropy,position), y=ratings, group=interaction(position,subjID),shape=factor(entropy),size=3.5),colour="grey88")+ #group=interaction(position,subjID),shape = factor(entropy)), size=5, color="grey")+
+  # geom_point(aes(shape = factor(entropy)), size=5, color="grey")+
+  geom_line(data=exp2.by.subj, aes(x = interaction(entropy,position), y=ratings, group=interaction(position,subjID),shape=factor(entropy),size=1),colour="grey88")+
+  geom_point(data=wsebs_exp2, aes(x=interaction(entropy,position),y=mean,shape=factor(entropy),size=9),colour="black")+
+  geom_errorbar(data=wsebs_exp2,aes(x=interaction(entropy,position),y=mean,ymin=mean-ci, ymax=mean+ci),width=.1) +
+  theme_bw()+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  scale_y_continuous(limits=c(1,7),breaks=c(1,2,3,4,5,6,7))+
+  ylab("Completeness ratings") +
+  xlab("Boundary status")+
+  scale_shape_manual(values=c(16, 1),
+                     name="Entropy",
+                     breaks=c("hi","lo"),
+                     labels=c("High", "Low"))+
+  theme(axis.title.x = element_text(face="bold",size=18),
+        axis.text.x  = element_text(size=14))+
+  theme(axis.title.y = element_text(face="bold",size=18),
+        axis.text.y  = element_text(size=14))+
+  theme(legend.title=element_text(face="bold",size=18))+
+  theme(legend.text=element_text(size=14))
+
+fig3.plot
+
+# Further layout-editing of Fig. 3 was performed in Microsoft PowerPoint
+
+```
+
+##Correlations with GMSI
+```{r}
+
+sep.by.entropy.2 <- ddply(exp2.data, c("subjID","entropy"),summarise,ratings=mean(ratings))
+comp.effect <- spread(sep.by.entropy.2,entropy,ratings)
+
+# Import GMSI scores
+setwd() # Add relevant directory
+gmsi.all <- read.csv('GMSI_Exp1_Exp2.csv')
+gmsi.exp2 <- subset(gmsi.all, Experiment == "Exp2")
+gmsi.order.2 <- gmsi.exp2[order(gmsi.exp2$SubjID),]
+
+
+# Omit 5 participants with uninterpretable completeness rating data
+gmsi.order.2 <- subset(gmsi.order.2, SubjID !="compRater_S03")
+gmsi.order.2 <- subset(gmsi.order.2, SubjID !="compRater_S11")
+gmsi.order.2 <- subset(gmsi.order.2, SubjID !="compRater_S24")
+gmsi.order.2 <- subset(gmsi.order.2, SubjID !="compRater_S10")
+gmsi.order.2 <- subset(gmsi.order.2, SubjID !="compRater_S29")
+
+# Bind dwell time data and GMSI scores 
+comp.gmsi <- cbind(comp.effect,gmsi.order.2)
+
+# Get entropy effect magnitude
+comp.gmsi$ratings.effect <- comp.gmsi$hi-comp.gmsi$lo
+
+# Correlations
+cor.test(comp.gmsi$ratings.effect,comp.gmsi$General,method="pearson")
+cor.test(comp.gmsi$ratings.effect,comp.gmsi$MusicTraining,method="pearson")
+cor.test(comp.gmsi$ratings.effect,comp.gmsi$ActiveEngagement, method="pearson")
+
+```
+

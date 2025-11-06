@@ -1,0 +1,258 @@
+---
+title: 'Study 3, data analyses'
+author: "Sonja Kunz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+    code_download: true
+---
+
+# Background
+
+The study investigated in a real taste test whether frequency constellations of food health and taste in different contexts contribute to beliefs about the health-taste relationship. We hypothesised that if there is more tasty and unhealthy food in one than another context, people will perceive an unhealthy-tasty relationship, regardless of the actual contingency between health and taste. Conversely, if there is more tasty and healthy food in one than another context, people will perceive a healthy-tasty relationship.
+
+## Procedure
+
+Participants tasted and viewed health ratings of individual foods from two different food contexts (differently coloured boxes). Afterwards, they indicated to what extent they perceived a relationship between health and taste, separately in each context, as well as overall, across contexts. Finally, they chose between a healthy or unhealthy smoothie.
+
+## Design 
+
+4 conditions in a mixed design. Each participant tasted and viewed information about smoothie samples from two contexts (within factor `context`) Participants were randomly assigned to the `harmonious` or `conflicting` base rate manipulation (between factor `condition`). In the `harmonious` base rate manipulation, there were both more healthy and tasty smoothies in the first than the second context. In the `conflicting` base rate manipulation, there were more unhealthy and tasty smoothies in the first than the second context.
+
+The boxes and cups in which the smoothies were served (i.e., the contexts) had different colours which were counter-balanced between participants (variable `random_color`).
+
+## Dependent measures
+
+The dependent variable was participants’ perceived relationship between healthiness and tastiness. Participants indicated, within each context as well as across contexts, whether the healthy or the unhealthy smoothies were tastier, on a scale from 1 = *the unhealthy ones* to 100 = *the healthy ones*. We subsequently re-coded this scale to range from -.5 to .5. (Relative contingency belief).
+
+Also, participants hypothetically chose between either a healthy or unhealthy smoothie (Choice).
+
+## Attention/Manipulation checks and additional measures
+
+To ensure that participants recognised the good and bad tasting smoothie samples, we asked them to rate their taste on a scale from - 3 = *not tasty at all* to 3 = *very tasty*, responses to which were re-coded to range from 1 to 7.  
+To ensure that participants paid attention to the presented health ratings, we asked them to recall each rating on a scale from 1 = *not healthy at all* to 5 = *very healthy* (On-line ratings).
+
+To ensure that participants recognised the skewed frequencies of healthy and tasty samples across the different contexts, they estimated how many samples per context were (un)healthy and (not) tasty, respectively (Base rate estimates).
+
+The manipulation check analyses are documented in a separate R markdown file: `Study3_manipulation_checks.Rmd`.
+
+Additionally, we assessed participants' general belief in a causal health-taste relationship to control for its possible influence in the analyses. For the control analyses, see the separate R markdown file `Study3_control.Rmd`.
+
+Load required packages:
+```{r, message=FALSE}
+library(tidyverse)
+library(misty)
+library(ggplot2)
+library(jtools)
+library(rstatix)
+library(knitr)
+library(sjPlot)
+library(Rmisc)
+```
+
+Import processed data.
+
+```{r}
+dat <- read.csv2('Data/Study3_data_processed.csv')
+```
+
+```{r, include=FALSE}
+# Turn the id and group variables into factors and add labels to the groups.
+dat <-
+  dat %>% 
+  mutate(id = factor(id),
+         condition = factor(condition, 
+                            levels = c('1', '2'), 
+                            labels = c('Harmonious', 'Conflicting')),
+         random_color = factor(random_color, 
+                               levels = c('1', '2'), 
+                               labels = c('Context 1 black, context 2 white', 'Context 1 white, context 2 black')),
+         choice = factor(choice, 
+                               levels = c('1', '2'), 
+                               labels = c('Healthy smoothie', 'Unhealthy smoothie'))
+  )
+```
+
+# Perceived health-taste relationship within contexts
+
+First, we tested the effects of base rate manipulation, context and their interaction on the participants' perceived health-taste relationship (Relative contingency belief). 
+We calculated a mixed ANOVA, testing the effect of the between-subjects factor base rate manipulation (harmonious vs. conflicting), within-subjects factor context (1st vs. 2nd) and their interaction on the perceived health-taste relationship. We expected a significant main effect of base rate manipulation.
+
+```{r, include=FALSE}
+# Restructure data into long format for the mixed ANOVA, convert the context variable into a factor.
+dat_long <-
+  dat %>% 
+  select(id, condition, belief_ht_c1_R, belief_ht_c2_R) %>% 
+  pivot_longer(cols = c('belief_ht_c1_R', 'belief_ht_c2_R'), 
+               names_to = 'context',
+               values_to = 'ht_rel') %>% 
+  mutate(context = rec(context, '"belief_ht_c1_R" = 1; "belief_ht_c2_R" = 2')) %>%
+  mutate(context = factor(context,
+                         levels = c('1', '2'),
+                         labels= c('1st Context', '2nd Context')))
+```
+
+## Descriptive statistics
+
+```{r, echo=FALSE}
+# Check the mean, standard deviation, standard error and 95% confidence interval of the perceived health-taste relationship in each base rate manipulation and context.
+ht_rel_sum <- summarySE(dat_long, measurevar='ht_rel', groupvars=c('condition', 'context'))
+ht_rel_sum %>% 
+  kable(format = 'markdown', digits = 2,
+        col.names = c('Base rate manipulation', 'Context','N', 'Mean relationship', 'Std. Dev.', 'Std. Error', '95% CI'), 
+        caption = 'Mean perceived health-taste relationship by base rate manipulation and context')
+```
+
+## ANOVA
+
+```{r}
+aov_ht_rel <- 
+  dat_long %>% 
+  anova_test(dv = ht_rel, wid = id,
+             between = condition, within = context, type = 3, effect.size = 'pes')
+```
+
+```{r, echo=FALSE}
+colnames(aov_ht_rel) <- c('Effect','df/nominator', 'df/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(aov_ht_rel) <- c('Base rate manipulation', 'Context', 'Base rate manipulation*Context')
+
+kable(aov_ht_rel[,-1],format = 'markdown',  digits = 2)
+```
+
+As expected, there was a large main effect of base rate manipulation.
+
+## Plot the results
+
+To illustrate that the perceived health-taste relationship deviated from the actual contingency, we plotted both the actual and perceived health-taste relationship within the different base rate manipulations and contexts.
+
+```{r, include=FALSE}
+# Restructure both real contingency and perceived into long format
+dat_realcor <-
+  dat %>% 
+  select('id', 'condition', starts_with('real'), 'belief_ht_c1_R', 'belief_ht_c2_R') %>% 
+  pivot_longer(-c('id', 'condition'),
+               names_to = 'trial',
+               values_to = 'cor') %>% 
+  mutate(context = case_when(grepl('c1', trial) ~ 1,
+                             grepl('c2', trial, ignore.case = TRUE) ~ 2),
+         realness = ifelse(str_detect(trial, fixed('real')), 1, 2)) %>% 
+  mutate(context =factor(context,
+                         levels = c('1', '2'),
+                         labels= c('1st Context', '2nd Context')),
+         realness = factor(realness,
+                           levels = c('1', '2'),
+                           labels = c('Real Relationship', 'Perceived Relationship'))
+  ) 
+```
+
+```{r, include=FALSE}
+# Calculate the mean, standard deviation, standard error and 95% confidence interval of the real and perceived health-taste relationship in each base rate manipulation and context, for plotting.
+realcor_sum <- summarySE(dat_realcor, measurevar='cor', groupvars=c('condition', 'context', 'realness'))
+```
+
+```{r,echo=FALSE}
+# Plot the real and perceived health-taste relationship by base rate manipulation and context, with CIs
+realcor_sum %>%
+  ggplot(aes(x=condition, y=cor, fill=context)) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=cor-ci, ymax=cor+ci),
+                width=.2,                   
+                position=position_dodge(.9)) +
+  facet_wrap('realness')+
+  geom_hline(yintercept = 0) +
+  coord_cartesian(ylim = c(-.50, .50))+
+  theme_apa() +
+  labs(x = 'Base Rate Manipulation', y = 'Mean Relationship')+
+  theme(legend.position = 'top',
+        axis.title.y = element_text(face = 'bold', size = 16),
+        axis.title.x = element_text(face = 'bold', size = 16),
+        text = element_text(size = 16))
+
+```
+
+# Perceived health-taste relationship across contexts
+
+Next, we tested the effects of base rate manipulation on participants' perceived health-taste relationship (Relative contingency belief) across contexts, with a one-way ANOVA.
+  
+## Descriptive statistics
+
+```{r, echo=FALSE}
+# Check the mean, standard deviation, standard error and 95% confidence interval of the perceived health-taste relationship across contexts in each base rate manipulation.
+beliefov_sum <- summarySE(dat, measurevar='belief_ht_overall_R', groupvars='condition')
+
+beliefov_sum %>% 
+  kable(format = 'markdown', digits = 2,
+        col.names = c('Base rate manipulation','N', 'Mean contingency belief', 'Std. Dev.', 'Std. Error', '95% CI'), 
+        caption = 'Mean perceived health-taste relationship by base rate manipulation')
+```
+
+## ANOVA
+
+```{r, message=FALSE}
+aov_belief_ov <-
+  anova_test(
+    data = dat, dv = belief_ht_overall_R,
+    between = condition, type = 3, effect.size = 'pes')
+
+```
+```{r, echo=FALSE}
+colnames(aov_belief_ov) <- c('Effect','df/nominator', 'df/denominator', '$F$', '$p$', 'Sig.', 'partial $\\eta^2$')
+rownames(aov_belief_ov) <- c('Base rate manipulation')
+
+kable(aov_belief_ov[-1], format = 'markdown',  digits = 2,
+      caption = 'Results of the ANOVA testing the effect of base rate manipulation on the perceived health-taste relationship across contexts')
+```
+
+## Plot the results
+
+```{r, echo=FALSE}
+beliefov_sum %>%
+  ggplot(aes(x=condition, y=belief_ht_overall_R, fill=condition)) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=belief_ht_overall_R-ci, ymax=belief_ht_overall_R+ci),
+                width=.2,                   
+                position=position_dodge(.9)) +
+  geom_hline(yintercept = 0) +
+  coord_cartesian(ylim = c(-.3, .3))+
+  theme_apa() +
+  labs(x = 'Base rate manipulation', y = 'Mean Relationship')+
+  theme(legend.position = 'none',
+        axis.title.y = element_text(face = 'bold', size = 16),
+        axis.title.x = element_text(face = 'bold', size = 16),
+        text = element_text(size = 16))
+
+```
+
+# Choice for healthy smoothie
+
+Finally, we tested whether the base rate manipulation affected the hypothetical choice between a healthy and unhealthy smoothie, with a logistic regression of choice on condition.
+
+## Descriptive statistics
+
+```{r, echo=FALSE}
+tab_xtab(var.row = dat$condition, var.col = dat$choice, var.labels = c('Base rate manipulation', 'Choice'))
+```
+
+## Logistic regression
+
+```{r}
+lm_choice <- glm(formula = choice ~ condition, family= "binomial", data = dat)
+```
+
+```{r, include=FALSE}
+exp(cbind(OR = coef(lm_choice), confint(lm_choice)))
+```
+
+```{r, message=FALSE, echo=FALSE}
+tab_model(lm_choice, show.est = T, show.se = T, show.stat = T, pred.labels = c('(Intercept)', 'Base rate manipulation'), dv.labels = 'Choice for healthy smoothie')
+```
+# Summary of results
+
+Participants in the harmonious base rate manipulation perceived a stronger healthy-tasty relationship within each context as well as across both contexts than participants in the conflicting base rate manipulation.
+
+Participants in the harmonious base rate manipulation also chose a healthy smoothie more likely than participants in the conflicting base rate manipulation.

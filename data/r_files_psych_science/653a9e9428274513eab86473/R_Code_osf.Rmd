@@ -1,0 +1,1382 @@
+---
+title: "Do They Look the Same Unless They are Angry? Investigating the other-race Effect in the Presence of Angry Expressions."
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_depth: 5
+    theme: cosmo 
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, messages = FALSE, echo = TRUE)
+# setup
+library(dplyr)
+library(tidyverse)
+library(psych)
+library(plotrix)
+library(lme4)
+library(lmerTest)
+library(kableExtra)
+library(psycho)
+library(effectsize)
+library(TOSTER)
+```
+
+# Data handling
+
+```{r load data, echo=FALSE, message=FALSE, warning=FALSE}
+df <- read.csv2("data.csv")
+# Select all relevant columns
+df <- df %>%
+  select(group, subject, blocknum, trialnum, blockcode, trialcode, response, stimulusitem2, stimulusitem3, stimulusitem4)
+df[, 7] <- sapply(df[, 7], as.numeric)
+
+# recode responses
+# memscale -> 1-6; unusualness scale -> 1-7
+df <- df %>% mutate(
+  response = response - 1
+)
+num <- c(78, 79, 80, 74, 75, 76, 70)
+for (i in 1:7) {
+  df$response[df$response == num[i]] <- i
+}
+```
+
+### Hits and FAs per race x expression category
+Recognition scores are recoded into binary yes/no judgments
+
+#### Ackerman stimuli
+
+```{r Hits FAs AC, echo=FALSE, message=FALSE, warning=FALSE}
+# Ackerman stimuli
+data_AC <- df %>%
+  group_by(subject) %>%
+  summarise(
+    Hit_BN_AC = sum(ifelse(startsWith(trialcode, "AC_BN_OLD") & response >= 4, 1, 0)),
+    Hit_WN_AC = sum(ifelse(startsWith(trialcode, "AC_WN_OLD") & response >= 4, 1, 0)),
+    Hit_BA_AC = sum(ifelse(startsWith(trialcode, "AC_BA_OLD") & response >= 4, 1, 0)),
+    Hit_WA_AC = sum(ifelse(startsWith(trialcode, "AC_WA_OLD") & response >= 4, 1, 0)),
+    Miss_BN_AC = sum(ifelse(startsWith(trialcode, "AC_BN_OLD") & response < 4, 1, 0)),
+    Miss_WN_AC = sum(ifelse(startsWith(trialcode, "AC_WN_OLD") & response < 4, 1, 0)),
+    Miss_BA_AC = sum(ifelse(startsWith(trialcode, "AC_BA_OLD") & response < 4, 1, 0)),
+    Miss_WA_AC = sum(ifelse(startsWith(trialcode, "AC_WA_OLD") & response < 4, 1, 0)),
+    FA_BN_AC = sum(ifelse(startsWith(trialcode, "AC_BN_NEW") & response >= 4, 1, 0)),
+    FA_WN_AC = sum(ifelse(startsWith(trialcode, "AC_WN_NEW") & response >= 4, 1, 0)),
+    FA_BA_AC = sum(ifelse(startsWith(trialcode, "AC_BA_NEW") & response >= 4, 1, 0)),
+    FA_WA_AC = sum(ifelse(startsWith(trialcode, "AC_WA_NEW") & response >= 4, 1, 0)),
+    CR_BN_AC = sum(ifelse(startsWith(trialcode, "AC_BN_NEW") & response < 4, 1, 0)),
+    CR_WN_AC = sum(ifelse(startsWith(trialcode, "AC_WN_NEW") & response < 4, 1, 0)),
+    CR_BA_AC = sum(ifelse(startsWith(trialcode, "AC_BA_NEW") & response < 4, 1, 0)),
+    CR_WA_AC = sum(ifelse(startsWith(trialcode, "AC_WA_NEW") & response < 4, 1, 0))
+  )
+head(data_AC)
+```
+
+#### CFD stimuli
+
+```{r Hits FAs GW, echo=FALSE, message=FALSE, warning=FALSE}
+# CFD stimuli
+data_GW <- df %>%
+  group_by(subject) %>%
+  summarise(
+    Hit_BN_GW = sum(ifelse(trialcode == "GW_BN_OLD" & response >= 4, 1, 0)),
+    Hit_WN_GW = sum(ifelse(trialcode == "GW_WN_OLD" & response >= 4, 1, 0)),
+    Hit_BA_GW = sum(ifelse(trialcode == "GW_BA_OLD" & response >= 4, 1, 0)),
+    Hit_WA_GW = sum(ifelse(trialcode == "GW_WA_OLD" & response >= 4, 1, 0)),
+    Miss_BN_GW = sum(ifelse(trialcode == "GW_BN_OLD" & response < 4, 1, 0)),
+    Miss_WN_GW = sum(ifelse(trialcode == "GW_WN_OLD" & response < 4, 1, 0)),
+    Miss_BA_GW = sum(ifelse(trialcode == "GW_BA_OLD" & response < 4, 1, 0)),
+    Miss_WA_GW = sum(ifelse(trialcode == "GW_WA_OLD" & response < 4, 1, 0)),
+    FA_BN_GW = sum(ifelse(trialcode == "GW_BN_NEW" & response >= 4, 1, 0)),
+    FA_WN_GW = sum(ifelse(trialcode == "GW_WN_NEW" & response >= 4, 1, 0)),
+    FA_BA_GW = sum(ifelse(trialcode == "GW_BA_NEW" & response >= 4, 1, 0)),
+    FA_WA_GW = sum(ifelse(trialcode == "GW_WA_NEW" & response >= 4, 1, 0)),
+    CR_BN_GW = sum(ifelse(trialcode == "GW_BN_NEW" & response < 4, 1, 0)),
+    CR_WN_GW = sum(ifelse(trialcode == "GW_WN_NEW" & response < 4, 1, 0)),
+    CR_BA_GW = sum(ifelse(trialcode == "GW_BA_NEW" & response < 4, 1, 0)),
+    CR_WA_GW = sum(ifelse(trialcode == "GW_WA_NEW" & response < 4, 1, 0))
+  )
+head(data_GW)
+```
+
+### Signaldetection parameters
+Nonparametric signal detection sensitivity scores (A') and response bias scores (B''d) will be calculated for each participant. While the sensitivity scores reflect recognition accuracy, response bias scores reflect participants’ general threshold for responding ‘seen’ or ‘not seen’ to a stimulus category.
+For the theoretical interpretation, we will focus on sensitivity scores as central outcome, and response bias is reported subsequently. Both scores are calculated for each target race and target expression combination.
+
+To deal with hits or false alarm rates of 0 or 1 (for which problems arise as z will be -∞ or +∞) we applied the loglinear approach (Hautus, 1995; Stanislaw & Todorov, 1995).
+
+```{r signal detection parameters, echo=FALSE, message=FALSE, warning=FALSE}
+# Ackerman
+SignalDetection_AC <- data.frame(
+  BN_AC = psycho::dprime(
+    n_hit = data_AC$Hit_BN_AC + 0.5,
+    n_fa = data_AC$FA_BN_AC + 0.5,
+    n_miss = data_AC$Miss_BN_AC,
+    n_cr = data_AC$CR_BN_AC,
+    n_targets = 5,
+    n_distractors = 5,
+    adjusted = F
+  ),
+  BA_AC = psycho::dprime(
+    n_hit = data_AC$Hit_BA_AC + 0.5,
+    n_fa = data_AC$FA_BA_AC + 0.5,
+    n_miss = data_AC$Miss_BA_AC,
+    n_cr = data_AC$CR_BA_AC,
+    n_targets = 5,
+    n_distractors = 5,
+    adjusted = F
+  ),
+  WN_AC = psycho::dprime(
+    n_hit = data_AC$Hit_WN_AC + 0.5,
+    n_fa = data_AC$FA_WN_AC + 0.5,
+    n_miss = data_AC$Miss_WN_AC,
+    n_cr = data_AC$CR_WN_AC,
+    n_targets = 5,
+    n_distractors = 5,
+    adjusted = F
+  ),
+  WA_AC = psycho::dprime(
+    n_hit = data_AC$Hit_WA_AC + 0.5,
+    n_fa = data_AC$FA_WA_AC + 0.5,
+    n_miss = data_AC$Miss_WA_AC,
+    n_cr = data_AC$CR_WA_AC,
+    n_targets = 5,
+    n_distractors = 5,
+    adjusted = F
+  ),
+  CASE = data_AC$subject
+)
+
+# write.csv2(SignalDetection_AC, "SignalDetection_AC.csv")
+
+# CFD
+SignalDetection_GW <- data.frame(
+  BN_GW = psycho::dprime(
+    n_hit = data_GW$Hit_BN_GW + 0.5,
+    n_fa = data_GW$FA_BN_GW + 0.5,
+    n_miss = data_GW$Miss_BN_GW,
+    n_cr = data_GW$CR_BN_GW,
+    n_targets = 5,
+    n_distractors = 5,
+    adjusted = F
+  ),
+  BA_GW = psycho::dprime(
+    n_hit = data_GW$Hit_BA_GW + 0.5,
+    n_fa = data_GW$FA_BA_GW + 0.5,
+    n_miss = data_GW$Miss_BA_GW,
+    n_cr = data_GW$CR_BA_GW,
+    n_targets = 5,
+    n_distractors = 5,
+    adjusted = F
+  ),
+  WN_GW = psycho::dprime(
+    n_hit = data_GW$Hit_WN_GW + 0.5,
+    n_fa = data_GW$FA_WN_GW + 0.5,
+    n_miss = data_GW$Miss_WN_GW,
+    n_cr = data_GW$CR_WN_GW,
+    n_targets = 5,
+    n_distractors = 5,
+    adjusted = F
+  ),
+  WA_GW = psycho::dprime(
+    n_hit = data_GW$Hit_WA_GW + 0.5,
+    n_fa = data_GW$FA_WA_GW + 0.5,
+    n_miss = data_GW$Miss_WA_GW,
+    n_cr = data_GW$CR_WA_GW,
+    n_targets = 5,
+    n_distractors = 5,
+    adjusted = F
+  ),
+  CASE = data_GW$subject
+)
+
+# write.csv2(SignalDetection_GW, "SignalDetection_GW.csv")
+
+# long format: For each stimuli set create a df with all signal detection parameters (columns) separately for each cross-cutting category of race x expression and each participant (rows).
+
+## Ackerman stimuli
+### dprime
+dprime_long_AC <- SignalDetection_AC %>% pivot_longer(c(BN_AC.dprime, BA_AC.dprime, WN_AC.dprime, WA_AC.dprime), names_to = "dprime", values_to = "value")
+dprime_long_AC <- dprime_long_AC %>% select(CASE, dprime, value)
+dprime_long_AC <- dprime_long_AC %>%
+  mutate(
+    Race = ifelse(dprime == "BN_AC.dprime" | dprime == "BA_AC.dprime", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(dprime == "BN_AC.dprime" | dprime == "WN_AC.dprime", "N", "A"), # factor Expression (neutral, angry)
+    dprime = value
+  ) %>%
+  select(-value)
+
+### A prime
+aprime_long_AC <- SignalDetection_AC %>% pivot_longer(c(BN_AC.aprime, BA_AC.aprime, WN_AC.aprime, WA_AC.aprime), names_to = "aprime", values_to = "value")
+aprime_long_AC <- aprime_long_AC %>% select(CASE, aprime, value)
+aprime_long_AC <- aprime_long_AC %>%
+  mutate(
+    Race = ifelse(aprime == "BN_AC.aprime" | aprime == "BA_AC.aprime", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(aprime == "BN_AC.aprime" | aprime == "WN_AC.aprime", "N", "A"), # factor Expression (neutral, angry)
+    aprime = value
+  ) %>%
+  select(-value)
+
+### response bias C
+c_long_AC <- SignalDetection_AC %>% pivot_longer(c(BN_AC.c, BA_AC.c, WN_AC.c, WA_AC.c), names_to = "c", values_to = "value")
+c_long_AC <- c_long_AC %>% select(CASE, c, value)
+c_long_AC <- c_long_AC %>%
+  mutate(
+    Race = ifelse(c == "BN_AC.c" | c == "BA_AC.c", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(c == "BN_AC.c" | c == "WN_AC.c", "N", "A"), # factor Expression (neurtal, angry)
+    c = value
+  ) %>%
+  select(-value)
+
+### response bias beta
+beta_long_AC <- SignalDetection_AC %>% pivot_longer(c(BN_AC.beta, BA_AC.beta, WN_AC.beta, WA_AC.beta), names_to = "beta", values_to = "value")
+beta_long_AC <- beta_long_AC %>% select(CASE, beta, value)
+beta_long_AC <- beta_long_AC %>%
+  mutate(
+    Race = ifelse(beta == "BN_AC.beta" | beta == "BA_AC.beta", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(beta == "BN_AC.beta" | beta == "WN_AC.beta", "N", "A"), # factor Expression (neutral, angry)
+    beta = value
+  ) %>%
+  select(-value)
+
+### response bias B''d
+bppd_long_AC <- SignalDetection_AC %>% pivot_longer(c(BN_AC.bppd, BA_AC.bppd, WN_AC.bppd, WA_AC.bppd), names_to = "bppd", values_to = "value")
+bppd_long_AC <- bppd_long_AC %>% select(CASE, bppd, value)
+bppd_long_AC <- bppd_long_AC %>%
+  mutate(
+    Race = ifelse(bppd == "BN_AC.bppd" | bppd == "BA_AC.bppd", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(bppd == "BN_AC.bppd" | bppd == "WN_AC.bppd", "N", "A"), # factor Expression (neutral, angry)
+    bppd = value
+  ) %>%
+  select(-value)
+### put it together
+data_AC <- data.frame(cbind(dprime_long_AC[, "dprime"], aprime_long_AC[, "aprime"], c_long_AC[, "c"], beta_long_AC[, "beta"], bppd_long_AC))
+data_AC <- data_AC %>% select("CASE", everything())
+
+### add condition
+for (i in data_AC$CASE) {
+  data_AC$condition[data_AC$CASE == i] <- df$group[df$subject == i]
+}
+# write.csv2(data_AC, "data_Ackerman.csv")
+
+## CFD stimuli
+### dprime
+dprime_long_GW <- SignalDetection_GW %>% pivot_longer(c(BN_GW.dprime, BA_GW.dprime, WN_GW.dprime, WA_GW.dprime), names_to = "dprime", values_to = "value")
+dprime_long_GW <- dprime_long_GW %>% select(CASE, dprime, value)
+dprime_long_GW <- dprime_long_GW %>%
+  mutate(
+    Race = ifelse(dprime == "BN_GW.dprime" | dprime == "BA_GW.dprime", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(dprime == "BN_GW.dprime" | dprime == "WN_GW.dprime", "N", "A"), # factor Expression (neutral, angry)
+    dprime = value
+  ) %>%
+  select(-value)
+
+### A prime
+aprime_long_GW <- SignalDetection_GW %>% pivot_longer(c(BN_GW.aprime, BA_GW.aprime, WN_GW.aprime, WA_GW.aprime), names_to = "aprime", values_to = "value")
+aprime_long_GW <- aprime_long_GW %>% select(CASE, aprime, value)
+aprime_long_GW <- aprime_long_GW %>%
+  mutate(
+    Race = ifelse(aprime == "BN_GW.aprime" | aprime == "BA_GW.aprime", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(aprime == "BN_GW.aprime" | aprime == "WN_GW.aprime", "N", "A"), # factor Expression (neutral, angry)
+    aprime = value
+  ) %>%
+  select(-value)
+
+### response bias C
+c_long_GW <- SignalDetection_GW %>% pivot_longer(c(BN_GW.c, BA_GW.c, WN_GW.c, WA_GW.c), names_to = "c", values_to = "value")
+c_long_GW <- c_long_GW %>% select(CASE, c, value)
+c_long_GW <- c_long_GW %>%
+  mutate(
+    Race = ifelse(c == "BN_GW.c" | c == "BA_GW.c", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(c == "BN_GW.c" | c == "WN_GW.c", "N", "A"), # factor Expression (neurtal, angry)
+    c = value
+  ) %>%
+  select(-value)
+
+### response bias beta
+beta_long_GW <- SignalDetection_GW %>% pivot_longer(c(BN_GW.beta, BA_GW.beta, WN_GW.beta, WA_GW.beta), names_to = "beta", values_to = "value")
+beta_long_GW <- beta_long_GW %>% select(CASE, beta, value)
+beta_long_GW <- beta_long_GW %>%
+  mutate(
+    Race = ifelse(beta == "BN_GW.beta" | beta == "BA_GW.beta", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(beta == "BN_GW.beta" | beta == "WN_GW.beta", "N", "A"), # factor Expression (neurtal, angry)
+    beta = value
+  ) %>%
+  select(-value)
+
+### response bias B''d
+bppd_long_GW <- SignalDetection_GW %>% pivot_longer(c(BN_GW.bppd, BA_GW.bppd, WN_GW.bppd, WA_GW.bppd), names_to = "bppd", values_to = "value")
+bppd_long_GW <- bppd_long_GW %>% select(CASE, bppd, value)
+bppd_long_GW <- bppd_long_GW %>%
+  mutate(
+    Race = ifelse(bppd == "BN_GW.bppd" | bppd == "BA_GW.bppd", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(bppd == "BN_GW.bppd" | bppd == "WN_GW.bppd", "N", "A"), # factor Expression (neurtal, angry)
+    bppd = value
+  ) %>%
+  select(-value)
+
+### put it together
+data_GW <- data.frame(cbind(dprime_long_GW[, "dprime"], aprime_long_GW[, "aprime"], c_long_GW[, "c"], beta_long_GW[, "beta"], bppd_long_GW))
+data_GW <- data_GW %>% select("CASE", everything())
+
+### add between condition
+for (i in data_GW$CASE) {
+  data_GW$condition[data_GW$CASE == i] <- df$group[df$subject == i]
+}
+# write.csv2(data_GW, "data_CFD.csv")
+
+# final data frame: Combine Ackerman and CFD data, add variable "stimuli (AC, GW)" and "order (1 = Ackerman first, 2 = CFD first)"
+
+data_GW$stimuli <- "GW"
+data_AC$stimuli <- "AC"
+data_sdt <- data.frame(rbind(data_AC, data_GW)) %>% mutate(
+  order = ifelse(condition > 12, 1, 2)
+)
+
+# write.csv2(data_sdt, "data_final.csv")
+head(data_sdt)
+
+# difference scores (White - Black)
+equ_long <- data_sdt %>% select(CASE, aprime, bppd, Race, Expression, order, stimuli)
+equ_wide <- pivot_wider(equ_long, names_from = Race, values_from = c(aprime, bppd))
+equ_wide$aprime_diff <- equ_wide$aprime_W - equ_wide$aprime_B
+equ_wide$bppd_diff <- equ_wide$bppd_W - equ_wide$bppd_B
+```
+
+# Main analyses
+Repeated-measures ANOVAs will be performed separately for the sensitivity scores and the response bias scores with the central analysis being the 2 (Target Race) x 2 (Target Expression) ANOVA collapsed across display times and distractor. Significant interaction effects in support of a replication will be followed up by simple paired t-test on the (White-Black) difference scores for each expression.
+
+To determine whether the results are significantly different from those expected if the null hypothesis were true, we will use the standard p < .05 criterion, and check the 95% CI for the inclusion of zero. Two-sided hypothesis testing will be applied when applicable, and effect sizes reported for all results. 
+
+## Ackerman First
+In the counterbalancing condition of first Ackerman stimuli, then CFD stimuli, successful direct replication would result in a race-by-emotion interaction for both stimuli sets in opposite directions.
+
+### A prime
+
+#### Ackerman stimuli
+
+##### Descriptive statistics
+
+```{r Ackerman a prime Descriptive statistics, message=FALSE, warning=FALSE}
+# Descriptive statistics
+describeBy(aprime ~ Race + Expression, data = filter(data_sdt, stimuli == "AC"))
+```
+
+##### 2 (Target Race) x 2 (Expression) rm ANOVA with A prime
+
+```{r Ackerman A prime ANOVA, message=FALSE, warning=FALSE}
+# ANOVA
+aov_aprime_AC <- aov(aprime ~ Race + Expression + (Race * Expression) + Error(factor(CASE)), filter(data_sdt, stimuli == "AC" & order == 1))
+summary(aov_aprime_AC)
+eta_squared(aov_aprime_AC, partial = T, alternative = "two.sided")
+```
+
+##### Paired t-tests (Black - White) for each expression condition
+
+```{r Ackerman A prime t-tests, message=FALSE, warning=FALSE}
+# neutral
+t.aprime.N.AC <- t.test(aprime ~ Race, data = filter(data_sdt, Expression == "N" & stimuli == "AC" & order == 1), paired = TRUE)
+t.aprime.N.AC
+cohens_d(t.aprime.N.AC, data = filter(data_sdt, Expression == "N" & stimuli == "AC" & order == 1))
+
+# angry
+t.aprime.A.AC <- t.test(aprime ~ Race,
+  data = filter(data_sdt, Expression == "A" & stimuli == "AC" & order == 1), paired = TRUE
+)
+t.aprime.A.AC
+cohens_d(t.aprime.A.AC, data = filter(data_sdt, Expression == "N" & stimuli == "AC" & order == 1))
+```
+
+#### CFD stimuli
+
+##### Descriptive statistics
+
+```{r CFD a prime Descriptive statistics, message=FALSE, warning=FALSE}
+# Descriptive statistics
+describeBy(aprime ~ Race + Expression, data = filter(data_sdt, stimuli == "GW" & order == 1))
+```
+
+##### 2 (Target Race) x 2 (Expression) rm ANOVA with A prime
+
+```{r CFD A prime ANOVA, message=FALSE, warning=FALSE}
+# ANOVA
+aov_aprime_GW <- aov(aprime ~ (Race * Expression) + Error(factor(CASE)), data = filter(data_sdt, stimuli == "GW" & order == 1))
+summary(aov_aprime_GW)
+eta_squared(aov_aprime_GW, partial = T, alternative = "two")
+```
+
+##### Paired t-tests (Black - White) for each expression condition
+
+```{r CFD A prime t-tests, message=FALSE, warning=FALSE}
+# neutral
+t.aprime.N.GW <- t.test(aprime ~ Race,
+  data = filter(data_sdt, Expression == "N" & stimuli == "GW" & order == 1), paired = TRUE
+)
+t.aprime.N.GW
+cohens_d(t.aprime.N.GW, data = filter(data_sdt, Expression == "N" & stimuli == "GW" & order == 1))
+
+# angry
+t.aprime.A.GW <- t.test(aprime ~ Race,
+  data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 1), paired = TRUE
+)
+t.aprime.A.GW
+cohens_d(t.aprime.A.GW, data = filter(data_sdt, Expression == "N" & stimuli == "GW" & order == 1))
+```
+
+### B''d
+#### Ackerman stimuli
+##### Descriptive statistics
+
+```{r Ackerman Bppd Descriptive statistics, message=FALSE, warning=FALSE}
+# Descriptive statistics
+describeBy(bppd ~ Race + Expression, data = filter(data_sdt, stimuli == "AC" & order == 1))
+```
+
+##### 2 (Target Race) x 2 (Expression) rm ANOVA with b''d
+
+```{r Ackerman bppd ANOVA, message=FALSE, warning=FALSE}
+# ANOVA
+aov_bppd_AC <- aov(bppd ~ Race + Expression + (Race * Expression) + Error(factor(CASE)), filter(data_sdt, stimuli == "AC" & order == 1))
+summary(aov_bppd_AC)
+eta_squared(aov_bppd_AC, partial = T, alternative = "two")
+```
+
+##### Paired t-tests (Black - White) for each expression condition
+
+```{r Ackerman bppd t-tests, message=FALSE, warning=FALSE}
+# neutral
+t.bppd.N.AC <- t.test(bppd ~ Race,
+  data = filter(data_sdt, Expression == "N" & stimuli == "AC" & order == 1), paired = TRUE
+)
+t.bppd.N.AC
+cohens_d(t.bppd.N.AC, data = filter(data_sdt, Expression == "N" & stimuli == "AC" & order == 1))
+# angry
+t.bppd.A.AC <- t.test(bppd ~ Race,
+  data = filter(data_sdt, Expression == "A" & stimuli == "AC" & order == 1), paired = TRUE
+)
+t.bppd.A.AC
+cohens_d(t.bppd.A.AC, data = filter(data_sdt, Expression == "A" & stimuli == "AC" & order == 1))
+```
+
+#### CFD stimuli
+##### Descriptive statistics
+
+```{r CFD bppd Descriptive statistics, message=FALSE, warning=FALSE}
+# Descriptive statistics
+describeBy(bppd ~ Race + Expression, data = filter(data_sdt, stimuli == "GW" & order == 1))
+```
+
+##### 2 (Target Race) x 2 (Expression) rm ANOVA with b''d
+
+```{r CFD bppd ANOVA, message=FALSE, warning=FALSE}
+# ANOVA
+aov_bppd_GW <- aov(bppd ~ (Race * Expression) + Error(factor(CASE)), data = filter(data_sdt, stimuli == "GW" & order == 1))
+summary(aov_bppd_GW)
+eta_squared(aov_bppd_GW, partial = T, alternative = "two")
+```
+
+##### Paired t-tests (Black - White) for each expression condition
+
+```{r CFD bppd t-tests, message=FALSE, warning=TRUE}
+# neutral
+t.bppd.N.GW <- t.test(bppd ~ Race,
+  data = filter(data_sdt, Expression == "N" & stimuli == "GW" & order == 1), paired = TRUE
+)
+t.bppd.N.GW
+cohens_d(t.bppd.N.GW, data = filter(data_sdt, Expression == "N" & stimuli == "GW" & order == 1))
+# angry
+t.bppd.A.GW <- t.test(bppd ~ Race,
+  data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 1), paired = TRUE
+)
+t.bppd.A.GW
+cohens_d(t.bppd.A.GW, data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 1))
+```
+
+## CFD First
+If these two direct replications are successful, the other condition will inform us whether the announcement of the recognition phase is responsible for this disparity (when each stimulus set produces opposite patterns to the one in the other condition) or whether it is a stimulus effect (as suggested by CFD et al., 2015), in which case both interactions should be identical, independent of order (and hence recognition announcement).
+
+### A prime
+
+#### Ackerman stimuli
+
+##### Descriptive statistics
+
+```{r Ackerman A prime Descriptive statistics r, message=FALSE, warning=FALSE}
+# Descriptive statistics
+describeBy(aprime ~ Race + Expression, data = filter(data_sdt, stimuli == "AC" & order == 2))
+```
+
+##### 2 (Target Race) x 2 (Expression) rm ANOVA with A prime
+
+```{r Ackerman A prime ANOVA r, message=FALSE, warning=FALSE}
+# ANOVA
+aov_aprime_AC_r <- aov(aprime ~ Race + Expression + (Race * Expression) + Error(factor(CASE)), filter(data_sdt, stimuli == "AC" & order == 2))
+summary(aov_aprime_AC_r)
+eta_squared(aov_aprime_AC_r, partial = T, alternative = "two")
+```
+
+##### Paired t-tests (Black - White) for each expression condition
+
+```{r Ackerman A prime t-tests r, message=FALSE, warning=FALSE}
+# neutral
+t.aprime.N.AC.r <- t.test(aprime ~ Race,
+  data = filter(data_sdt, Expression == "N" & stimuli == "AC" & order == 2), paired = TRUE
+)
+t.aprime.N.AC.r
+cohens_d(t.aprime.N.AC.r, data = filter(data_sdt, Expression == "N" & stimuli == "AC" & order == 2))
+
+# angry
+t.aprime.A.AC.r <- t.test(aprime ~ Race,
+  data = filter(data_sdt, Expression == "A" & stimuli == "AC" & order == 2), paired = TRUE
+)
+t.aprime.A.AC.r
+cohens_d(t.aprime.A.AC.r, data = filter(data_sdt, Expression == "N" & stimuli == "AC" & order == 2))
+```
+
+#### CFD stimuli
+
+##### Descriptive statistics
+
+```{r CFD A prime Descriptive statistics r, message=FALSE, warning=FALSE}
+# Descriptive statistics
+describeBy(aprime ~ Race + Expression, data = filter(data_sdt, stimuli == "GW" & order == 2))
+```
+
+##### 2 (Target Race) x 2 (Expression) rm ANOVA with A prime
+
+```{r CFD A prime ANOVA r, message=FALSE, warning=FALSE}
+# ANOVA
+aov_aprime_GW_r <- aov(aprime ~ (Race * Expression) + Error(factor(CASE)), data = filter(data_sdt, stimuli == "GW" & order == 2))
+summary(aov_aprime_GW_r)
+eta_squared(aov_aprime_GW_r, partial = T, alternative = "two")
+```
+
+##### Paired t-tests (Black - White) for each expression condition
+
+```{r CFD A prime t-tests r, message=FALSE, warning=FALSE}
+# neutral
+t.aprime.N.GW.r <- t.test(aprime ~ Race,
+  data = filter(data_sdt, Expression == "N" & stimuli == "GW" & order == 2), paired = TRUE
+)
+t.aprime.N.GW.r
+cohens_d(t.aprime.N.GW.r, data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 2))
+
+# angry
+t.aprime.A.GW.r <- t.test(aprime ~ Race,
+  data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 2), paired = TRUE
+)
+t.aprime.A.GW.r
+cohens_d(t.aprime.A.GW.r, data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 2))
+```
+
+### B''d
+#### Ackerman stimuli
+##### Descriptive statistics
+
+```{r Ackerman Bppd Descriptive statistics r, message=FALSE, warning=FALSE}
+# Descriptive statistics
+describeBy(bppd ~ Race + Expression, data = filter(data_sdt, stimuli == "AC" & order == 2))
+```
+
+##### 2 (Target Race) x 2 (Expression) rm ANOVA with bppd
+
+```{r Ackerman bppd ANOVA r, message=FALSE, warning=FALSE}
+# ANOVA
+aov_bppd_AC_r <- aov(bppd ~ Race + Expression + (Race * Expression) + Error(factor(CASE)), filter(data_sdt, stimuli == "AC" & order == 2))
+summary(aov_bppd_AC_r)
+eta_squared(aov_bppd_AC_r, partial = T, alternative = "two")
+```
+
+##### Paired t-tests (Black - White) for each expression condition
+
+```{r Ackerman bppd t-tests r, message=FALSE, warning=FALSE}
+# neutral
+t.bppd.N.AC.r <- t.test(bppd ~ Race,
+  data = filter(data_sdt, Expression == "N" & stimuli == "AC" & order == 2), paired = TRUE
+)
+t.bppd.N.AC.r
+cohens_d(t.bppd.N.AC.r, data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 2))
+
+# angry
+t.bppd.A.AC.r <- t.test(bppd ~ Race,
+  data = filter(data_sdt, Expression == "A" & stimuli == "AC" & order == 2), paired = TRUE
+)
+t.bppd.A.AC.r
+cohens_d(t.bppd.A.AC.r, data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 2))
+```
+
+#### CFD stimuli
+##### Descriptive statistics
+
+```{r CFD bppd Descriptive statistics r, message=FALSE, warning=FALSE}
+# Descriptive statistics
+describeBy(bppd ~ Race + Expression, data = filter(data_sdt, stimuli == "GW" & order == 2))
+```
+
+##### 2 (Target Race) x 2 (Expression) rm ANOVA with bppd
+
+```{r CFD bppd ANOVA r, message=FALSE, warning=FALSE}
+# ANOVA
+aov_bppd_GW_r <- aov(bppd ~ (Race * Expression) + Error(factor(CASE)), data = filter(data_sdt, stimuli == "GW" & order == 2))
+summary(aov_bppd_GW_r)
+eta_squared(aov_bppd_GW_r, partial = T, alternative = "two")
+```
+
+##### Paired t-tests (Black - White) for each expression condition
+
+```{r CFD bppd t-tests r, message=FALSE, warning=FALSE}
+# neutral
+t.bppd.N.GW.r <- t.test(bppd ~ Race,
+  data = filter(data_sdt, Expression == "N" & stimuli == "GW" & order == 2), paired = TRUE
+)
+t.bppd.N.GW.r
+cohens_d(t.bppd.N.GW.r, data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 2))
+
+# angry
+t.bppd.A.GW.r <- t.test(bppd ~ Race,
+  data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 2), paired = TRUE
+)
+t.bppd.A.GW.r
+cohens_d(t.bppd.A.GW.r, data = filter(data_sdt, Expression == "A" & stimuli == "GW" & order == 2))
+```
+
+# Follow-Up Analysis
+## Equivalence Tests collapsed across conditions
+Lastly, equivalence test for the central results will be included. For the central effect size, the double difference score of (White neutral – Black neutral) vs. (White angry- Black angry), a sample size of 400 participants will equip us with 90% power to find evidence for equivalence in the critical smallest effect size of interest window from dz = -0.165 to dz = 0.165.
+
+```{r equivalence tests}
+# Ackerman
+## aprime
+t_TOST(
+  formula = aprime_diff ~ Expression,
+  data = filter(equ_wide, stimuli == "AC"),
+  paired = T,
+  eqb = c(-0.165, 0.165),
+  eqbound_type = "SMD"
+)
+
+## bppd
+t_TOST(
+  formula = bppd_diff ~ Expression,
+  data = filter(equ_wide, stimuli == "AC"),
+  paired = T,
+  eqb = c(-0.165, 0.165),
+  eqbound_type = "SMD"
+)
+
+# CFD
+## aprime
+t_TOST(
+  formula = aprime_diff ~ Expression,
+  data = filter(equ_wide, stimuli == "GW"),
+  paired = T,
+  eqb = c(-0.165, 0.165),
+  eqbound_type = "SMD"
+)
+
+## bppd
+t_TOST(
+  formula = bppd_diff ~ Expression,
+  data = filter(equ_wide, stimuli == "GW"),
+  paired = T,
+  eqb = c(-0.165, 0.165),
+  eqbound_type = "SMD"
+)
+```
+
+If we observe such a pattern for either the sensitivity scores or the response bias, this will be followed up by an omnibus ANOVA on the full dataset with stimuli set and counterbalancing order as additional factors. Both possibilities would yield different three-way interactions (target race x target emotion x stimulus sets, respectively counterbalancing order). It is, of course, also conceivable that both stimulus sets produce similar results, thus speaking either to the functional or the stereotype congruency perspective.
+
+## 2 (Race) x 2 (Expression) x 2 (Stimuli) x 2 (Order) mixed ANOVA
+
+```{r sensitivity index aprime, message=FALSE, warning=FALSE}
+aov_aprime <- aov(aprime ~ (Race * Expression * stimuli * order) + Error(factor(CASE)), data = data_sdt)
+summary(aov_aprime)
+eta_squared(aov_aprime, partial = T, alternative = "two")
+```
+```{r response bias bppd, message=FALSE, warning=FALSE}
+aov_bppd <- aov(bppd ~ (Race * Expression * stimuli * order) + Error(factor(CASE)), data = data_sdt)
+summary(aov_bppd)
+eta_squared(aov_bppd, partial = T, alternative = "two")
+```
+
+# Exploratory analyses
+
+```{r unusualness + recognition data, message=FALSE, warning=FALSE, include=FALSE}
+# portraits from the memory phase
+targets_m <- df %>%
+  filter(blocknum == 1 | blocknum == 5) %>%
+  select(subject, stimulusitem2, stimulusitem3, stimulusitem4)
+for (i in 2:4) { # delete irrelevant stimuli (distractors, blank etc.)
+  targets_m[, i] <- ifelse(startsWith(targets_m[, i], "art") | startsWith(targets_m[, i], "blank") | targets_m[, i] == 0, "", targets_m[, i])
+}
+targets_m <- targets_m[order(targets_m$subject, targets_m$stimulusitem2, targets_m$stimulusitem3, targets_m$stimulusitem4), ]
+
+# portraits from the recognition phase
+targets_r <- df %>%
+  filter(blocknum == 3 | blocknum == 7) %>%
+  select(subject, stimulusitem2, response)
+targets_r <- targets_r[order(targets_r$subject, targets_r$stimulusitem2), ]
+
+# portraits from the unusualness ratings
+targets_u <- df %>%
+  filter(blocknum == 4 | blocknum == 8) %>%
+  select(subject, stimulusitem2, response)
+targets_u <- targets_u[order(targets_u$subject, targets_u$stimulusitem2), ]
+
+# create dummy variables to identify joint values
+targets_m$dummy <- paste0(targets_m$subject, targets_m$stimulusitem2, targets_m$stimulusitem3, targets_m$stimulusitem4)
+targets_r$dummy <- paste0(targets_r$subject, targets_r$stimulusitem2)
+targets_u$dummy <- paste0(targets_u$subject, targets_u$stimulusitem2)
+```
+
+For each stimulus calculate mean unusualness rating across participants
+
+```{r mean unusualness per item target + distracter stimuli, echo=FALSE, message=FALSE, warning=FALSE}
+unusual_item <- targets_u %>%
+  group_by(stimulusitem2) %>%
+  summarise(
+    unusual = mean(response),
+  )
+
+unusual_item$Race <- ifelse(startsWith(unusual_item$stimulusitem2, "B") | startsWith(unusual_item$stimulusitem2, "CFD-B"), "B", "W")
+unusual_item$Expression <- ifelse(startsWith(unusual_item$stimulusitem2, "BA") | startsWith(unusual_item$stimulusitem2, "WA") | endsWith(unusual_item$stimulusitem2, "A.jpg"), "A", "N")
+unusual_item$Stimuli <- ifelse(startsWith(unusual_item$stimulusitem2, "CFD"), "GW", "AC")
+
+# write.csv2(unusual_item, "unusualness_per_item1.csv")
+head(unusual_item)
+```
+
+For each participant select unusualness and recognition ratings only for target stimuli (that were presented in the memory phase)
+
+```{r unusualness + recognition only target stimuli, echo=FALSE, message=FALSE, warning=FALSE}
+recognition_unusualness_subject <- inner_join(targets_m, targets_r, by = "dummy") %>% select(subject.x, stimulusitem2.y, response)
+colnames(recognition_unusualness_subject) <- c("subject", "stimulusitem2", "recognition")
+recognition_unusualness_subject$dichotom <- ifelse(recognition_unusualness_subject$recognition < 4, 0, 1)
+recognition_unusualness_subject$Race <- ifelse(startsWith(recognition_unusualness_subject$stimulusitem2, "B") | startsWith(recognition_unusualness_subject$stimulusitem2, "CFD-B"), "B", "W")
+recognition_unusualness_subject$Expression <- ifelse(startsWith(recognition_unusualness_subject$stimulusitem2, "BA") | startsWith(recognition_unusualness_subject$stimulusitem2, "WA") | endsWith(recognition_unusualness_subject$stimulusitem2, "A.jpg"), "A", "N")
+recognition_unusualness_subject$stimuli <- ifelse(startsWith(recognition_unusualness_subject$stimulusitem2, "CFD"), "GW", "AC")
+
+## add a column with mean unusualness ratings of each item across participants calculated above (>> unusualness_per_item)
+
+for (i in recognition_unusualness_subject$stimulusitem2) {
+  recognition_unusualness_subject$unusual_average[recognition_unusualness_subject$stimulusitem2 == i] <- unusual_item$unusual[unusual_item$stimulusitem2 == i]
+}
+
+# write.csv2(recognition_unusualness_subject, "recognition_unusualness_per_subject.csv")
+head(recognition_unusualness_subject)
+```
+
+## Unusualness
+As exploratory analysis, to address the suspicion voiced by CFD et al. (2015) that data in support of the functional perspective may be an artefact of stimulus unusualness (and hence greater memorability, particularly for angry Black faces), we will first test whether Black angry faces are indeed rated as particularly unusual compared to the other three categories of faces in both
+stimuli sets, using the mean usualness scores for each face.
+
+```{r unusualness, echo=TRUE, message=FALSE, warning=FALSE}
+unusual_item <- data.frame(unusual_item)
+# Descriptive statistics
+describeBy(unusual ~ Race + Stimuli, data = unusual_item)
+describeBy(unusual ~ Expression + Stimuli, data = unusual_item)
+describeBy(unusual ~ Race + Expression + Stimuli, data = unusual_item)
+
+# Ackerman
+aov_unusual_AC <- aov(unusual ~ Race * Expression + Error(factor(stimulusitem2)), filter(unusual_item, Stimuli == "AC"))
+summary(aov_unusual_AC)
+eta_squared(aov_unusual_AC, partial = T, alternative = "two")
+
+# CFD
+aov_unusual_GW <- aov(unusual ~ Race * Expression + Error(factor(stimulusitem2)), filter(unusual_item, Stimuli == "GW"))
+summary(aov_unusual_GW)
+eta_squared(aov_unusual_GW, partial = T, alternative = "two")
+```
+
+## Recognition
+### Raw correlation
+In addition, we will correlate unusualness ratings with recognition ratings for each picture. A positive correlation would further support this notion.
+
+```{r correlation recognition unusualness, echo=TRUE, message=FALSE, warning=FALSE}
+data_recog <- recognition_unusualness_subject
+
+# correlate unusualness with recognition
+cor.test(data_recog$unusual_average, data_recog$recognition, method = "pearson")
+```
+
+### Linear mixed model
+This will then be followed up by testing whether the memory effects will vanish once we control for unusualness. To this end, a linear mixed model will have to be conducted predicting recognition ratings with unusualness rating, target race, and target expression and their interaction as fixed factors and participants as random factor. This will also be conducted for the dichotomized recognition rating.
+
+#### Continuous recognition scores
+
+```{r recognition by race expression unusualness, echo=TRUE, message=FALSE, warning=FALSE}
+## Ackerman
+lme_AC <- lmer(recognition ~ Race + Expression + (Race * Expression) + (1 | subject), data = filter(data_recog, stimuli == "AC"))
+summary(lme_AC)
+plot(lme_AC)
+
+### add unusualness ratings as predictor
+lme_AC_u <- lmer(recognition ~ Race + Expression + unusual_average + (Race * Expression) + (1 | subject), data = filter(data_recog, stimuli == "AC"))
+summary(lme_AC_u)
+plot(lme_AC_u)
+
+## CFD
+lme_GW <- lmer(recognition ~ Race + Expression + (Race * Expression) + (1 | subject), data = filter(data_recog, stimuli == "GW"))
+summary(lme_GW)
+plot(lme_GW)
+
+### add unusualnessness as predictor
+lme_GW_u <- lmer(recognition ~ Race + Expression + unusual_average + (Race * Expression) + (1 | subject), data = filter(data_recog, stimuli == "GW"))
+summary(lme_GW_u)
+plot(lme_GW_u)
+```
+
+#### Dichotomous recognition score
+This will also be conducted for the dichotomized recognition rating.
+
+```{r dichotomized recognition by race expression unusualness, echo=TRUE, message=FALSE, warning=FALSE}
+## Ackerman
+lme_AC1 <- glmer(dichotom ~ Race + Expression + (Race * Expression) + (1 | subject), data = filter(data_recog, stimuli == "AC"))
+summary(lme_AC1)
+plot(lme_AC1)
+
+### add unusualness ratings as predictor
+lme_AC_u1 <- glmer(dichotom ~ Race + Expression + unusual_average + (Race * Expression * unusual_average) + (1 | subject), data = filter(data_recog, stimuli == "AC"))
+summary(lme_AC_u1)
+plot(lme_AC_u1)
+
+## CFD
+lme_GW1 <- glmer(dichotom ~ Race + Expression + (Race * Expression) + (1 | subject), data = filter(data_recog, stimuli == "GW"))
+summary(lme_GW1)
+plot(lme_GW1)
+
+### add unusualness ratings as predictor
+lme_GW_u1 <- glmer(dichotom ~ Race + Expression + unusual_average + (Race * Expression * unusual_average) + (1 | subject), data = filter(data_recog, stimuli == "GW"))
+summary(lme_GW_u1)
+plot(lme_GW_u1)
+```
+
+## Sensitivity scores A prime
+To enhance the comparability to the main analyses we resorted to sensitive scores again and included unusualness ratings for both targets and distractors. As this would have created a constant for the Ackerman stimuli (all participants saw all stimuli either as targets or as distractors), we created a random split for each participant. Specifically, we split up both stimulus sets employed in the recognition phase in two equal halves with equal numbers for targets and distractors of each race x expression combination. We then calculated sensitivity scores (A’) for each of those halves as well as the consensual unusualness of that half (by averaging consensual ratings for all included stimuli). These sensitivity scores (A’) were then predicted with target race, target expression, and their interaction including a random intercept per participant. 
+
+### Ackerman stimuli
+
+```{r splithalf data Ackerman, message=FALSE, warning=FALSE, include=FALSE}
+set.seed(1)
+# Ackerman
+
+sample_AC <- filter(df, startsWith(trialcode, "AC"))
+sample_AC$index <- ifelse(startsWith(sample_AC$trialcode, "AC_BN_OLD"), 1,
+  ifelse(startsWith(sample_AC$trialcode, "AC_WN_OLD"), 2,
+    ifelse(startsWith(sample_AC$trialcode, "AC_BA_OLD"), 3,
+      ifelse(startsWith(sample_AC$trialcode, "AC_WA_OLD"), 4,
+        ifelse(startsWith(sample_AC$trialcode, "AC_BN_NEW"), 5,
+          ifelse(startsWith(sample_AC$trialcode, "AC_WN_NEW"), 6,
+            ifelse(startsWith(sample_AC$trialcode, "AC_BA_NEW"), 7,
+              ifelse(startsWith(sample_AC$trialcode, "AC_WA_NEW"), 8, 9)
+            )
+          )
+        )
+      )
+    )
+  )
+)
+sample_AC <- sample_AC %>%
+  group_by(subject, index) %>%
+  group_map(~ .x[sample(nrow(.x)), ])
+
+caseVariable <- str_c(rep(unique(df$subject), each = 16))
+caseVariable <- sort(caseVariable)
+
+sampleA_AC <- list()
+sampleB_AC <- list()
+for (i in 1:3168) {
+  sampleA_AC[[i]] <- sample_AC[[i]][1:2, ]
+  sampleB_AC[[i]] <- sample_AC[[i]][3:4, ]
+}
+
+sampleA_AC <- bind_rows(sampleA_AC, .id = "column_label")
+sampleA_AC$CASE <- caseVariable
+sampleB_AC <- bind_rows(sampleB_AC, .id = "column_label")
+sampleB_AC$CASE <- caseVariable
+
+# sample A
+data_AC_A <- sampleA_AC %>%
+  group_by(CASE) %>%
+  summarise(
+    Hit_BN_AC_A = sum(ifelse(startsWith(trialcode, "AC_BN_OLD") & response >= 4, 1, 0)),
+    Hit_WN_AC_A = sum(ifelse(startsWith(trialcode, "AC_WN_OLD") & response >= 4, 1, 0)),
+    Hit_BA_AC_A = sum(ifelse(startsWith(trialcode, "AC_BA_OLD") & response >= 4, 1, 0)),
+    Hit_WA_AC_A = sum(ifelse(startsWith(trialcode, "AC_WA_OLD") & response >= 4, 1, 0)),
+    Miss_BN_AC_A = sum(ifelse(startsWith(trialcode, "AC_BN_OLD") & response < 4, 1, 0)),
+    Miss_WN_AC_A = sum(ifelse(startsWith(trialcode, "AC_WN_OLD") & response < 4, 1, 0)),
+    Miss_BA_AC_A = sum(ifelse(startsWith(trialcode, "AC_BA_OLD") & response < 4, 1, 0)),
+    Miss_WA_AC_A = sum(ifelse(startsWith(trialcode, "AC_WA_OLD") & response < 4, 1, 0)),
+    FA_BN_AC_A = sum(ifelse(startsWith(trialcode, "AC_BN_NEW") & response >= 4, 1, 0)),
+    FA_WN_AC_A = sum(ifelse(startsWith(trialcode, "AC_WN_NEW") & response >= 4, 1, 0)),
+    FA_BA_AC_A = sum(ifelse(startsWith(trialcode, "AC_BA_NEW") & response >= 4, 1, 0)),
+    FA_WA_AC_A = sum(ifelse(startsWith(trialcode, "AC_WA_NEW") & response >= 4, 1, 0)),
+    CR_BN_AC_A = sum(ifelse(startsWith(trialcode, "AC_BN_NEW") & response < 4, 1, 0)),
+    CR_WN_AC_A = sum(ifelse(startsWith(trialcode, "AC_WN_NEW") & response < 4, 1, 0)),
+    CR_BA_AC_A = sum(ifelse(startsWith(trialcode, "AC_BA_NEW") & response < 4, 1, 0)),
+    CR_WA_AC_A = sum(ifelse(startsWith(trialcode, "AC_WA_NEW") & response < 4, 1, 0))
+  )
+
+SignalDetection_AC_A <- data.frame(
+  BN_AC_A = psycho::dprime(
+    n_hit = data_AC_A$Hit_BN_AC_A + 0.5,
+    n_fa = data_AC_A$FA_BN_AC_A + 0.5,
+    n_miss = data_AC_A$Miss_BN_AC_A,
+    n_cr = data_AC_A$CR_BN_AC_A,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  BA_AC_A = psycho::dprime(
+    n_hit = data_AC_A$Hit_BA_AC_A + 0.5,
+    n_fa = data_AC_A$FA_BA_AC_A + 0.5,
+    n_miss = data_AC_A$Miss_BA_AC_A,
+    n_cr = data_AC_A$CR_BA_AC_A,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  WN_AC_A = psycho::dprime(
+    n_hit = data_AC_A$Hit_WN_AC_A + 0.5,
+    n_fa = data_AC_A$FA_WN_AC_A + 0.5,
+    n_miss = data_AC_A$Miss_WN_AC_A,
+    n_cr = data_AC_A$CR_WN_AC_A,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  WA_AC_A = psycho::dprime(
+    n_hit = data_AC_A$Hit_WA_AC_A + 0.5,
+    n_fa = data_AC_A$FA_WA_AC_A + 0.5,
+    n_miss = data_AC_A$Miss_WA_AC_A,
+    n_cr = data_AC_A$CR_WA_AC_A,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  CASE = data_AC_A$CASE
+)
+
+aprime_long_AC_A <- SignalDetection_AC_A %>% pivot_longer(c(BN_AC_A.aprime, BA_AC_A.aprime, WN_AC_A.aprime, WA_AC_A.aprime), names_to = "aprime", values_to = "value")
+aprime_long_AC_A <- aprime_long_AC_A %>% select(CASE, aprime, value)
+aprime_long_AC_A <- aprime_long_AC_A %>%
+  mutate(
+    Race = ifelse(aprime == "BN_AC_A.aprime" | aprime == "BA_AC_A.aprime", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(aprime == "BN_AC_A.aprime" | aprime == "WN_AC_A.aprime", "N", "A"), # factor Expression (neutral, angry)
+    aprime = value
+  ) %>%
+  select(-value)
+
+# unusualness
+items <- unusual_item$stimulusitem2
+for (i in items) {
+  sampleA_AC$unusual[sampleA_AC$stimulusitem2 == i] <- unusual_item$unusual[unusual_item$stimulusitem2 == i]
+}
+sampleA_AC$category <- ifelse(startsWith(sampleA_AC$stimulusitem2, "BN"), "BN",
+  ifelse(startsWith(sampleA_AC$stimulusitem2, "WN"), "WN",
+    ifelse(startsWith(sampleA_AC$stimulusitem2, "BA"), "BA", "WA")
+  )
+)
+unusualA_AC <- sampleA_AC %>%
+  group_by(CASE, category) %>%
+  summarize(mean(unusual))
+recogA_AC <- sampleA_AC %>%
+  group_by(CASE, category) %>%
+  summarize(mean(response))
+
+aprime_long_AC_A$unusual <- ifelse(aprime_long_AC_A$Race == "B" & aprime_long_AC_A$Expression == "N", unusualA_AC$`mean(unusual)`[unusualA_AC$category == "BN"],
+  ifelse(aprime_long_AC_A$Race == "B" & aprime_long_AC_A$Expression == "A", unusualA_AC$`mean(unusual)`[unusualA_AC$category == "BA"],
+    ifelse(aprime_long_AC_A$Race == "W" & aprime_long_AC_A$Expression == "N", unusualA_AC$`mean(unusual)`[unusualA_AC$category == "WN"], unusualA_AC$`mean(unusual)`[unusualA_AC$category == "WA"])
+  )
+)
+
+aprime_long_AC_A$recog <- ifelse(aprime_long_AC_A$Race == "B" & aprime_long_AC_A$Expression == "N", recogA_AC$`mean(response)`[recogA_AC$category == "BN"],
+  ifelse(aprime_long_AC_A$Race == "B" & aprime_long_AC_A$Expression == "A", recogA_AC$`mean(response)`[recogA_AC$category == "BA"],
+    ifelse(aprime_long_AC_A$Race == "W" & aprime_long_AC_A$Expression == "N", recogA_AC$`mean(response)`[recogA_AC$category == "WN"], recogA_AC$`mean(response)`[recogA_AC$category == "WA"])
+  )
+)
+
+# sample B
+data_AC_B <- sampleB_AC %>%
+  group_by(CASE) %>%
+  summarise(
+    Hit_BN_AC_B = sum(ifelse(startsWith(trialcode, "AC_BN_OLD") & response >= 4, 1, 0)),
+    Hit_WN_AC_B = sum(ifelse(startsWith(trialcode, "AC_WN_OLD") & response >= 4, 1, 0)),
+    Hit_BA_AC_B = sum(ifelse(startsWith(trialcode, "AC_BA_OLD") & response >= 4, 1, 0)),
+    Hit_WA_AC_B = sum(ifelse(startsWith(trialcode, "AC_WA_OLD") & response >= 4, 1, 0)),
+    Miss_BN_AC_B = sum(ifelse(startsWith(trialcode, "AC_BN_OLD") & response < 4, 1, 0)),
+    Miss_WN_AC_B = sum(ifelse(startsWith(trialcode, "AC_WN_OLD") & response < 4, 1, 0)),
+    Miss_BA_AC_B = sum(ifelse(startsWith(trialcode, "AC_BA_OLD") & response < 4, 1, 0)),
+    Miss_WA_AC_B = sum(ifelse(startsWith(trialcode, "AC_WA_OLD") & response < 4, 1, 0)),
+    FA_BN_AC_B = sum(ifelse(startsWith(trialcode, "AC_BN_NEW") & response >= 4, 1, 0)),
+    FA_WN_AC_B = sum(ifelse(startsWith(trialcode, "AC_WN_NEW") & response >= 4, 1, 0)),
+    FA_BA_AC_B = sum(ifelse(startsWith(trialcode, "AC_BA_NEW") & response >= 4, 1, 0)),
+    FA_WA_AC_B = sum(ifelse(startsWith(trialcode, "AC_WA_NEW") & response >= 4, 1, 0)),
+    CR_BN_AC_B = sum(ifelse(startsWith(trialcode, "AC_BN_NEW") & response < 4, 1, 0)),
+    CR_WN_AC_B = sum(ifelse(startsWith(trialcode, "AC_WN_NEW") & response < 4, 1, 0)),
+    CR_BA_AC_B = sum(ifelse(startsWith(trialcode, "AC_BA_NEW") & response < 4, 1, 0)),
+    CR_WA_AC_B = sum(ifelse(startsWith(trialcode, "AC_WA_NEW") & response < 4, 1, 0))
+  )
+
+SignalDetection_AC_B <- data.frame(
+  BN_AC_B = psycho::dprime(
+    n_hit = data_AC_B$Hit_BN_AC_B + 0.5,
+    n_fa = data_AC_B$FA_BN_AC_B + 0.5,
+    n_miss = data_AC_B$Miss_BN_AC_B,
+    n_cr = data_AC_B$CR_BN_AC_B,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  BA_AC_B = psycho::dprime(
+    n_hit = data_AC_B$Hit_BA_AC_B + 0.5,
+    n_fa = data_AC_B$FA_BA_AC_B + 0.5,
+    n_miss = data_AC_B$Miss_BA_AC_B,
+    n_cr = data_AC_B$CR_BA_AC_B,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  WN_AC_B = psycho::dprime(
+    n_hit = data_AC_B$Hit_WN_AC_B + 0.5,
+    n_fa = data_AC_B$FA_WN_AC_B + 0.5,
+    n_miss = data_AC_B$Miss_WN_AC_B,
+    n_cr = data_AC_B$CR_WN_AC_B,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  WA_AC_B = psycho::dprime(
+    n_hit = data_AC_B$Hit_WA_AC_B + 0.5,
+    n_fa = data_AC_B$FA_WA_AC_B + 0.5,
+    n_miss = data_AC_B$Miss_WA_AC_B,
+    n_cr = data_AC_B$CR_WA_AC_B,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  CASE = data_AC_B$CASE
+)
+
+aprime_long_AC_B <- SignalDetection_AC_B %>% pivot_longer(c(BN_AC_B.aprime, BA_AC_B.aprime, WN_AC_B.aprime, WA_AC_B.aprime), names_to = "aprime", values_to = "value")
+aprime_long_AC_B <- aprime_long_AC_B %>% select(CASE, aprime, value)
+aprime_long_AC_B <- aprime_long_AC_B %>%
+  mutate(
+    Race = ifelse(aprime == "BN_AC_B.aprime" | aprime == "BA_AC_B.aprime", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(aprime == "BN_AC_B.aprime" | aprime == "WN_AC_B.aprime", "N", "A"), # factor Expression (neutral, angry)
+    aprime = value
+  ) %>%
+  select(-value)
+
+# unusualness
+items <- unusual_item$stimulusitem2
+for (i in items) {
+  sampleB_AC$unusual[sampleB_AC$stimulusitem2 == i] <- unusual_item$unusual[unusual_item$stimulusitem2 == i]
+}
+sampleB_AC$category <- ifelse(startsWith(sampleB_AC$stimulusitem2, "BN"), "BN",
+  ifelse(startsWith(sampleB_AC$stimulusitem2, "WN"), "WN",
+    ifelse(startsWith(sampleB_AC$stimulusitem2, "BA"), "BA", "WA")
+  )
+)
+unusualB_AC <- sampleB_AC %>%
+  group_by(CASE, category) %>%
+  summarize(mean(unusual))
+recogB_AC <- sampleB_AC %>%
+  group_by(CASE, category) %>%
+  summarize(mean(response))
+
+aprime_long_AC_B$unusual <- ifelse(aprime_long_AC_B$Race == "B" & aprime_long_AC_B$Expression == "N", unusualB_AC$`mean(unusual)`[unusualB_AC$category == "BN"],
+  ifelse(aprime_long_AC_B$Race == "B" & aprime_long_AC_B$Expression == "A", unusualB_AC$`mean(unusual)`[unusualB_AC$category == "BA"],
+    ifelse(aprime_long_AC_B$Race == "W" & aprime_long_AC_B$Expression == "N", unusualB_AC$`mean(unusual)`[unusualB_AC$category == "WN"], unusualB_AC$`mean(unusual)`[unusualB_AC$category == "WA"])
+  )
+)
+
+aprime_long_AC_B$recog <- ifelse(aprime_long_AC_B$Race == "B" & aprime_long_AC_B$Expression == "N", recogB_AC$`mean(response)`[recogB_AC$category == "BN"],
+  ifelse(aprime_long_AC_B$Race == "B" & aprime_long_AC_B$Expression == "A", recogB_AC$`mean(response)`[recogB_AC$category == "BA"],
+    ifelse(aprime_long_AC_B$Race == "W" & aprime_long_AC_B$Expression == "N", recogB_AC$`mean(response)`[recogB_AC$category == "WN"], recogB_AC$`mean(response)`[recogB_AC$category == "WA"])
+  )
+)
+
+aprime_long_AC_AB <- rbind(aprime_long_AC_A, aprime_long_AC_B)
+aprime_long_AC_AB <- aprime_long_AC_AB[order(aprime_long_AC_AB$CASE), ]
+
+head(aprime_long_AC_AB)
+```
+
+#### Linear mixed model
+
+Predict aprime from race * expression first, then include average unusualness as additional predictor.
+
+```{r splithalf linear mixed model Ackerman, echo=TRUE, message=FALSE, warning=FALSE}
+# Linear mixed model
+lme_aprime_AC_AB <- lmer(aprime ~ (Race * Expression) + (1 | CASE), data = aprime_long_AC_AB)
+summary(lme_aprime_AC_AB)
+
+## add unusualness_all as control variable
+lme_aprime_u_AC_AB <- lmer(aprime ~ (Race * Expression) + unusual + Race + Expression + (1 | CASE), data = aprime_long_AC_AB)
+summary(lme_aprime_u_AC_AB)
+```
+
+### CFD
+
+```{r splithalf data CFD, message=FALSE, warning=FALSE, include=FALSE}
+# CFD
+
+sample_GW <- filter(df, startsWith(trialcode, "GW"))
+sample_GW$index <- ifelse(startsWith(sample_GW$trialcode, "GW_BN_OLD"), 1,
+  ifelse(startsWith(sample_GW$trialcode, "GW_WN_OLD"), 2,
+    ifelse(startsWith(sample_GW$trialcode, "GW_BA_OLD"), 3,
+      ifelse(startsWith(sample_GW$trialcode, "GW_WA_OLD"), 4,
+        ifelse(startsWith(sample_GW$trialcode, "GW_BN_NEW"), 5,
+          ifelse(startsWith(sample_GW$trialcode, "GW_WN_NEW"), 6,
+            ifelse(startsWith(sample_GW$trialcode, "GW_BA_NEW"), 7,
+              ifelse(startsWith(sample_GW$trialcode, "GW_WA_NEW"), 8, 9)
+            )
+          )
+        )
+      )
+    )
+  )
+)
+sample_GW <- sample_GW %>%
+  group_by(subject, index) %>%
+  group_map(~ .x[sample(nrow(.x)), ])
+
+caseVariable <- str_c(rep(unique(df$subject), each = 16))
+caseVariable <- sort(caseVariable)
+
+sampleA_GW <- list()
+sampleB_GW <- list()
+for (i in 1:3168) {
+  sampleA_GW[[i]] <- sample_GW[[i]][1:2, ]
+  sampleB_GW[[i]] <- sample_GW[[i]][3:4, ]
+}
+
+sampleA_GW <- bind_rows(sampleA_GW, .id = "column_label")
+sampleA_GW$CASE <- caseVariable
+sampleB_GW <- bind_rows(sampleB_GW, .id = "column_label")
+sampleB_GW$CASE <- caseVariable
+
+# sample A
+data_GW_A <- sampleA_GW %>%
+  group_by(CASE) %>%
+  summarise(
+    Hit_BN_GW_A = sum(ifelse(startsWith(trialcode, "GW_BN_OLD") & response >= 4, 1, 0)),
+    Hit_WN_GW_A = sum(ifelse(startsWith(trialcode, "GW_WN_OLD") & response >= 4, 1, 0)),
+    Hit_BA_GW_A = sum(ifelse(startsWith(trialcode, "GW_BA_OLD") & response >= 4, 1, 0)),
+    Hit_WA_GW_A = sum(ifelse(startsWith(trialcode, "GW_WA_OLD") & response >= 4, 1, 0)),
+    Miss_BN_GW_A = sum(ifelse(startsWith(trialcode, "GW_BN_OLD") & response < 4, 1, 0)),
+    Miss_WN_GW_A = sum(ifelse(startsWith(trialcode, "GW_WN_OLD") & response < 4, 1, 0)),
+    Miss_BA_GW_A = sum(ifelse(startsWith(trialcode, "GW_BA_OLD") & response < 4, 1, 0)),
+    Miss_WA_GW_A = sum(ifelse(startsWith(trialcode, "GW_WA_OLD") & response < 4, 1, 0)),
+    FA_BN_GW_A = sum(ifelse(startsWith(trialcode, "GW_BN_NEW") & response >= 4, 1, 0)),
+    FA_WN_GW_A = sum(ifelse(startsWith(trialcode, "GW_WN_NEW") & response >= 4, 1, 0)),
+    FA_BA_GW_A = sum(ifelse(startsWith(trialcode, "GW_BA_NEW") & response >= 4, 1, 0)),
+    FA_WA_GW_A = sum(ifelse(startsWith(trialcode, "GW_WA_NEW") & response >= 4, 1, 0)),
+    CR_BN_GW_A = sum(ifelse(startsWith(trialcode, "GW_BN_NEW") & response < 4, 1, 0)),
+    CR_WN_GW_A = sum(ifelse(startsWith(trialcode, "GW_WN_NEW") & response < 4, 1, 0)),
+    CR_BA_GW_A = sum(ifelse(startsWith(trialcode, "GW_BA_NEW") & response < 4, 1, 0)),
+    CR_WA_GW_A = sum(ifelse(startsWith(trialcode, "GW_WA_NEW") & response < 4, 1, 0))
+  )
+
+SignalDetection_GW_A <- data.frame(
+  BN_GW_A = psycho::dprime(
+    n_hit = data_GW_A$Hit_BN_GW_A + 0.5,
+    n_fa = data_GW_A$FA_BN_GW_A + 0.5,
+    n_miss = data_GW_A$Miss_BN_GW_A,
+    n_cr = data_GW_A$CR_BN_GW_A,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  BA_GW_A = psycho::dprime(
+    n_hit = data_GW_A$Hit_BA_GW_A + 0.5,
+    n_fa = data_GW_A$FA_BA_GW_A + 0.5,
+    n_miss = data_GW_A$Miss_BA_GW_A,
+    n_cr = data_GW_A$CR_BA_GW_A,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  WN_GW_A = psycho::dprime(
+    n_hit = data_GW_A$Hit_WN_GW_A + 0.5,
+    n_fa = data_GW_A$FA_WN_GW_A + 0.5,
+    n_miss = data_GW_A$Miss_WN_GW_A,
+    n_cr = data_GW_A$CR_WN_GW_A,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  WA_GW_A = psycho::dprime(
+    n_hit = data_GW_A$Hit_WA_GW_A + 0.5,
+    n_fa = data_GW_A$FA_WA_GW_A + 0.5,
+    n_miss = data_GW_A$Miss_WA_GW_A,
+    n_cr = data_GW_A$CR_WA_GW_A,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  CASE = data_GW_A$CASE
+)
+
+aprime_long_GW_A <- SignalDetection_GW_A %>% pivot_longer(c(BN_GW_A.aprime, BA_GW_A.aprime, WN_GW_A.aprime, WA_GW_A.aprime), names_to = "aprime", values_to = "value")
+aprime_long_GW_A <- aprime_long_GW_A %>% select(CASE, aprime, value)
+aprime_long_GW_A <- aprime_long_GW_A %>%
+  mutate(
+    Race = ifelse(aprime == "BN_GW_A.aprime" | aprime == "BA_GW_A.aprime", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(aprime == "BN_GW_A.aprime" | aprime == "WN_GW_A.aprime", "N", "A"), # factor Expression (neutral, angry)
+    aprime = value
+  ) %>%
+  select(-value)
+
+# unusualness
+items <- unusual_item$stimulusitem2
+for (i in items) {
+  sampleA_GW$unusual[sampleA_GW$stimulusitem2 == i] <- unusual_item$unusual[unusual_item$stimulusitem2 == i]
+}
+sampleA_GW$category <- ifelse(startsWith(sampleA_GW$stimulusitem2, "CFD-B") & endsWith(sampleA_GW$stimulusitem2, "N.jpg"), "BN",
+  ifelse(startsWith(sampleA_GW$stimulusitem2, "CFD-W") & endsWith(sampleA_GW$stimulusitem2, "N.jpg"), "WN",
+    ifelse(startsWith(sampleA_GW$stimulusitem2, "CFD-B") & endsWith(sampleA_GW$stimulusitem2, "A.jpg"), "BA", "WA")
+  )
+)
+unusualA_GW <- sampleA_GW %>%
+  group_by(CASE, category) %>%
+  summarize(mean(unusual))
+
+recogA_GW <- sampleA_GW %>%
+  group_by(CASE, category) %>%
+  summarize(mean(response))
+
+aprime_long_GW_A$unusual <- ifelse(aprime_long_GW_A$Race == "B" & aprime_long_GW_A$Expression == "N", unusualA_GW$`mean(unusual)`[unusualA_GW$category == "BN"],
+  ifelse(aprime_long_GW_A$Race == "B" & aprime_long_GW_A$Expression == "A", unusualA_GW$`mean(unusual)`[unusualA_GW$category == "BA"],
+    ifelse(aprime_long_GW_A$Race == "W" & aprime_long_GW_A$Expression == "N", unusualA_GW$`mean(unusual)`[unusualA_GW$category == "WN"], unusualA_GW$`mean(unusual)`[unusualA_GW$category == "WA"])
+  )
+)
+
+aprime_long_GW_A$recog <- ifelse(aprime_long_GW_A$Race == "B" & aprime_long_GW_A$Expression == "N", recogA_GW$`mean(response)`[recogA_GW$category == "BN"],
+  ifelse(aprime_long_GW_A$Race == "B" & aprime_long_GW_A$Expression == "A", recogA_GW$`mean(response)`[recogA_GW$category == "BA"],
+    ifelse(aprime_long_GW_A$Race == "W" & aprime_long_GW_A$Expression == "N", recogA_GW$`mean(response)`[recogA_GW$category == "WN"], recogA_GW$`mean(response)`[recogA_GW$category == "WA"])
+  )
+)
+
+# sample B
+data_GW_B <- sampleB_GW %>%
+  group_by(CASE) %>%
+  summarise(
+    Hit_BN_GW_B = sum(ifelse(startsWith(trialcode, "GW_BN_OLD") & response >= 4, 1, 0)),
+    Hit_WN_GW_B = sum(ifelse(startsWith(trialcode, "GW_WN_OLD") & response >= 4, 1, 0)),
+    Hit_BA_GW_B = sum(ifelse(startsWith(trialcode, "GW_BA_OLD") & response >= 4, 1, 0)),
+    Hit_WA_GW_B = sum(ifelse(startsWith(trialcode, "GW_WA_OLD") & response >= 4, 1, 0)),
+    Miss_BN_GW_B = sum(ifelse(startsWith(trialcode, "GW_BN_OLD") & response < 4, 1, 0)),
+    Miss_WN_GW_B = sum(ifelse(startsWith(trialcode, "GW_WN_OLD") & response < 4, 1, 0)),
+    Miss_BA_GW_B = sum(ifelse(startsWith(trialcode, "GW_BA_OLD") & response < 4, 1, 0)),
+    Miss_WA_GW_B = sum(ifelse(startsWith(trialcode, "GW_WA_OLD") & response < 4, 1, 0)),
+    FA_BN_GW_B = sum(ifelse(startsWith(trialcode, "GW_BN_NEW") & response >= 4, 1, 0)),
+    FA_WN_GW_B = sum(ifelse(startsWith(trialcode, "GW_WN_NEW") & response >= 4, 1, 0)),
+    FA_BA_GW_B = sum(ifelse(startsWith(trialcode, "GW_BA_NEW") & response >= 4, 1, 0)),
+    FA_WA_GW_B = sum(ifelse(startsWith(trialcode, "GW_WA_NEW") & response >= 4, 1, 0)),
+    CR_BN_GW_B = sum(ifelse(startsWith(trialcode, "GW_BN_NEW") & response < 4, 1, 0)),
+    CR_WN_GW_B = sum(ifelse(startsWith(trialcode, "GW_WN_NEW") & response < 4, 1, 0)),
+    CR_BA_GW_B = sum(ifelse(startsWith(trialcode, "GW_BA_NEW") & response < 4, 1, 0)),
+    CR_WA_GW_B = sum(ifelse(startsWith(trialcode, "GW_WA_NEW") & response < 4, 1, 0))
+  )
+
+SignalDetection_GW_B <- data.frame(
+  BN_GW_B = psycho::dprime(
+    n_hit = data_GW_B$Hit_BN_GW_B + 0.5,
+    n_fa = data_GW_B$FA_BN_GW_B + 0.5,
+    n_miss = data_GW_B$Miss_BN_GW_B,
+    n_cr = data_GW_B$CR_BN_GW_B,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  BA_GW_B = psycho::dprime(
+    n_hit = data_GW_B$Hit_BA_GW_B + 0.5,
+    n_fa = data_GW_B$FA_BA_GW_B + 0.5,
+    n_miss = data_GW_B$Miss_BA_GW_B,
+    n_cr = data_GW_B$CR_BA_GW_B,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  WN_GW_B = psycho::dprime(
+    n_hit = data_GW_B$Hit_WN_GW_B + 0.5,
+    n_fa = data_GW_B$FA_WN_GW_B + 0.5,
+    n_miss = data_GW_B$Miss_WN_GW_B,
+    n_cr = data_GW_B$CR_WN_GW_B,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  WA_GW_B = psycho::dprime(
+    n_hit = data_GW_B$Hit_WA_GW_B + 0.5,
+    n_fa = data_GW_B$FA_WA_GW_B + 0.5,
+    n_miss = data_GW_B$Miss_WA_GW_B,
+    n_cr = data_GW_B$CR_WA_GW_B,
+    n_targets = 3,
+    n_distractors = 3,
+    adjusted = F
+  ),
+  CASE = data_GW_B$CASE
+)
+
+aprime_long_GW_B <- SignalDetection_GW_B %>% pivot_longer(c(BN_GW_B.aprime, BA_GW_B.aprime, WN_GW_B.aprime, WA_GW_B.aprime), names_to = "aprime", values_to = "value")
+aprime_long_GW_B <- aprime_long_GW_B %>% select(CASE, aprime, value)
+aprime_long_GW_B <- aprime_long_GW_B %>%
+  mutate(
+    Race = ifelse(aprime == "BN_GW_B.aprime" | aprime == "BA_GW_B.aprime", "B", "W"), # factor Target's Race (Black, White)
+    Expression = ifelse(aprime == "BN_GW_B.aprime" | aprime == "WN_GW_B.aprime", "N", "A"), # factor Expression (neutral, angry)
+    aprime = value
+  ) %>%
+  select(-value)
+
+# unusualness
+items <- unusual_item$stimulusitem2
+for (i in items) {
+  sampleB_GW$unusual[sampleB_GW$stimulusitem2 == i] <- unusual_item$unusual[unusual_item$stimulusitem2 == i]
+}
+sampleB_GW$category <- ifelse(startsWith(sampleB_GW$stimulusitem2, "CFD-B") & endsWith(sampleB_GW$stimulusitem2, "N.jpg"), "BN",
+  ifelse(startsWith(sampleB_GW$stimulusitem2, "CFD-W") & endsWith(sampleB_GW$stimulusitem2, "N.jpg"), "WN",
+    ifelse(startsWith(sampleB_GW$stimulusitem2, "CFD-B") & endsWith(sampleB_GW$stimulusitem2, "A.jpg"), "BA", "WA")
+  )
+)
+unusualB_GW <- sampleB_GW %>%
+  group_by(CASE, category) %>%
+  summarize(mean(unusual))
+
+recogB_GW <- sampleB_GW %>%
+  group_by(CASE, category) %>%
+  summarize(mean(response))
+
+aprime_long_GW_B$unusual <- ifelse(aprime_long_GW_B$Race == "B" & aprime_long_GW_B$Expression == "N", unusualB_GW$`mean(unusual)`[unusualB_GW$category == "BN"],
+  ifelse(aprime_long_GW_B$Race == "B" & aprime_long_GW_B$Expression == "A", unusualB_GW$`mean(unusual)`[unusualB_GW$category == "BA"],
+    ifelse(aprime_long_GW_B$Race == "W" & aprime_long_GW_B$Expression == "N", unusualB_GW$`mean(unusual)`[unusualB_GW$category == "WN"], unusualB_GW$`mean(unusual)`[unusualB_GW$category == "WA"])
+  )
+)
+
+aprime_long_GW_B$recog <- ifelse(aprime_long_GW_B$Race == "B" & aprime_long_GW_B$Expression == "N", recogB_GW$`mean(response)`[recogB_GW$category == "BN"],
+  ifelse(aprime_long_GW_B$Race == "B" & aprime_long_GW_B$Expression == "A", recogB_GW$`mean(response)`[recogB_GW$category == "BA"],
+    ifelse(aprime_long_GW_B$Race == "W" & aprime_long_GW_B$Expression == "N", recogB_GW$`mean(response)`[recogB_GW$category == "WN"], recogB_GW$`mean(response)`[recogB_GW$category == "WA"])
+  )
+)
+
+aprime_long_GW_AB <- rbind(aprime_long_GW_A, aprime_long_GW_B)
+aprime_long_GW_AB <- aprime_long_GW_AB[order(aprime_long_GW_AB$CASE), ]
+
+head(aprime_long_GW_AB)
+```
+
+#### Linear mixed model
+
+```{r splithalf linear mixed model CFD, echo=TRUE, message=FALSE, warning=FALSE}
+# Linear mixed model
+lme_aprime_GW_AB <- lmer(aprime ~ (Race * Expression) + (1 | CASE), data = aprime_long_GW_AB)
+summary(lme_aprime_GW_AB)
+
+## add unusualness_all as control variable
+lme_aprime_u_GW_AB <- lmer(aprime ~ (Race * Expression) + unusual + (1 | CASE), data = aprime_long_GW_AB)
+summary(lme_aprime_u_GW_AB)
+```

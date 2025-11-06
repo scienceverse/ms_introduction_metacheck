@@ -1,0 +1,286 @@
+---
+title: 'Study 3, data processing steps'
+author: "Sonja Kunz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    code_download: true
+---
+Load packages
+```{r, message=FALSE}
+library(tidyverse) 
+library(misty)
+```
+
+Import raw data.
+```{r, message=FALSE}
+dat_raw <- 
+  read_csv2('Data/Study3_data_raw.csv')
+```
+
+# Variable recodings
+
+## Match responses to the first and second context
+
+In the study, participants answered the same questions about 2 different contexts (boxes), contexts 1 and 2. 
+For some participants, context 1 was the black box and context 2 the white box, while it was reversed for the other participants. This is reflected in the variable `random_color`.
+For participants in `random_color` group 1, the 1st box was black and the 2nd box was white. For participants in `random_color` group 2, the 1st box was white and the 2nd box was black.
+
+The survey was programmed such that responses to the taste ratings were recorded for the black or white box, regardless of which one was context 1 or 2. The health ratings were recorded for the predominantly healthy or unhealthy context and black or white box, regardless of which one was context 1 or 2. 
+But for the analyses, we need to know what the on-line taste and health ratings for the smoothies in the first and second context were, regardless of their colours and whether they were the (un)healthy context. 
+
+So, we re-coded participants' answers accordingly. That is, for all participants, for which context 1 was the black box with mostly healthy food, their responses to context 1 are the responses to the black healthy context and the responses to context 2 are the responses to the white unhealthy context and so on. 
+
+### Taste ratings
+
+For participants in both base rate manipulations, the 1st context was always the predominantly tasty box. So we only had to consider the colour randomisation.
+
+```{r}
+# Re-code the variables such that if random_color = 1st box black, taste rating for context 1 = taste rating for black box, otherwise white box etc.
+dat <- 
+  dat_raw %>% 
+  mutate(onl_taste_c1_1 = ifelse(random_color == 1, onl_taste_black_1, onl_taste_white_1),
+         onl_taste_c1_2 = ifelse(random_color == 1, onl_taste_black_2, onl_taste_white_2),
+         onl_taste_c1_3 = ifelse(random_color == 1, onl_taste_black_3, onl_taste_white_3),
+         onl_taste_c1_4 = ifelse(random_color == 1, onl_taste_black_4, onl_taste_white_4),
+         onl_taste_c1_5 = ifelse(random_color == 1, onl_taste_black_5, onl_taste_white_5),
+         onl_taste_c1_6 = ifelse(random_color == 1, onl_taste_black_6, onl_taste_white_6),
+         onl_taste_c1_7 = ifelse(random_color == 1, onl_taste_black_7, onl_taste_white_7),
+         onl_taste_c1_8 = ifelse(random_color == 1, onl_taste_black_8, onl_taste_white_8),
+         onl_taste_c2_1 = ifelse(random_color == 1, onl_taste_white_1, onl_taste_black_1),
+         onl_taste_c2_2 = ifelse(random_color == 1, onl_taste_white_2, onl_taste_black_2),
+         onl_taste_c2_3 = ifelse(random_color == 1, onl_taste_white_3, onl_taste_black_3),
+         onl_taste_c2_4 = ifelse(random_color == 1, onl_taste_white_4, onl_taste_black_4),
+         onl_taste_c2_5 = ifelse(random_color == 1, onl_taste_white_5, onl_taste_black_5),
+         onl_taste_c2_6 = ifelse(random_color == 1, onl_taste_white_6, onl_taste_black_6),
+         onl_taste_c2_7 = ifelse(random_color == 1, onl_taste_white_7, onl_taste_black_7),
+         onl_taste_c2_8 = ifelse(random_color == 1, onl_taste_white_8, onl_taste_black_8)
+         )
+```
+
+### Health ratings
+
+For participants in the harmonious base rate manipulation, the first context was the predominantly healthy one, whereas for participants in the conflicting base rate manipulation, it was reversed. Therefore, we had to consider both the base rate manipulation and the colour randomisation.
+
+```{r}
+# Re-code on-line health ratings such that if condition = harmonious AND random_color = 1st box black, health rating for context 1 = health rating for black healthy box etc.
+dat <- 
+  dat %>% 
+  mutate(onl_health_c1_1 = ifelse(condition == 1 & random_color == 1, onl_health_healthy_black_1, 
+                                ifelse(condition == 1 & random_color == 2, onl_health_healthy_white_1,
+                                       ifelse(condition == 2 & random_color == 1, onl_health_unhealthy_black_1,
+                                              onl_health_unhealthy_white_1)
+                                       )
+                                ),
+         onl_health_c2_1 = ifelse(condition == 1 & random_color == 1, onl_health_unhealthy_white_1, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_unhealthy_black_1,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_healthy_white_1,
+                                                onl_health_healthy_black_1)
+                                         )
+                                  ),
+         onl_health_c1_2 = ifelse(condition == 1 & random_color == 1, onl_health_healthy_black_2, 
+                                         ifelse(condition == 1 & random_color == 2, onl_health_healthy_white_2,
+                                                ifelse(condition == 2 & random_color == 1, onl_health_unhealthy_black_2,
+                                                       onl_health_unhealthy_white_2)
+                                                )
+                                         ),
+         onl_health_c2_2 = ifelse(condition == 1 & random_color == 1, onl_health_unhealthy_white_2, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_unhealthy_black_2,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_healthy_white_2,
+                                                onl_health_healthy_black_2)
+                                         )
+                                  ),
+         onl_health_c1_3 = ifelse(condition == 1 & random_color == 1, onl_health_healthy_black_3, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_healthy_white_3,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_unhealthy_black_3,
+                                                onl_health_unhealthy_white_3)
+                                         )
+                                  ),
+         onl_health_c2_3 = ifelse(condition == 1 & random_color == 1, onl_health_unhealthy_white_3, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_unhealthy_black_3,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_healthy_white_3,
+                                                onl_health_healthy_black_3)
+                                         )
+                                  ),
+         onl_health_c1_4 = ifelse(condition == 1 & random_color == 1, onl_health_healthy_black_4, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_healthy_white_4,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_unhealthy_black_4,
+                                                onl_health_unhealthy_white_4)
+                                         )
+                                  ),
+         onl_health_c2_4 = ifelse(condition == 1 & random_color == 1, onl_health_unhealthy_white_4, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_unhealthy_black_4,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_healthy_white_4,
+                                                onl_health_healthy_black_4)
+                                         )
+                                  ),
+         onl_health_c1_5 = ifelse(condition == 1 & random_color == 1, onl_health_healthy_black_5, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_healthy_white_5,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_unhealthy_black_5,
+                                                onl_health_unhealthy_white_5)
+                                         )
+                                  ),
+         onl_health_c2_5 = ifelse(condition == 1 & random_color == 1, onl_health_unhealthy_white_5, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_unhealthy_black_5,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_healthy_white_5,
+                                                onl_health_healthy_black_5)
+                                         )
+                                  ),
+         onl_health_c1_6 = ifelse(condition == 1 & random_color == 1, onl_health_healthy_black_6, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_healthy_white_6,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_unhealthy_black_6,
+                                                onl_health_unhealthy_white_6)
+                                         )
+                                  ),
+         onl_health_c2_6 = ifelse(condition == 1 & random_color == 1, onl_health_unhealthy_white_6, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_unhealthy_black_6,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_healthy_white_6,
+                                                onl_health_healthy_black_6)
+                                         )
+                                  ),
+         onl_health_c1_7 = ifelse(condition == 1 & random_color == 1, onl_health_healthy_black_7, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_healthy_white_7,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_unhealthy_black_7,
+                                                onl_health_unhealthy_white_7)
+                                         )
+                                  ),
+         onl_health_c2_7 = ifelse(condition == 1 & random_color == 1, onl_health_unhealthy_white_7, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_unhealthy_black_7,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_healthy_white_7,
+                                                onl_health_healthy_black_7)
+                                         )
+                                  ),
+         onl_health_c1_8 = ifelse(condition == 1 & random_color == 1, onl_health_healthy_black_8, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_healthy_white_8,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_unhealthy_black_8,
+                                                onl_health_unhealthy_white_8)
+                                         )
+                                  ),
+         onl_health_c2_8 = ifelse(condition == 1 & random_color == 1, onl_health_unhealthy_white_8, 
+                                  ifelse(condition == 1 & random_color == 2, onl_health_unhealthy_black_8,
+                                         ifelse(condition == 2 & random_color == 1, onl_health_healthy_white_8,
+                                                onl_health_healthy_black_8)
+                                         )
+                                  )
+         )
+```
+
+In the survey, the health ratings were recorded such that 1 represents the highest and 5 the lowest rating. For the analyses, we reverse-coded the ratings to match with the high/low taste ratings.
+
+```{r}
+dat <- 
+  dat %>% 
+  mutate(onl_health_c1_1 = item.reverse(onl_health_c1_1, min = 1, max = 5),
+         onl_health_c1_2 = item.reverse(onl_health_c1_2, min = 1, max = 5),
+         onl_health_c1_3 = item.reverse(onl_health_c1_3, min = 1, max = 5),
+         onl_health_c1_4 = item.reverse(onl_health_c1_4, min = 1, max = 5),
+         onl_health_c1_5 = item.reverse(onl_health_c1_5, min = 1, max = 5),
+         onl_health_c1_6 = item.reverse(onl_health_c1_6, min = 1, max = 5),
+         onl_health_c1_7 = item.reverse(onl_health_c1_7, min = 1, max = 5),
+         onl_health_c1_8 = item.reverse(onl_health_c1_8, min = 1, max = 5),
+         onl_health_c2_1 = item.reverse(onl_health_c2_1, min = 1, max = 5),
+         onl_health_c2_2 = item.reverse(onl_health_c2_2, min = 1, max = 5),
+         onl_health_c2_3 = item.reverse(onl_health_c2_3, min = 1, max = 5),
+         onl_health_c2_4 = item.reverse(onl_health_c2_4, min = 1, max = 5),
+         onl_health_c2_5 = item.reverse(onl_health_c2_5, min = 1, max = 5),
+         onl_health_c2_6 = item.reverse(onl_health_c2_6, min = 1, max = 5),
+         onl_health_c2_7 = item.reverse(onl_health_c2_7, min = 1, max = 5),
+         onl_health_c2_8 = item.reverse(onl_health_c2_8, min = 1, max = 5),
+  )
+```
+
+## Dependent variables
+
+## Relative contingency belief
+
+Participants indicated, within each context as well as across contexts, whether the healthy or the unhealthy smoothies were tastier, on a scale from 1 = *the unhealthy ones* to 100 = *the healthy ones*. We re-coded the relative contingency belief, so that it ranged from - 0.5 to 0.5 instead of 1 to 100.
+
+```{r}
+dat <-
+  dat %>% 
+  mutate(belief_ht_c1_R = (belief_ht_c1 - 50) / 100,
+         belief_ht_c2_R = (belief_ht_c2 - 50) / 100,
+         belief_ht_overall_R = (belief_ht_overall - 50) / 100)
+```
+
+# Variable computations
+
+## Attention checks: On-line health and taste ratings
+
+For the attention check analyses, we calculated the mean on-line health and taste ratings per context, to compare them between the base rate manipulations.
+
+```{r}
+dat <-
+  dat %>% 
+  mutate(mean_onl_taste_c1 = rowMeans(.[ ,c('onl_taste_c1_1','onl_taste_c1_2', 'onl_taste_c1_3', 'onl_taste_c1_4', 'onl_taste_c1_5', 'onl_taste_c1_2', 'onl_taste_c1_7', 'onl_taste_c1_8')]),
+         mean_onl_taste_c2 = rowMeans(.[ ,c('onl_taste_c2_1','onl_taste_c2_2', 'onl_taste_c2_3', 'onl_taste_c2_4', 'onl_taste_c2_5', 'onl_taste_c2_2', 'onl_taste_c2_7', 'onl_taste_c2_8')]),
+         mean_onl_health_c1 = rowMeans(.[ ,c('onl_health_c1_1','onl_health_c1_2', 'onl_health_c1_3', 'onl_health_c1_4', 'onl_health_c1_5', 'onl_health_c1_2', 'onl_health_c1_7', 'onl_health_c1_8')]),
+         mean_onl_health_c2 = rowMeans(.[ ,c('onl_health_c2_1','onl_health_c2_2', 'onl_health_c2_3', 'onl_health_c2_4', 'onl_health_c2_5', 'onl_health_c2_2', 'onl_health_c2_7', 'onl_health_c2_8')])
+         )
+```
+
+## Add the real contingency
+
+To illustrate that participants' perceived health-taste relationship was even opposite to the actual contingency, we added a variable indicating the actual health-taste contingency per context to compare it with the perceived relationship in the descriptive statistics and also graphically.
+In the harmonious condition, the real contingency within each context was - .33 and in the conflicting contexts condition, it was .33.
+
+```{r}
+dat <- 
+  dat %>% 
+  mutate(real_cor_c1 = ifelse(
+    (condition == '1'), -0.33, ifelse((condition == '2'), 0.33, 0)),
+    real_cor_c2 = ifelse((condition == '1'), -0.33, ifelse((condition == '2'), 0.33, 0))
+    )
+```
+
+## Additional measures 
+
+### Belief in a causal health-taste relationship 
+
+We asked participants for their causal belief in a health-taste relationship, with two items:</br>
+</br>1. `belief_healthier`: "If a food was made healthier, it would also be ...1 = *much less tasty* - 100 = *much tastier*"
+</br>2. `belief_tastier`: "If a food was made tastier, it would also be ...1 = *much less healthy* - 100 = *much healthier*"
+
+#### Scale reliability
+
+```{r}
+dat %>% 
+  select(belief_healthier, belief_tastier) %>% 
+  item.alpha()
+```
+
+#### Calculate the mean belief in a causal HT relationship scores
+
+```{r}
+dat <-
+  dat %>%
+  mutate(causal_HT = rowMeans(.[ ,c('belief_healthier', 'belief_tastier')])
+  )
+```
+
+### Body mass index (BMI)
+
+We calculated the body mass index (BMI) by dividing weight in kilograms by size in metres squared.
+
+```{r}
+dat <- 
+  dat %>% 
+  mutate(BMI = weight /(height/100)^2)
+```
+
+# Save processed data
+
+Remove all unneeded variables and save the processed data as a CSV.
+
+```{r}
+dat %>% 
+  select(id, condition, random_color, BMI, nutri, causal_HT,
+         starts_with(c('mean_onl', 'base', 'real')),
+         belief_ht_c1_R, belief_ht_c2_R, belief_ht_overall_R, choice,
+         -contains(c('white', 'black')))  %>% 
+  write_csv2('Data/Study3_data_processed.csv')
+
+```

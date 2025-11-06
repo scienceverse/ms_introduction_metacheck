@@ -1,0 +1,483 @@
+---
+title: "Happy to have helped: Study 1a"
+date: "11/21/2021"
+output:
+  html_document:
+    number_sections: no
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+theme: sandstone
+highlight: tango
+---
+
+# Method
+
+**Study design**: 2 (perspective: Requester vs. Helper) by 2 (gratitude: mentioned vs. not mentioned)
+
+**Study location**: [redacted for anonymity] (0.6 miles from a world-class tourist attraction)
+
+* Ethnicity: 55.7% white, 13.9% hispanic, 10.9% Asian, 9.0% black, 10.4% other or unreported.
+* Highest degree: Doctoral (7.5%), Master's (22.4%), Bachelor's (36.8%), Some college (21.9%), High school (9.0%), some high school or less (2.49%).
+
+Five RAs worked on this study, with at least two RAs during each session. Data were collected on 7/17, 7/21, 7/23, 7/25, and 7/26, 2018.
+
+
+# Part 1: Seeking help
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+library(readr)
+library(ggplot2)
+library(ggExtra)
+library(ggthemes)
+library(ggpubr)
+library(gridExtra)
+library(ggExtra)
+library(viridisLite)
+library(viridis)
+library(tidyr)
+library(plyr)
+library(lsr)
+library(dplyr)
+library(ggExtra)
+library(stringr)
+library(psych)
+
+setwd("/Users/xuanzhao/Dropbox/Zhao Epley Happy to Help/OSF documents/Study 1a/")
+data_folder <- "/Users/xuanzhao/Dropbox/Zhao Epley Happy to Help/OSF documents/Study 1a/"
+file <- "Study 1a data.csv"
+
+data_study1 <- read_csv(paste0(data_folder,file)) 
+
+data_study1 <- data_study1 %>%
+  mutate(Role = factor(Role, levels = c("Requester", "Helper"),labels = c("Requesters", "Helpers")))
+
+data_study1$ID <- as.factor(data_study1$ID)
+
+data_study1$PositiveMood <- (data_study1$Positive + 5 + data_study1$Pleased)/2
+data_study1$InconveniencePerc <- (data_study1$Inconvenient + data_study1$Annoyed)/2
+data_study1$ProsocialAttr <- (data_study1$Prosocial1 + data_study1$Prosocial2)/2
+data_study1$ComplyAttr <- (data_study1$Comfort1 + data_study1$Conform2)/2
+data_study1$Mood <- (data_study1$PositiveMood + (10-data_study1$InconveniencePerc))/2
+data_study1$Willingness <- (data_study1$Willing + data_study1$Likely)/2
+
+lower_ci <- function(mean, se, n, conf_level = 0.95){
+  lower_ci <- mean - qt(1 - ((1 - conf_level) / 2), n - 1) * se
+}
+
+```
+
+## Willingness to Help
+
+* "How willing do you think you would be to let them use your cell phone?/ How willing do you think they would be to let you use their cell phone?" [0: not at all willing; 10: completely willing]
+* "How likely do you think you would actually agree to let them use your cell phone?/How likely do you think they would actually agree to let you use their cell phone?" [0: not at all likely; 10: completely likely]
+
+We'll first test whether these two items are highly correlated before combining them to calculate a composite score.
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+cor.test(data_study1$Willing, data_study1$Likely, method=c("pearson"))
+
+```
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ddply(data_study1, c("Role"), summarise,
+               N    = length(Willingness),
+               mean = mean(Willingness, na.rm = TRUE),
+               sd   = sd(Willingness, na.rm = TRUE),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+ggbarplot(data_study1, x = "Role", y = "Willingness", add = "mean_se",
+          color = "Role", fill = "Role", alpha = 0.75, palette = "uchicago",
+          position = position_dodge(0.8)) +
+  stat_compare_means(method = "wilcox.test", paired = FALSE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4) +
+  ylab("Willingness to Help") + 
+  font("xlab", size = 16) +
+  font("x.text", size = 16) +
+  font("ylab", size = 16) + 
+  font("legend.title", size = 16) +
+  font("legend.text", size = 16)
+
+t.test(Willingness ~ Role, data = data_study1, var.equal = TRUE, alternative = "two.sided")
+effsize::cohen.d(Willingness ~ Role, data = data_study1)
+
+```
+
+## Flynn & Lake (2008) replication
+
+### Estimated percentage agreement
+
+* "What percentage of people do you think would agree to this request?"
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggbarplot(data_study1, x = "Role", y = "PercentageAgree_1", add = "mean_se",
+          color = "Role", fill = "Role", alpha = 0.75, palette = "uchicago",
+          position = position_dodge(0.8)) +
+  stat_compare_means(method = "wilcox.test", paired = FALSE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4) +
+  ylab("% of people who would agree") + 
+  font("xlab", size = 16) +
+  font("x.text", size = 16) +
+  font("ylab", size = 16) + 
+  font("legend.title", size = 16) +
+  font("legend.text", size = 16)
+
+ddply(data_study1, c("Role"), summarise,
+               N    = length(PercentageAgree_1),
+               mean = mean(PercentageAgree_1, na.rm = T),
+               sd   = sd(PercentageAgree_1, na.rm = T),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+t.test(PercentageAgree_1 ~ Role, data = data_study1, var.equal = TRUE, alternative = "two.sided")
+effsize::cohen.d(PercentageAgree_1 ~ Role, data = data_study1)
+
+```
+
+### Discomfort rejecting request
+
+**Their initial items (1 to 7)**:
+
+* How difficult do you think it would be to say “no” to this request?
+* How awkward do you think it would be to say “no” to this request?
+* How embarrassed do you think the average person would feel if they said “no” to this request? 
+
+**Our adapted version (0 to 10; with perspective built into the items)**: 
+
+* How difficult do you think they would find it to say "no" to your request?
+* How awkward do you think they would find it to say "no" to your request?
+* How embarrassed do you think they would feel if they said "no" to your request?
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+Flynn_discomfort <- data_study1 %>%
+  dplyr::select(Difficult:Embarrased)
+
+psych::alpha(Flynn_discomfort)
+
+```
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+discomfort <- rowMeans(Flynn_discomfort)
+data_study1$discomfort <- discomfort
+
+ddply(data_study1, c("Role"), summarise,
+               N    = length(discomfort),
+               mean = mean(discomfort, na.rm=T),
+               sd   = sd(discomfort, na.rm=T),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+t.test(discomfort ~ Role, data = data_study1, var.equal = TRUE, alternative = "two.sided")
+effsize::cohen.d(discomfort ~ Role, data = data_study1)
+
+```
+
+Hmm... How about each item?
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggbarplot(data_study1, x = "Role", y = "Difficult", add = "mean_se",
+          color = "Role", fill = "Role", alpha = 0.75, palette = "uchicago",
+          position = position_dodge(0.8)) +
+  stat_compare_means(method = "t.test", paired = FALSE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4) +
+  ylab("Difficult") + 
+  font("xlab", size = 16) +
+  font("x.text", size = 16) +
+  font("ylab", size = 16) + 
+  font("legend.title", size = 16) +
+  font("legend.text", size = 16)
+
+ggbarplot(data_study1, x = "Role", y = "Awkward", add = "mean_se",
+          color = "Role", fill = "Role", alpha = 0.75, palette = "uchicago",
+          position = position_dodge(0.8)) +
+  stat_compare_means(method = "t.test", paired = FALSE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4) +
+  ylab("Awkward") + 
+  font("xlab", size = 16) +
+  font("x.text", size = 16) +
+  font("ylab", size = 16) + 
+  font("legend.title", size = 16) +
+  font("legend.text", size = 16)
+
+ggbarplot(data_study1, x = "Role", y = "Embarrased", add = "mean_se",
+          color = "Role", fill = "Role", alpha = 0.75, palette = "uchicago",
+          position = position_dodge(0.8)) +
+  stat_compare_means(method = "t.test", paired = FALSE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4) +
+  ylab("Embarrased") + 
+  font("xlab", size = 16) +
+  font("x.text", size = 16) +
+  font("ylab", size = 16) + 
+  font("legend.title", size = 16) +
+  font("legend.text", size = 16)
+
+```
+
+**None of the items replicated Flynn & Lake (2008)**.
+
+<br>
+
+# Part 2: After helping
+
+[Page 1]
+
+Now imagine that this person agreed to your request, handed you their phone. 
+
+You made a short phone call, and then handed the phone back.
+
+[Page 2 (only "gratitude" condition)]
+
+"Thanks so much for helping me! You really saved my day! Otherwise, my doctor might have canceled my appointment!” 
+
+You thanked them several times for helping you.
+ 
+## Expernece of Helping
+
+* How positive/negative do you think they would feel after this interaction?
+* How inconvenient do you think it would be to have let you borrow their phone? 
+* How annoyed do you think they would feel about this interaction?
+* How pleased do you think they would feel about this interaction?
+
+### PCA/Item analysis
+
+Should we calculate one or two composite scores of positive and negative mood? Let's conduct a PCA.
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+after_mood <- data_study1 %>%
+  dplyr::select(Positive:Pleased)
+
+alpha(after_mood, check.keys=TRUE)
+scree(after_mood)
+
+pca_after_mood <- principal(after_mood, nfactors=2, rotate="varimax")
+print(pca_after_mood)
+
+```
+
+Note that the Cronbach's alpha for these four mood items is only .65. And PCA reveals two separate PCs. So let's analyze positive mood and inconvenience perception separately. But before that, let's confirm on their correlation coefficients
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+cor.test(data_study1$Positive, data_study1$Pleased, method=c("pearson"))
+cor.test(data_study1$Annoyed, data_study1$Inconvenient, method=c("pearson"))
+
+```
+
+Between these two constructs:
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+cor.test(data_study1$PositiveMood, data_study1$InconveniencePerc, method=c("pearson"))
+
+```
+
+Hence, positive mood and inconvenience perception should be treated as two separate constructs.
+
+### Positive Mood
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggbarplot(data_study1, x = "Role", y = "PositiveMood", add = "mean_se",
+          color = "Role", fill = "Role", alpha = 0.75, palette = "uchicago", facet.by = "Gratitude",
+          position = position_dodge(0.8)) +
+  ylab("Positive Mood") + 
+  font("xlab", size = 16) +
+  font("x.text", size = 16) +
+  font("ylab", size = 16) + 
+  font("legend.title", size = 16) +
+  font("legend.text", size = 16)
+
+ddply(data_study1, c("Role"), summarise,
+               N    = length(PositiveMood),
+               mean = mean(PositiveMood, na.rm=T),
+               sd   = sd(PositiveMood, na.rm=T),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+ddply(data_study1, c("Gratitude"), summarise,
+               N    = length(PositiveMood),
+               mean = mean(PositiveMood, na.rm=T),
+               sd   = sd(PositiveMood, na.rm=T),
+               se   = sd / sqrt(N))
+
+p_mood_aov <- aov(PositiveMood ~ Role * Gratitude, data = data_study1)
+summary(p_mood_aov)
+etaSquared(p_mood_aov)
+
+```
+
+Effect size (Cohen's d):
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+effsize::cohen.d(PositiveMood ~ Role, data = data_study1)
+
+```
+
+### Inconvenience Perception
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggbarplot(data_study1, x = "Role", y = "InconveniencePerc", add = "mean_se",
+          color = "Role", fill = "Role", alpha = 0.75, palette = "uchicago", facet.by = "Gratitude",
+          position = position_dodge(0.8)) +
+  stat_compare_means(method = "t.test", paired = FALSE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4) +
+  ylab("Inconvenience Perception") + 
+  font("xlab", size = 16) +
+  font("x.text", size = 16) +
+  font("ylab", size = 16) + 
+  font("legend.title", size = 16) +
+  font("legend.text", size = 16)
+
+ddply(data_study1, c("Role"), summarise,
+               N    = length(InconveniencePerc),
+               mean = mean(InconveniencePerc, na.rm=T),
+               sd   = sd(InconveniencePerc, na.rm=T),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+n_inc_aov <- aov(InconveniencePerc ~ Role * Gratitude, data = data_study1)
+summary(n_inc_aov)
+etaSquared(n_inc_aov)
+
+```
+
+
+Effect size (Cohen's d):
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+effsize::cohen.d(InconveniencePerc ~ Role, data = data_study1)
+
+```
+
+<br>
+
+## Motivation Attribution
+
+"To what extent do you agree or disagree that each of the following statements describes their motivation to help?
+ 
+They would have agreed to help me because...
+
+* they wanted to see me out of my trouble [Prosocial 1]
+* they wanted to avoid saying "no" to me [Compliance 1]
+* they believed their small favor would mean a lot to me [Prosocial 2]
+* they were forced by the social pressure [Compliance 2]
+
+### PCA/Item analysis
+
+Should we analyze prosocial and compliance motivations (antonomous vs. controlled) separately? Again let's start with PCA.
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+attribution <- data_study1 %>%
+  dplyr::select(Prosocial1:Conform2)
+
+psych::alpha(attribution, check.keys=TRUE)
+
+scree(attribution)
+
+pca_attribution <- principal(attribution, nfactors=2, rotate="varimax")
+print(pca_attribution)
+
+```
+
+Yes, we need to analyze these two motivation attributions separately. Btw, the alpha of all four items is only .61.
+
+Just to be sure---are prosocial motivation and compliance motivation correlated?
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+cor.test(data_study1$ProsocialAttr, data_study1$ComplyAttr, method=c("pearson"))
+
+```
+
+So again, it seems we shouldn't collapse these two motivations. Let's treat them as distinct constructs.
+
+### Prosocial Motivation
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+cor.test(data_study1$Prosocial1, data_study1$Prosocial2, method=c("pearson"))
+
+```
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+ggbarplot(data_study1, x = "Role", y = "ProsocialAttr", add = "mean_se",
+          color = "Role", fill = "Role", alpha = 0.75, palette = "uchicago", facet.by = "Gratitude",
+          position = position_dodge(0.8)) +
+  stat_compare_means(method = "t.test", paired = FALSE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4) +
+  ylab("Prosocial Motivation") + 
+  font("xlab", size = 16) +
+  font("x.text", size = 16) +
+  font("ylab", size = 16) + 
+  font("legend.title", size = 16) +
+  font("legend.text", size = 16)
+
+p_attr_aov <- aov(ProsocialAttr ~ Role * Gratitude, data = data_study1)
+summary(p_attr_aov)
+etaSquared(p_attr_aov)
+
+ddply(data_study1, c("Role"), summarise,
+               N    = length(ProsocialAttr),
+               mean = mean(ProsocialAttr, na.rm=T),
+               sd   = sd(ProsocialAttr, na.rm=T),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+
+```
+
+
+Effect size (Cohen's d):
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+effsize::cohen.d(ProsocialAttr ~ Role, data = data_study1)
+
+```
+
+### Compliance Motivation
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+# cor.test(data_study1$Comfort1, data_study1$Conform2, method=c("pearson"))
+
+ggbarplot(data_study1, x = "Role", y = "ComplyAttr", add = "mean_se",
+          color = "Role", fill = "Role", alpha = 0.75, palette = "uchicago", facet.by = "Gratitude",
+          position = position_dodge(0.8)) +
+  stat_compare_means(method = "t.test", paired = FALSE, aes(label = paste0("p =", ..p.format..)),label.x = 1.4) +
+  ylab("Compliance Motivation") + 
+  font("xlab", size = 16) +
+  font("x.text", size = 16) +
+  font("ylab", size = 16) + 
+  font("legend.title", size = 16) +
+  font("legend.text", size = 16)
+
+c_attr_aov <- aov(ComplyAttr ~ Role * Gratitude, data = data_study1)
+summary(c_attr_aov)
+etaSquared(c_attr_aov)
+
+ddply(data_study1, c("Role"), summarise,
+               N    = length(ComplyAttr),
+               mean = mean(ComplyAttr, na.rm=T),
+               sd   = sd(ComplyAttr, na.rm=T),
+               se   = sd / sqrt(N), 
+               ci = mean - lower_ci(mean, se, N))
+```
+
+
+Effect size (Cohen's d):
+
+```{r, echo=FALSE, message= FALSE, warning= FALSE}
+
+effsize::cohen.d(ComplyAttr ~ Role, data = data_study1)
+
+```

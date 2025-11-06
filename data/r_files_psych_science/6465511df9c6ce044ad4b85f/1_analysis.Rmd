@@ -1,0 +1,546 @@
+---
+title: "1_analysis"
+author: "Nick Kathios"
+date: "3/9/2022"
+output: html_document
+---
+
+```{r}
+library(lme4)
+library(lmerTest)
+library(tidyverse)
+library(ggrepel)
+library(effects)
+library(emmeans)
+library(simr)
+library(AICcmodavg)
+library(MuMIn)
+```
+
+#reading in data
+```{r}
+studyone <- read.csv(file = '../data/studyone.csv')
+studytwo <- read.csv(file = '../data/studytwo.csv')
+studythree <- read.csv(file='../data/studythree.csv')
+studyfour <- read.csv(file='../data/studyfour.csv')
+studysix <- read.csv(file='../data/studysix.csv')
+studyseven <- read.csv(file='../data/studyseven.csv')
+studyeight <- read.csv(file='../data/studyeight.csv')
+```
+
+#data cleaning for study one analyses
+```{r}
+studyone$subject <- as.factor(studyone$subject)
+studyone$clipnum <- as.factor(studyone$clipnum)
+
+#convert to long form for interaction model
+studyoneinteraction <-
+  studyone %>%
+  subset(select=c(2,3,4,7,9)) %>%
+  rename("Altered" = manip_like, "Original" = post_like) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "liking")
+
+
+studyoneinteraction$liking_scaled <- scale(studyoneinteraction$liking)
+studyoneinteraction$rep_scaled <- scale(studyoneinteraction$rep)
+studyoneinteraction$outcome_type <- as.factor(studyoneinteraction$outcome_type)
+
+studyoneinteractionfam <-
+  studyone %>%
+  subset(select=c(2,3,4,8,10)) %>%
+  rename("Altered" = man_fam, "Original" = post_fam) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "familiarity")
+
+studyoneinteractionfam$outcome_type <- as.factor(studyoneinteractionfam$outcome_type)
+studyoneinteractionfam$familiarity_scaled <- scale(studyoneinteractionfam$familiarity)
+studyoneinteractionfam$rep_scaled <- scale(studyoneinteractionfam$rep)
+```
+
+#study one analysis
+```{r}
+## liking ratings
+contrasts(studyoneinteraction$outcome_type) <- c(-.5,.5)
+m1 <- lmer(liking_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studyoneinteraction)
+summary(m1)
+test(emtrends(m1, "outcome_type",var = "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 3345))
+
+## familiarity ratings
+contrasts(studyoneinteractionfam$outcome_type) <- c(-.5,.5)
+m1f <- lmer(familiarity_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studyoneinteractionfam)
+summary(m1f)
+test(emtrends(m1f, ~outcome_type, "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 3351))
+```
+
+#data cleaning for study two analyses
+```{r}
+studytwo$clipnum <- as.factor(studytwo$clipnum)
+studytwo$subject <- as.factor(studytwo$subject)
+
+#convert to long form
+studytwointeraction <-
+  studytwo %>%
+  subset(select=c(2,3,4,7,9)) %>%
+  rename("Altered" = manip_like, "Original" = post_like) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "liking")
+
+studytwointeraction$outcome_type = as.factor(studytwointeraction$outcome_type)
+studytwointeraction$liking_scaled <- scale(studytwointeraction$liking)
+studytwointeraction$rep_scaled <- scale(studytwointeraction$rep)
+contrasts(studytwointeraction$outcome_type) <- c(-.5,.5)
+
+studytwointeractionfam <-
+  studytwo %>%
+  subset(select=c(2,3,4,8,10)) %>%
+  rename("Altered" = man_fam, "Original" = post_fam) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "familiarity")
+
+studytwointeractionfam$outcome_type = as.factor(studytwointeractionfam$outcome_type)
+contrasts(studytwointeractionfam$outcome_type) <- c(-.5,.5)
+studytwointeractionfam$familiarity_scaled <- scale(studytwointeractionfam$familiarity)
+studytwointeractionfam$rep_scaled <- scale(studytwointeractionfam$rep)
+```
+
+#study two analysis
+```{r}
+## liking ratings
+m2 <- lmer(liking_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studytwointeraction,control=lmerControl(optimizer = c("bobyqa")))
+summary(m2)
+
+## familiarity ratings
+m2f <- lmer(familiarity_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studytwointeractionfam)
+contrasts(studyoneinteraction$outcome_type)
+summary(m2f)
+```
+
+#data cleaning for study three analyses
+```{r}
+studythree$subject <- as.factor(studythree$subject)
+studythree$clipnum <- as.factor(studythree$clipnum)
+
+#convert to long form
+studythreeinteraction <-
+  studythree %>%
+  subset(select=c(2,3,4,8,10)) %>%
+  rename("Altered" = manip_like, "Original" = post_like) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "liking")
+
+
+studythreeinteraction$outcome_type = as.factor(studythreeinteraction$outcome_type)
+studythreeinteraction$liking_scaled <- scale(studythreeinteraction$liking)
+studythreeinteraction$rep_scaled <- scale(studythreeinteraction$rep)
+contrasts(studythreeinteraction$outcome_type) <- c(-.5,.5)
+
+
+studythreeinteractionfam <-
+  studythree %>%
+  subset(select=c(2,3,4,9,11)) %>%
+  rename("Altered" = man_fam, "Original" = post_fam) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "familiarity")
+
+studythreeinteractionfam$outcome_type = as.factor(studythreeinteractionfam$outcome_type)
+studythreeinteractionfam$familiarity_scaled <- scale(studythreeinteractionfam$familiarity)
+studythreeinteractionfam$rep_scaled <- scale(studythreeinteractionfam$rep)
+contrasts(studythreeinteractionfam$outcome_type) <- c(-.5,.5)
+```
+
+#study three analyses
+```{r}
+#model selection
+m3 <- lmer(liking_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studythreeinteraction)
+summary(m3)
+test(emtrends(m3, ~outcome_type, "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 4000))
+
+#plot familiarity ratings
+m3f <- lmer(familiarity_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studythreeinteractionfam,control=lmerControl(optimizer = c("bobyqa")))
+summary(m3f)
+test(emtrends(m3f, ~outcome_type, "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 4000))
+```
+
+#data cleaning for study four analyses
+```{r}
+studyfour$subject <- as.factor(studyfour$subject)
+studyfour$clipnum <- as.factor(studyfour$clipnum)
+
+studyfourinteraction <-
+  studyfour %>%
+  subset(select=c(2,3,4,8,10)) %>%
+  rename("Altered" = manip_like, "Original" = post_like) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "liking")
+
+studyfourinteraction$outcome_type = as.factor(studyfourinteraction$outcome_type)
+studyfourinteraction$liking_scaled <- scale(studyfourinteraction$liking)
+studyfourinteraction$rep_scaled <- scale(studyfourinteraction$rep)
+contrasts(studyfourinteraction$outcome_type) <- c(-.5,.5)
+
+studyfourinteractionfam <-
+  studyfour %>%
+  subset(select=c(2,3,4,9,11)) %>%
+  rename("Altered" = man_fam, "Original" = post_fam) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "familiarity")
+
+studyfourinteractionfam$familiarity_scaled <- scale(studyfourinteractionfam$familiarity)
+studyfourinteractionfam$rep_scaled <- scale(studyfourinteractionfam$rep)
+studyfourinteractionfam$outcome_type = as.factor(studyfourinteractionfam$outcome_type)
+contrasts(studyfourinteractionfam$outcome_type) <- c(-.5,.5)
+```
+
+#study four analyses
+```{r}
+## liking ratings
+m4 <- lmer(liking_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studyfourinteraction)
+summary(m4)
+test(emtrends(m4, ~outcome_type, "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 4000))
+
+## familiarity ratings
+m4f <- lmer(familiarity_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studyfourinteractionfam)
+summary(m4f)
+test(emtrends(m4f, ~outcome_type, "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 4000))
+```
+
+
+#data cleaning for study six analyses
+```{r}
+studysix$subject <- as.factor(studysix$subject)
+studysix$clipnum <- as.factor(studysix$clipnum)
+
+#convert to long form for interaction model
+studysixinteraction <-
+  studysix %>%
+  subset(select=c(2,3,4,8,10)) %>%
+  rename("Original" = manip_like, "Altered" = post_like) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "liking")
+
+
+studysixinteraction$liking_scaled <- scale(studysixinteraction$liking)
+studysixinteraction$rep_scaled <- scale(studysixinteraction$rep)
+studysixinteraction$outcome_type <- as.factor(studysixinteraction$outcome_type)
+studysixinteraction <- within(studysixinteraction, outcome_type <- relevel(outcome_type, ref = "Original"))
+
+studysixinteractionfam <-
+  studysix %>%
+  subset(select=c(2,3,4,9,11)) %>%
+  rename("Original" = man_fam, "Altered" = post_fam) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "familiarity")
+
+studysixinteractionfam$outcome_type <- as.factor(studysixinteractionfam$outcome_type)
+studysixinteractionfam$familiarity_scaled <- scale(studysixinteractionfam$familiarity)
+studysixinteractionfam$rep_scaled <- scale(studysixinteractionfam$rep)
+studysixinteractionfam <- within(studysixinteractionfam, outcome_type <- relevel(outcome_type, ref = "Original"))
+```
+
+#study six analysis
+```{r}
+contrasts(studysixinteraction$outcome_type) <- c(-.5,.5)
+## liking ratings
+m1 <- lmer(liking_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studysixinteraction,control=lmerControl(optimizer = c("bobyqa")))
+summary(m1)
+test(emtrends(m1, "outcome_type",var = "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 3345))
+
+## familiarity ratings
+contrasts(studysixinteractionfam$outcome_type) <- c(-.5,.5)
+m1f <- lmer(familiarity_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studysixinteractionfam,control=lmerControl(optimizer = c("bobyqa")))
+summary(m1f)
+test(emtrends(m1f, ~outcome_type, "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 3351))
+```
+
+#plotting
+```{r}
+ggplot(data=studysixinteraction, aes(x=rep, y=liking)) +
+  ylab('Liking Rating') +
+  xlab('Number of Presentations') +
+  theme_classic() +
+  theme(
+    axis.title.x = element_text(family="Arial", size=22),
+    axis.title.y = element_text(family="Arial",size=22),
+    axis.text.x = element_text(family="Arial", size=20),
+    axis.text.y = element_text(family="Arial",size=20),
+  ) +
+  scale_color_manual(values=c("#56B4E9", "#E69F00")) +
+  scale_fill_manual(values=c("#56B4E9", "#E69F00")) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'errorbar', width = 0.2, aes(color=outcome_type), data=studysixinteraction) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'pointrange', aes(color=outcome_type), data=studysixinteraction)
+
+#fam ratings
+newdata <- expand.grid(
+  rep_scaled=seq(-1.2,1.8,0.001),
+  outcome_type = c("Original", "Altered")
+)
+predictions<- predictSE(m1f, newdata, se.fit = TRUE, print.matrix =
+        TRUE, level = 0)
+
+pred_minimeta <- cbind(newdata, predictions)
+
+pred_minimeta$rep <- pred_minimeta$rep_scaled * attr(studysixinteractionfam$rep_scaled, 'scaled:scale') + attr(studysixinteractionfam$rep_scaled, 'scaled:center')
+pred_minimeta$familiarity <- pred_minimeta$fit * attr(studysixinteractionfam$familiarity_scaled, 'scaled:scale') + attr(studysixinteractionfam$familiarity_scaled, 'scaled:center')
+pred_minimeta$upper <- (pred_minimeta$fit + pred_minimeta$se.fit) * attr(studysixinteractionfam$familiarity_scaled, 'scaled:scale') + attr(studysixinteractionfam$familiarity_scaled, 'scaled:center')
+pred_minimeta$lower <- (pred_minimeta$fit - pred_minimeta$se.fit) * attr(studysixinteractionfam$familiarity_scaled, 'scaled:scale') + attr(studysixinteractionfam$familiarity_scaled, 'scaled:center')
+
+labels <- subset(pred_minimeta, rep==median(pred_minimeta$rep))
+labels$label_placement <- ifelse(labels$outcome_type=="Original", labels$upper,labels$lower)
+
+ggplot(data=studysixinteractionfam, aes(x=rep, y=familiarity)) +
+  ylab('Familiarity Rating') +
+  xlab('Number of Presentations') +
+  theme_classic() +
+  theme(
+    axis.title.x = element_text(family="Arial", size=22),
+    axis.title.y = element_text(family="Arial",size=22),
+    axis.text.x = element_text(family="Arial", size=20),
+    axis.text.y = element_text(family="Arial",size=20),
+  ) +
+  scale_color_manual(values=c("#56B4E9", "#E69F00")) +
+  scale_fill_manual(values=c("#56B4E9", "#E69F00")) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'errorbar', width = 0.2, aes(color=outcome_type)) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'pointrange', aes(color=outcome_type))
+```
+
+#meta over study 1 + 6
+```{r}
+#fam ratings
+## re-coding so that for study 6, original = no pred error, altered = pred error
+studyoneinteractionfam$study <- "Study 1"
+studyoneinteractionfam$outcome_type <- ifelse(studyoneinteractionfam$outcome_type=="Original", "Exposed", "Not Exposed")
+studysixinteractionfam$outcome_type <- ifelse(studysixinteractionfam$outcome_type=="Altered", "Exposed", "Not Exposed")
+studysixinteractionfam$study <- "Study 6"
+
+study1_6f <- rbind(studyoneinteractionfam, studysixinteractionfam)
+  
+study1_6f$familiarity_scaled <- scale(study1_6f$familiarity)
+study1_6f$rep_scaled <- scale(study1_6f$rep)
+study1_6f$outcome_type <- as.factor(study1_6f$outcome_type)
+
+study1_6f$study <- as.factor(study1_6f$study)
+contrasts(study1_6f$outcome_type) <- c(-.5,.5)
+
+m1_6f <- lmer(familiarity_scaled ~ study*outcome_type*rep_scaled + (rep_scaled|subject) + (1|clipnum), data=study1_6f,control=lmerControl(optimizer = c("bobyqa")))
+summary(m1_6f)
+
+#plotting
+labels <- subset(study1_6f,subject == "54849ec4fdf99b0379939d1d") %>%
+  subset(rep==8) %>%
+  subset(clipnum==12)
+
+
+labels$label_placement <- ifelse(labels$outcome_type=="Exposed", 4.95,3.75)
+
+minimeta2_fam<-
+ggplot(data=study1_6f, aes(x=rep, y=familiarity)) +
+  ylab('Familiarity Rating') +
+  xlab('Exposure (number of presentations)') +
+  theme_classic() +
+  theme(
+    axis.title.x = element_text(family="Arial", size=22),
+    axis.title.y = element_text(family="Arial",size=22),
+    axis.text.x = element_text(family="Arial", size=20),
+    axis.text.y = element_text(family="Arial",size=20),
+    strip.text.x = element_text(family="Arial",size=20),
+  ) +
+  scale_color_manual(values=c("#56B4E9", "#E69F00")) +
+  scale_fill_manual(values=c("#56B4E9", "#E69F00")) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'errorbar', width = 0.2, aes(color=outcome_type), alpha=0.7) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'pointrange', aes(color=outcome_type),alpha=0.7) +
+  facet_grid(~study) +
+  theme(legend.position = "none") +
+  geom_label_repel(aes(label = outcome_type, y=label_placement, color=outcome_type),
+                   na.rm = TRUE,
+                   data=labels, 
+                   min.segment.length = Inf,
+                   point.size = NA,
+                   family="Arial",
+                   size=8
+                   )
+  
+
+#ggsave(plot=minimeta2_fam, file='../figures/minimeta2_fam.png', width=8)
+
+#liking ratings
+studyoneinteraction$study <- "Study 1"
+studyoneinteraction$outcome_type <- ifelse(studyoneinteraction$outcome_type=="Original", "Exposed", "Not Exposed")
+studysixinteraction$outcome_type <- ifelse(studysixinteraction$outcome_type=="Altered", "Exposed", "Not Exposed")
+studysixinteraction$study <- "Study 6"
+
+study1_6 <- rbind(studyoneinteraction, studysixinteraction)
+
+study1_6$outcome_type <- as.factor(study1_6$outcome_type)
+study1_6 <- within(study1_6, outcome_type <- relevel(outcome_type, ref = "Not Exposed"))
+
+study1_6$liking_scaled <- scale(study1_6$liking)
+study1_6$rep_scaled <- scale(study1_6$rep)
+contrasts(study1_6$outcome_type) <- c(-.5,.5)
+
+m1_6 <- lmer(liking_scaled ~ study*outcome_type*rep_scaled + (outcome_type*rep_scaled|subject) + (1|clipnum), data=study1_6,control=lmerControl(optimizer = c("bobyqa")))
+summary(m1_6)
+
+#plotting
+labels <- subset(study1_6,subject == "54849ec4fdf99b0379939d1d") %>%
+  subset(rep==8) %>%
+  subset(clipnum==12)
+
+
+labels$label_placement <- ifelse(labels$outcome_type=="Exposed", 3.6, 2.8)
+
+minimeta2_liking <-
+  ggplot(data=study1_6, aes(x=rep, y=liking)) +
+  ylab('Liking Rating') +
+  xlab('Exposure (number of presentations)') +
+  theme_classic() +
+  theme(
+    axis.title.x = element_text(family="Arial", size=22),
+    axis.title.y = element_text(family="Arial",size=22),
+    axis.text.x = element_text(family="Arial", size=20),
+    axis.text.y = element_text(family="Arial",size=20),
+    strip.text.x = element_text(family="Arial",size=20),
+  ) +
+  scale_color_manual(values=c("#56B4E9", "#E69F00")) +
+  scale_fill_manual(values=c("#56B4E9", "#E69F00")) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'errorbar', width = 0.2, aes(color=outcome_type),alpha=0.7) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'pointrange', aes(color=outcome_type),alpha=0.7) +
+  facet_grid(~study) +
+  theme(legend.position = "none") +
+  geom_label_repel(aes(label = outcome_type, y=label_placement, color=outcome_type),
+                   na.rm = TRUE,
+                   data=labels, 
+                   min.segment.length = Inf,
+                   point.size = NA,
+                   family="Arial",
+                   size=8
+                   )
+
+#ggsave(plot=minimeta2_liking, file='../figures/minimeta2_liking.png', width=8)
+
+emtrends(m1_6f, pairwise~outcome_type*study, var="rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 14561, adjust = "none")
+#contrast(em)
+```
+
+#data cleaning for study seven analyses
+```{r}
+studyseven$subject <- as.factor(studyseven$subject)
+studyseven$clipnum <- as.factor(studyseven$clipnum)
+
+#convert to long form for interaction model
+studyseveninteraction <-
+  studyseven %>%
+  subset(select=c(2,3,4,8,10)) %>%
+  rename("Altered" = manip_like, "Original" = post_like) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "liking")
+
+
+studyseveninteraction$liking_scaled <- scale(studyseveninteraction$liking)
+studyseveninteraction$rep_scaled <- scale(studyseveninteraction$rep)
+studyseveninteraction$outcome_type <- as.factor(studyseveninteraction$outcome_type)
+```
+
+#study seven (no fam ratings) analysis
+```{r}
+## liking ratings
+contrasts(studyseveninteraction$outcome_type) <- c(-.5,.5)
+m1 <- lmer(liking_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studyseveninteraction)
+summary(m1)
+```
+
+#meta over study 7 + 1
+```{r}
+#liking ratings
+studyoneinteraction$study <- "Study1"
+studyseveninteraction$study <- "Study7"
+
+#if running whole script through, make sure study one's outcome type is coded altered v original and not 
+#exposed vs not exposed
+studyoneinteraction$outcome_type <- ifelse(studyoneinteraction$outcome_type=="Exposed", "Original", "Altered")
+study1_7 <- rbind(studyoneinteraction, studyseveninteraction)
+
+study1_7$liking_scaled <- scale(study1_7$liking)
+study1_7$rep_scaled <- scale(study1_7$rep)
+study1_7$outcome_type <- as.factor(study1_7$outcome_type)
+contrasts(study1_7$outcome_type) <- c(-.5,.5)
+
+m1_7 <- lmer(liking_scaled ~ study*outcome_type*rep_scaled + (outcome_type*rep_scaled|subject) + (1|clipnum), data=study1_7,control=lmerControl(optimizer = c("bobyqa")))
+summary(m1_7)
+
+#plotting
+ggplot(data=study1_7, aes(x=rep, y=liking)) +
+  ylab('Liking Rating') +
+  xlab('Number of Presentations') +
+  theme_classic() +
+  theme(
+    axis.title.x = element_text(family="Arial", size=22),
+    axis.title.y = element_text(family="Arial",size=22),
+    axis.text.x = element_text(family="Arial", size=20),
+    axis.text.y = element_text(family="Arial",size=20),
+  ) +
+  scale_color_manual(values=c("#56B4E9", "#E69F00")) +
+  scale_fill_manual(values=c("#56B4E9", "#E69F00")) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'errorbar', width = 0.2, aes(color=outcome_type)) +
+  stat_summary(fun.data = 'mean_cl_normal', geom = 'pointrange', aes(color=outcome_type)) +
+  facet_grid(~study)
+
+emtrends(m1_7, pairwise~outcome_type*study, var="rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 14561, adjust = "none")
+```
+
+#data cleaning for study eight  analyses
+```{r}
+studyeight$subject <- as.factor(studyeight$subject)
+studyeight$clipnum <- as.factor(studyeight$clipnum)
+
+#filtering out duplicates
+studyeight <- 
+  studyeight %>%
+  filter_at(vars(subject), all_vars(!. %in% c('310', '333', '337', '361')))
+
+#convert to long form for interaction model
+studyeightinteraction <-
+  studyeight %>%
+  subset(select=c(2,3,4,8,10)) %>%
+  rename("Altered" = manip_like, "Original" = post_like) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "liking")
+
+studyeightinteraction$outcome_type = as.factor(studyeightinteraction$outcome_type)
+studyeightinteraction$liking_scaled <- scale(studyeightinteraction$liking)
+studyeightinteraction$rep_scaled <- scale(studyeightinteraction$rep)
+contrasts(studyeightinteraction$outcome_type) <- c(-.5,.5)
+
+studyeightinteractionfam <-
+  studyeight %>%
+  subset(select=c(2,3,4,7,9,11)) %>%
+  rename("Altered" = man_fam, "Original" = post_fam) %>%
+  pivot_longer(Original:Altered, names_to = "outcome_type", values_to = "familiarity")
+
+studyeightinteractionfam$outcome_type = as.factor(studyeightinteractionfam$outcome_type)
+contrasts(studyeightinteractionfam$outcome_type) <- c(-.5,.5)
+studyeightinteractionfam$familiarity_scaled <- scale(studyeightinteractionfam$familiarity)
+studyeightinteractionfam$rep_scaled <- scale(studyeightinteractionfam$rep)
+```
+
+#study eight analysis
+```{r}
+## liking ratings
+m5 <- lmer(liking_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studyeightinteraction,control=lmerControl(optimizer = c("bobyqa")))
+summary(m5)
+test(emtrends(m5, ~outcome_type, "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 4000))
+
+## familiarity ratings
+m5f <- lmer(familiarity_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studyeightinteractionfam)
+summary(m5f)
+test(emtrends(m5f, ~outcome_type, "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 4000))
+
+##model fitting ### see "bmrq_analysis script for fitting these models to studies 1-4
+#fam ratings
+linmodelf <- lmer(familiarity_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studyeightinteractionfam, control=lmerControl(optimizer="bobyqa"))
+summary(linmodelf)
+test(emtrends(linmodelf, ~outcome_type, "rep_scaled", lmer.df = "satterthwaite", lmerTest.limit = 14585))
+r.squaredGLMM(linmodelf)
+#logarithmic 
+studyeightinteractionfam$log_rep <- log10(studyeightinteractionfam$rep + 0.1)
+studyeightinteractionfam$log_repscaled <- scale(studyeightinteractionfam$log_rep)
+logmodelf <- lmer(familiarity_scaled ~ log_repscaled*outcome_type  + (log_repscaled*outcome_type|subject) + (1|clipnum), data=studyeightinteractionfam)
+summary(logmodelf)
+test(emtrends(logmodelf, ~outcome_type, "log_repscaled", lmer.df = "satterthwaite", lmerTest.limit = 14585))
+r.squaredGLMM(logmodelf)
+
+anova(linmodelf, logmodelf)
+
+#liking ratings
+linmodel <-lmer(liking_scaled ~ rep_scaled*outcome_type + (rep_scaled*outcome_type|subject) + (1|clipnum), data=studyeightinteraction,control=lmerControl(optimizer = c("bobyqa")))
+quadmodel <- lmer(liking_scaled ~ poly(rep_scaled,2,raw=TRUE)*outcome_type + (poly(rep_scaled,2,raw=TRUE)*outcome_type|subject) + (1|clipnum), data=studyeightinteraction,control=lmerControl(optimizer = c("bobyqa")))
+anova(linmodel, quadmodel)
+```
