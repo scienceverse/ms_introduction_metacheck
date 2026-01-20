@@ -1,6 +1,6 @@
 ---
-title: "Papercheck for Psychological Science"
-shorttitle: "Papercheck for Psychological Science"
+title: "Metacheck for Psychological Science"
+shorttitle: "Metacheck for Psychological Science"
 author:
   - name: Lisa DeBruine
     orcid: 0000-0002-7523-5539
@@ -79,26 +79,26 @@ library(readxl)
 library(tidyr)
 library(janitor)
 library(crayon)
-library(httr)   # For downloading HTML
-library(fs)     # For file handling
-library(openalexR)
-options(openalexR.mailto = "D.Lakens@tue.nl")
+library(httr)
+library(fs)
 library(progress)
 library(rstudioapi)
 library(textutils)
-
+library(openalexR)
+options(openalexR.mailto = "D.Lakens@tue.nl")
 
 # Set working directory to the file location of this R file. Make sure the related folders (e.g., data) are in the same location
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
-# Read in raw xml files into papercheck opbjects. This takes a lot of time, and therefore we save the object. 
-# xml <- read("psych_science_xml")
-# save(xml, file = "psychscience_2004_2024_xml.RData")
+# Read in raw xml files into metacheck opbjects. This takes a lot of time, and therefore we save the object. 
+# xml <- read("C:/Users/dlakens/OneDrive - TU Eindhoven/R/download_articles_code_and_data/psych_science_xml")
+# save(xml, file = "psychscience_2004_2025_xml.RData")
 
 
 load("data/psychscience_2014_2024_xml.RData")
 load("data/psychscience_openalex_2014_2024.RData")
 load("data/psychscience_crossref_2014_2024.RData")
+load("data/psychscience_aspredicted.RData")
 # Downloaded in the chunk osf_retrieve, but stored as it takes a long time to run
 all_osf_file_info_psych_science <- readRDS("data/all_osf_file_info_psych_science.rds")
 all_osf_r_file_psych_science <- readRDS("data/r_file_info_psych_science.rds")
@@ -155,18 +155,17 @@ Metascientific research demonstrates significant room for improvement in how sci
 
 Human factors research suggests that automation (where researchers are kept in the loop) can offer a partial solution. Two recent developments have increased the possibility that best practices can be automatically detected. First, metascientific research has identified where the adoption of best practices is lagging, and offered concrete suggestions for improvement. This work often includes data that can be used as ground truth to validate automated checks. Second, advances in machine learning and artificial intelligence have made it easier to deal with written text, both when turning scientific articles into structured data files (e.g., the GROBID machine learning library), as when extracting or classifying information in written text. This has made it possible to develop algorithms that automatically emulate what experts do when they examine if best practices are present or absent. For example, a reviewer might search for the section in the paper that describes an a-priori power analysis, and then check if people follow best practices, and report the alpha level, desired power, the effect size metric, and a justification for the effect size, for each hypothesis tested [@lakens_justification_2022]. If any of this information is missing, authors should be made aware that they are not following best practices, so that they can improve their paper. While many automated checks for best practices will require only simple text matching based on regular expression, more complex text extraction is possible by using large language models (LLMs).
 
-In this article we introduce a new tool, Papercheck, which uses text search, code, and large language models to extract information from scientific text (which could be a draft of a manuscript, submitted or published articles, or preregistration documents) and provide automated suggestions for improvement. Papercheck is inspired by quality control processes in software development. For example, R package developers run a set of automated checks before they submit their package to the Comprehensive R Archive Network (CRAN). The automated checks aim to identify any remaining issues, and inform developers about how to fix them. The goal of papercheck is to screen scientific manuscripts, identify areas for improvement based on algorithms that emulate what experts would do while checking a research paper, and educate researchers on how to incorporate best practices. The tool is module based, with a dedicated module for any practice that the community wants to improve, and where automation offers a solution. This means the tool can be extended by the scientific community to fit their needs, and specialised modules can be created for different scientific fields based on what is considered a best practice in that research area. The tool can reduce the burden on peer reviewers by resolving common problems before submission, allowing peer reviewers to focus on those issues that can not be automatically detected.
+In this article we introduce a new tool, Metacheck, which uses text search, code, and large language models to extract information from scientific text (which could be a draft of a manuscript, submitted or published articles, or preregistration documents) and provide automated suggestions for improvement. Metacheck is inspired by quality control processes in software development. For example, R package developers run a set of automated checks before they submit their package to the Comprehensive R Archive Network (CRAN). The automated checks aim to identify any remaining issues, and inform developers about how to fix them. The goal of Metacheck is to screen scientific manuscripts, identify areas for improvement based on algorithms that emulate what experts would do while checking a research paper, and educate researchers on how to incorporate best practices. The tool is module based, with a dedicated module for any practice that the community wants to improve, and where automation offers a solution. This means the tool can be extended by the scientific community to fit their needs, and specialised modules can be created for different scientific fields based on what is considered a best practice in that research area. The tool can reduce the burden on peer reviewers by resolving common problems before submission, allowing peer reviewers to focus on those issues that can not be automatically detected.
 
-Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., is the desired level of power reported in an a-priori power analysis), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is there a good justification for the effect size entered in an a-priori power analysis). Papercheck focuses on the first task, and leaves the evaluation to the user. We will illustrate the potential of automated checks to improve best practices in 4 areas, namely 1) experimental design, 2) open science practices, 3) statistical inferences, and 4) reporting guidelines. Finally, we will demonstrate the usefulness of a tool that can efficiently process text in scientific articles to perform menial tasks (e.g., check if if hyperlinks are working), more easily code information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., statcheck, checking if retracted articles are cited) in a single module-based workflow that can be expanded by the scientific community.
-
+Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., is the desired level of power reported in an a-priori power analysis), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is there a good justification for the effect size entered in an a-priori power analysis). Metacheck focuses on the first task, and leaves the evaluation to the user. We will illustrate the potential of automated checks to improve best practices in 4 areas, namely 1) experimental design, 2) open science practices, 3) statistical inferences, and 4) reporting guidelines. Finally, we will demonstrate the usefulness of a tool that can efficiently process text in scientific articles to perform menial tasks (e.g., check if if hyperlinks are working), more easily code information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., statcheck, checking if retracted articles are cited) in a single module-based workflow that can be expanded by the scientific community. We perform these checks on all articles published in Psychological Science from 2004 to 2014, which published articles from all subfields in psychology. 
 
 ## Use Cases
 
-The current version of Papercheck has two contexts of use. The first use-case is by scientists -- either authors or reviewers -- who have the goal to improve a scientific manuscript by checking for the presence or absence of specific practices. Papercheck can provide recommendations that improve the manuscript in situations where 1) a practice is not sufficiently salient to the scientist to be noticed without assistance, 2) the scientist is not yet able to identify the absence of a practice manually due to a lack of knowledge or training, or 3) scientists do not have time to identify the practice manually. Scientists using Papercheck are aware that all modules make recommendations that can be Type 1 and Type 2 errors. This means that it is possible that many possibly problematic practices are automatically identified, while none are actually problematic upon closer inspection. It is also possible that no problematic practices are found, but many are present.
+The current version of Metacheck has two contexts of use. The first use-case is by scientists -- either authors or reviewers -- who have the goal to improve a scientific manuscript by checking for the presence or absence of specific practices. Metacheck can provide recommendations that improve the manuscript in situations where 1) a practice is not sufficiently salient to the scientist to be noticed without assistance, 2) the scientist is not yet able to identify the absence of a practice manually due to a lack of knowledge or training, or 3) scientists do not have time to identify the practice manually. Scientists using Metacheck are aware that all modules make recommendations that can be Type 1 and Type 2 errors. This means that it is possible that many possibly problematic practices are automatically identified, while none are actually problematic upon closer inspection. It is also possible that no problematic practices are found, but many are present.
 
-As developers, our priority is to develop modules with error rates that are low enough to not impact the usability of Papercheck for individual authors, which - following the ISO 9241-11 definition - means "the extent to which a product can be used by specified users to achieve specified goals with effectiveness, efficiency, and satisfaction in a specified context of use". Our working assumption is that preparing a scientific manuscript takes a considerable amount of time, and that scientists care about the quality of their work. Under this assumption, we believe that a tool with high error rates - say up to 50% - will be considered sufficiently useful to be adopted as long as it accurately identified some bad practices that researchers would not have identified themselves. For example, a spelling checker that marks 'Papercheck' and 'manuscirpt' as words with spelling errors, and does not mark 'extend' as a spelling error where the correct word would have been 'extent' remains useful as long as it takes relatively little time to evaluate the suggestions, even though the error rate is 2 out of 3.
+As developers, our priority is to develop modules with error rates that are low enough to not impact the usability of Metacheck for individual authors, which - following the ISO 9241-11 definition - means "the extent to which a product can be used by specified users to achieve specified goals with effectiveness, efficiency, and satisfaction in a specified context of use". Our working assumption is that preparing a scientific manuscript takes a considerable amount of time, and that scientists care about the quality of their work. Under this assumption, we believe that a tool with high error rates - say up to 50% - will be considered sufficiently useful to be adopted as long as it accurately identified some bad practices that researchers would not have identified themselves. For example, a spelling checker that marks 'Metacheck' and 'manuscirpt' as words with spelling errors, and does not mark 'extend' as a spelling error where the correct word would have been 'extent' remains useful as long as it takes relatively little time to evaluate the suggestions, even though the error rate is 2 out of 3.
 
-The second use-case of Papercheck is as a tool to examine a large number of scientific articles. For example, a university or science funder might be interested in how many manuscripts by researchers that they employ or fund share data and code if this is in line with their policies. A meta-scientist might be interested in how many articles report effect sizes in a specific literature, and test whether there is an improvement in best practices. A scientific journal might want to evaluate how a change in editorial practices has impacted the diversity in populations that are examined in the studies they publish. Papercheck modules can easily be run on large numbers of papers, facilitating text searches and the automatic extraction and classification of information. In this use-case the usability of an automated tool requires low error rates if users want to use the output of the tool. Here, Type 2 errors are problematic, and difficult to identify, as it requires users to manually screen all papers for instances that were missed by the algorithms, and if manual screening was possible, there was no need for an automated tool. Type 1 errors might be easier to identify, but still require manually checking all instances flagged by a module. Therefore, low error rates are important for the usability of Papercheck as a meta-scientific tool. Validation procedures that quantify error rates are essential to safeguard the accuracy of results, and allow users to evaluate whether modules are accurate enough for their purposes, and communicate the error rates when presenting results. It is possible that a module has low-enough error rates for the individual use-case, while error rates are too high for meta-scientific use-cases.
+The second use-case of Metacheck is as a tool to examine a large number of scientific articles. For example, a university or science funder might be interested in how many manuscripts by researchers that they employ or fund share data and code if this is in line with their policies. A meta-scientist might be interested in how many articles report effect sizes in a specific literature, and test whether there is an improvement in best practices. A scientific journal might want to evaluate how a change in editorial practices has impacted the diversity in populations that are examined in the studies they publish. Metacheck modules can easily be run on large numbers of papers, facilitating text searches and the automatic extraction and classification of information. In this use-case the usability of an automated tool requires low error rates if users want to use the output of the tool. Here, Type 2 errors are problematic, and difficult to identify, as it requires users to manually screen all papers for instances that were missed by the algorithms, and if manual screening was possible, there was no need for an automated tool. Type 1 errors might be easier to identify, but still require manually checking all instances flagged by a module. Therefore, low error rates are important for the usability of Metacheck as a meta-scientific tool. Validation procedures that quantify error rates are essential to safeguard the accuracy of results, and allow users to evaluate whether modules are accurate enough for their purposes, and communicate the error rates when presenting results. It is possible that a module has low-enough error rates for the individual use-case, while error rates are too high for meta-scientific use-cases.
 
 # Examples
 
@@ -174,18 +173,17 @@ The second use-case of Papercheck is as a tool to examine a large number of scie
 
 ### Automatically Checking Journal Article Reporting Standards
 
-The journal article reporting standards (JARS) developed by the American Psychological Association (APA) offer guidance on the information that should be reported in scientific articles to enhance their scientific rigour (Appelbaum et al. 2018). Almost every published article would improve if researchers diligently followed JARS. However, the guidelines are not widely known, rarely implemented by authors, and almost never checked by editors or reviewers. Manually checking whether all reporting standards are implemented would be effortful. Automation can help by automatically checking if recommendations are followed.
-
-The first reporting guideline that has been implemented in Papercheck is to report exact p-values. The APA Manual states:
+The journal article reporting standards (JARS) developed by the American Psychological Association (APA) offer guidance on the information that should be reported in scientific articles to enhance their scientific rigour (Appelbaum et al. 2018). Almost every published article would improve if researchers diligently followed JARS. However, the guidelines are not widely known, rarely implemented by authors, and almost never checked by editors or reviewers. Manually checking whether all reporting standards are implemented would be effortful. Automation can help by automatically checking if recommendations are followed. The first reporting guideline that has been implemented in Metacheck is to report exact p-values. The APA Manual states:
 
 > Report exact p values (e.g., p = .031) to two or three decimal places. However, report p values less than .001 as p \< .001.
 
-Access to precisely reported p-values allows readers to include the test results in p value meta-analytic tests, such as p-curve, or z-curve (Simonsohn, Nelson, and Simmons 2014; Bartoš and Schimmack 2020), and makes it possible to the check the internal coherence of the reported results with tools such as Statcheck (Nuijten et al. 2015). Papercheck has a dedicated module, `exact_p`, to identify the presence of imprecise p-values. It will return all instances of imprecisely reported p-values in a paper.
+Access to precisely reported p-values allows readers to include the test results in p value meta-analytic tests, such as p-curve, or z-curve (Simonsohn, Nelson, and Simmons 2014; Bartoš and Schimmack 2020), and makes it possible to the check the internal coherence of the reported results with tools such as Statcheck (Nuijten et al. 2015). Metacheck has a dedicated module, `exact_p`, to identify the presence of imprecise p-values. It will return all instances of imprecisely reported p-values in a paper.
 
-We can also examine the difference between significant and non-significant effects, out of interest, and which imprecise p-values are reported. This illustrates how papercheck makes it possible to easily explore larger numbers of papers, and their properties. This allows us to uncover interesting explorative findings, such as the fact that there is a large peak at p \> 0.25, as it is apparently common for researchers to use this cut-off to indicate a non-significant result. It is unclear to us where this shared practice originates.
+We can also examine the difference between significant and non-significant effects, out of interest, and which imprecise p-values are reported. This illustrates how Metacheck makes it possible to easily explore larger numbers of papers, and their properties. This allows us to uncover interesting explorative findings, such as the fact that there is a large peak at p \> 0.25, as it is apparently common for researchers to use this cut-off to indicate a non-significant result. It is unclear to us where this shared practice originates.
 
 ```{r}
 res_imprecise <- module_run(xml, "exact_p")
+
 res_imprecise$table$significance <- ifelse((res_imprecise$table$p_comp == "<"), "significant", "nonsignificant")
 
 merged_data <- res_imprecise$table %>%
@@ -317,13 +315,21 @@ ggplot(imprecise_df, aes(x = value)) +
 
 ```
 
-The peak at 0.25 is due to the tendency of authors to treat *p* values \> 0.25 as an indication of an absence of an effect. It is unclear where this criterion comes from. A possible origin might be the proposed alpha of 0.25 $\le$ $\alpha$ $\le$ 0.35 for stopping rules in forward stepwise selection procedures [@bendel1977comparison], later popularized as $\alpha$ $\le$ .025 in a widely used textbook on logistic regression [@hosmer2013applied], but we are unsure about this. The correct approach to conclude meaningful effects are absent is by performing an equivalence test against a smallest effect size of interest [@lakens_equivalence_2018].
+The peak at 0.25 is due to the tendency of authors to treat *p* values \> 0.25 as an indication of an absence of an effect. It is unclear where this criterion comes from. A possible origin might be the proposed alpha of 0.25 $\le$ $\alpha$ $\le$ 0.35 for stopping rules in forward stepwise selection procedures [@bendel1977comparison], later popularized as $\alpha$ $\le$ .025 in a widely used textbook on logistic regression [@hosmer2013applied], but we are unsure about this. The correct approach to conclude meaningful effects are absent is by performing an equivalence test against a smallest effect size of interest [@lakens_equivalence_2018]. We have also created a related module that simply checks if nonsignificant p values are reported in an article. If so, the module warns researchers against misinterpretations of non-significant results, and provides all sentences with non-singificant results to enable researchers to quickly check for any mistakes. 
+
+```{r}
+# The paper below is a good example of the incorrect interpretation of non-significant results. 
+paper <- xml$`09567976241268630`
+res_nonsig <- metacheck::module_run(paper, "nonsig")
+# For example
+res_nonsig$table[2,]$expanded
+```
 
 ### Reporting effect sizes
 
 A second JARS guideline that can be automatically checked is whether people report effect sizes alongside their test result. Each test (e.g., a *t*-test, *F*-test, etc.) should include the corresponding effect size (e.g., a Cohen's *d*, or partial eta-squared). Based on a text search that uses regular expressions (regex), we can identify *t*-tests and *F*-tests that are not followed by an effect size, and warn researchers accordingly.
 
-We have manually checked the *t*-tests and *F*-tests in 250 papers in Psychological Science, and our `effect_size` module detected 100% of *t*-tests with effect sizes, 99% of *t*-tests without effect sizes, 99% of *F*-tests with effect sizes, and 100% of *F*-tests without effect sizes. This is accurate enough to use the module for meta-scientific research, such as examining whether there is an increase in the best practice to report effect sizes for *t*-tests and *F*-tests over time. In the plot below we have run the module on 1838 published articles in the journal Psychological Science between 2014 and 2024. We can see that where a decade ago, around 25% of articles report *t*-tests or *F*-tests without an effect size this has dropped to between 10% and 15% a decade later. Perhaps a tool like Papercheck can reduce this percentage even further.
+We have manually checked the *t*-tests and *F*-tests in 250 papers in Psychological Science, and our `effect_size` module detected 100% of *t*-tests with effect sizes, 99% of *t*-tests without effect sizes, 99% of *F*-tests with effect sizes, and 100% of *F*-tests without effect sizes. This is accurate enough to use the module for meta-scientific research, such as examining whether there is an increase in the best practice to report effect sizes for *t*-tests and *F*-tests over time. In the plot below we have run the module on 1838 published articles in the journal Psychological Science between 2014 and 2024. We can see that where a decade ago, around 25% of articles report *t*-tests or *F*-tests without an effect size this has dropped to between 10% and 15% a decade later. Perhaps a tool like Metacheck can reduce this percentage even further.
 
 ```{r}
 res_effect_size <- module_run(xml, "effect_size")
@@ -369,7 +375,7 @@ ggplot(combined_summary, aes(x = factor(year), y = percentage, fill = test_type)
 
 ### Checking Data and Code in Repositories
 
-There is widespread support among scientists for open science practices, such as data and code sharing [@ferguson2023survey]. Funders increasingly require the researchers they fund to make data and code available alongside publications from funded projects. As data and code sharing is a relatively new practice, and there is a lack of training in data management, it is common to see badly documented data repositories. Data repositories would improve substantially if more scientists followed best practices, such as the TIER protocol (https://www.projecttier.org/tier-protocol/protocol-4-0/). By automatically checking data repositories, Papercheck can increase awareness of best practices, and make suggestions for improvements.
+There is widespread support among scientists for open science practices, such as data and code sharing [@ferguson2023survey]. Funders increasingly require the researchers they fund to make data and code available alongside publications from funded projects. As data and code sharing is a relatively new practice, and there is a lack of training in data management, it is common to see badly documented data repositories. Data repositories would improve substantially if more scientists followed best practices, such as the TIER protocol (https://www.projecttier.org/tier-protocol/protocol-4-0/). By automatically checking data repositories, Metacheck can increase awareness of best practices, and make suggestions for improvements.
 
 At a minimum a data repository for a scientific paper should contain a Read Me file that contains instructions on how to reproduce reported results. If data is shared, it should be stored in a 'data' folder, or at least have the word 'data' in the filename. Furthermore, there should be a codebook or data dictionary that explains which variables are included in the dataset, and what the values mean, in order for others to re-use the data. Code or scripts should similarly be shared in 'code' folder, or at least have the word 'code' in the filename. Ideally peer reviewers or editors would check the contents of a data repository. In practice, time constraints make it so that data repositories are often not checked. Automation can perform some checks of whether data repositories are organized following best practices, reducing the workload of peer reviewers.
 
@@ -388,7 +394,7 @@ If valid, the link is processed, and the OSF Application Programming Interface (
 # saveRDS(info, file = "all_osf_file_info_psych_science.rds")
 ```
 
-We can then use this information to determine if, for each file, the information about the files contains text that makes it easy to determine what is being shared. A simple regular expression text search for 'README', 'codebook', 'script', and 'data' (in a number of possible ways that these words can be written) is used to automatically detect what is shared.
+We can then use this information to determine if, for each file, the information about the files contains text that makes it easy to determine what is being shared. A simple regular expression text search for 'README', 'codebook', 'script', and 'data' (in a number of possible ways that these words can be written) is used to automatically detect what is shared. THIS IS JUST INFORMATIVE.   
 
 ```{r summarize_osf_files}
 osf_files_summary <- summarize_contents(all_osf_file_info_psych_science)
@@ -446,7 +452,7 @@ for (zip_file in zip_files) {
 }
 ```
 
-So far we have used Papercheck to check whether links exist, are publicly available, and whether certain types of files exist. But it is also possible to automatically download files, examine their contents, and provide feedback to users. This can be useful to examine datasets (e.g., is personal information such as IP addresses included), or code files. Papercheck also contains a function `osf_file_download` to download all files from a project on the OSF while maintaining the folder structure. This function can be used to easily download and check content shared on the OSF. 
+So far we have used Metacheck to check whether links exist, are publicly available, and whether certain types of files exist. But it is also possible to automatically download files, examine their contents, and provide feedback to users. This can be useful to examine datasets (e.g., is personal information such as IP addresses included), or code files. Metacheck also contains a function `osf_file_download` to download all files from a project on the OSF while maintaining the folder structure. This function can be used to easily download and check content shared on the OSF. 
 
 It is also possible to download files from data repositories, and perform checks on the content of these files. As an example, we have created a function that will examine four best practices in files that contain R code. These best practices are providing sufficient comments in the code file (so that other users can understand the code), not declaring all libraries in one block at the top of the file (which makes it more cumbersome to install all required R packages), using fixed file paths (which need to be manually changed to make the code run), and not making all files that should be loaded or sourced - such as data files, or other R files with functions - available in the same repository. 
 
@@ -490,7 +496,7 @@ if (!"sourced_files" %in% names(r_files_only)) {
 }
 
 # Helper to extract quoted strings (excludes URLs)
-.extract_quoted <- function(x) {
+extract_quoted <- function(x) {
   qs <- unlist(regmatches(x, gregexpr("(['\"]).*?\\1", x, perl = TRUE)))
   if (length(qs) == 0) return(character(0))
   qs <- gsub("^['\"]|['\"]$", "", qs)
@@ -760,8 +766,9 @@ for (i in 1:nrow(r_files_only)) {
   
   ### NEW: detect loaded/sourced files (NULL-safe) -----------------------------
 
+grepl_load <- "\\b((?:[[:alnum:]_.]+::)?read\\.(?:csv2?|table|delim2?)|(?:[[:alnum:]_.]+::)?readRDS|(?:[[:alnum:]_.]+::)?load|(?:[[:alnum:]_.]+::)?read_(?:csv2?|tsv|delim|rds|lines)|(?:[[:alnum:]_.]+::)?fread|(?:[[:alnum:]_.]+::)?read_(?:xlsx?|excel)|(?:[[:alnum:]_.]+::)?read\\.xlsx|(?:[[:alnum:]_.]+::)?read_(?:dta|sav|sas)|(?:[[:alnum:]_.]+::)?read\\.dta|(?:[[:alnum:]_.]+::)?read_feather|(?:[[:alnum:]_.]+::)?read_parquet|(?:[[:alnum:]_.]+::)?fromJSON|(?:[[:alnum:]_.]+::)?read_yaml|(?:[[:alnum:]_.]+::)?read_xml|(?:[[:alnum:]_.]+::)?read_ods|(?:[[:alnum:]_.]+::)?readtext)\\s*\\("
 # Lines with data-loading calls
-load_lines <- grep(.load_pat, rfile_nc, value = TRUE, perl = TRUE)
+load_lines <- grep(grepl_load, rfile_nc, value = TRUE, perl = TRUE)
 
 loaded_paths <- unique(unlist(lapply(load_lines, function(ln) {
   cand <- .extract_quoted(ln)
@@ -809,6 +816,8 @@ r_files_only$sourced_files[[i]] <- list(sourced_files)
 } 
 
 
+
+
 ```
 
 PROVDE SOME SUMMARY OF RUNNING THIS CODE ON ALL PSYCH SCIENCE PAPERS, AFTER VALIDATING THE CODE A BIT
@@ -817,874 +826,565 @@ PROVDE SOME SUMMARY OF RUNNING THIS CODE ON ALL PSYCH SCIENCE PAPERS, AFTER VALI
 
 It is increasingly common for researchers to preregister their studies [@spitzer2023registered; @imai2025pre]. As preregistration is a new practice, best practices are continuously being developed. Researchers who preregister should ideally continuously stay up-to-date about these best practices, but in practice researchers might not have the time to do so. Automation can assist researchers in keeping up-to-date about updated best practices. 
 
-It has recently become clear that researchers often fail to disclose deviations from their preregistration [@van2024potential], but that is is important to do so. Reviewers could check whether researchers adhere to the preregistration, but this requires additional time from peer reviewers. As peer review is already considered insufficiently rewarded, and it is increasingly difficult to find researchers willing to peer review articles, it would be beneficial make such checks as effortless as possible. Here we demonstrate how Papercheck can automatically retrieve the content of a preregistration. The preregistration can then be presented alongside the relevant information in the manuscript. We focus on AsPredicted preregistrations as their structured format makes it especially easy to retrieve information, but the same principle can be applied to other preregistration databases. 
+It has recently become clear that researchers often fail to disclose deviations from their preregistration [@van2024potential], but that is is important to do so. Reviewers could check whether researchers adhere to the preregistration, but this requires additional time. As peer review is already considered insufficiently rewarded, and it is increasingly difficult to find researchers willing to peer review articles, it would be beneficial make such checks as effortless as possible. Here we demonstrate how Metacheck can automatically retrieve the content of a preregistration. The preregistration can then be presented alongside the relevant information in the manuscript. We focus on AsPredicted preregistrations as their structured format makes it especially easy to retrieve information, but the same principle can be applied to other preregistration databases.
+
+
+```{r}
+# As Predicted Links
+paper <- psychsci[["09567976241239935"]]
+links_ap <- aspredicted_links(psychsci)
+ap_url <- links_ap
+info_ap <- aspredicted_retrieve(ap_url, id_col = 1, wait = 20)
+info_ap$AP_sample_size
+
+```
+
+
+The first step is to identify hyperlinks to AsPredicted preregistrations. Metacheck provides a convenient function for extracting these links: `aspredicted_links()`. The function cleans up the links when they are incorrectly formatted, such as a link is split across two sentences, which is common in scientific PDF files. The published version of articles sometimes still includes 'blind' links, which are useful to allow anonymous peer review, but when a paper is accepted, the link should be replaced by the normal link to the AsPredicted preregistration. Forgetting to replace these links is an example of a lapse that automation can prevent. If a link to AsPredicted is identified, the function `aspredicted_retrieve()` can be used to retrieve the preregistration from the AsPredicted website. Each item in the preregistration, such as the planned sample size, is stored. 
+
+Recent metascientific research on preregistrations [@vandenakker_potential_2024] has shown that the most common deviation from a preregistration in practice is that researchers do not collect the sample size that they preregistered. This is not necessarily problematic, as a difference might be only a single datapoint. Nevertheless, researchers should discuss the deviation, and evaluate whether the deviation impacts the severity of the test [@lakens_when_2024]. Checking the sample size of a study against the preregistration requires some effort, as the preregistration document needs to be opened, and the text in the manuscript needs to be located. Recently, a fully automatic comparison tool, ([RegCheck](https://regcheck.app/)) has been created by Jamie Cummins from the University of Bern, that relies on large language models and AI where users upload the manuscript, the preregistration, and receive an automated comparison. We take a slightly different approach. We retrieve the preregistration from AsPredicted automatically, and present users with the information about the preregistered sample size (which is straightforward given the structured approach of the AsPredicted template). We then recommend users to compare this information against the method section in the manuscript.
+
+THIS NEEDS TO BE TURNED INTO AN ACTUAL MODULE THAT CAN RUN. IT SHOULD JUST RETRIEVE THE PREREG AND PRINT THE ITEMS WITH SOME TEXT, AND GIVE THE OPTION TO GET MORE INFO. THE MODULE SHOULD WORK FOR BOTH OSF AND ASPREDICTED LINKS. 
 
 ### Checking Power Analyses
 
-Researchers should provide a sample size justification when they design a study to provide an argument why the study has sufficient informational value with respect to its inferential goal [@lakens_justification_2022]. One approach to a sample size justification is a power analysis. Peers need to be able to evaluate the power analysis to examine with the arguments for the informational value of the study design are valid. This requires that all parameters of the power analysis are reported: The type of power analysis (e.g., a-priori, comprimise, sensitivity), the statistical test that the power analysis is performed for (e.g., an independent t-test, a within-between interaction effect in a 2x2 ANOVA), the effect size metric (e.g., d, r, odds ratio), the effect size (a numerical value, e.g., 0.3), the desired power (e.g., 95%), and the alpha level (commonly 0.05, but it is possible that this value needs to be adjusted for multiple comparisons). Many power analyses do not report all the required information. Moreover, some researchers perform post-hoc power analyses where they compute the power for the observed effect size, given the collected sample size. This flawed practice is performed in an attempt to answer the question whether a non-significant result is a Type 2 error, which post-hoc power can not answer.
+To design an informative study, researchers should collect sufficient data. The final number of observations should be justified respect to the inferential goal of the study [@lakens_justification_2022]. One approach to a sample size justification is an a priori power analysis. If an a priori power analysis is performed, it should be reported transparently for peers to be able to evaluate the sample size justification. This requires researchers to specify the type of power analysis (e.g., a priori, compromise, sensitivity), the statistical test that the power analysis is performed for (e.g., an independent *t*-test, a within-between interaction effect in a 2x2 ANOVA), the effect size metric (e.g., *d*, *r*, odds ratio), the effect size (a numerical value, e.g., 0.3), the desired power (e.g., 95%), and the alpha level (e.g., 0.05). Many power analyses do not transparently report this information. Moreover, some researchers perform post-hoc power analyses where they compute the power for the observed effect size, given the collected sample size, even though this practice is flawed.
 
 The powercheck module aims to assist researchers in fully reporting power analysis, and dissuade them from performing a post-hoc power analysis. It first searches for the word "power\[ed\]", and based on a pre-trained local logistic regression model classifies sentences as a statistical power analysis, or not. Sentences classified as probable power analysis statements are then expanded by including the previous and two subsequent sentences, and sent to Groq, a service for artificial intelligence inference. Groq can run a range of different language models, such as Llama 3.3 70B, an open source language model. Based on a prompt the Groq API returns a JSON structured dataset with either the content of the parameters that should be reported in a power analysis, or missing information if the language model can not retrieve the values for certain parameters.
 
 The information retrieved from the language model is then cleaned (e.g., by removing spaces) and standardized (e.g., Cohen's d, ds, and Hedges' g are all recoded as 'd', 0.8, 80%, and .80 are recoded as 0.80, etc.). An additional simple text search for words such as 'post-hoc power' or 'observed power' is performed. Based on this information users are informed about which parameters were not automatically identified, or why observed power analyses should not be informed. Given the complexity of natural language, we should expect Type 1 and type 2 errors. For an example , the sentence "Null of 33% power Note: The observed p -curve includes 29 statistically significant (p \< .05) results, of which 14 are p \< .025. There were 8 additional results entered but excluded from p-curve because they were p \> .05." was incorrectly classified as a sentence describing a power analysis (i.e., a Type 1 error) dus to the presence of a significance level threshold, and numbers of entities included and excluded in the analysis. The following sentence is an example of a Type 2 error: "We attempted to recruit 200 participants to have sufficient power to detect a small to moderate effect size, but in recruiting groups of friends on campus, we ended up with 199 fluent English speakers (105 female)". This statement provides too minimal information about the details of the power analysis to be classified as one.
+Type 1 errors are annoying, but this annoyance is hopefully in the long run compensated by the benefits of a tool such as Metacheck. Type 2 errors miss an opportunity to inform users of best practices. However, it is possible to still report the result of the power module by stating that no reported power analyses were identified, and informing users that if this is incorrect, they might want to reconsider whether the way they reported the power analysis is clear enough for human readers. A statement such as "We performed an a-priori power analysis for a one-sided dependent t-test with an alpha of 0.05, a desired power of 0.95, an effect size of interest of dz = 0.2, which lead to a required sample size of N = 272" should have a very high probability of being automatically detected and should allow all parameters to be automatically retrieved by the algorithm. Out of all 707 power analysis statements (although these include some double counted due to overlapping sentences) 72 were fully reported. Some missing information might not be considered too problematic, such as the alpha level which is almost exclusively 5% (although some researchers used 0.01 or corrected the alpha level for multiple comparisons) or the test (which can sometimes - although too often not - be retrieved from the result section. The simple warning for observed power based simply on a regex text search would catch the use of 'post-hoc' power in 45 instances across 37 papers. This bad practice is a rare occurrence, but flaw is relatively serious, and hence worth correcting through an automated tool.
 
-Type 1 errors are annoying, but this annoyance is hopefully in the long run compensated by the benefits of a tool such as papercheck. Type 2 errors miss an opportunity to inform users of best practices. However, it is possible to still report the result of the power module by stating that no reported power analyses were identified, and informing users that if this is incorrect, they might want to reconsider whether the way they reported the power analysis is clear enough for human readers. A statement such as "We performed an a-priori power analysis for a one-sided dependent t-test with an alpha of 0.05, a desired power of 0.95, an effect size of interest of dz = 0.2, which lead to a required sample size of N = 272" should have a very high probability of being automatically detected and should allow all parameters to be automatically retrieved by the algorithm. Out of all 707 power analysis statements (although these include some double counted due to overlapping sentences) 72 were fully reported. Some missing information might not be considered too problematic, such as the alpha level which is almost exclusively 5% (although some researchers used 0.01 or corrected the alpha level for multiple comparisons) or the test (which can sometimes - although too often not - be retrieved from the result section. The simple warning for observed power based simply on a regex text search would catch the use of 'post-hoc' power in 45 instances across 37 papers. This bad practice is a rare occurrence, but flaw is relatively serious, and hence worth correcting through an automated tool.
-
-```{r}
-# Load required package
-library(writexl)
-
-text_found_power <- search_text(xml, "power(ed)?\\b", return = "sentence")
-
-# Read in manually validated data (subset of total above)
-coded_power <- read_xlsx("power_validate_search_power_2_5_2025_completed.xlsx")
-coded_power$id <- sub("\\.xml$", "", coded_power$id)
-
-# Remove results from a metascience paper by Bakker. It will confuse the logistic regression classifier.  
-coded_power <- coded_power[coded_power$id != "0956797616647519", ]
-# Expand the text
-coded_power <- expand_text(coded_power, xml, expand_to = "sentence", plus = 1)
-
-
-# Create a logistic regression classifier (Code by Lisa)
-train <- dplyr::slice_sample(coded_power, prop = 0.5)
-test <- anti_join(coded_power, train, by = "text")
-
-# words <- distinctive_words(
-#   text = train$text,
-#   classification = train$power_computation,
-#   n = 20,
-#   numbers = "specific",
-#   stop_words = c("the", "a", "of", "an", "and", "in", "we", "to", "with", "were", "et", "al")
-# )
-
-has_symbols <- c(has_equals = "=", 
-                 has_percent = "%",
-                 has_80 = ".80",
-#                 has_80percent = "80%",
-                 has_90percent = "90%",
-                 has_apriori = "a priori",
-                 has_eta = "η p 2",
-                 has_cohend = "Cohen's d",
-                 has_gpower = "G*Power")
-
-power_words <- c("power", "size", "sampl", "particip", "detect", "analys", "05", "α")
-
-# Only text
-
-features <- text_features(
-  text = train$text, 
-  words = power_words,
-  word_count = FALSE, 
-  has_number = TRUE,
-  has_symbol = has_symbols,
-  values = "presence" # presence or count
-)
-
-# show the first row
-features[1, ] |> str()
-
-# Train logistic regression model
-
-model <- glm(train$power_computation ~ .,
-             data = features,
-             family = "binomial")
-
-summary(model)
-
-train$model_response <- predict(model, features)
-
-train$power_computation_predict <-
-  train$model_response > 0.5
-
-dplyr::count(train, 
-             power_computation, 
-             power_computation_predict)
-
-test_features <- text_features(
-  text = test$text, 
-  words = power_words,
-  word_count = FALSE, 
-  has_number = TRUE,
-  has_symbol = has_symbols, 
-  values = "presence" # presence or count
-)
-test$model_response <- predict(model, test_features)
-
-test$power_computation_predict <-
-  test$model_response > 0.5
-
-dplyr::count(test, 
-             power_computation, 
-             power_computation_predict)
-
-# Add column to easily check matches and mismatches
-test$match_result <- ifelse(
-  as.logical(test$power_computation) == test$power_computation_predict,
-  "correct",
-  "false"
-)
-
-train$match_result <- ifelse(
-  as.logical(train$power_computation) == train$power_computation_predict,
-  "correct",
-  "false"
-)
-
-
-# Expanded
-
-features <- text_features(
-  text = train$expanded, 
-  words = power_words,
-  word_count = FALSE, 
-  has_number = TRUE,
-  has_symbol = has_symbols,
-  values = "presence" # presence or count
-)
-
-# show the first row
-features[1, ] |> str()
-
-# Train logistic regression model
-
-model <- glm(train$power_computation ~ .,
-             data = features,
-             family = "binomial")
-
-summary(model)
-
-train$model_response_expanded <- predict(model, features)
-
-train$power_computation_predict_expanded <-
-  train$model_response_expanded > 0.5
-
-dplyr::count(train, 
-             power_computation, 
-             power_computation_predict_expanded)
-
-test_features <- text_features(
-  text = test$expanded, 
-  words = power_words,
-  word_count = FALSE, 
-  has_number = TRUE,
-  has_symbol = has_symbols, 
-  values = "presence" # presence or count
-)
-test$model_response_expanded <- predict(model, test_features)
-
-test$power_computation_predict_expanded <-
-  test$model_response_expanded > 0.5
-
-dplyr::count(test, 
-             power_computation, 
-             power_computation_predict_expanded)
-
-# Add column to easily check matches and mismatches
-test$match_result_expanded <- ifelse(
-  as.logical(test$power_computation) == test$power_computation_predict_expanded,
-  "correct",
-  "false"
-)
-
-train$match_result_expanded <- ifelse(
-  as.logical(train$power_computation) == train$power_computation_predict_expanded,
-  "correct",
-  "false"
-)
-
-# Now run this on the psych_science dataset
-# Question: Run on $text, or @expanded_text? Now on text 
-test_features <- text_features(
-  text = text_found_power$text, 
-  words = power_words,
-  word_count = FALSE, 
-  has_number = TRUE,
-  has_symbol = has_symbols, 
-  values = "presence" # presence or count
-)
-text_found_power$model_response <- predict(model, test_features)
-
-# Question: Which cut-off value works best? >0? Especially since the lmm can also kick out some non-power sentences? 
-text_found_power$power_computation_predict <-
-  text_found_power$model_response > 0.5
-
-# Expand the text
-text_found_power <- expand_text(text_found_power, xml, expand_to = "sentence", minus =1, plus = 2)
-
-# Save as Excel
-write_xlsx(text_found_power, path = paste0("power_validate_search_power-5-24-2025.xlsx"))
-
-```
-
-Now we ask an LLM to process the power analysis statements.
-
-```{r}
-# Define the query
-query <- paste0(
-  "You will be given a piece of academic text. Your task is to:\n\n",
-  "1. **Classify** the type of power analysis mentioned:\n",
-  "   - \"a priori\": if power analysis is done before data collection to determine sample size.\n",
-  "   - \"post hoc\": if power is computed after observing the results (e.g., effect size, p-values).\n",
-  "   - \"unclear\": if it's not clear whether the power analysis is pre- or post-data.\n",
-  "   - \"no power analysis\": if there's no mention of power analysis.\n\n",
-  "2. **Extract the following fields**, but only if the classification is \"a priori\" or \"post-hoc\":\n\n",
-  "   - \"statistical_test\": What statistical test is used (e.g., ANOVA, t-test).\n",
-  "   - \"alpha_level\": The alpha level (e.g., 0.05).\n",
-  "   - \"effect_size\": The numeric effect size used.\n",
-  "   - \"type_effect_size\": The type of effect size (e.g., standardized mean differences (indicated by the letter d for between designs, and d z for within designs), or by for example the letters f, η² or η p 2, etc.).\n",
-  "   - \"desired_power\": The target statistical power (e.g., 0.80, 0.90, or 80%, 95%).\n",
-  "   - \"total_sample_size\": The total sample size specified or required.\n\n",
-  "Use \"unknown\" if any of the values are not specified. Always return a valid JSON object in the following format, making such all \"and { and } are present:\n\n",
-  "{\n",
-  "  \"classification\": \"a priori\" | \"post hoc\" | \"unclear\" | \"no power analysis\",\n",
-  "  \"statistical_test\": \"x\",\n",
-  "  \"alpha_level\": \"x\",\n",
-  "  \"effect_size\": \"x\",\n",
-  "  \"type_effect_size\": \"x\",\n",
-  "  \"desired_power\": \"x\",\n",
-  "  \"total_sample_size\": \"x\"\n",
-  "}\n"
-)
-
-
-# Define batch size
-llm_max_calls(n = 800)
-batch_size <- 100
-text_found_power$llm_result <- NA_character_  # Ensures it's a character column
-
-# Get total number of rows
-total_rows <- nrow(text_found_power)
-starting_row <- 1
-
-# Filter rows where power_computation_predict is TRUE
-rows_to_process <- which(text_found_power$power_computation_predict)
-
-# Total rows to process
-total_rows <- length(rows_to_process)
-
-# Loop in batches
-for (j in seq(801, total_rows, by = batch_size)) {
-  
-  # Define batch range
-  batch_end <- min(j + batch_size - 1, total_rows)
-  batch_indices <- rows_to_process[j:batch_end]
-  
-  # Select batch of text
-  text_batch <- text_found_power$expanded[batch_indices]
-  
-  # Try sending requests to LLM
-  tryCatch({
-    res <- llm(text_batch, query)  # Call the LLM
-    
-    # Store the results
-    text_found_power$llm_result[batch_indices] <- res$answer  
-    
-    # Print progress
-    cat("Completed batch indices:", j, "to", batch_end, "\n")
-    
-    # Ask whether to continue
-    continue <- readline(prompt = "Do you want to continue? (Y/N): ")
-    
-    if (tolower(continue) == "n") {
-      cat("You can continue later starting from batch index:", j + batch_size, "\n")
-      break
-    }
-    
-  }, error = function(e) {
-    cat("Error at batch indices:", j, "to", batch_end, "\n")
-    cat("Error message:", e$message, "\n")
-    stop("Stopping script due to error.")
-  })
-}
-
-filename <- paste0("data/power_lmm_expanded_", format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), ".RData")
-save(text_found_power, file = filename)
-
-# Load lmm data.
-load("data/power_lmm_complete2025-05-24_08-23-08.RData")
-
-# Fix missing } at end of JSON and some missing ". The LLM is not perfect. For app, needs a check if valid json was generated.  
-
-text_found_power$llm_result <- ifelse(
-  !grepl("\\}$", text_found_power$llm_result) & !is.na(text_found_power$llm_result),
-  paste0(text_found_power$llm_result, "}"),
-  text_found_power$llm_result
-)
-
-text_found_power$llm_result[1041] <- "{\n  \"classification\": \"a priori\",\n  \"statistical_test\": \"omnibus interaction effect\",\n  \"alpha_level\": \"unknown\",\n  \"effect_size\": \"0.3\",\n  \"type_effect_size\": \"d\",\n  \"desired_power\": \"0.80\",\n  \"total_sample_size\": \"38\"\n}"
-
-text_found_power$llm_result[1110] <- "{\n  \"classification\": \"a priori\",\n  \"statistical_test\": \"analysis of variance\",\n  \"effect_size\": \"0.4\",\n  \"type_effect_size\": \"standard deviations\",\n  \"desired_power\": \"0.86\",\n  \"total_sample_size\": \"120\"\n}"
-
-text_found_power$llm_result[1532] <- "{\n  \"classification\": \"a priori\",\n  \"statistical_test\": \"2 × 2 interaction\",\n  \"alpha_level\": \"0.05\",\n  \"effect_size\": \"moderate\",\n  \"type_effect_size\": \"unknown\",\n  \"desired_power\": \"0.8\",\n  \"total_sample_size\": \"60\"\n}"
-
-text_found_power$llm_result[1979] <- "{\n  \"classification\": \"a priori\",\n  \"statistical_test\": \"unknown\",\n  \"effect_size\": \"0.30\",\n  \"type_effect_size\": \"d\",\n  \"desired_power\": \"0.80\",\n  \"total_sample_size\": \"278\"\n}"
-
-text_found_power$llm_result[2018] <- "{\n  \"classification\": \"post hoc\",\n  \"statistical_test\": \"F test, t test\",\n  \"alpha_level\": \"< .001\",\n  \"effect_size\": \"0.22\",\n  \"type_effect_size\": \"η p 2\",\n  \"desired_power\": \"unknown\",\n  \"total_sample_size\": \"96\"\n}"
-
-text_found_power$llm_result[2423] <- "{\n  \"classification\": \"post hoc\",\n  \"statistical_test\": \"F-test\",\n  \"alpha_level\": \"< .001\",\n  \"effect_size\": \".446, .395, .175\",\n  \"type_effect_size\": \"η p 2\",\n  \"desired_power\": \"unknown\",\n  \"total_sample_size\": \"198\"\n}"
-
-text_found_power$llm_result[3662] <- "{\n  \"classification\": \"a priori\",\n  \"statistical_test\": \"unknown\",\n  \"alpha_level\": \"unknown\",\n  \"effect_size\": \"unknown\",\n  \"type_effect_size\": \"unknown\",\n  \"desired_power\": \"0.991, 0.801\",\n  \"total_sample_size\": \"350\"\n}"
-
-# First create empty columns with the appropriate names
-new_cols <- c("classification", "statistical_test", "alpha_level", "effect_size",
-              "type_effect_size", "desired_power", "total_sample_size")
-
-text_found_power[new_cols] <- NA
-
-# Process each row
-for (i in seq_len(nrow(text_found_power))) {
-  print(i)
-  json_text <- text_found_power$llm_result[i]
-  
-  if (!is.na(json_text) && nchar(json_text) > 0) {
-    result <- fromJSON(json_text)
-    
-    # Assign each element to the corresponding new column
-    for (col in new_cols) {
-      if (!is.null(result[[col]])) {
-        text_found_power[[col]][i] <- result[[col]]
-      }
-    }
-  }
-}
-
-```
-
-Now we can take a look at how often which info is missing, if power analyses increase over time, etc. We first merge everything into psych_science
-
-```{r}
-# Merge
-# 1. Identify IDs with predicted power analysis
-ids_with_power <- text_found_power %>%
-  filter(power_computation_predict == TRUE) %>%
-  distinct(id) %>%
-  pull(id)
-
-# 2. Aggregate power_text and expanded text per ID
-power_rows <- text_found_power %>%
-  filter(power_computation_predict == TRUE) %>%
-  group_by(id) %>%
-  summarise(
-    power_text = list(text),
-    power_text_expanded = list(expanded),
-    classification = list(na.omit(classification)),
-    statistical_test = list(na.omit(statistical_test)),
-    alpha_level = list(na.omit(alpha_level)),
-    effect_size = list(na.omit(effect_size)),
-    type_effect_size = list(na.omit(type_effect_size)),
-    desired_power = list(na.omit(desired_power)),
-    total_sample_size = list(na.omit(total_sample_size)),
-    .groups = "drop"
-  ) %>%
-  mutate(across(
-    classification:total_sample_size,
-    ~ map(.x, ~ if(length(.x) == 0) NA else .x)
-  ))
-
-# 3. Join and assign has_power_analysis based on ID presence
-psych_science <- psych_science %>%
-  left_join(power_rows, by = "id") %>%
-  mutate(has_power_analysis = id %in% ids_with_power)
-
-# save(psych_science, file = "psych_science_with_power_expanded.RData")
-load(file = "psych_science_with_power_expanded.RData")
-
-# Clean up data
-
-psych_science <- psych_science %>%
-  mutate(
-    type_effect_size = map(type_effect_size, function(x) {
-      if (is.null(x) || length(x) == 0) return(NULL)
-      
-      # Replace your patterns first
-      x <- str_replace_all(x, "(?i)\\bd\\s?z\\b", "dz")
-      x <- str_replace_all(x, "(?i)\\bcorrelation\\s?coefficient\\b", "r")
-      x <- str_replace_all(x, "(?i)\\bhedges['’]?s\\s?g\\b", "d")
-      x <- str_replace_all(x, "(?i)\\bcohen['’]?s\\s?d\\b", "d")
-      x <- str_replace_all(x, "η\\s?p\\s?2", "ηp2")
-      x <- str_replace_all(x, "f\\s?2", "f2")
-      x <- str_replace_all(x, "f\\s?²", "f2")
-      x <- str_replace_all(x, "(?i)\\bcohen['’]?s\\s?f²\\b", "f2")
-      x <- str_replace_all(x, "(?i)\\bcohen['’]?s\\s?f\\s?2\\b", "f2")
-      x <- str_replace_all(x, "(?i)\\bcohen['’]?s f\\b", "f")
-      x <- str_replace_all(x, "(?i)\\br\\s?2\\b|\\br²\\b|\\br\\^2\\b|\\bR\\s?2\\b|\\bR²\\b|\\bR\\^2\\b", "r2")
-      
-      # Trim leading and trailing whitespace (spaces, tabs, newlines, etc.)
-      x <- stri_trim_both(x)
-      
-      # Replace multiple internal whitespace (space, tab, newline) with a single space
-      x <- str_replace_all(x, "\\s+", " ")
-      
-      # Remove any empty strings if they exist after trimming
-      x <- x[x != ""]
-      
-      if (length(x) == 0) return(NULL)
-      
-      return(x)
-    })
-  )
-
-
-# Clean desired_power
-
-format_power_value <- function(x) {
-  # Convert to numeric safely
-  num <- suppressWarnings(as.numeric(x))
-  if (is.na(num)) return(NA_character_)
-  # Format with 2 decimals and leading zero (sprintf always adds leading zero)
-  sprintf("%.2f", num)
-}
-
-psych_science <- psych_science %>%
-  mutate(
-    desired_power = map(desired_power, ~ {
-      if (is.null(.x) || length(.x) == 0) return(NULL)
-      # Clean each value in the vector
-      cleaned <- map_chr(.x, format_power_value)
-      cleaned
-    })
-  )
-
-```
-
-We can now summarize this data.
-
-```{r}
-
-# Assuming psych_science$desired_power is a list-column (each element either a vector of values or a single value)
-
-# Step 1: Make sure every element is a list/vector (wrap singles in list if needed)
-psych_science <- psych_science %>%
-  mutate(desired_power = map(desired_power, ~ if (length(.x) == 0) NULL else as.character(.x)))
-
-# Step 2: Unnest the list-column so each value is one row
-all_desired_power <- psych_science %>%
-  select(desired_power) %>%
-  unnest(desired_power)
-
-# Step 3: Count frequencies
-freq_table <- all_desired_power %>%
-  filter(!is.na(desired_power)) %>%
-  count(desired_power, sort = TRUE)
-
-print(freq_table)
-
-
-library(dplyr)
-library(tidyr)
-library(purrr)
-library(ggplot2)
-
-# 1. Prepare desired_power as list of character vectors (you already have this)
-psych_science <- psych_science %>% 
-  mutate(desired_power = map(desired_power, ~ if (length(.x) == 0) NULL else as.character(.x)))
-
-# 2. Unnest desired_power to long format
-desired_power_long <- psych_science %>%
-  select(year, desired_power) %>%
-  unnest(desired_power) %>%
-  filter(!is.na(desired_power))
-
-# 3. Filter only the powers you want to plot
-powers_to_plot <- c("0.80", "0.90", "0.95")
-
-desired_power_filtered <- desired_power_long %>%
-  filter(desired_power %in% powers_to_plot)
-
-# 4. Count frequency per year and desired_power
-freq_by_year <- desired_power_filtered %>%
-  count(year, desired_power)
-
-# 5. Plot histogram (bar plot) with ggplot2
-ggplot(freq_by_year, aes(x = factor(year), y = n, fill = desired_power)) +
-  geom_col(position = "dodge") +
-  labs(
-    title = "Frequency of Desired Power Values Over Years",
-    x = "Year",
-    y = "Count",
-    fill = "Desired Power"
-  ) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-```
-
-What would our feedback from the papercheck app look like?
-
-```{r}
-
-check_power_analysis <- function(single_paper, verbose = FALSE) {
-  cols_to_check <- c("classification", "power_text_expanded", "statistical_test", "alpha_level", "effect_size", "type_effect_size", "desired_power", "total_sample_size")
-  
-  analysis_fields <- c(
-    "statistical_test", "alpha_level", "effect_size",
-    "type_effect_size", "desired_power", "total_sample_size"
-  )
-
-  # Check that all columns are lists and have equal lengths
-  list_lengths <- sapply(single_paper[cols_to_check], function(x) {
-    if (is.null(x[[1]])) return(0)
-    if (!is.list(x)) return(NA)
-    length(x[[1]])
-  })
-
-  if (length(unique(list_lengths)) != 1 || any(is.na(unique(list_lengths)))) {
-    msg <- paste0("⚠️ Row with ID ", single_paper$id, 
-                  ": Not all power analysis columns contain the same number of items.")
-    if (verbose) cat(msg, "\n\n")
-    return(NULL)
-  }
-
-  # Expand and deduplicate
-  expanded_df <- single_paper %>%
-    mutate(row_id = 1) %>%
-    unnest_longer(all_of(cols_to_check)) %>%
-    distinct(across(all_of(analysis_fields)), .keep_all = TRUE) %>%
-    group_by(row_id) %>%
-    mutate(power_analysis_number = paste0("power analysis ", row_number())) %>%
-    ungroup()
-
-  # Message prefix for multiple analyses
-  if (nrow(expanded_df) > 1 && verbose) {
-    cat(paste0("Papercheck identified ", nrow(expanded_df), " power analysis statements.\n\n"))
-  }
-
-  # Loop through each analysis row and collect messages
-  power_summaries <- vector("character", length = nrow(expanded_df))
-
-  for (i in seq_len(nrow(expanded_df))) {
-    row <- expanded_df[i, ]
-
-    msg <- case_when(
-      is.null(row$power_text_expanded[[1]]) || all(is.na(row$power_text_expanded[[1]])) ~
-        "We found no power analysis in this paper. If you intended to report a power analysis, it might need to be reported more systematically and completely to be automatically identified.",
-      TRUE ~ paste(
-        "Papercheck has identified the following text as a power analysis:",
-        row$power_text_expanded[[1]],
-        sep = "\n\n"
-      )
-    )
-
-    # Identify missing fields
-    missing_info <- cols_to_check[-1][
-      sapply(row[cols_to_check[-1]], function(x) {
-        val <- x[[1]]
-        is.null(val) || is.na(val) || tolower(str_trim(val)) == "unknown"
-      })
-    ]
-
-    # Append missing/completeness message
-    if (length(missing_info) > 0) {
-      msg <- paste(
-        msg,
-        crayon::red$bold("The following information was missing in the description of the power analysis, or not automatically identified:"),
-        paste(missing_info, collapse = ", "),
-        sep = "\n\n"
-      )
-    } else {
-      msg <- paste(
-        msg,
-        crayon::green$bold("This power analysis is reported completely, including all information required to increase the probability that it can be independently replicated. If not done already, consider adding a link to computationally reproducible code for this power analysis, or a screenshot or report provided by the power analysis software you are using."),
-        sep = "\n\n"
-      )
-    }
-
-    # Add analysis header if needed
-    if (nrow(expanded_df) > 1) {
-      msg <- paste0("== ", row$power_analysis_number, " ==\n", msg)
-    }
-
-    # Save message
-    power_summaries[i] <- msg
-
-    # Conditionally print
-    if (verbose) cat(msg, "\n\n---\n\n")
-  }
-
-  # Add message to dataframe
-  expanded_df$power_summary <- power_summaries
-
-  # Add reported columns
-  for (field in analysis_fields) {
-    expanded_df[[paste0(field, "_reported")]] <- !(
-      is.na(expanded_df[[field]]) |
-        tolower(trimws(expanded_df[[field]])) == "unknown"
-    )
-  }
-
-  return(expanded_df)
-}
-
-# Now apply it to psych_science for rows with has_power_analysis
-# Need to update this, exclude all rows not deemed a power analysis
-result_df <- psych_science %>%
-  filter(has_power_analysis == TRUE) %>%
-  split(1:nrow(.)) %>%
-  map_dfr(check_power_analysis)  # map_dfr binds all returned dataframes together
-
-```
-
-Percentage of papers with a power analysis per year:
-
-```{r}
-# Calculate percentage of studies with power analysis per year
-# Summarize
-power_by_year <- psych_science %>%
-  group_by(year) %>%
-  summarise(
-    total = n(),
-    with_power = sum(has_power_analysis, na.rm = TRUE),
-    percent_with_power = 100 * with_power / total
-  )
-
-# Plot
-ggplot(power_by_year, aes(x = year, y = percent_with_power)) +
-  geom_line(group = 1, color = "steelblue") +
-  geom_point(color = "steelblue") +
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  scale_x_continuous(
-    breaks = power_by_year$year,  # One tick per year
-    labels = power_by_year$year
-  ) +
-  labs(
-    title = "Percentage of Studies With Power Analysis by Year",
-    x = "Year",
-    y = "Percent with Power Analysis"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate for clarity
-  )
-
-
-
-# Define the fields to check
-fields <- c("statistical_test", "alpha_level", "effect_size", 
-            "type_effect_size", "desired_power", "total_sample_size")
-
-# Create a long-format dataframe with reported flags
-long_df <- result_df %>%
-  mutate(year = as.integer(year)) %>%
-  pivot_longer(
-    cols = all_of(paste0(fields, "_reported")),
-    names_to = "field",
-    values_to = "reported"
-  ) %>%
-  mutate(field = str_remove(field, "_reported"))
-
-# Calculate percentage reported per year per field
-summary_df <- long_df %>%
-  group_by(year, field) %>%
-  summarise(
-    total = n(),
-    reported_n = sum(reported, na.rm = TRUE),
-    percent_reported = 100 * reported_n / total,
-    .groups = "drop"
-  )
-
-# Create the plot
-ggplot(summary_df, aes(x = year, y = percent_reported, color = field)) +
-  geom_line(size = 1.1) +
-  geom_point(size = 2) +
-  scale_y_continuous(
-    limits = c(0, 100),
-    breaks = seq(0, 100, by = 10),
-    labels = scales::percent_format(scale = 1)
-  ) +
-  scale_x_continuous(
-    breaks = sort(unique(summary_df$year))
-  ) +
-  labs(
-    title = "Reporting of Power Analysis Components Over Time",
-    x = "Year",
-    y = "Percentage Reported",
-    color = "Reported Field"
-  ) +
-  theme_minimal(base_size = 14) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-# Identify all _reported columns
-reported_cols <- grep("_reported$", names(result_df), value = TRUE)
-
-# Summarize per id: was each field ever missing (i.e., FALSE)?
-summary_per_column <- result_df %>%
-  group_by(id) %>%
-  summarise(across(all_of(reported_cols), ~ any(!.x), .names = "{.col}_missing")) %>%
-  ungroup()
-
-# Step 2: Select only the *_missing columns
-missing_only <- summary_per_column %>%
-  select(ends_with("_missing"))
-
-# Count how many times each field was missing
-missing_counts <- missing_only %>%
-  summarise(across(everything(), sum)) %>%
-  pivot_longer(cols = everything(), names_to = "field", values_to = "papers_with_missing")
-
-
-# Total number of papers
-n_papers <- nrow(summary_per_column)
-
-# Add percentage column
-missing_summary <- missing_counts %>%
-  mutate(
-    field = str_replace(field, "_reported_missing$", ""),
-    percent_missing = round(100 * papers_with_missing / n_papers, 1)
-  )
-
-missing_summary
-
-# Find all columns ending with _reported
-reported_cols <- grep("_reported$", names(result_df), value = TRUE)
-
-# Count how many rows have all _reported columns as TRUE
-fully_reported_count <- result_df %>%
-  filter(if_all(all_of(reported_cols), ~ .x == TRUE)) %>%
-  nrow()
-
-# Print result
-fully_reported_count
-
-```
+ADD POWER ANALYSIS EXAMPLE
 
 We should summarize that 1) Not all power analyses are detected, and it is important to increase the accuracy of the workflow. There are false positives and false negatives. At the same time, for the 1838 papers in psych science, we can currently identify and extract information for 445 papers, which contain 707 sentences identified as power analyses. In these 445 we can warn people for missing statistical tests 334 times, missing alpha levels 296 times, missing effect sizes 106 times, missing type of effect sizes 142 times, desired power in 108 papers and the final sample size in XX.
 
+## Creating Metacheck Modules
+
+Metacheck is module based. Modules are very similar to the functions in R packages. Community engagement and epistemic diversity is a core value of the Metacheck developers. A healthy science discusses what should be considered a best practice. We have therefore made it as easy as possible for anyone to transform their own views about best practices into a Metacheck module. Anyone can create a module that performs checks and validate it against ground truth. Modules can be shared and installed locally, or submitted to the Metacheck R package through a pull request on Github. This makes it possible for journals in any scientific discipline to create modules that check requirements in the author submission guidelines, for experts on any aspect of the scientific process to create automated warnings for problems they often have to point out during peer review, and for organizations to create a module that check if researchers adhere to reporting guidelines that they create. 
+
+Metacheck can also function as a hub for existing automated checks. Although researchers run their manuscript through multiple tools, websites, or services, it is more convenient if a single tool combines all existing checks. This might also help researchers to discover automated checks that they are not yet aware of. As a demonstration of how other checks can be incorporated into Metacheck we have created a Statcheck module (Nuijten et al. 2015) for Metacheck. Statcheck has not been extensively validated yet, but an initial study shows `that only for *t*t-tests, *F*-tests, and chi-squared tests in 48 articles in two psychology journals, the true positive rate is 85.3% (which increases to 100% if researchers performing one-tailed tests are indicated by to “one-tailed”, “one-sided”, or “directional” in the article). Statcheck has not been validated for tests of correlations (*r*) or *Z*-tests, and based on anecdotal observations the accuracy for these tests seems much lower. As a core value of Metacheck is to only include validated checks, the Statcheck module of Metacheck will by default not evaluate tests of correlations and *Z*-tests, until the performance of Statcheck on these tests has been validated.
+
 ```{r}
-# We can also create a very simple warning for post-hoc power
+statcheck <- metacheck::module_run(xml, "statcheck")
+save(statcheck, file = "data/statcheck_results.RData")
 
-observed_power_regex <- "(\\bobserved power\\b|\\bpost[ -]hoc power\\b|\\bretrospective power\\b|\\b(?:achieved(?:\\s+\\w+){0,2}\\s+power)\\b)"
 
-text_found_observed_power <- search_text(xml, observed_power_regex)
-n_distinct(text_found_observed_power$id)
-
-text_found_observed_power <- expand_text(text_found_observed_power, xml, expand_to = "paragraph")
 
 ```
 
+## Menial tasks
+
+So far we have focused on modules that capture expertise about best practices. There is an additional category of checks that do not require expertise, but still benefit from being automated because this saved time, and researchers might forget to perform these checks. We will illustrates the usefulness of Metacheck to perform such menial tasks through two modules. The `url_check` module checks all hyperlinks in an article and 1) identifies the presence of anonymized links to the Open Science Framework or AsPredicted in articles, and warns to replace them before publication with public links, and 2) checks whether hyperlinks resolve (e.g., whether the website that is linked to loads) and warns researchers to consider linking to a more stable version of the website, such as the Wayback Machine by the Internet Archive.
+
 ```{r}
-testset <- rbind(apriori_power[1:10, ], post_hoc_power)
+# Random test to get all urls, check if individual are open.
+# The result of all URLs is too large and messy to check all.
 
-observed_power_regex <- "(\\bobserved power\\b|\\bpost[ -]hoc power\\b|\\bretrospective power\\b|\\b(?:achieved(?:\\s+\\w+){0,2}\\s+power)\\b)"
+# To make a module our of this we should also include the OSF view only check, and the aspredicted blind link check. 
 
-# Add the new column based on regex match
-testset <- testset %>%
-  mutate(posthoc_regex_match = ifelse(str_detect(text, observed_power_regex), 1, 0))
+all_url <- metacheck::module_run(xml, "all_urls")
+all_url <- unique(all_url$table["text"])
 
-# FIGURE OUT PRIVACY OF GROQ
+filtered_url <- all_url %>%
+  mutate(text = str_trim(text)) %>% 
+  filter(str_detect(text, regex("^(https?://|www\\.)", ignore_case = TRUE))) %>%
+  filter(!coalesce(str_detect(text, regex("osf\\.io|aspredicted|/doi|dx.doi|orcid.org|sagepub|psychologicalscience.org/publications", 
+                                          ignore_case = TRUE)), FALSE))
 
-# Define the query
-query <- "Does this sentence describe what is known as 'observed power', or 'post-hoc power'? This would be true if the power directly follows statistical test results, or if power is computed for the results observed in the study. Return 'post hoc' if so. If the power analysis is done 'a priori', before data is collected, to determine the sample size of the study, answer 'a priori'. If it is unclear, return 'unclear', and if the statement is not about statistical power, return 'no power analysis'"
+# Can we fix some links, by replacing > . with .? 
 
-res <- llm(testset$text, query)
+# ---- Helper: robust check for a single URL
+check_url_live <- function(raw_url, timeout_sec = 5) {
+  # trim whitespace
+  url <- trimws(raw_url)
 
-# Detect if "a priori" is in the answer
-testset$result_apriori <- ifelse(grepl("\\ba priori\\b", res$answer), 1, 0)
-
-# Detect if "post hoc" is in the answer
-testset$result_posthoc <- ifelse(grepl("\\bpost[- ]hoc\\b", res$answer), 1, 0)
-
-# Now we take the testset, only those classified as apriori, and get details by expanding the text, then asking llm.
-
-apriori <- testset %>%
-  filter(result_apriori == 1)
-
-apriori <- expand_text(apriori, psych_oa_xml, plus = 2, minus = 2)
-
-query <- paste0(
-  "In the following text, a researcher describes an a priori power analysis. ",
-  "A fully reported power analysis should specify the test researchers will perform, ",
-  "the alpha level of the test, the effect size, the type of effect size (e.g., cohens's d, f, eta, omega), and the desired power. ",
-  "This leads to the sample size they will collect. ",
-  "Extract this information, be brief (answer only in numbers where possible), and format the output as a JSON object. {",
-  "  \"statistical_test\": \"x\",",
-  "  \"alpha_level\": \"x\",",
-  "  \"effect_size\": \"x\",",
-  "  \"type_effect_size\": \"x\",",
-  "  \"desired_power\": \"x\",",
-  "  \"total_sample_size\": \"x\"",
-  "} ",
-  "The text is:"
-)
-
-res_ex <- llm(apriori$expanded, query)
-
-# Regular expression pattern to match key-value pairs including "total sample size"
-pattern <- "\"(.*?)\":\\s*\"?([^,\n]+)\"?"
-
-# Function to extract key-value pairs from the text
-extract_info <- function(text) {
-  # Extract key-value pairs using the regex pattern
-  matches <- regmatches(text, gregexpr(pattern, text, perl = TRUE))
-  
-  # Flatten the list of matches
-  key_value_pairs <- unlist(matches)
-  
-  # Check if key_value_pairs is empty
-  if(length(key_value_pairs) == 0) {
-    return(NULL)
+  # Return a consistent "failure" object on empty/NA
+  if (is.na(url) || identical(url, "")) {
+    return(list(ok = FALSE, status = NA_integer_, final_url = NA_character_))
   }
-  
-  # Extract keys and values separately
-  keys <- gsub("\"(.*?)\":.*", "\\1", key_value_pairs)  # Extract key
-  values <- gsub(".*?:\\s*\"?(.*)\"?", "\\1", key_value_pairs)  # Extract value
-  
-  # Return as a named list (key-value pairs)
-  return(setNames(values, keys))
-}
 
-# Apply the extraction function to each text string
-extracted_data <- lapply(res_ex$answer, function(x) {
-  tryCatch({
-    extract_info(x)
-  }, error = function(e) {
-    NULL  # Return NULL if an error occurs
-  })
-})
-
-# Convert the list to a data frame
-extracted_df <- do.call(rbind, lapply(extracted_data, function(x) as.data.frame(t(x))))
-
-# Function to clean each cell
-clean_cell <- function(x) {
-  x <- trimws(x)                        # Remove leading & trailing spaces
-  x <- gsub("\"", "", x)                # Remove all double quotes
-  x <- ifelse(tolower(x) %in% c("not specified", "", "na"), NA, x) # Convert "not specified" and empty values to NA
-  return(x)
-}
-
-# Apply the cleaning function to all cells in the dataframe
-extracted_df <- extracted_df %>% mutate_all(clean_cell)
-
-final_apriori <- cbind(apriori, res_ex[2:4], extracted_df)
-
-# Function to compute power analysis for t-test
-compute_power <- function(statistical_test, effect_size, alpha_level, desired_power) {
-  if (tolower(statistical_test) %in% c("t test", "t-test")) {
-    result <- pwr::pwr.t.test(d = as.numeric(effect_size), sig.level = as.numeric(alpha_level), power = as.numeric(desired_power), type ="two.sample", alternative = "two.sided")
-    sample_size <- 2*ceiling(result$n)
-    return(sample_size)  # Store the sample size required
+  # Build candidate URLs:
+  # - If starts with "www.", try https then http
+  # - If already has http/https, use as-is
+  # - Otherwise, try both https and http (defensive)
+  if (grepl("^www\\.", url, ignore.case = TRUE)) {
+    candidates <- c(paste0("https://", url), paste0("http://", url))
+  } else if (grepl("^https?://", url, ignore.case = TRUE)) {
+    candidates <- c(url)
   } else {
-    return(NA)  # If not a t-test, return NA
+    candidates <- c(paste0("https://", url), paste0("http://", url))
+  }
+
+  # Common request config: follow redirects, set UA, set timeout
+  ua <- user_agent(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) R/httr"
+  )
+  cfg <- config(followlocation = TRUE)
+  to  <- timeout(timeout_sec)
+
+  request_once <- function(u, method = "HEAD") {
+    # Return NULL on any network/SSL/DNS error
+    res <- tryCatch(
+      {
+        if (identical(method, "HEAD")) {
+          httr::HEAD(u, ua, cfg, to)
+        } else {
+          httr::GET(u, ua, cfg, to)
+        }
+      },
+      error = function(e) NULL
+    )
+    if (is.null(res)) return(NULL)
+    list(status = httr::status_code(res), final_url = res$url)
+  }
+
+  # Try each candidate: HEAD first, then GET fallback
+  for (u in candidates) {
+    # 1) HEAD (fast; but some servers block or misconfigure it)
+    head_res <- request_once(u, "HEAD")
+    if (!is.null(head_res) && head_res$status < 400) {
+      return(list(ok = TRUE, status = head_res$status, final_url = head_res$final_url))
+    }
+
+    # 2) Fallback to GET if HEAD is blocked (405/403) or failed
+    need_get <- is.null(head_res) || head_res$status %in% c(405, 403)
+    if (need_get) {
+      get_res <- request_once(u, "GET")
+      if (!is.null(get_res) && get_res$status < 400) {
+        return(list(ok = TRUE, status = get_res$status, final_url = get_res$final_url))
+      }
+    }
+
+    # Otherwise, move to the next candidate (e.g., try http after https)
+  }
+
+  # Nothing worked
+  list(ok = FALSE, status = NA_integer_, final_url = NA_character_)
+}
+
+# Preallocate vectors for speed and clean types
+n <- nrow(filtered_url)
+checked      <- integer(n)
+http_status  <- rep(NA_integer_, n)
+resolved_url <- rep(NA_character_, n)
+
+# Loop through rows
+for (i in seq_len(n)) {
+  res <- check_url_live(filtered_url$text[i], timeout_sec = 5)
+  checked[i]      <- if (isTRUE(res$ok)) 1 else 0
+  http_status[i]  <- if (is.null(res$status)) NA_integer_ else res$status
+  resolved_url[i] <- if (is.null(res$final_url)) NA_character_ else res$final_url
+
+  # (optional) simple progress every 200 rows:
+  message("Checked ", i, " / ", n)
+}
+
+# Add columns to your tibble
+filtered_url$checked      <- checked
+filtered_url$http_status  <- http_status
+filtered_url$resolved_url <- resolved_url
+
+save(filtered_url, file = "links_down_psych_science.RData")
+
+```
+
+We check for blinded links for peer review. 
+
+```{r}
+
+RGX_ASPREDICTED <- "aspredicted"
+text_found <- search_text(xml, RGX_ASPREDICTED, return = "paragraph")
+# blind links often end up having a space in the extracted hyperlink. 
+# e.g., https://aspredicted.org/blind.php? x=6uq6sx which should have been extracted as https://aspredicted.org/blind.php?x=6uq6sx
+# So we fix it by removing the space. 
+text_found$text <- gsub("blind\\.php\\?\\s*", "blind.php?", text_found$text)
+RGX_ASPREDICTED_LINK <- "aspredicted\\.org/\\s*[a-zA-Z0-9]{5}"
+text_found_as_predicted <- search_text(text_found, RGX_ASPREDICTED_LINK, return = "match")
+RGX_ASPREDICTED_BLIND <- "http://aspredicted\\.org/blind\\.php\\?x=s*[a-zA-Z0-9]{6}"
+text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")
+
+RGX_ASPREDICTED_BLIND <- "http://aspredicted\\.org/blind\\.php\\?x=s*[a-zA-Z0-9]{6}"
+text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")
+
+# Remove duplicates
+text_found_as_predicted_blind <- text_found_as_predicted_blind %>% distinct(text, .keep_all = TRUE)
+
+# Define the regular expression pattern for detecting OSF URLs 
+RGX_VIEWONLY <- "view_only"
+text_found <- search_text(xml, RGX_VIEWONLY, return = "paragraph")
+text_found$text <- gsub("/\\? view_only", "/?view_only", text_found$text)
+
+text_found <- text_found %>% distinct(text, .keep_all = TRUE)
+
+```
+
+### Check References
+
+The `ref_check` module checks the reference list of scientific articles and 1) warns for missing DOI's in the reference list, and attempts to automatically add them when missing, 2) checks whether articles have corrections, expressions of concern, or are retracted, according to the RetractionWatch, 3) points out when original articles are cited, but direct replication studies of the same paper exist but have not been cited (Röseler, 2024). 
+
+```{r}
+
+# Script to get all references in a single table
+
+# 1) Extract nested data frames
+bibs <- lapply(xml, function(x) x$bib)
+
+# 2) Normalize each 'bib' so that 'year' is integer of correct length (even for 0-row dfs)
+coerce_year_to_integer <- function(df) {
+  # If NULL, replace by an empty data frame
+  if (is.null(df)) df <- data.frame()
+  
+  df <- as.data.frame(df, stringsAsFactors = FALSE)
+  nr <- nrow(df)
+  
+  # If 'year' is missing, create it with the right length
+  if (!"year" %in% names(df)) {
+    df$year <- if (nr == 0) integer(0) else rep(NA_integer_, nr)
+    return(df)
+  }
+  
+  # Coerce to character first, then to integer
+  y_chr <- as.character(df$year)
+  y_int <- suppressWarnings(as.integer(y_chr))
+  
+  # For non-numeric forms, try to extract a 4-digit year
+  need_extract <- is.na(y_int) & !is.na(y_chr) & nzchar(y_chr)
+  if (any(need_extract)) {
+    m   <- regexpr("\\b\\d{4}\\b", y_chr[need_extract])
+    got <- ifelse(m > 0,
+                  substring(y_chr[need_extract], m, m + attr(m, "match.length") - 1),
+                  NA_character_)
+    y_int[need_extract] <- suppressWarnings(as.integer(got))
+  }
+  
+  # Assign back; lengths now match nrow(df), including the 0-row case
+  df$year <- y_int
+  df
+}
+
+bibs_fixed <- lapply(bibs, coerce_year_to_integer)
+
+# 3) Bind after coercion — now types align everywhere
+all_psych_science_refs <- dplyr::bind_rows(bibs_fixed)
+
+# 4) How many papers have a DOI?
+# 1) Flag presence of DOI (per your rule: any non-NA value counts)
+all_psych_science_refs <- all_psych_science_refs %>%
+  mutate(has_doi = !is.na(doi))
+
+# 2) Overall percentage with DOI
+overall <- all_psych_science_refs %>%
+  summarize(
+    n = n(),
+    with_doi = sum(has_doi, na.rm = TRUE),
+    pct_with_doi = 100 * with_doi / n
+  )
+
+overall
+
+# add year
+all_psych_science_refs <- all_psych_science_refs %>%
+  rename(year_ref = year)
+
+# bring 'year' into all_psych_science_refs by id
+all_psych_science_refs <- all_psych_science_refs %>%
+  left_join(psych_science %>% select(id, year), by = "id")
+
+# Compute percentage with DOI per year
+by_year <- all_psych_science_refs %>%
+  filter(!is.na(year)) %>%
+  group_by(year) %>%
+  summarize(
+    n = n(),
+    pct_with_doi = 100 * sum(has_doi) / n(),
+    .groups = "drop"
+  ) %>%
+  arrange(year)
+
+# Simple line plot
+ggplot(by_year, aes(x = year, y = pct_with_doi)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Percentage of Rows with DOI per Year",
+    x = "Year",
+    y = "DOI (%)"
+  ) +
+  theme_minimal()
+
+
+
+
+# Open file: file.edit("~/.Renviron")
+# 
+# Add email address to be shared with Crossref crossref_email = name@example.com
+# 
+# Save the file and restart your R session
+
+
+
+# Function to get a doi from crossref by sending the full reference text.  
+get_doi <- function(reference) {
+  options(crossref_email = "d.lakens@tue.nl")
+  tryCatch({
+    res <- cr_works(query = reference, limit = 1)
+    if (nrow(res$data) > 0) {
+      return(res$data$doi[1])
+    } else {
+      return(NA)
+    }
+  }, error = function(e) {
+    return(NA)
+  })
+}
+
+# Function that takes a DOI, and retrieves information from pubpeer related to post-publication peer review comments. 
+get_pubpeer_comment <- function(doi) {
+  url <- "https://pubpeer.com/v3/publications?devkey=PubPeerZotero"
+  
+  body <- list(
+    dois = list(tolower(doi))
+  )
+  
+  response <- POST(
+    url,
+    body = toJSON(body, auto_unbox = TRUE),
+    encode = "raw",
+    add_headers(`Content-Type` = "application/json;charset=UTF-8")
+  )
+  
+  if (status_code(response) == 200) {
+    data <- content(response, as = "parsed", type = "application/json")
+    if (length(data[["feedbacks"]]) > 0) {
+      return(list(
+        total_comments = data[["feedbacks"]][[1]][["total_comments"]],
+        url = data[["feedbacks"]][[1]][["url"]],
+        users = strsplit(data[["feedbacks"]][[1]][["users"]], ",\\s*")[[1]]
+      ))
+    } else {
+      return(NULL)  # No feedback found
+    }
+  } else {
+    return(NULL)  # Request failed
   }
 }
 
-# Apply function row-wise
-final_apriori <- final_apriori %>%
-  mutate(reproduced_power = pmap_dbl(
-    list(statistical_test, effect_size, alpha_level, desired_power),
-    compute_power
-  ))
+# For example:
+# get_pubpeer_comment("10.1037/0022-3514.81.4.657")
 
-# View the result
-print(final_apriori)
+# Function that takes the references of a papercheck paper (paper[["bib"]]), adds dois where missing (using the get_doi() function) and refers the table with references, with the following columns added:
+# 1: total_comments: Total number of pubpeer comments
+# 2: pubpeer_url: Link to read the pubpeer comments. 
+# 3: users: NAmes of the people who posted. Mainly used to filter out statcheck comments
+# 4: doi_from_crossref: Is the DOI in the dataframe original (extracted by GROBID from the references = 0) or added by crossref (= 1). Both can be inaccurate, but crossref more so. 
 
+# We could add a check for the DOI, by going to the DOI, and check if the website has some info we would expect, like the journal name. 
+refs <- all_psych_science_refs
+ref_check <- function(paper) {
+  # Read in FReD database. 
+  # We can also download the latest version https://osf.io/9r62x/files/z5u9b, or add a function to check the latest version and update it if needed. 
+  FReD <- read_excel("data/FReD.xlsx")
+  # Remove first 2 rows
+  FReD <- FReD[-c(1, 2), ]
+  # Remove all rows without doi for original study and replication
+  FReD <- FReD[FReD$doi_original != "" & !is.na(FReD$doi_original) & 
+             FReD$doi_replication != "" & !is.na(FReD$doi_replication), ]
+  attr(FReD, "date") <- Sys.Date()
+
+# Keep only the column we need
+FReD <- FReD %>%
+  select(ref_original, doi_original, ref_replication, doi_replication)
+
+
+  # Only keep article types in the references. We can't get doi's for other types (books, miscellaneous), and trying will just slow down the function.
+  
+  refs <- refs %>%
+    filter(bibtype == "Article")
+
+  # If there are no rows, return immediately
+  if (nrow(refs) == 0) {
+    return(refs)
+  }
+  # Add new columns to refs
+  refs$total_comments <- NA_integer_
+  refs$pubpeer_url <- NA_character_
+  refs$users <- NA_character_
+  refs$doi_from_crossref <- NA_character_
+  refs$retraction_watch <- NA_character_
+  
+  # Initialize progress bar
+  pb <- txtProgressBar(min = 0, max = nrow(refs), style = 3)
+  
+  for (i in seq_len(nrow(refs))) {
+    # Ensure DOI is present
+    if (is.na(refs$doi[i])) {
+      doi <- get_doi(refs$ref[i])   # run only if doi is NA
+      refs$doi_from_crossref[i] <- 1
+      refs$doi[i] <- doi            # replace NA with the new value
+    } else {
+      doi <- refs$doi[i]
+      refs$doi_from_crossref[i] <- 0
+    }
+    
+    feedback <- get_pubpeer_comment(doi)
+    
+    # Add pubpeer info to columns
+    if (!is.null(feedback)) {
+      refs$total_comments[i] <- feedback$total_comments
+      refs$pubpeer_url[i] <- feedback$url
+      refs$users[i] <- paste(feedback$users, collapse = ", ")
+    }
+    
+    setTxtProgressBar(pb, i)
+  }
+  # This now crashes due to the select doi 
+  retraction_table <- refs %>%
+    inner_join(
+      refs, 
+      retractionwatch(), 
+      by = 'doi'
+      )
+  
+  
+  refs <- refs %>%
+  left_join(retraction_table %>% select(doi, retractionwatch), by = "doi", relationship = "many-to-many")
+
+
+replication_table <- refs %>% select(doi) %>%
+  inner_join(
+    FReD %>% select(ref_original, doi_original, ref_replication, doi_replication),
+    by = c("doi" = "doi_original"),
+    relationship = "many-to-many"
+  )
+  # Some original studies have more than 1 replication in the same paper (e.g., many labs replications), but we just want to point to the dois of papers containing replication studies. 
+  replication_table <- replication_table[!duplicated(replication_table["doi_replication"]), ]
+
+  # To be able to add 
+  replication_table_collapsed <- replication_table %>%
+    group_by(doi) %>%
+    summarise(
+      ref_replication = paste(ref_replication, collapse = "; "),
+      doi_replication = paste(doi_replication, collapse = "; "),
+      .groups = "drop"
+    )
+  
+    all_psych_science_refs <- all_psych_science_refs %>%
+    left_join(replication_table_collapsed %>% select(doi, ref_replication, doi_replication), by = "doi", relationship = "many-to-many")
+
+  close(pb)
+  return(refs)
+}
+
+# Loop over all references
+# This should become a module 'reference_check'
+# Should combine retraction watch, replication database, miscitation check, pubpeer
+
+# Initialize an empty list to store results
+pubpeer_results <- list()
+
+ids <- names(xml)
+total <- length(ids)
+
+for (i in seq_along(ids)) {
+  id <- ids[i]
+  refs <- xml[[id]][["bib"]]
+  cat(sprintf("Checking references for %s (%d/%d) ...\n", id, i, total))
+  pubpeer_results[[id]] <- ref_check(refs)
+}
+
+
+save(pubpeer_results, file = "pubpeerresults_first_447.Rdata")
+
+
+retraction_table <- dplyr::inner_join(all_psych_science_refs, retractionwatch(), by = 'doi')
+retraction_table <- retraction_table[!duplicated(retraction_table["doi"]), ]
+
+# Add retractionwatch info to references
+all_psych_science_refs <- all_psych_science_refs %>%
+  left_join(retraction_table %>% select(doi, retractionwatch), by = "doi", relationship = "many-to-many")
+
+
+get_pubpeer_comment("10.1177/0146167211398138")
 
 
 ```
 
-### Text search
+# Discussion
+
+To prevent widespread misuse of an automated tool such as Metacheck, it is important to realize the limits of the tool. Although it might seem desirable to develop modules with high accuracy, a cost-benefit analysis might indicate that at this phase it is more important to invest time to develop 10 modules that assist researchers to check their papers with a relatively high error rate, then to spend the same time on two modules that can be used meta-scientifically with very low error rates. The flexibility of human language combined with the lack of standardization in how researchers report information in scientific manuscripts are such that reducing error rates from 50% to 20% is much easier than reducing error rates from 20% to 5%. Our current approach is to follow the Pareto principle and focus on the 20% of the ways in which researchers get something wrong, that when when identified, would prevent 80% of the times researchers get something wrong.
+
+# References
+
+
+
+
+# DELETE?
+
+### All p-values
+
+```{r}
+all_p <- metacheck::module_run(xml, "all_p_values")$table
+
+ggplot(all_p, aes(x = p_value)) +
+  geom_histogram(
+    bins = 100,
+    fill = "#1f77b4",       # Professional blue tone
+    color = "white"         # Thin white borders for clarity
+  ) +
+  scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.1)) +
+  labs(
+    title = "Distribution of p-values",
+    x = "p-value",
+    y = "Frequency"
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Arial"),
+    plot.title = element_text(size = 20, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey80", size = 0.3),
+    panel.grid.minor = element_blank()
+  )
+
+
+
+library(ggplot2)
+
+df <- subset(all_p, !is.na(p_value))
+eps <- .Machine$double.xmin
+df$p_value <- pmin(pmax(df$p_value, eps), 1 - eps)
+
+# Two-sided, unsigned z (|z|)
+df$z_abs <- qnorm(1 - df$p_value / 2)
+
+ggplot(df, aes(x = z_abs)) +
+  geom_histogram(
+    bins = 100,
+    fill = "#1f77b4",
+    color = "white"
+  ) +
+  labs(
+    title = "Distribution of |z|-values (from two-sided p)",
+    x = "|z|-value",
+    y = "Frequency"
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Arial"),
+    plot.title = element_text(size = 20, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey80", size = 0.3),
+    panel.grid.minor = element_blank()
+
+# Save for publication
+ggsave("p_value_histogram.png", width = 6, height = 4, dpi = 300)
+
+
+```
+
 
 ### Hyperlinks
 
@@ -1698,9 +1398,9 @@ We will provide two illustrations of the usefulness of combining domain expertis
 # Random test to get all urls, check if individual are open.
 # The result of all URLs is too large and messy to check all.
 
-all_url <- papercheck::module_run(xml, "all-urls")$table
+all_url <- metacheck::module_run(xml, "all-urls")$table
 all_url <- unique(all_url["text"])
-down_check <- papercheck:::site_down(all_url$text[175], error = FALSE)
+down_check <- metacheck:::site_down(all_url$text[175], error = FALSE)
 
 ```
 
@@ -1718,7 +1418,7 @@ RGX_ASPREDICTED_BLIND <- "http://aspredicted\\.org/blind\\.php\\?x=s*[a-zA-Z0-9]
 text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")
 
 RGX_ASPREDICTED_BLIND <- "http://aspredicted\\.org/blind\\.php\\?x=s*[a-zA-Z0-9]{6}"
-text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")*****
+text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")
 
 # Remove duplicates
 text_found_as_predicted_blind <- text_found_as_predicted_blind %>% distinct(text, .keep_all = TRUE)
@@ -2464,162 +2164,6 @@ load(file = "registration_df.RData")
 
 A task now is to manually compare the llm output and the sample size.
 
-```{r}
-RGX_ASPREDICTED <- "aspredicted"
-text_found <- search_text(xml, RGX_ASPREDICTED, return = "paragraph")
-# blind links often end up having a space in the extracted hyperlink. 
-# e.g., https://aspredicted.org/blind.php? x=6uq6sx which should have been extracted as https://aspredicted.org/blind.php?x=6uq6sx
-# So we fix it by removing the space. 
-text_found$text <- gsub("blind\\.php\\?\\s*", "blind.php?", text_found$text)
-RGX_ASPREDICTED_LINK <- "aspredicted\\.org/\\s*[a-zA-Z0-9]{5}"
-text_found_as_predicted <- search_text(text_found, RGX_ASPREDICTED_LINK, return = "match")
-RGX_ASPREDICTED_BLIND <- "http://aspredicted\\.org/blind\\.php\\?x=s*[a-zA-Z0-9]{6}"
-text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")
-
-# Clean up
-# Remove any spaces between `.io/` and the 5 characters
-text_found_as_predicted$text <- gsub("aspredicted.org/\\s*", "aspredicted.org/", text_found_as_predicted$text)
-
-text_found_as_predicted$http_aspredicted <- ifelse(grepl("^https?://", text_found_as_predicted$text), text_found$text, paste0("https://", text_found$text))
-text_found_as_predicted$http_aspredicted <- paste0(text_found_as_predicted$text,".pdf")
-text_found_as_predicted$aspredicted_id <- substr(text_found_as_predicted$text, nchar(text_found_as_predicted$text) - 4, nchar(text_found$text))
-
-# Remove blind and old public links
-text_found_as_predicted <- text_found_as_predicted %>%
-  filter(!(aspredicted_id %in% c("publi", "blind")))
-
-# Then remove duplicates
-text_found_as_predicted <- text_found_as_predicted %>% distinct(text, .keep_all = TRUE)
-
-```
-
-Then we search through all projects:
-
-```{r}
-
-# Function to process a single URL and extract data
-process_url <- function(url) {
-  # Get the HTML content
-  page <- GET(url) %>% read_html()
-  
-  # Extract the text content
-  text <- page %>% html_text2()
-
-  # Regular expression pattern to split by one or more newlines or multiple spaces
-  split_text <- unlist(strsplit(text, "\n"))
-  
-  # Remove empty lines and lines with only whitespace (including \r, \n, spaces)
-  split_text <- split_text[nchar(gsub("\\s", "", split_text)) > 0]
-
-  # Initialize a list to hold the answers
-  answers <- list(
-    title = split_text[2]
-  )
-  
-  # Function to extract text for a question
-  extract_question <- function(start_text, end_text, split_text) {
-  # Wrap the function in tryCatch to handle errors
-  result <- tryCatch({
-    start_index <- grep(start_text, split_text)
-    end_index <- grep(end_text, split_text)
-    
-    # Ensure both start and end indices are found
-    if(length(start_index) == 0 || length(end_index) == 0) {
-      stop("Start or end text not found")
-    }
-    
-    # Extract the text between the start and end indices
-    found_text <- split_text[(start_index + 1):(end_index - 1)]
-    
-    # Combine the text into a single string and return
-    paste(found_text, collapse = " ")
-    
-  }, error = function(e) {
-    # Return "ERROR" if any error occurs
-    return("ERROR")
-  })
-  
-  return(result)
-}
-
-  
-  answers$created <- extract_question("Pre-registered on", "Have any data been collected", split_text)
-  answers$authors <- extract_question("Author", "Pre-registered on", split_text)
-
-  # Extract answers for Q1-Q8
-  answers$Q1 <- extract_question("Have any data been collected", "What's the main question being asked or hypothesis being tested", split_text)
-  answers$Q2 <- extract_question("What's the main question being asked or hypothesis being tested in this study?", "Describe the key dependent variable", split_text)
-  answers$Q3 <- extract_question("Describe the key dependent variable", "How many and which conditions will", split_text)
-  answers$Q4 <- extract_question("How many and which conditions will", "Specify exactly which analyses you will conduct", split_text)
-  answers$Q5 <- extract_question("Specify exactly which analyses you will conduct", "Describe exactly how outliers will be defined|Any secondary analyses", split_text)
-  answers$Q6 <- extract_question("Describe exactly how outliers will be defined|Any secondary analyses", "How many observations will be collected", split_text)
-  answers$Q7 <- extract_question("number will be determined", "Anything else you would like to pre-register", split_text)
-  answers$Q8 <- extract_question("secondary analyses, variables collected", "Version of AsPredicted Questions", split_text)
-  
-  # Extract version
-  version_index <- grep("Version of AsPredicted Questions", split_text)
-  answers$version <- paste(split_text[version_index], collapse = " ")
-
-  return(answers)
-}
-
-# Initialize the dataframe for storing results
-aspredicted <- data.frame(
-  id = text_found_as_predicted$id,
-  link = text_found_as_predicted$http_aspredicted,
-  title = rep(NA_character_, nrow(text_found_as_predicted)),
-  created = rep(NA_character_, nrow(text_found_as_predicted)),
-  authors = rep(NA_character_, nrow(text_found_as_predicted)),
-  Q1 = rep(NA_character_, nrow(text_found_as_predicted)),
-  Q2 = rep(NA_character_, nrow(text_found_as_predicted)),
-  Q3 = rep(NA_character_, nrow(text_found_as_predicted)),
-  Q4 = rep(NA_character_, nrow(text_found_as_predicted)),
-  Q5 = rep(NA_character_, nrow(text_found_as_predicted)),
-  Q6 = rep(NA_character_, nrow(text_found_as_predicted)),
-  Q7 = rep(NA_character_, nrow(text_found_as_predicted)),
-  Q8 = rep(NA_character_, nrow(text_found_as_predicted)),
-  version = rep(NA_character_, nrow(text_found_as_predicted)),
-  stringsAsFactors = FALSE
-)
-
-n <- nrow(text_found_as_predicted)
-pb <- progress_bar$new(
-  format = "  Processing [:bar] :percent (:elapsed s)",
-  total = n, clear = FALSE, width = 60
-)
-
-for (i in 1:n) {
-  pb$tick()  # Update progress bar
-  Sys.sleep(20)
-  
-  url <- text_found_as_predicted$http_aspredicted[i]
-  
-  # Process the URL and get answers
-  answers <- process_url(url)
-
-  # Store the extracted data into the dataframe
-  aspredicted$title[i] <- answers$title
-  aspredicted$created[i] <- answers$created
-  aspredicted$authors[i] <- answers$authors
-  aspredicted$Q1[i] <- answers$Q1
-  aspredicted$Q2[i] <- answers$Q2
-  aspredicted$Q3[i] <- answers$Q3
-  aspredicted$Q4[i] <- answers$Q4
-  aspredicted$Q5[i] <- answers$Q5
-  aspredicted$Q6[i] <- answers$Q6
-  aspredicted$Q7[i] <- answers$Q7
-  aspredicted$Q8[i] <- answers$Q8
-  aspredicted$version[i] <- answers$version
-}
-
-# Then we merge the files. 
-text_found_as_predicted <- dplyr::left_join(text_found_as_predicted, aspredicted[,2:14], by = c("http_aspredicted" = "link"))
-
-# save(text_found_as_predicted, file = "psychscience_aspredicted.RData")
-load(file = "psychscience_aspredicted.RData")
-
-```
-
 Now we can add as predicted sample size info to our psych science dataset.
 
 ```{r}
@@ -2890,164 +2434,137 @@ for (i in 1:nrow(osf_ids_vector)) {
 
 ```
 
-## Menial tasks
 
-There is a range of common mistakes that can easily be automatically checked. We will illustrates the usefulness of Papercheck to perform such menial tasks in X examples.
-
-The first example is to identify the presence of anonimized links in the published version of articles. Researchers often want to make their preregistration or files available to reviewers, but links to online repositories would reveal their identity, which is not in line with the blinding a manuscript for peer review. To solve this problem platforms such as the Open Science Framework (OSF) and AsPredicted have created 'view only' or 'blind' links, which allow peer reviewers to gian access to preregistrations and files, without revealing the name of the researchers. Researchers often forget to change these blinded links to the public links. A simple text search is sufficient to find blinded links in manuscripts, and remind authors (or editors) to update these links when checking proofs.
 
 ```{r}
+# We can also create a very simple warning for post-hoc power
 
-RGX_ASPREDICTED <- "aspredicted"
-text_found <- search_text(xml, RGX_ASPREDICTED, return = "paragraph")
-# blind links often end up having a space in the extracted hyperlink. 
-# e.g., https://aspredicted.org/blind.php? x=6uq6sx which should have been extracted as https://aspredicted.org/blind.php?x=6uq6sx
-# So we fix it by removing the space. 
-text_found$text <- gsub("blind\\.php\\?\\s*", "blind.php?", text_found$text)
-RGX_ASPREDICTED_LINK <- "aspredicted\\.org/\\s*[a-zA-Z0-9]{5}"
-text_found_as_predicted <- search_text(text_found, RGX_ASPREDICTED_LINK, return = "match")
-RGX_ASPREDICTED_BLIND <- "http://aspredicted\\.org/blind\\.php\\?x=s*[a-zA-Z0-9]{6}"
-text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")
+observed_power_regex <- "(\\bobserved power\\b|\\bpost[ -]hoc power\\b|\\bretrospective power\\b|\\b(?:achieved(?:\\s+\\w+){0,2}\\s+power)\\b)"
 
-RGX_ASPREDICTED_BLIND <- "http://aspredicted\\.org/blind\\.php\\?x=s*[a-zA-Z0-9]{6}"
-text_found_as_predicted_blind <- search_text(text_found, RGX_ASPREDICTED_BLIND, return = "match")
+text_found_observed_power <- search_text(xml, observed_power_regex)
+n_distinct(text_found_observed_power$id)
 
-# Remove duplicates
-text_found_as_predicted_blind <- text_found_as_predicted_blind %>% distinct(text, .keep_all = TRUE)
-
-# Define the regular expression pattern for detecting OSF URLs 
-RGX_VIEWONLY <- "view_only"
-text_found <- search_text(xml, RGX_VIEWONLY, return = "paragraph")
-text_found$text <- gsub("/\\? view_only", "/?view_only", text_found$text)
-
-text_found <- text_found %>% distinct(text, .keep_all = TRUE)
+text_found_observed_power <- expand_text(text_found_observed_power, xml, expand_to = "paragraph")
 
 ```
 
-We find 5 papers which have been published with blind AsPredicted links, and 32 with view only OSF links.
-
-### Check pubpeer comments for references.
-
-We can check pubpeer for comments:
-
-We will just link to the comments, maybe some text summary, but that is it. Optionally, remove statcheck ones.
-
-For example, the DOI https://doi.org/10.1037/0022-3514.81.4.657 has a pubpeer comment. It is a statcheck automated test comment, so not interesting. We first encode the DOI in URL format, then turn it into the search command:
-
 ```{r}
+testset <- rbind(apriori_power[1:10, ], post_hoc_power)
 
-get_pubpeer_comment <- function(doi) {
-  url <- "https://pubpeer.com/v3/publications?devkey=PubPeerZotero"
+observed_power_regex <- "(\\bobserved power\\b|\\bpost[ -]hoc power\\b|\\bretrospective power\\b|\\b(?:achieved(?:\\s+\\w+){0,2}\\s+power)\\b)"
+
+# Add the new column based on regex match
+testset <- testset %>%
+  mutate(posthoc_regex_match = ifelse(str_detect(text, observed_power_regex), 1, 0))
+
+# FIGURE OUT PRIVACY OF GROQ
+
+# Define the query
+query <- "Does this sentence describe what is known as 'observed power', or 'post-hoc power'? This would be true if the power directly follows statistical test results, or if power is computed for the results observed in the study. Return 'post hoc' if so. If the power analysis is done 'a priori', before data is collected, to determine the sample size of the study, answer 'a priori'. If it is unclear, return 'unclear', and if the statement is not about statistical power, return 'no power analysis'"
+
+res <- llm(testset$text, query)
+
+# Detect if "a priori" is in the answer
+testset$result_apriori <- ifelse(grepl("\\ba priori\\b", res$answer), 1, 0)
+
+# Detect if "post hoc" is in the answer
+testset$result_posthoc <- ifelse(grepl("\\bpost[- ]hoc\\b", res$answer), 1, 0)
+
+# Now we take the testset, only those classified as apriori, and get details by expanding the text, then asking llm.
+
+apriori <- testset %>%
+  filter(result_apriori == 1)
+
+apriori <- expand_text(apriori, psych_oa_xml, plus = 2, minus = 2)
+
+query <- paste0(
+  "In the following text, a researcher describes an a priori power analysis. ",
+  "A fully reported power analysis should specify the test researchers will perform, ",
+  "the alpha level of the test, the effect size, the type of effect size (e.g., cohens's d, f, eta, omega), and the desired power. ",
+  "This leads to the sample size they will collect. ",
+  "Extract this information, be brief (answer only in numbers where possible), and format the output as a JSON object. {",
+  "  \"statistical_test\": \"x\",",
+  "  \"alpha_level\": \"x\",",
+  "  \"effect_size\": \"x\",",
+  "  \"type_effect_size\": \"x\",",
+  "  \"desired_power\": \"x\",",
+  "  \"total_sample_size\": \"x\"",
+  "} ",
+  "The text is:"
+)
+
+res_ex <- llm(apriori$expanded, query)
+
+# Regular expression pattern to match key-value pairs including "total sample size"
+pattern <- "\"(.*?)\":\\s*\"?([^,\n]+)\"?"
+
+# Function to extract key-value pairs from the text
+extract_info <- function(text) {
+  # Extract key-value pairs using the regex pattern
+  matches <- regmatches(text, gregexpr(pattern, text, perl = TRUE))
   
-  body <- list(
-    dois = list(tolower(doi))
-  )
+  # Flatten the list of matches
+  key_value_pairs <- unlist(matches)
   
-  response <- POST(
-    url,
-    body = toJSON(body, auto_unbox = TRUE),
-    encode = "raw",
-    add_headers(`Content-Type` = "application/json;charset=UTF-8")
-  )
-  
-  if (status_code(response) == 200) {
-    data <- content(response, as = "parsed", type = "application/json")
-    if (length(data[["feedbacks"]]) > 0) {
-      return(list(
-        total_comments = data[["feedbacks"]][[1]][["total_comments"]],
-        url = data[["feedbacks"]][[1]][["url"]],
-        users = strsplit(data[["feedbacks"]][[1]][["users"]], ",\\s*")[[1]]
-      ))
-    } else {
-      return(NULL)  # No feedback found
-    }
-  } else {
-    return(NULL)  # Request failed
+  # Check if key_value_pairs is empty
+  if(length(key_value_pairs) == 0) {
+    return(NULL)
   }
+  
+  # Extract keys and values separately
+  keys <- gsub("\"(.*?)\":.*", "\\1", key_value_pairs)  # Extract key
+  values <- gsub(".*?:\\s*\"?(.*)\"?", "\\1", key_value_pairs)  # Extract value
+  
+  # Return as a named list (key-value pairs)
+  return(setNames(values, keys))
 }
 
-
-get_pubpeer_comment("10.1037/0022-3514.81.4.657")
-
-```
-
-### Work with references
-
-```{r}
-get_doi <- function(reference) {
+# Apply the extraction function to each text string
+extracted_data <- lapply(res_ex$answer, function(x) {
   tryCatch({
-    res <- cr_works(query = reference, limit = 1)
-    if (nrow(res$data) > 0) {
-      return(res$data$doi[1])
-    } else {
-      return(NA)
-    }
+    extract_info(x)
   }, error = function(e) {
-    return(NA)
+    NULL  # Return NULL if an error occurs
   })
+})
+
+# Convert the list to a data frame
+extracted_df <- do.call(rbind, lapply(extracted_data, function(x) as.data.frame(t(x))))
+
+# Function to clean each cell
+clean_cell <- function(x) {
+  x <- trimws(x)                        # Remove leading & trailing spaces
+  x <- gsub("\"", "", x)                # Remove all double quotes
+  x <- ifelse(tolower(x) %in% c("not specified", "", "na"), NA, x) # Convert "not specified" and empty values to NA
+  return(x)
 }
 
+# Apply the cleaning function to all cells in the dataframe
+extracted_df <- extracted_df %>% mutate_all(clean_cell)
 
-check_pubpeer_for_references <- function(refs) {
-  # Initialize progress bar
-  pb <- txtProgressBar(min = 0, max = length(refs), style = 3)
-  
-  results <- vector("list", length(refs))
-  
-  for (i in seq_along(refs)) {
-    doi <- get_doi(refs[i])
-    feedback <- get_pubpeer_comment(doi)
-    
-    results[[i]] <- list(
-      reference = refs[i],
-      doi = doi,
-      total_comments = if (!is.null(feedback)) feedback$total_comments else NA,
-      pubpeer_url = if (!is.null(feedback)) feedback$url else NA,
-      users = if (!is.null(feedback)) paste(feedback$users, collapse = ", ") else NA
-    )
-    
-    setTxtProgressBar(pb, i)
-  }
-  
-  close(pb)
-  
-  # Convert to data frame
-  results_df <- do.call(rbind, lapply(results, as.data.frame))
-  return(results_df)
-}
+final_apriori <- cbind(apriori, res_ex[2:4], extracted_df)
 
-# Loop over all references
-
-# Initialize an empty list to store results
-pubpeer_results <- list()
-
-ids <- names(xml)
-total <- length(ids)
-i <- 1
-for (i in 1:1) {
-  id <- ids[i]
-  refs <- xml[[id]][["references"]]
-  
-  if (!is.null(refs) && length(refs) > 0) {
-    refs <- refs[!is.na(refs) & nzchar(refs)]  # Clean missing/empty entries
-    
-    if (length(refs) > 0) {
-      cat(sprintf("Checking references for %s (%d/%d) ...\n", id, i, total))
-      pubpeer_results[[id]] <- check_pubpeer_for_references(refs)
-    } else {
-      pubpeer_results[[id]] <- NULL
-    }
+# Function to compute power analysis for t-test
+compute_power <- function(statistical_test, effect_size, alpha_level, desired_power) {
+  if (tolower(statistical_test) %in% c("t test", "t-test")) {
+    result <- pwr::pwr.t.test(d = as.numeric(effect_size), sig.level = as.numeric(alpha_level), power = as.numeric(desired_power), type ="two.sample", alternative = "two.sided")
+    sample_size <- 2*ceiling(result$n)
+    return(sample_size)  # Store the sample size required
   } else {
-    pubpeer_results[[id]] <- NULL
+    return(NA)  # If not a t-test, return NA
   }
 }
 
-save(pubpeer_results, file = "pubpeerresults_first_447.Rdata")
+# Apply function row-wise
+final_apriori <- final_apriori %>%
+  mutate(reproduced_power = pmap_dbl(
+    list(statistical_test, effect_size, alpha_level, desired_power),
+    compute_power
+  ))
+
+# View the result
+print(final_apriori)
+
+
 
 ```
-
-# Discussion
-
-To prevent widespread misuse of an automated tool such as Papercheck, it is important to realize the limits of the tool. Although it might seem desirable to develop modules with high accuracy, a cost-benefit analysis might indicate that at this phase it is more important to invest time to develop 10 modules that assist researchers to check their papers with a relatively high error rate, then to spend the same time on two modules that can be used meta-scientifically with very low error rates. The flexibility of human language combined with the lack of standardization in how researchers report information in scientific manuscripts are such that reducing error rates from 50% to 20% is much easier than reducing error rates from 20% to 5%. Our current approach is to follow the Pareto principle and focus on the 20% of the ways in which researchers get something wrong, that when when identified, would prevent 80% of the times researchers get something wrong.
-
-# References
