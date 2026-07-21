@@ -1,6 +1,5 @@
 ---
-title: "Part 1: Introducing Metacheck"
-subtitle: "An Automated Tool for Improving Research Practices in Psychology"
+title: "Part 1: Introducing Metacheck as An Automated Tool for Improving Research Practices in Psychology"
 author:
   - name: Lisa DeBruine
     orcid: 0000-0002-7523-5539
@@ -47,7 +46,7 @@ abstract: "Meta-scientific research has revealed that researchers often fall sho
 # install the apaquarto extension
 quarto::quarto_add_extension("wjschne/apaquarto", no_prompt = TRUE)
 
-# install the main version of metacheck
+# install the main version of Metacheck
 pak::pkg_install("scienceverse/metacheck@main")
 ```
 
@@ -99,7 +98,7 @@ Human factors research suggests that automation (where researchers remain in the
 
 Importantly, the use of LLMs is entirely optional and opt-in. Metacheck restricts LLMs to the classification of existing text, and the vast majority of modules work without an LLM; the only exceptions are `power` and `prereg_check`. Finally, when users opt to use an LLM, models can be run locally, ensuring that no data leaves the user's computer.
 
-In this article, we introduce a new tool, Metacheck, which uses text search, code, and large language models to extract information from scientific articles (e.g., the draft of a manuscript, submitted or published articles, or preregistration documents) and provide automated suggestions for improvement. Metacheck is inspired by quality control processes in software development. For example, R package developers run a set of automated checks before they submit their package to the Comprehensive R Archive Network (CRAN). The automated checks aim to identify any remaining issues, and inform developers about how to fix them. The goal of Metacheck is to screen scientific manuscripts, identify areas for improvement based on algorithms that emulate what experts would do while checking a research article, and help researchers incorporate best research practices. The tool is modular, with a dedicated module for any practice that the research community wants to improve, and where automation offers a solution. This means the tool can be extended by the research community to fit their needs, and specialised modules can be created for different scientific fields based on what is considered a best practice in that research area. The tool can reduce the burden on peer reviewers by resolving common problems before submission, allowing peer reviewers to focus on those issues that cannot be automatically detected.
+In this article, we introduce a new tool, Metacheck, which uses text search, code, and optional LLMs to extract information from scientific articles (e.g., the draft of a manuscript, submitted or published articles, or preregistration documents) and provide automated suggestions for improvement. Metacheck is inspired by quality control processes in software development. For example, R package developers run a set of automated checks before they submit their package to the Comprehensive R Archive Network (CRAN). The automated checks aim to identify any remaining issues, and inform developers about how to fix them. The goal of Metacheck is to screen scientific manuscripts, identify areas for improvement based on algorithms that emulate what experts would do while checking a research article, and help researchers incorporate best research practices. The tool is modular, with a dedicated module for any practice that the research community wants to improve, and where automation offers a solution. This means the tool can be extended by the research community to fit their needs, and specialised modules can be created for different scientific fields based on what is considered a best practice in that research area. The tool can reduce the burden on peer reviewers by resolving common problems before submission, allowing peer reviewers to focus on those issues that cannot be automatically detected.
 
 Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., is the magnitude of the effect size reported in an the a priori power analysis?), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is there a good justification for the effect size entered in an a priori power analysis?). Metacheck focuses on the first task, and leaves the evaluation to the user. We will illustrate the potential of automated checks to improve best research practices in four areas, namely 1) experimental design, 2) open science practices, 3) statistical inferences, and 4) reporting guidelines. Finally, we will demonstrate the usefulness of a tool that can efficiently process text in scientific articles to perform menial tasks (e.g., check whether hyperlinks work), extract information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., statcheck and check for citations to retracted articles) in a single modular workflow that can be expanded by the scientific community. We perform these checks on `r length(psych_science)` articles published in Psychological Science from 2014 to 2026. This set of articles contains studies from all subfields in psychology.
 
@@ -350,6 +349,8 @@ ggplot(imprecise_df, aes(x = value)) +
 ggsave("output/hist_imprecise.png", width = 6, height = 4, dpi = 300)
 ```
 
+The performance of the `stat_p_exact` module was evaluated on 225 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. This set of articles contained 405 instances of non-exact *p*-values. It correctly detected 269 of 405 instances (`r round((269/405)*100, 0)`%) and incorrectly identified 78 instances `r round((78/405)*100, 0)`. The module missed 136 instances `r round((136/405)*100, 0)`of imprecisely reported *p*-values and correctly identified 4,557 instances of precisely reported *p*-values.
+
 We have also developed a related module, `stat_p_nonsig` that detects whether non-significant *p*-values are reported in an article. When such results are identified, the module warns researchers against interpreting non-significant *p*-values as evidence of the absence of an effect and returns all sentences containing non-significant *p*-values, allowing researchers to quickly check for potential misinterpretations. @tbl-non_sig displays the non-significant *p*-value and the full sentence in which it was reported.
 
 ```{r}
@@ -374,13 +375,15 @@ When a non-significant *p*-value is detected, the module provides the following 
 
 > "Meta-scientific research has shown nonsignificant p values are commonly misinterpreted. It is incorrect to infer that there is 'no effect', 'no difference', or that groups are 'the same' after p > 0.05. It is possible that there is a true non-zero effect, but that the study did not detect it. Make sure your inference acknowledges that it is possible that there is a non-zero effect. It is correct to include the effect is 'not significantly' different, although this just restates that p > 0.05."
 
+The performance of the `stat_p_nonsig` module was evaluated on 194 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. It correctly detected 1486 of 1602 instances of non-significant *p*-values (`r round((1486/1602)*100, 0)`).
+
 ### Checking (Un)reported Effect Sizes
 
 A second JARS guideline that can be checked automatically is whether effect sizes are reported alongside their statistical test result. Each statistical test (e.g., *t*-test or *F*-test) should be accompanied by the corresponding effect size (e.g., Cohen's *d* or $\eta_p^2$). Metacheck includes a dedicated rule-based module, `stat_effect_size`, that identifies *t*-tests and *F*-tests not accompanied by an effect size estimate and flags these instances for researchers.
 
 @fig-es-trend shows the results of applying the module to `r length(psych_science)` published articles in Psychological Science between 2014 and 2026. Approximately a decade ago, around 25% of articles reported *t*-tests or *F*-tests without an accompanying effect size. By 2024, this proportion had declined to between 10% and 15%, suggesting a substantial improvement in reporting practices. Tools such as Metacheck may help reduce this percentage even further by identifying missing effect sizes before manuscripts are submitted or published.
 
-To evaluate the performance of the module, we manually annotated the *t*-tests and *F*-tests reported in 250 open-access articles published in Psychological Science. The module correctly identified 100% of *t*-tests reported with effect sizes, 99% of *t*-tests reported without effect sizes, 99% of *F*-tests reported with effect sizes, and 100% of *F*-tests reported without effect sizes. This level of accuracy is sufficient for meta-scientific research, such as examining trends in adherence to reporting guidelines over time.
+The performance of the module was evaluated on 250 open-access articles published in Psychological Science, from which *t*-tests and *F*-tests were manually extracted to create a ground-truth dataset. The module correctly identified 100% of *t*-tests reported with effect sizes, 99% of *t*-tests reported without effect sizes, 99% of *F*-tests reported with effect sizes, and 100% of *F*-tests reported without effect sizes. This level of accuracy is sufficient for meta-scientific research, such as examining trends in adherence to reporting guidelines over time.
 
 ```{r}
 #| label: fig-es-trend
@@ -578,9 +581,9 @@ cat(res_posthoc_single$report[[3]])
 
 > You reported a power analysis that has been classified as 'post-hoc'. Calculating observed power is [almost never useful](https://lakens.github.io/statistical_inferences/08-samplesizejustification.html#sec-posthocpower). If you actually performed a sensitivity power analysis, label it as such explicitly.`.
 
-So far, we have classified power analyses using only a rule-based approach. However, a limitation of currently reported power analyses is the lack of standardization in how their components are described and reported. This lack of standardization makes it difficult, if not impossible, to reliably extract relevant information using a rule-based approach alone. This limitation can be partially addressed by using a large language model (LLM) to classify and extract information from reported power analyses.
+So far, we have classified power analyses using only a rule-based approach. However, a limitation of currently reported power analyses is the lack of standardization in how their components are described and reported. This lack of standardization makes it difficult, if not impossible, to reliably extract relevant information using a rule-based approach alone. This limitation can be partially addressed by using a LLM to classify and extract information from reported power analyses.
 
-Importantly, the LLM-based approach is opt-in. By default, the module does not use an LLM. Users can enable this functionality by setting the LLM option to `TRUE` using `llm_use(TRUE)`. When enabled, the module first applies the rule-based approach to reduce the number of LLM calls. Paragraphs identified as potentially containing power analyses are then submitted to Groq, an artificial intelligence inference service that provides access to multiple language models, including the open-source Ollama models. 
+Importantly, the LLM-based approach is opt-in. By default, the module operates without using a LLM. Users can enable this functionality by setting `llm_use(TRUE)`. When enabled, the module first applies the rule-based approach to reduce the number of calls to the LLM. Paragraphs identified as potentially containing power analyses are then submitted to Groq, an artificial intelligence inference service that provides access to multiple language models, including the open-source Ollama models. 
 
 Another important feature of the `power` module is that the LLM can be accessed either through an API or locally on the user's computer. By default, Metacheck uses the Groq API to process the LLM component. However, users may prefer to ensure that data do not leave their computer, for example when working with sensitive or confidential materials. in such cases, the module can be configured to use locally models, such as Ollama.
 
@@ -653,12 +656,15 @@ tbl_power_llm <- res_power_llm$table |>
   pivot_longer(
     cols = everything(),
     names_to = "Component",
-    values_to = "Proportion Missing (%)"
+    values_to = "Missing (%)"
   ) 
 
 # Display the table
 tbl_power_llm |> 
-  kable()
+  kable() |> 
+  footnote(
+    general = "Note. The number of missing cases for the type of power analysis is 0 because the LLM classified all instances into a power-analysis category."
+  )
 ```
 
 For the `r length(psych_science)` articles published in *Psychological Science*, the module using the LLM-based approach currently identifies and extracts information from `r length(unique(res_power_llm$table$paper_id))` articles containing `r length(res_power_llm$table$power_id)` sentences identified as reporting power analyses. Not all missing information is equally problematic. For example, a missing alpha level is less concerning because the conventional value of 5% is used in the vast majority of studies, although some researchers use more stringent thresholds (e.g., 0.01) or adjust alpha levels to account for multiple comparisons. By contrast, missing information about the statistical test is more concerning given the multiplicity of statistical tests used in psychology articles. Missing the expected effect size is also particularly problematic because this component is central to justifying the planned sample size.
@@ -667,7 +673,7 @@ Given the lack of standardization in how power analyses are reported and the com
 
 The following sentence is an example of a Type 2 error: "We attempted to recruit 200 participants to have sufficient power to detect a small to moderate effect size, but in recruiting groups of friends on campus, we ended up with 199 fluent English speakers (105 female)". This statement provides too minimal information about the details of the power analysis to be classified as one. Type 1 errors are annoying, but this annoyance is hopefully in the long run compensated by the benefits of a tool such as Metacheck. Type 2 errors miss an opportunity to inform users of best research practices. However, it is possible to still report the result of the power module by stating that no reported power analyses were identified, and informing users that if this is incorrect, they might want to reconsider whether the way they reported the power analysis is clear enough for human readers. A statement such as "We performed an a-priori power analysis for a one-sided dependent *t*-test with an alpha level of 0.05, a desired power of 0.95, an effect size of interest of $d_z$ = 0.2, which lead to a required sample size of *N* = 272" should have a very high probability of being automatically detected and should allow all components to be automatically retrieved by the module using the LLM-based approach.
 
-To evaluate the performance of the `power` module, we manually annotated the power analyses reported in 250 open-access articles published in Psychological Science. Accuracy was highest for identifying the alpha level (0.89), software used for the analysis (0.84), and achieved power (0.83). Accuracy was also relatively high for extracting the expected effect size (0.76) and sample size (0.73), and moderate for identifying the statistical test (0.70). The lowest accuracy was observed for the type of power analysis (0.52) and the metric used to express the expected effect size (0.59). These results indicate that the module performs better for components that are typically reported using standardized numerical values or commonly recognized software names, whereas components that depend more heavily on contextual interpretation or inconsistent reporting terminology are more challenging to extract accurately.
+The performance of the `power` module was evaluated on 250 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. Accuracy was highest for identifying the alpha level (0.89), software used for the analysis (0.84), and achieved power (0.83). Accuracy was also relatively high for extracting the expected effect size (0.76) and sample size (0.73), and moderate for identifying the statistical test (0.70). The lowest accuracy was observed for the type of power analysis (0.52) and the metric used to express the expected effect size (0.59). These results indicate that the module performs better for components that are typically reported using standardized numerical values or commonly recognized software names, whereas components that depend more heavily on contextual interpretation or inconsistent reporting terminology are more challenging to extract accurately.
 
 ### Checking Statements
 
@@ -781,7 +787,7 @@ Metacheck can also serve as a hub for existing automated tools. Researchers ofte
 
 As a proof of concept, we developed a Metacheck module for Statcheck [@nuijten_2016]. However, consistent with Metacheck's emphasis on validated automated checks, the module only implements analyses for which Statcheck's performance has been empirically evaluated. An initial study indicate that for *t*-tests, *F*-tests, and $\chi^2$ tests, Statcheck achieved a true positive rate of 85.3%, increasing to 100% when one-tailed tests were explicitly identified using terms such as “one-tailed”, “one-sided”, or “directional”. In contrast, Statcheck has not been validated for correlations (*r*) tests or *Z*-tests, and anecdotal evidence suggests substantially lower accuracy for these tests. Accordingly, the Statcheck module excludes correlation tests and *Z*-tests by default until their performance has been validated.
 
-Similarly, we have developed a Metacheck module for [RegCheck](https://regcheck.app/), a fully automated comparison tool that uses large language models to compare a manuscript with its preregistration [@cummins_2026]. Metacheck also has a module that checks preregistrations but it takes a slightly different approach. Rather than relying on LLM-based comparison, it automatically retrieves the preregistration from AsPredicted automatically and extracts the preregistered sample size, taking advantage of the AsPredicted structured template. Metacheck then presents this information alongside the manuscript, allowing users to quickly compare the preregistered and the reported sample sizes.
+Similarly, we have developed a Metacheck module for [RegCheck](https://regcheck.app/), a fully automated comparison tool that uses LLMs to compare a manuscript with its preregistration [@cummins_2026]. Metacheck also has a module that checks preregistrations but it takes a slightly different approach. Rather than relying on LLM-based comparison, it automatically retrieves the preregistration from AsPredicted automatically and extracts the preregistered sample size, taking advantage of the AsPredicted structured template. Metacheck then presents this information alongside the manuscript, allowing users to quickly compare the preregistered and the reported sample sizes.
 
 # Discussion
 
