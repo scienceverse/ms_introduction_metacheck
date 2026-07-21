@@ -13,6 +13,7 @@ metacheck_paper/
 │   └── res_open_practices.RData      # Results of the `open_practices` module
 ├── manuscript.qmd                    # Quarto manuscript source file
 ├── manuscript.html                   # Rendered HTML manuscript
+├── manuscript.docx                   # Rendered DOCX manuscript
 ├── bibliography_doi.bib              # Bibliography file containing references
 ├── output/                           # Generated outputs (figures, tables, and rendered files)
 ├── _extensions/                      # Quarto extensions used by the manuscript
