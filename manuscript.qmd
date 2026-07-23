@@ -53,15 +53,31 @@ pak::pkg_install("scienceverse/metacheck@main")
 ```{r}
 #| label: libraries
 #| message: FALSE
+#| output: false
+
+# Libraries to be loaded
+packages <- c(
+  "metacheck",
+  "knitr",
+  "kableExtra",
+  "dplyr",
+  "ggplot2",
+  "tidyr",
+  "stringr"
+)
 
 # Load libraries
-library(metacheck)
-library(knitr)
-library(kableExtra)
-library(dplyr)
-library(ggplot2)
-library(tidyr)
-library(stringr)
+lapply(
+  packages,
+  library,
+  character.only = TRUE
+)
+
+# Create BIB file for R packages
+write_bib(
+  packages,
+  file = "package-citations.bib"
+)
 ```
 
 ```{r}
@@ -87,7 +103,7 @@ results <- results |>
 
 Meta-scientific research demonstrates significant room for improvement in how researchers design studies, report findings, and implement open science practices when sharing their work. The uptake of best research practices is slow [@sharpe2013resistance] and often suboptimal. For example, researchers often use invalid and unreliable measures [@goos2024assessing], misinterpret non-significant results [@aczel2018quantifying], write insufficiently specific preregistrations [@van_potential_2024], invalid power analyses [@thibault2024evaluation], and misuse Bayes factors [@tendeiro2024diagnosing]. Although it is the responsibility of researchers to keep up to date with best research practices, time constraints and the rapid pace of new developments make this challenging. Peer reviewers, similarly pressed for time, may not identify instances where best research practices are not followed. Checklists have the potential to increase the adoption of best practices, but in practice, they have limited impact, as researchers might not be aware of the existence of checklists, and they still need sufficient expertise to evaluate whether they have adhered to items on the checklist [@dexter2017narrative].
 
-Human factors research suggests that automation (where researchers remain in the loop) can offer a partial solution. Two recent developments have increased the possibility that best research practices can be automatically detected. First, meta-scientific research has identified where the adoption of best practices is lagging and offered concrete suggestions for improvement. This work often includes data that can be used as ground truth to validate automated checks. Second, advances in machine learning and artificial intelligence have made it easier to deal with written text, both when turning scientific articles into structured data files (e.g., using the GROBID machine learning library) and when extracting or classifying information in written text. This has made it possible to develop algorithms that automatically emulate what experts do when they assess whether best research practices are present or absent. For example, a reviewer might search for the section in the paper that reports an a priori power analysis and then check whether authors have followed best reporting practices. Specifically, the reviewer would check whether authors report the alpha level, desired power, the effect size metric, a justification for the effect size, and the statistical test for each hypothesis tested [@lakens_justification_2022]. If any of these components is missing, authors should be made aware that they are not following best research practices, so that the transparency of the power analysis can be improved. While many automated checks for best research practices will require only simple text matching based on regular expressions, more complex text extraction is possible using large language models (LLMs). 
+Human factors research suggests that automation (where researchers remain in the loop) can offer a partial solution. Two recent developments have increased the possibility that best research practices can be automatically detected. First, meta-scientific research has identified where the adoption of best practices is lagging and offered concrete suggestions for improvement. This work often includes data that can be used as ground truth to validate automated checks. Second, advances in machine learning and artificial intelligence have made it easier to deal with written text, both when turning scientific articles into structured data files (e.g., using the GROBID machine learning library) and when extracting or classifying information in written text. This has made it possible to develop algorithms that automatically emulate what experts do when they assess whether best research practices are present or absent. For example, a reviewer might search for the section in the paper that reports an a priori power analysis and then check whether authors have followed best reporting practices. Specifically, the reviewer would check whether authors report the alpha level, desired power, the effect size metric, a justification for the effect size, and the statistical test for each hypothesis tested [@lakens_justification_2022]. If any of these components is missing, authors should be made aware that they are not following best research practices, so that the transparency of the power analysis can be improved. While many automated checks for best research practices will require only simple text matching based on regular expressions, more complex text extraction is possible using large language models (LLMs).
 
 Importantly, the use of LLMs is entirely optional and opt-in. Metacheck restricts LLMs to the classification of existing text, and the vast majority of modules work without an LLM; the only exceptions are `power` and `prereg_check`. Finally, when users opt to use an LLM, models can be run locally, ensuring that no data leaves the user's computer.
 
@@ -104,6 +120,8 @@ As developers, our priority is to develop modules with error rates that are low 
 The second use case for Metacheck is as a meta-scientific tool to examine a large number of research articles. For example, a science funder might be interested in how many manuscripts by researchers whom they fund share data and code in line with its policy. A meta-researcher might be interested in how many articles report effect sizes in a specific literature, and assess whether reporting practices have improved. A scientific journal might want to evaluate how a change in editorial practices has impacted the diversity in populations that are examined in the studies they publish. Metacheck modules can easily be run on large numbers of articles, facilitating text searches and the automatic extraction and classification of information. In this use case, the usability of an automated tool requires low error rates if users are to rely on e the output of the tool. Here, Type 2 errors are problematic and difficult to identify, because identifying them requires users to manually screen all articles for instances that were missed by the modules, and if manual screening were feasible, there would be little need for an automated tool. Type 1 errors might be easier to identify but still require users to manually check all instances flagged by a module. Therefore, low error rates are important for the usability of Metacheck as a meta-scientific tool. Validation procedures that quantify error rates are essential to safeguard the accuracy of results, allow users to evaluate whether modules are accurate enough for their purposes, and to report the corresponding error rates when presenting results. It is possible that a module has low enough error rates for the individual use case, while still being too high for meta-scientific use cases.
 
 # Examples
+
+In the following section, we demonstrate how to use selected Metacheck modules from both a researcher's perspective and a meta-scientific perspective. All examples were produced using R [@RStudio] and the following R packages: `dplyr` [@R-dplyr], `ggplot2` [@R-ggplot2], `kableExtra` [@R-kableExtra], `knitr` [@R-knitr], `metacheck` [@R-metacheck], and `stringr` [@R-stringr]. This article was written using Quarto [@Quarto].
 
 ## Modules
 
@@ -144,7 +162,7 @@ filter(
 
 The modules also provide a recommendation for improving the research practice associated with the warnings they detect. For example, the `stat_p_exact` module it returns the following recommendation:
 
-> "Reporting *p* values imprecisely (e.g., *p* < .05) reduces transparency, reproducibility, and re-use (e.g., in *p* value meta-analyses). Best practice is to report exact p-values with three decimal places (e.g., *p* = .032) unless *p* values are smaller than 0.001, in which case you can use *p* < .001." 
+> "Reporting *p* values imprecisely (e.g., *p* \< .05) reduces transparency, reproducibility, and re-use (e.g., in *p* value meta-analyses). Best practice is to report exact p-values with three decimal places (e.g., *p* = .032) unless *p* values are smaller than 0.001, in which case you can use *p* \< .001."
 
 All modules can be run in batch mode on a large number of articles, and the output can be used for meta-scientific research. One example is shown in @fig-imprecise-pvalues, which displays the proportion of imprecisely reported *p*-values by statistical significance over time. The figure shows that the proportion of imprecisely reported *p*-values is similar across significant and non-significant results. Another example is shown in @fig-atleastone, which displays the proportion of articles containing at least one imprecisely reported *p*-values over time. The figure shows that there has been a decline in comparison to a decade ago.
 
@@ -389,7 +407,7 @@ tibble(
 
 When a non-significant *p*-value is detected, the module provides the following recommendation on how to interpret the a non-significant result:
 
-> "Meta-scientific research has shown nonsignificant p values are commonly misinterpreted. It is incorrect to infer that there is 'no effect', 'no difference', or that groups are 'the same' after p > 0.05. It is possible that there is a true non-zero effect, but that the study did not detect it. Make sure your inference acknowledges that it is possible that there is a non-zero effect. It is correct to include the effect is 'not significantly' different, although this just restates that p > 0.05."
+> "Meta-scientific research has shown nonsignificant p values are commonly misinterpreted. It is incorrect to infer that there is 'no effect', 'no difference', or that groups are 'the same' after p \> 0.05. It is possible that there is a true non-zero effect, but that the study did not detect it. Make sure your inference acknowledges that it is possible that there is a non-zero effect. It is correct to include the effect is 'not significantly' different, although this just restates that p \> 0.05."
 
 The performance of the `stat_p_nonsig` module was evaluated on 194 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. It correctly detected 1486 of 1602 instances of non-significant *p*-values (`r round((1486/1602)*100, 0)`).
 
@@ -602,15 +620,15 @@ res_posthoc_single <- module_run(paper, "power")
 cat(res_posthoc_single$report[[3]])
 ```
 
-> You reported a power analysis that has been classified as 'post-hoc'. Calculating observed power is [almost never useful](https://lakens.github.io/statistical_inferences/08-samplesizejustification.html#sec-posthocpower). If you actually performed a sensitivity power analysis, label it as such explicitly.`.
+> You reported a power analysis that has been classified as 'post-hoc'. Calculating observed power is [almost never useful](https://lakens.github.io/statistical_inferences/08-samplesizejustification.html#sec-posthocpower). If you actually performed a sensitivity power analysis, label it as such explicitly.\`.
 
-So far, we have classified power analyses using only a rule-based approach. However, a limitation of currently reported power analyses is the lack of standardization in how their components are described and reported. This lack of standardization makes it difficult, if not impossible, to reliably extract relevant information using a rule-based approach alone. This limitation can be partially addressed by using a LLM to classify and extract information from reported power analyses.
+So far, we have classified power analyses using only a rule-based approach. However, a limitation of currently reported power analyses is the lack of standardization in how their components are described and reported. This lack of standardization makes it difficult, if not impossible, to reliably extract relevant information using a rule-based approach alone. This limitation can be partially addressed by using an LLM to classify and extract information from reported power analyses.
 
-Importantly, the LLM-based approach is opt-in. By default, the module operates without using a LLM. Users can enable this functionality by setting `llm_use(TRUE)`. When enabled, the module first applies the rule-based approach to reduce the number of calls to the LLM. Paragraphs identified as potentially containing power analyses are then submitted to Groq, an artificial intelligence inference service that provides access to multiple language models, including the open-source Ollama models. 
+Importantly, the LLM-based approach is opt-in. By default, the module operates without using an LLM. Users can enable this functionality by setting `llm_use(TRUE)`. When enabled, the module first applies the rule-based approach to reduce the number of calls to the LLM. Paragraphs identified as potentially containing power analyses are then submitted to Groq, an artificial intelligence inference service that provides access to multiple language models, including the open-source Ollama models.
 
-Another important feature of the `power` module is that the LLM can be accessed either through an API or locally on the user's computer. By default, Metacheck uses the Groq API to process the LLM component. However, users may prefer to ensure that data do not leave their computer, for example when working with sensitive or confidential materials. In such cases, the module can be configured to run models locally, such as Ollama.
+Another important feature of the `power` module is that the LLM can be accessed either through an API or locally on the user's computer. By default, Metacheck uses the Groq API to process the LLM component. However, users may prefer to ensure that data does not leave their computer, for example when working with sensitive or confidential materials. In such cases, the module can be configured to run models locally, such as Ollama.
 
-Based on a predefined prompt, the LLM returns a JSON-structured output containing the identified power-analysis components. The module then uses this standardized output to identify missing reporting components and provide feedback on the completeness of the reported power analysis. An additional advantage of the LLM-based approach is that multiple power analyses are often reported within a single paragraph. The prompt submitted to the LLM therefore instructs the model to return separate outputs when multiple power analyses are identified within the same paragraph. @tbl-power_llm reports the cases and proportion of components identified in a sample a sample of `r length(psych_science)`. To generate these results, the `power` model was run using the locally hosted Ollama model qwen3.5:9b. 
+Based on a predefined prompt, the LLM returns a JSON-structured output containing the identified power-analysis components. The module then uses this standardized output to identify missing reporting components and provide feedback on the completeness of the reported power analysis. An additional advantage of the LLM-based approach is that multiple power analyses are often reported within a single paragraph. The prompt submitted to the LLM therefore instructs the model to return separate outputs when multiple power analyses are identified within the same paragraph. @tbl-power_llm reports the cases and proportion of components identified in a sample of `r length(psych_science)`. To generate these results, the `power` model was run using the locally hosted Ollama model qwen3.5:9b.
 
 ```{r}
 #| label: llm_power
@@ -691,23 +709,24 @@ tbl_power_llm <- res_power_llm$table |>
 tbl_power_llm |> 
   kable() 
 ```
+
 **Note**. The number of missing cases for the type of power analysis is 0 because the LLM classified all instances into a power-analysis category.
 
-For the `r length(psych_science)` articles published in *Psychological Science*, the module using the LLM-based approach currently identifies and extracts information from `r length(unique(res_power_llm$table$paper_id))` articles containing `r length(res_power_llm$table$power_id)` sentences identified as reporting power analyses. Not all missing information is equally problematic. For example, a missing alpha level is less concerning because the conventional value of 5% is used in the vast majority of studies, although some researchers use more stringent thresholds (e.g., 0.01) or adjust alpha levels to account for multiple comparisons. By contrast, missing information about the statistical test is more concerning given the multiplicity of statistical tests used in psychology articles. Missing the expected effect size is also particularly problematic because this component is central to justifying the planned sample size.
+For the `r length(psych_science)` articles published in *Psychological Science*, the module using the LLM-based approach currently identifies and extracts information from `r length(unique(res_power_llm$table$paper_id))` articles containing `r length(res_power_llm$table$power_id)` sentences identified as reporting power analyses. Not all missing information is equally problematic. For example, a missing alpha level is less concerning because the conventional value of 5% is used in most studies, although some researchers use more stringent thresholds (e.g., 0.01) or adjust alpha levels to account for multiple comparisons. By contrast, missing information about the statistical test is more concerning given the multiplicity of statistical tests used in psychology articles. Missing the expected effect size is also particularly problematic because this component is central to justifying the planned sample size.
 
-Given the lack of standardization in how power analyses are reported and the complexity of human language, Type 1 and Type 2 errors should be expected. For an example, the sentence "Null of 33% power Note: The observed p-curve includes 29 statistically significant (*p* \< .05) results, of which 14 are *p* \< .025. There were 8 additional results entered but excluded from p-curve because they were *p* \> .05." was incorrectly classified as a sentence describing a power analysis (i.e., a Type 1 error) due to the presence of a significance level threshold, and numbers of entities included and excluded in the analysis.
+Given the lack of standardization in how power analyses are reported, and the complexity of human language, Type 1 and Type 2 errors should be expected. For an example, the sentence "Null of 33% power Note: The observed p-curve includes 29 statistically significant (*p* \< .05) results, of which 14 are *p* \< .025. There were 8 additional results entered but excluded from p-curve because they were *p* \> .05." was incorrectly classified as a sentence describing a power analysis (i.e., a Type 1 error) due to the presence of a significance level threshold, and numbers of entities included and excluded in the analysis.
 
 The following sentence is an example of a Type 2 error: "We attempted to recruit 200 participants to have sufficient power to detect a small to moderate effect size, but in recruiting groups of friends on campus, we ended up with 199 fluent English speakers (105 female)". This statement provides too minimal information about the details of the power analysis to be classified as one. Type 1 errors are annoying, but this annoyance is hopefully in the long run compensated by the benefits of a tool such as Metacheck. Type 2 errors miss an opportunity to inform users of best research practices. However, it is possible to still report the result of the power module by stating that no reported power analyses were identified, and informing users that if this is incorrect, they might want to reconsider whether the way they reported the power analysis is clear enough for human readers. A statement such as "We performed an a-priori power analysis for a one-sided dependent *t*-test with an alpha level of 0.05, a desired power of 0.95, an effect size of interest of $d_z$ = 0.2, which lead to a required sample size of *N* = 272" should have a very high probability of being automatically detected and should allow all components to be automatically retrieved by the module using the LLM-based approach.
 
-The performance of the `power` module was evaluated on 250 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. Accuracy was highest for identifying the alpha level (0.89), software used for the analysis (0.84), and achieved power (0.83). Accuracy was also relatively high for extracting the expected effect size (0.76) and sample size (0.73), and moderate for identifying the statistical test (0.70). The lowest accuracy was observed for the type of power analysis (0.52) and the metric used to express the expected effect size (0.59). These results indicate that the module performs better for components that are typically reported using standardized numerical values or commonly recognized software names, whereas components that depend more heavily on contextual interpretation or inconsistent reporting terminology are more challenging to extract accurately.
+The performance of the `power` module was evaluated on 250 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. Accuracy was highest for identifying the alpha level (0.89), software used for the analysis (0.84) and achieved power (0.83). Accuracy was also relatively high for extracting the expected effect size (0.76) and sample size (0.73), and moderate for identifying the statistical test (0.70). The lowest accuracy was observed for the type of power analysis (0.52) and the metric used to express the expected effect size (0.59). These results indicate that the module performs better for components that are typically reported using standardized numerical values or commonly recognized software names, whereas components that depend more heavily on contextual interpretation or inconsistent reporting terminology are more challenging to extract accurately.
 
 ### Checking Statements
 
-So far, we have focused on modules that capture expertise about best research practices. However, an additional category are checks that do not require expertise but still benefit from automation. These checks can be time consuming and may be overlooked by researchers despite being relatively straightforward to perform. We will illustrate the usefulness of Metacheck for automating such routine tasks with the rule-based module `open_practices`. 
+So far, we have focused on modules that capture expertise about best research practices. However, an additional category is checks that do not require expertise but still benefit from automation. These checks can be time consuming and may be overlooked by researchers despite being relatively straightforward to perform. We will illustrate the usefulness of Metacheck for automating such routine tasks with the rule-based module `open_practices`.
 
-This module searches for statements indicating that data, code, materials, or a preregistration are openly available. It returns the sentences in which such statements are identified and classifies, for each type of open practice, whether a corresponding statement was detected. 
+This module searches for statements indicating that data, code, materials, or preregistration are openly available. It returns the sentences in which such statements are identified and classifies, for each type of open practice, whether a corresponding statement was detected.
 
-@tbl-open_practices shows the results of applying the module to a single article. The first statement indicates that both data and code are available, whereas the second indicates the availability of code only. The third statement reports that data, analysis code, and experimental scripts are publicly available. Therefore, the three statements have been correctly identified.  
+@tbl-open_practices shows the results of applying the module to a single article. The first statement indicates that both data and code are available, whereas the second indicates the availability of code only. The third statement reports that data, analysis code, and experimental scripts are publicly available. Therefore, the three statements have been correctly identified.
 
 ```{r}
 #| label: tbl-open_practices
@@ -764,12 +783,11 @@ example_on_request <- module_run(psych_science$`0956797615576533`, "open_practic
 example_on_request$report
 ```
 
-> Some materials are shared on request, which is not an acceptable method of sharing. This is based on the following text:\n\n> Data for the present experiments are available on request from the corresponding author."
+> Some materials are shared on request, which is not an acceptable method of sharing. This is based on the following text:\n\n\> Data for the present experiments are available on request from the corresponding author."
 
 ### Checking References
 
-Metacheck includes several modules that use the references list of an article to perform several automated checks, such as checking whether cited articles have corrections, expressions of concern, or retractions, based on data from Retraction Watch; identifying cases in which an original article is cited even though a direct replication study of the same article exists but has not been cited [@roseler_replication_2024]; identifying incoherent references; and
-identifying whether cited articles have comments on PubPeer. Such comments may be worth knowing about, as they can range from minor clarifications to serious concerns about the work. 
+Metacheck includes several modules that use the references list of an article to perform several automated checks, such as checking whether cited articles have corrections, expressions of concern, or retractions, based on data from Retraction Watch; identifying cases in which an original article is cited even though a direct replication study of the same article exists but has not been cited [@roseler_replication_2024]; identifying incoherent references; and identifying whether cited articles have comments on PubPeer. Such comments may be worth knowing about, as they can range from minor clarifications to serious concerns about the work.
 
 For illustrative purposes, we demonstrate the `ref_pubpeer` module. If the module detects that a cited article has a comment on PubPeer, it returns the following warning:
 
@@ -802,25 +820,30 @@ res_pubpeer$table |>
   kable()
 ```
 
-
 # Creating Metacheck Modules
 
 Metacheck is modular by design. Its modules are conceptually similar to functions in R packages: each module performs a specific automated check. This architecture reflects a core value of Metacheck: community engagement and epistemic diversity. Decisions about what constitutes best research practice should emerge through scientific discussions rather than be imposed by a single group. We have therefore designed Metacheck to make it as straightforward as possible for researchers to translate their own views on best practices into modules.
 
-Anyone can develop a module and validate its performance. Modules can be developed and installed locally, or contributed to the Metacheck R package through a GitHub pull request. This flexibility enables journals to develop modules that verify compliance with their submission guidelines, methodological experts to automate checks for issues they frequently identify during peer review, and organizations to create modules that assess adherence to reporting guidelines that they publish.
+Anyone can develop a module and validate its performance. Modules can be developed and installed locally or contributed to the Metacheck R package through a GitHub pull request. This flexibility enables journals to develop modules that verify compliance with their submission guidelines, methodological experts to automate checks for issues they frequently identify during peer review, and organizations to create modules that assess adherence to reporting guidelines that they publish.
 
-Metacheck can also serve as a hub for existing automated tools. Researchers often need to use multiple software packages, websites or online services to evaluate different aspects of a manuscript. Integrating these checks into a single tool simplifies this workflow and may also increase awareness of tools that researchers would otherwise not discover.
+Metacheck can also serve as a hub for existing automated tools. Researchers often need to use multiple software packages, websites, or online services to evaluate different aspects of a manuscript. Integrating these checks into a single tool simplifies this workflow and may also increase awareness of tools that researchers would otherwise not discover.
 
-As a proof of concept, we developed a Metacheck module for Statcheck [@nuijten_2016]. However, consistent with Metacheck's emphasis on validated automated checks, the module only implements analyses for which Statcheck's performance has been empirically evaluated. An initial study indicated that for *t*-tests, *F*-tests, and $\chi^2$ tests, Statcheck achieved a true positive rate of 85.3%, increasing to 100% when one-tailed tests were explicitly identified using terms such as “one-tailed”, “one-sided”, or “directional”. In contrast, Statcheck has not been validated for correlations (*r*) tests or *Z*-tests, and anecdotal evidence suggests substantially lower accuracy for these tests. Accordingly, the Statcheck module excludes correlation tests and *Z*-tests by default until their performance has been validated.
+As proof of concept, we developed a Metacheck module for Statcheck [@nuijten_2016]. However, consistent with Metacheck's emphasis on validated automated checks, the module only implements analyses for which Statcheck's performance has been empirically evaluated. An initial study indicated that for *t*-tests, *F*-tests, and $\chi^2$ tests, Statcheck achieved a true positive rate of 85.3%, increasing to 100% when one-tailed tests were explicitly identified using terms such as “one-tailed”, “one-sided”, or “directional”. In contrast, Statcheck has not been validated for correlations (*r*) tests or *Z*-tests, and anecdotal evidence suggests substantially lower accuracy for these tests. Accordingly, the Statcheck module excludes correlation tests and *Z*-tests by default until their performance has been validated.
 
-Similarly, we have developed a Metacheck module for [RegCheck](https://regcheck.app/), a fully automated comparison tool that uses LLMs to compare a manuscript with its preregistration [@cummins_2026]. Metacheck also has a module that checks preregistrations but it takes a slightly different approach. Rather than relying on LLM-based comparison, it automatically retrieves the preregistration from AsPredicted automatically and extracts the preregistered sample size, taking advantage of the AsPredicted structured template. Metacheck then presents this information alongside the manuscript, allowing users to quickly compare the preregistered and the reported sample sizes.
+Similarly, we have developed a Metacheck module for [RegCheck](https://regcheck.app/), a fully automated comparison tool that uses LLMs to compare a manuscript with its preregistration [@cummins_2026]. Metacheck also has a module that checks preregistrations, but it takes a slightly different approach. Rather than relying on LLM-based comparison, it automatically retrieves the preregistration from AsPredicted automatically and extracts the preregistered sample size, taking advantage of the AsPredicted structured template. Metacheck then presents this information alongside the manuscript, allowing users to quickly compare the preregistered and the reported sample sizes.
 
 # Discussion
 
-To prevent the widespread misuse of an automated tool such as Metacheck, it is important to recognize its limitations. Although it may seem desirable for every module to achieve very high accuracy, a cost-benefit analysis suggests that, at this stage, it is more valuable to develop a broad range of modules that provide useful assistance despite moderate error rates than to devote the same effort to a small number of modules that achieve near-perfect accuracy and are primarily suitable for meta-scientific research. This trade-off reflects the inherent complexity of scientific writing. The flexibility of human language, combined with the lack of standardization in how information is reported in manuscripts, means that reducing a module's error rate from 50% to 20% is often substantially easier than reducing it from 20% to 5%. Consequently, our current development strategy follows the Pareto principle: the priority is building modules that identify the relatively small number of common reporting errors that account for the majority of avoidable errors. In other words, we focus on the 20% of issues that, when detected, help prevent 80% of reporting errors.
+To prevent the widespread misuse of an automated tool such as Metacheck, it is important to recognize its limitations. Although it may seem desirable for every module to achieve very high accuracy, a cost-benefit analysis suggests that, at this stage, it is more valuable to develop a broad range of modules that provide useful assistance despite moderate error rates than to devote the same effort to a small number of modules that achieve near-perfect accuracy and are primarily suitable for meta-scientific research. This trade-off reflects the inherent complexity of scientific writing. The flexibility of human language, combined with the lack of standardization in how information is reported in manuscripts, means that reducing a module error rate from 50% to 20% is often substantially easier than reducing it from 20% to 5%. Consequently, our current development strategy follows the Pareto principle: the priority is building modules that identify the relatively small number of common reporting errors that account for most avoidable errors. In other words, we focus on the 20% of issues that, when detected, help prevent 80% of reporting errors.
+
+```{r}
+#| label: session-info
+#| include: false
+
+capture.output(
+  sessioninfo::session_info(),
+  file = "session-info.txt"
+)
+```
 
 # References
-
-
-
-

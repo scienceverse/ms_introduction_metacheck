@@ -20,7 +20,8 @@ metacheck_paper/
 ├── bibliography_doi.bib              # Bibliography file containing references
 ├── output/                           # Generated outputs (figures, tables, and rendered files)
 ├── _extensions/                      # Quarto extensions used by the manuscript
-└── apa.csl                           # APA citation style file
+├── apa.csl                           # APA citation style file
+└── session-info.txt                  # # R session information
 ```
 
 # Data and Code
