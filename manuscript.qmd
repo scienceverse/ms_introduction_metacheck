@@ -261,7 +261,7 @@ ggplot(
   scale_fill_manual(
     values = c(
       "significant" = "skyblue", 
-      "nonsignificant" = "forestgreen")
+      "nonsignificant" = "forestgreen") 
     ) +
   theme_minimal()
 
@@ -274,32 +274,43 @@ ggsave("output/imprecise_pvalues.png", width = 6, height = 4, dpi = 300)
 
 results_with_imprecise <- results |> 
   left_join(
-    res_imprecise$summary_table, 
+    res_stat_p_exact$summary_table, 
     by = "paper_id"
     )
 
 # Calculate percentage of papers with at least one imprecise p per year
-summary_df <- results_with_imprecise |> 
-    group_by(year) |> 
-    summarise(
-      total_papers = n(),
-      papers_with_imprecise = sum(n_imprecise > 0, na.rm = TRUE),
-      percentage = (papers_with_imprecise / total_papers) * 100
-    )
+summary_df <- results_with_imprecise |>
+  mutate(year = as.character(year)) |>
+  group_by(year) |>
+  summarise(
+    total_papers = n(),
+    papers_with_imprecise = sum(n_imprecise > 0, na.rm = TRUE),
+    percentage = (papers_with_imprecise / total_papers) * 100,
+    .groups = "drop"
+  )
+all_years <- data.frame(year = as.character(2014:2026))
+summary_df <- all_years |>
+  left_join(summary_df, by = "year") |>
+  mutate(
+    percentage = ifelse(is.na(percentage), 0, percentage),
+    total_papers = ifelse(is.na(total_papers), 0, total_papers),
+    papers_with_imprecise = ifelse(is.na(papers_with_imprecise), 0, papers_with_imprecise)
+  )
 
 # Create the bar plot
-ggplot(summary_df, 
-       aes(x = factor(year), y = percentage)
-       ) +
- geom_bar(
-   stat = "identity", 
-   fill = "skyblue", 
-   color = "black"
-   ) +
-labs(
-  x = "Year",
-  y = "Percentage of Articles (%)"
-  ) + 
+ggplot(
+  summary_df,
+  aes(x = factor(year, levels = all_years$year), y = percentage)
+) +
+  geom_col(
+    fill = "skyblue",
+    color = "black"
+  ) +
+  scale_x_discrete(limits = all_years$year, drop = FALSE) +
+  labs(
+    x = "Year",
+    y = "Percentage of Articles (%)"
+  ) +
   theme_minimal()
 
 # Save plot
@@ -403,7 +414,7 @@ save(res_effect_size, file = "input/res_effect_size.RData")
 
 ```{r}
 #| label: fig-es-trend
-#| fig-cap: "Percentage of articles reporting *t*-tests or *F*-tests without effect sizes."
+#| fig-cap: "Proportion of articles reporting *t*-tests or *F*-tests without effect sizes."
 
 # Load results
 load("input/res_effect_size.RData")
@@ -458,7 +469,7 @@ ggplot(
     "t-test" = "skyblue", 
     "F-test" = "orange")
     ) +
-  theme_minimal()
+  theme_minimal() 
 
 # Save plot
 ggsave("output/stat_effect_size.png", width = 6, height = 4, dpi = 300)
@@ -506,22 +517,6 @@ bind_rows(
 ) |> 
   kable()
 ```
-
-```{r}
-# Table of F-test results not included
-#| eval: FALSE
-#| label: tbl-es_ftest
-
-res_effect_size$table |> 
-  filter(test == "F-test" & eta_coherence == "no_match") |>
-  select(
-    "test_text", 
-    "es", 
-    "eta_implied_partial", 
-    "eta_coherence") |>
-  kable()
-```
-
 
 ### Checking Power Analyses
 
