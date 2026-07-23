@@ -9,7 +9,10 @@ metacheck_paper/
 ├── input/                            # Data used in the analyses
 │   ├── psychsci.rds                  # Articles used to run the Metacheck modules
 │   ├── psych_science_crossref.RData  # Crossref metadata for the articles
-│   ├── res_power_llm.RData           # Results of the `power` module
+│   ├── res_stat_p_exact.RData        # Results of the `stat_p_exact` module 
+│   ├── res_stat_effect_size.RData    # Results of the `stat_effect_size` module 
+│   ├── res_power.RData               # Results of the `power` module using the rule-based approach
+│   ├── res_power_llm.RData           # Results of the `power` module using the LLM-based approach
 │   └── res_open_practices.RData      # Results of the `open_practices` module
 ├── manuscript.qmd                    # Quarto manuscript source file
 ├── manuscript.html                   # Rendered HTML manuscript

@@ -66,7 +66,7 @@ library(stringr)
 
 ```{r}
 #| label: data
-#| eval: TRUE
+#| eval: TRUE 
 
 # Load RDS object containing articles from 2014 to 2026
 psych_science <- readRDS("input/psychsci.rds")
@@ -149,21 +149,32 @@ The modules also provide a recommendation for improving the research practice as
 All modules can be run in batch mode on a large number of articles, and the output can be used for meta-scientific research. One example is shown in @fig-imprecise-pvalues, which displays the proportion of imprecisely reported *p*-values by statistical significance over time. The figure shows that the proportion of imprecisely reported *p*-values is similar across significant and non-significant results. Another example is shown in @fig-atleastone, which displays the proportion of articles containing at least one imprecisely reported *p*-values over time. The figure shows that there has been a decline in comparison to a decade ago.
 
 ```{r}
-#| label: fig-imprecise-pvalues
-#| fig-cap: "Proportion of Articles Reporting Imprecise P-Values, by Statistical Significance."
+#| label: res_stat_p_exact
+#| eval: FALSE # Set to TRUE to rerun module
 
 # Run "stat_p_exact" module
-res_imprecise <- module_run(psych_science, "stat_p_exact")
+res_stat_p_exact <- module_run(psych_science, "stat_p_exact")
+
+# Save results
+save(res_stat_p_exact, file = "input/res_stat_p_exact.RData")
+```
+
+```{r}
+#| label: fig-imprecise-pvalues
+#| fig-cap: "Proportion of articles reporting imprecise *p*-values, by statistical significance."
+
+# Load results
+load("input/res_stat_p_exact.RData")
 
 # Classify p-values as significant or non-significant based on the reported comparison operator
-res_imprecise$table$significance <- ifelse(
-  res_imprecise$table$p_comp == "<", 
+res_stat_p_exact$table$significance <- ifelse(
+  res_stat_p_exact$table$p_comp == "<", 
   "significant", 
   "nonsignificant"
   )
 
 # Summarize imprecisely reported p-values by article and significance category
-merged_data <- res_imprecise$table |> 
+merged_data <- res_stat_p_exact$table |> 
   group_by(paper_id, significance) |> 
   summarise(
     imprecise_text = list(text),  # Store as a list (vector)
@@ -259,7 +270,7 @@ ggsave("output/imprecise_pvalues.png", width = 6, height = 4, dpi = 300)
 
 ```{r}
 #| label: fig-atleastone
-#| fig-cap: "Proportion of Articles with At Least One Imprecisely Reported P-Value."
+#| fig-cap: "Proportion of articles with at least one imprecisely reported *p*-value."
 
 results_with_imprecise <- results |> 
   left_join(
@@ -299,7 +310,8 @@ Another example is illustrated in @fig-hist, which shows the distribution of imp
 
 ```{r}
 #| label: fig-hist
-#| fig-cap: "Distribution of Imprecisely Reported P-Values."
+#| warning: FALSE
+#| fig-cap: "Distribution of imprecisely reported *p*-values."
 
 # Histogram for exact values
 # Step 1: Unnest `imprecise_text` into one row per value
@@ -348,7 +360,7 @@ We have also developed a related module, `stat_p_nonsig` that detects whether no
 
 ```{r}
 #| label: tbl-non_sig
-#| tbl-cap: "Example output of the `stat_p_nonsig` module applied to a single article"
+#| tbl-cap: "Example output of the `stat_p_nonsig` module applied to a single article."
 
 # Example of misinterpretation of non-significant results
 paper <- psych_science$`09567976241268630`
@@ -379,11 +391,22 @@ A second JARS guideline that can be checked automatically is whether effect size
 The performance of the module was evaluated on 250 open-access articles published in Psychological Science, from which *t*-tests and *F*-tests were manually extracted to create a ground-truth dataset. The module correctly identified 100% of *t*-tests reported with effect sizes, 99% of *t*-tests reported without effect sizes, 99% of *F*-tests reported with effect sizes, and 100% of *F*-tests reported without effect sizes. This level of accuracy is sufficient for meta-scientific research, such as examining trends in adherence to reporting guidelines over time.
 
 ```{r}
-#| label: fig-es-trend
-#| fig-cap: "Percentage of Articles Reporting t-tests or F-tests Without Effect Sizes."
+#| label: res_stat_effect_size
+#| eval: FALSE # Set to TRUE to rerun module
 
 # Run module
 res_effect_size <- module_run(psych_science, "stat_effect_size")
+
+# Save results
+save(res_effect_size, file = "input/res_effect_size.RData")
+```
+
+```{r}
+#| label: fig-es-trend
+#| fig-cap: "Percentage of articles reporting *t*-tests or *F*-tests without effect sizes."
+
+# Load results
+load("input/res_effect_size.RData")
 
 # Combine both datasets
 results_with_effect_size <- results |> 
@@ -485,6 +508,7 @@ bind_rows(
 ```
 
 ```{r}
+# Table of F-test results not included
 #| eval: FALSE
 #| label: tbl-es_ftest
 
@@ -529,14 +553,25 @@ res_power_unknown$table[, c("power_type", "text")] |>
 ```
 
 ```{r}
-#| label: tbl-power_type
-#| tbl-cap: "Classification of power analyses by category using the rule-based approach."
+#| label: res_power
+#| eval: FALSE # Set to TRUE to rerun module
 
 # Opt-out LLM
 llm_use(FALSE)
 
 # Run the module
 res_power <- module_run(psych_science, "power")
+
+# Save results
+save(res_power, file = "input/res_power.RData")
+```
+
+```{r}
+#| label: tbl-power_type
+#| tbl-cap: "Classification of power analyses by category using the rule-based approach."
+
+# Load results
+load("input/res_power.RData")
 
 # Calculate number and proportion of power analyses by type
 power_type <- res_power$table |> 
@@ -584,7 +619,7 @@ Based on a predefined prompt, the LLM returns a JSON-structured output containin
 
 ```{r}
 #| label: llm_power
-#| eval: FALSE # Set to TRUE to rerun results
+#| eval: FALSE # Set to TRUE to rerun module
 
 # Opt-in LLM
 llm_use(TRUE)
@@ -636,15 +671,21 @@ tbl_power_llm <- res_power_llm$table |>
   ) |> 
   summarise(
     across(
-      everything(),
+      -power_type,
       ~ paste0(
         sum(is.na(.x)),
         " (",
         round(mean(is.na(.x)) * 100, 0),
         "%)"
       )
+    ),
+    type_power = paste0(
+      sum(power_type == "unknown", na.rm = TRUE),
+      " (",
+      round(mean(power_type == "unknown", na.rm = TRUE) * 100, 0),
+      "%)"
     )
-  ) |> 
+  ) |>
   pivot_longer(
     cols = everything(),
     names_to = "Component",
@@ -693,8 +734,8 @@ res_open_practices$table |>
 ```
 
 ```{r}
-#| label: open_practices
-#| eval: FALSE
+#| label: res_open_practices
+#| eval: FALSE # Set to TRUE to rerun module
 
 # Run module on all articles
 res_open_practices <- module_run(psych_science, "open_practices")
