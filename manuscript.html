@@ -61,6 +61,8 @@ div.csl-indent {
 <script src="manuscript_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="manuscript_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="manuscript_files/libs/bootstrap/bootstrap-5c01d5bc28a937a85b2916158845ac5b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="manuscript_files/libs/tabwid-1.1.3/tabwid.css" rel="stylesheet">
+<script src="manuscript_files/libs/tabwid-1.1.3/tabwid.js"></script>
 
   <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
   <script>document.addEventListener("DOMContentLoaded", function () {
@@ -107,24 +109,24 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="_extensions/wjschne/apaquarto/apa.css">
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body class="quarto-light">
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
 <div id="quarto-sidebar-toc-left" class="sidebar toc-left">
-  <nav id="TOC" role="doc-toc" class="toc-active">
+  <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="99">
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#firstheader" id="toc-firstheader" class="nav-link active" data-scroll-target="#firstheader">Part 1: Introducing Metacheck as an Automated Tool for Improving Research Practices in Psychology</a></li>
+  <li><a href="#firstheader" id="toc-firstheader" class="nav-link active" data-scroll-target="#firstheader">Part 1: Introducing Metacheck as an Automated Tool for Improving Research Practices in Psychology</a>
+  <ul class="collapse">
   <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a>
   <ul class="collapse">
   <li><a href="#use-cases" id="toc-use-cases" class="nav-link" data-scroll-target="#use-cases">Use Cases</a></li>
   </ul></li>
   <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a>
-  <ul class="collapse">
-  <li><a href="#modules" id="toc-modules" class="nav-link" data-scroll-target="#modules">Modules</a>
   <ul class="collapse">
   <li><a href="#checking-reported-p-values" id="toc-checking-reported-p-values" class="nav-link" data-scroll-target="#checking-reported-p-values">Checking Reported <em>P</em>-values</a></li>
   <li><a href="#checking-unreported-effect-sizes" id="toc-checking-unreported-effect-sizes" class="nav-link" data-scroll-target="#checking-unreported-effect-sizes">Checking (Un)reported Effect Sizes</a></li>
@@ -132,12 +134,12 @@ window.Quarto = {
   <li><a href="#checking-statements" id="toc-checking-statements" class="nav-link" data-scroll-target="#checking-statements">Checking Statements</a></li>
   <li><a href="#checking-references" id="toc-checking-references" class="nav-link" data-scroll-target="#checking-references">Checking References</a></li>
   </ul></li>
-  </ul></li>
   <li><a href="#creating-metacheck-modules" id="toc-creating-metacheck-modules" class="nav-link" data-scroll-target="#creating-metacheck-modules">Creating Metacheck Modules</a></li>
   <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
   </ul>
-</nav>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="manuscript.docx"><i class="bi bi-file-word"></i>MS Word (apaquarto)</a></li><li><a href="manuscript.pdf"><i class="bi bi-file-pdf"></i>PDF (apaquarto)</a></li></ul></div></nav>
 </div>
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
 </div>
@@ -185,32 +187,37 @@ window.Quarto = {
 </section>
 <section id="firstheader" class="level1 title unnumbered">
 <h1 class="title unnumbered">Part 1: Introducing Metacheck as an Automated Tool for Improving Research Practices in Psychology</h1>
-</section>
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Meta-scientific research demonstrates significant room for improvement in how researchers design studies, report findings, and implement open science practices when sharing their work. The uptake of best research practices is slow <span class="citation" data-cites="sharpe2013resistance">(<a href="#ref-sharpe2013resistance" role="doc-biblioref">Sharpe, 2013</a>)</span> and often suboptimal. For example, researchers often use invalid and unreliable measures <span class="citation" data-cites="goos2024assessing">(<a href="#ref-goos2024assessing" role="doc-biblioref">Goos et al., 2024</a>)</span>, misinterpret non-significant results <span class="citation" data-cites="aczel2018quantifying">(<a href="#ref-aczel2018quantifying" role="doc-biblioref">Aczel et al., 2018</a>)</span>, write insufficiently specific preregistrations <span class="citation" data-cites="van_potential_2024">(<a href="#ref-van_potential_2024" role="doc-biblioref"><span class="nocase">Akker et al.</span>, 2024</a>)</span>, invalid power analyses <span class="citation" data-cites="thibault2024evaluation">(<a href="#ref-thibault2024evaluation" role="doc-biblioref">Thibault et al., 2024</a>)</span>, and misuse Bayes factors <span class="citation" data-cites="tendeiro2024diagnosing">(<a href="#ref-tendeiro2024diagnosing" role="doc-biblioref">Tendeiro et al., 2024</a>)</span>. Although it is the responsibility of researchers to keep up to date with best research practices, time constraints and the rapid pace of new developments make this challenging. Peer reviewers, similarly pressed for time, may not identify instances where best research practices are not followed. Checklists have the potential to increase the adoption of best practices, but in practice, they have limited impact, as researchers might not be aware of the existence of checklists, and they still need sufficient expertise to evaluate whether they have adhered to items on the checklist <span class="citation" data-cites="dexter2017narrative">(<a href="#ref-dexter2017narrative" role="doc-biblioref">Dexter &amp; Shafer, 2017</a>)</span>.</p>
-<p>Human factors research suggests that automation (where researchers remain in the loop) can offer a partial solution. Two recent developments have increased the possibility that best research practices can be automatically detected. First, meta-scientific research has identified where the adoption of best practices is lagging and offered concrete suggestions for improvement. This work often includes data that can be used as ground truth to validate automated checks. Second, advances in machine learning and artificial intelligence have made it easier to deal with written text, both when turning scientific articles into structured data files (e.g., using the GROBID machine learning library) and when extracting or classifying information in written text. This has made it possible to develop algorithms that automatically emulate what experts do when they assess whether best research practices are present or absent. For example, a reviewer might search for the section in the paper that reports an a priori power analysis and then check whether authors have followed best reporting practices. Specifically, the reviewer would check whether authors report the alpha level, desired power, the effect size metric, a justification for the effect size, and the statistical test for each hypothesis tested <span class="citation" data-cites="lakens_justification_2022">(<a href="#ref-lakens_justification_2022" role="doc-biblioref">Lakens, 2022</a>)</span>. If any of these components is missing, authors should be made aware that they are not following best research practices, so that the transparency of the power analysis can be improved. While many automated checks for best research practices will require only simple text matching based on regular expressions, more complex text extraction is possible using large language models (LLMs).</p>
-<p>Importantly, the use of LLMs is entirely optional and opt-in. Metacheck restricts LLMs to the classification of existing text, and the vast majority of modules work without an LLM; the only exceptions are <code>power</code> and <code>prereg_check</code>. Finally, when users opt to use an LLM, models can be run locally, ensuring that no data leaves the user’s computer.</p>
-<p>In this article, we introduce a new tool, Metacheck, which uses text search, code, and optional LLMs to extract information from scientific articles (e.g., the draft of a manuscript, submitted or published articles, or preregistration documents) and provide automated suggestions for improvement. Metacheck is inspired by quality control processes in software development. For example, R package developers run a set of automated checks before they submit their package to the Comprehensive R Archive Network (CRAN). The automated checks aim to identify any remaining issues, and inform developers about how to fix them. The goal of Metacheck is to screen scientific manuscripts, identify areas for improvement based on algorithms that emulate what experts would do while checking a research article, and help researchers incorporate best research practices. The tool is modular, with a dedicated module for any practice that the research community wants to improve, and where automation offers a solution. This means the tool can be extended by the research community to fit their needs, and specialised modules can be created for different scientific fields based on what is considered a best practice in that research area. The tool can reduce the burden on peer reviewers by resolving common problems before submission, allowing peer reviewers to focus on those issues that cannot be automatically detected.</p>
-<p>Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., is the magnitude of the effect size reported in an a priori power analysis?), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is there a good justification for the effect size entered in an a priori power analysis?). Metacheck focuses on the first task, and leaves the evaluation to the user. We will illustrate the potential of automated checks to improve best research practices in four areas, namely 1) experimental design, 2) open science practices, 3) statistical inferences, and 4) reporting guidelines. Finally, we will demonstrate the usefulness of a tool that can efficiently process text in scientific articles to perform menial tasks (e.g., check whether hyperlinks work), extract information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., statcheck and check for citations to retracted articles) in a single modular workflow that can be expanded by the scientific community. We perform these checks on 1937 articles published in Psychological Science from 2014 to 2026. This set of articles contains studies from all subfields in psychology.</p>
-<section id="use-cases" class="level2">
-<h2 data-anchor-id="use-cases">Use Cases</h2>
-<p>The current version of Metacheck can be used in two contexts. The first use case is by researchers — either authors or reviewers — who have the goal of improving a scientific manuscript by checking for the presence or absence of best research practices. Metacheck can provide recommendations that improve the manuscript in situations where 1) a practice is not sufficiently salient to the researcher to be noticed without assistance, 2) the researcher is not yet able to identify the absence of a practice manually due to a lack of knowledge or training, or 3) researchers do not have time to identify the practice manually. Researchers using Metacheck should be aware that recommendations generated by its modules can contain both Type 1 (false positive) and Type 2 errors (false negative). A Type 1 error occurs when a module flags a practice that is not actually problematic, whereas a Type 2 error occurs when a module fails to identify a problematic practice.This means that many practices may be automatically identified as problematic, while none are actually problematic upon closer inspection. It is also possible that no problematic practices are identified, even though they are are present.</p>
+<section id="introduction" class="level2">
+<h2 data-anchor-id="introduction">Introduction</h2>
+<p>Meta-scientific research demonstrates significant room for improvement in how researchers design studies, report findings, and implement open science practices when sharing their work. The uptake of best research practices is slow <span class="citation" data-cites="sharpe2013resistance">(<a href="#ref-sharpe2013resistance" role="doc-biblioref">Sharpe, 2013</a>)</span> and often suboptimal. For example, researchers often use invalid and unreliable measures <span class="citation" data-cites="goos2024assessing">(<a href="#ref-goos2024assessing" role="doc-biblioref">Goos et al., 2024</a>)</span>, misinterpret non-significant results <span class="citation" data-cites="aczel2018quantifying">(<a href="#ref-aczel2018quantifying" role="doc-biblioref">Aczel et al., 2018</a>)</span>, write insufficiently specific preregistrations <span class="citation" data-cites="van_potential_2024">(<a href="#ref-van_potential_2024" role="doc-biblioref"><span class="nocase">Akker et al.</span>, 2024</a>)</span>, invalid power analyses <span class="citation" data-cites="thibault2024evaluation">(<a href="#ref-thibault2024evaluation" role="doc-biblioref">Thibault et al., 2024</a>)</span>, and misuse Bayes factors <span class="citation" data-cites="tendeiro2024diagnosing">(<a href="#ref-tendeiro2024diagnosing" role="doc-biblioref">Tendeiro et al., 2024</a>)</span>. Although it is the responsibility of researchers to keep up to date with best research practices, time constraints and the rapid pace of new developments make this challenging. Peer reviewers, similarly pressed for time, may not identify instances where best research practices are not followed. Checklists have the potential to increase the adoption of best practices, but in practice, they have limited impact, as researchers might not be aware of the existence of checklists and they still need sufficient expertise to evaluate whether they have adhered to items on the checklist <span class="citation" data-cites="dexter2017narrative">(<a href="#ref-dexter2017narrative" role="doc-biblioref">Dexter &amp; Shafer, 2017</a>)</span>.</p>
+<p>Human factors research suggests that automation (where researchers remain in the loop) can offer a partial solution. Two recent developments have increased the possibility that best research practices can be automatically detected. First, meta-scientific research has identified where the adoption of best practices is lagging and offered concrete suggestions for improvement. This work often includes data that can be used as ground truth to validate automated checks. Second, advances in machine learning and artificial intelligence have made it easier to deal with written text, both when turning scientific articles into structured data files (e.g., using the GROBID machine learning library) and extract or classify information in written text. This has made it possible to develop algorithms that automatically emulate what experts do when they assess whether best research practices are present or absent. For example, a reviewer might search for the section in the paper that reports an a priori power analysis and then check whether authors have followed best reporting practices. Specifically, the reviewer would check whether authors report the alpha level, desired power, the effect size metric, a justification for the effect size, and the statistical test for each hypothesis tested <span class="citation" data-cites="lakens_justification_2022">(<a href="#ref-lakens_justification_2022" role="doc-biblioref">Lakens, 2022</a>)</span>. If any of these components is missing, authors should be made aware that they are not following best research practices, so that the transparency of the power analysis can be improved. While many automated checks for best research practices will require only simple text matching based on regular expressions, more complex text extraction is possible using large language models (LLMs).</p>
+<p>In this article, we introduce a new tool, Metacheck, which uses text search, code, and optional LLMs to extract information from scientific articles (e.g., the draft of a manuscript, submitted or published articles, or preregistration documents) and provide automated suggestions for improvement. Metacheck is inspired by quality control processes in software development. For example, R package developers run a set of automated checks before they submit their package to the Comprehensive R Archive Network (CRAN). The automated checks aim to identify any remaining issues and inform developers about how to fix them. The goal of Metacheck is to screen scientific manuscripts, identify areas for improvement based on algorithms that emulate what experts would do while checking a research article, and help researchers incorporate best research practices. The tool is modular, with a dedicated module for any practice that the research community wants to improve, and where automation offers a solution. This means the tool can be extended by the research community to fit their needs, and specialised modules can be created for different scientific fields based on what is considered best practice in that research area. The tool can reduce the burden on peer reviewers by resolving common problems before submission, allowing peer reviewers to focus on those issues that cannot be automatically detected.</p>
+<!--
+LDB: I moved the next paragraph down because it didn't make sense before introducing metacheck. But it still references things that the reader won't yet understand, like module names.
+-->
+<p>Importantly, in Metacheck the use of LLMs is entirely optional and opt-in. Metacheck restricts LLMs to the classification of existing text, and the vast majority of modules work without an LLM; the only current exceptions are <code>power</code> and <code>prereg_check</code>. Finally, when users opt to use an LLM, models can be run locally, ensuring that no data leaves the user’s computer.</p>
+<p>Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., the magnitude of the effect size for an a priori power analysis), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is this effect size appropriately justified). Metacheck focuses on the first task, and leaves the evaluation to the user.</p>
+<p>We will illustrate the potential of automated checks to improve best research practices in four areas: 1) experimental design, 2) open science practices, 3) statistical inferences, and 4) reporting guidelines. Finally, we will demonstrate the usefulness of our tool for efficiently processing text in scientific articles to perform menial tasks (e.g., check whether hyperlinks work), extract information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., statcheck and check for citations to retracted articles) in a single modular workflow that can be expanded by the scientific community. We perform these checks on 1937 articles published in Psychological Science from 2014 to 2026. This set of articles contains studies from all subfields in psychology.</p>
+<section id="use-cases" class="level3">
+<h3 data-anchor-id="use-cases">Use Cases</h3>
+<p>The current version of Metacheck can be used in two contexts. The first use case is by researchers — either authors or reviewers — who have the goal of improving a scientific manuscript by checking for the presence or absence of best research practices. Metacheck can provide recommendations that improve the manuscript in situations where 1) a practice is not sufficiently salient to the researcher to be noticed without assistance, 2) the researcher is not yet able to identify the absence of a practice manually due to a lack of knowledge or training, or 3) researchers do not have time to identify the practice manually. Researchers using Metacheck should be aware that recommendations generated by its modules can contain both false positive and false negative errors. A false positive error occurs when a module flags a practice that is not actually problematic, whereas a false negative error occurs when a module fails to identify a problematic practice. Since there is an inherent tradeoff between false positives and negatives, most of our modules work on a ‘smoke detector’ principle, prioritising detecting possible instances of a practice that can then be screened by the resaercher. This means that many practices may be automatically identified as problematic, while few are actually problematic upon closer inspection. However, it is still possible that instances are missed, even though they are are present.</p>
 <p>As developers, our priority is to develop modules with error rates that are low enough not to impact the usability of Metacheck for users. Following the ISO 9241-11 definition, usability refers to “the extent to which a product can be used by specified users to achieve specified goals with effectiveness, efficiency, and satisfaction in a specified context of use”. Our working assumption is that preparing a scientific article takes a considerable amount of time, and that researchers care about the quality of their work. Under this assumption, we believe that a tool with high error rates — say up to 50% — will be considered sufficiently useful to be adopted as long as it accurately identifies some problematic research practices that researchers would not have identified themselves. For example, a spelling checker that marks ‘Metacheck’ and ‘manuscript’ as words with spelling errors, and does not mark ‘extend’ as a spelling error when the correct word would have been ‘extent’ remains useful as long as it takes relatively little time to evaluate the suggestions, even though its error rate is two out of three.</p>
-<p>The second use case for Metacheck is as a meta-scientific tool to examine a large number of research articles. For example, a science funder might be interested in how many manuscripts by researchers whom they fund share data and code in line with its policy. A meta-researcher might be interested in how many articles report effect sizes in a specific literature, and assess whether reporting practices have improved. A scientific journal might want to evaluate how a change in editorial practices has impacted the diversity in populations that are examined in the studies they publish. Metacheck modules can easily be run on large numbers of articles, facilitating text searches and the automatic extraction and classification of information. In this use case, the usability of an automated tool requires low error rates if users are to rely on e the output of the tool. Here, Type 2 errors are problematic and difficult to identify, because identifying them requires users to manually screen all articles for instances that were missed by the modules, and if manual screening were feasible, there would be little need for an automated tool. Type 1 errors might be easier to identify but still require users to manually check all instances flagged by a module. Therefore, low error rates are important for the usability of Metacheck as a meta-scientific tool. Validation procedures that quantify error rates are essential to safeguard the accuracy of results, allow users to evaluate whether modules are accurate enough for their purposes, and to report the corresponding error rates when presenting results. It is possible that a module has low enough error rates for the individual use case, while still being too high for meta-scientific use cases.</p>
+<p>The second use case for Metacheck is as a meta-scientific tool to examine a large number of research articles. For example, a science funder might be interested in how many manuscripts by funded researchers share data and code in line with its policy. A meta-researcher might be interested in how many articles report effect sizes in a specific literature, and assess whether reporting practices have improved. A scientific journal might want to evaluate how a change in editorial practices has impacted the diversity in populations that are examined in the studies they publish. Metacheck modules can easily be run on large numbers of articles, facilitating text searches and the automatic extraction and classification of information. In this use case, the usability of an automated tool requires low error rates if users are to rely on the output of the tool. Here, false negative errors are problematic and difficult to identify, because identifying them requires users to manually screen all articles for instances that were missed by the modules, and if manual screening were feasible, there would be little need for an automated tool. False positive errors might be easier to identify but still require users to manually check all instances flagged by a module. Therefore, low error rates are important for the usability of Metacheck as a meta-scientific tool. Validation procedures that quantify error rates are essential to safeguard the accuracy of results, allow users to evaluate whether modules are accurate enough for their purposes, and to report the corresponding error rates when presenting results. It is possible that a module has low enough error rates for the individual use case, while still being too high for meta-scientific use cases.</p>
 </section>
 </section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<p>In the following section, we demonstrate how to use selected Metacheck modules from both a researcher’s perspective and a meta-scientific perspective. All examples were produced using R <span class="citation" data-cites="RStudio">(<a href="#ref-RStudio" role="doc-biblioref">Posit team, 2026</a>)</span> and the following R packages: <code>dplyr</code> <span class="citation" data-cites="R-dplyr">(<a href="#ref-R-dplyr" role="doc-biblioref">Wickham, François, et al., 2026</a>)</span>, <code>ggplot2</code> <span class="citation" data-cites="R-ggplot2">(<a href="#ref-R-ggplot2" role="doc-biblioref">Wickham, Chang, et al., 2026</a>)</span>, <code>kableExtra</code> <span class="citation" data-cites="R-kableExtra">(<a href="#ref-R-kableExtra" role="doc-biblioref">Zhu, 2024</a>)</span>, <code>knitr</code> <span class="citation" data-cites="R-knitr">(<a href="#ref-R-knitr" role="doc-biblioref">Xie, 2025</a>)</span>, <code>metacheck</code> <span class="citation" data-cites="R-metacheck">(<a href="#ref-R-metacheck" role="doc-biblioref">DeBruine et al., 2026</a>)</span>, and <code>stringr</code> <span class="citation" data-cites="R-stringr">(<a href="#ref-R-stringr" role="doc-biblioref">Wickham, 2025</a>)</span>. This article was written using Quarto <span class="citation" data-cites="Quarto">(<a href="#ref-Quarto" role="doc-biblioref">Allaire &amp; Dervieux, 2025</a>)</span>.</p>
-<section id="modules" class="level2">
-<h2 data-anchor-id="modules">Modules</h2>
+<section id="examples" class="level2">
+<h2 data-anchor-id="examples">Examples</h2>
+<p>In the following section, we demonstrate how to use selected Metacheck modules from both a researcher’s perspective and a meta-scientific perspective. All examples were produced using R <span class="citation" data-cites="RStudio">(<a href="#ref-RStudio" role="doc-biblioref">Posit team, 2026</a>)</span> and the following R packages: <code>dplyr</code> <span class="citation" data-cites="R-dplyr">(<a href="#ref-R-dplyr" role="doc-biblioref">Wickham, François, et al., 2026</a>)</span>, <code>ggplot2</code> <span class="citation" data-cites="R-ggplot2">(<a href="#ref-R-ggplot2" role="doc-biblioref">Wickham, Chang, et al., 2026</a>)</span>, <code>flextable</code> <span class="citation" data-cites="R-flextable">(<a href="#ref-R-flextable" role="doc-biblioref">Gohel &amp; Skintzos, 2026</a>)</span>, <code>metacheck</code> <span class="citation" data-cites="R-metacheck">(<a href="#ref-R-metacheck" role="doc-biblioref">DeBruine et al., 2026</a>)</span>, and <code>stringr</code> <span class="citation" data-cites="R-stringr">(<a href="#ref-R-stringr" role="doc-biblioref">Wickham, 2025</a>)</span>. This article was written using Quarto <span class="citation" data-cites="Quarto">(<a href="#ref-Quarto" role="doc-biblioref">Allaire &amp; Dervieux, 2025</a>)</span>.</p>
 <section id="checking-reported-p-values" class="level3">
 <h3 data-anchor-id="checking-reported-p-values">Checking Reported <em>P</em>-values</h3>
-<p>The Journal Article Reporting Standards (JARS) developed by the American Psychological Association (APA) offer guidance on the information that should be reported in scientific articles to enhance their scientific rigour <span class="citation" data-cites="appelbaum_2018">(<a href="#ref-appelbaum_2018" role="doc-biblioref">Appelbaum et al., 2018</a>)</span>. Almost every published scientific article could be improve if researchers diligently followed JARS. However, the guidelines are not widely known, rarely implemented by authors, and almost never checked by editors or reviewers. Manually checking whether all reporting standards are implemented would be effortful. Automation can help by automatically assessing whether recommendations are followed. The first reporting guideline that has been implemented in Metacheck concerns the the reporting of exact <em>p</em>-values. The APA Manual states:</p>
+<p>The Journal Article Reporting Standards (JARS) developed by the American Psychological Association (APA) offer guidance on the information that should be reported in scientific articles to enhance their scientific rigour <span class="citation" data-cites="appelbaum_2018">(<a href="#ref-appelbaum_2018" role="doc-biblioref">Appelbaum et al., 2018</a>)</span>. Almost every published scientific article could be improved if researchers diligently followed JARS. However, the guidelines are not widely known, rarely implemented by authors, and almost never checked by editors or reviewers. Manually checking whether all reporting standards are implemented would be effortful. Automation can help by automatically assessing whether recommendations are followed. The first reporting guideline that has been implemented in Metacheck concerns the the reporting of exact <em>p</em>-values. The APA Manual states:</p>
 <blockquote class="blockquote">
-<p>Report exact <em>p</em> values (e.g., <em>p</em> = .031) to two or three decimal places. However, report <em>p</em> values less than .001 as <em>p</em> &lt; .001.</p>
+<p>“Report exact <em>p</em> values (e.g., <em>p</em> = .031) to two or three decimal places. However, report <em>p</em> values less than .001 as <em>p</em> &lt; .001.”</p>
 </blockquote>
+<!-- 
+cite? seems to be from 
+https://apastyle.apa.org/instructional-aids/numbers-statistics-guide.pdf
+-->
 <p>Access to precisely reported <em>p</em>-values allows readers to include <em>p</em>-values in meta-analytic tools, such as p-curve <span class="citation" data-cites="simonsohn2014">(<a href="#ref-simonsohn2014" role="doc-biblioref">Simonsohn et al., 2014</a>)</span> or z-curve <span class="citation" data-cites="schimmack_2017">(<a href="#ref-schimmack_2017" role="doc-biblioref">Schimmack &amp; Brunner, 2017</a>)</span>, and makes it possible to check the internal coherence of the reported results with tools such as Statcheck <span class="citation" data-cites="nuijten_2016">(<a href="#ref-nuijten_2016" role="doc-biblioref">Nuijten et al., 2016</a>)</span>. Metacheck has a dedicated rule-based module, <code>stat_p_exact</code>, which returns all instances of imprecisely reported <em>p</em>-values in scientific articles. For illustrative purposes, we run the module on a single paper and display, in <a href="#tbl-res_imprecise" class="quarto-xref" aria-expanded="false">Table&nbsp;1</a>, the <em>p</em>-value that was reported with insufficient precision and the full sentence in which it was reported.</p>
 <div class="cell FigureWithoutNote" prefix="" data-tblnum="1" data-custom-style="FigureWithoutNote">
 <div id="tbl-res_imprecise" class="cell quarto-float quarto-figure quarto-figure-center" prefix="" data-tblnum="1">
@@ -225,24 +232,7 @@ window.Quarto = {
 </figcaption>
 <div aria-describedby="tbl-res_imprecise-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<table class="cell caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 4%">
-<col style="width: 95%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">text</th>
-<th style="text-align: left;">expanded</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">p &lt; .01</td>
-<td style="text-align: left;">Greater aggression-antisociality predicted greater body size at all ages in this cohort, r = .14 (p &lt; .01) at age 11, r = .19 (p &lt; .001) at age 14, and r = .21 (p &lt; .001) at age 17.</td>
-</tr>
-</tbody>
-</table>
+<div class="tabwid"><style>.cl-f62f6104{}.cl-f62c0f4a{font-family:'Helvetica';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f62d72a4{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f62daef4{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62daef5{width:5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62daefe{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62daf08{width:5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-f62f6104"><thead><tr style="overflow-wrap:break-word;"><th class="cl-f62daef4"><p class="cl-f62d72a4"><span class="cl-f62c0f4a">text</span></p></th><th class="cl-f62daef5"><p class="cl-f62d72a4"><span class="cl-f62c0f4a">expanded</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-f62daefe"><p class="cl-f62d72a4"><span class="cl-f62c0f4a">p &lt; .01</span></p></td><td class="cl-f62daf08"><p class="cl-f62d72a4"><span class="cl-f62c0f4a">Greater aggression-antisociality predicted greater body size at all ages in this cohort, r = .14 (p &lt; .01) at age 11, r = .19 (p &lt; .001) at age 14, and r = .21 (p &lt; .001) at age 17.</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 </figure>
@@ -254,7 +244,13 @@ window.Quarto = {
 <blockquote class="blockquote">
 <p>“Reporting <em>p</em> values imprecisely (e.g., <em>p</em> &lt; .05) reduces transparency, reproducibility, and re-use (e.g., in <em>p</em> value meta-analyses). Best practice is to report exact p-values with three decimal places (e.g., <em>p</em> = .032) unless <em>p</em> values are smaller than 0.001, in which case you can use <em>p</em> &lt; .001.”</p>
 </blockquote>
+<!--
+LDB: consistent "p values" versus "p-values" between paper and module output
+-->
 <p>All modules can be run in batch mode on a large number of articles, and the output can be used for meta-scientific research. One example is shown in <a href="#fig-imprecise-pvalues" class="quarto-xref" aria-expanded="false">Figure&nbsp;1</a>, which displays the proportion of imprecisely reported <em>p</em>-values by statistical significance over time. The figure shows that the proportion of imprecisely reported <em>p</em>-values is similar across significant and non-significant results. Another example is shown in <a href="#fig-atleastone" class="quarto-xref" aria-expanded="false">Figure&nbsp;2</a>, which displays the proportion of articles containing at least one imprecisely reported <em>p</em>-values over time. The figure shows that there has been a decline in comparison to a decade ago.</p>
+<!--
+The original logic for this plot was wrong
+-->
 <div class="cell FigureWithoutNote" data-custom-style="FigureWithoutNote">
 <div class="cell-output-display">
 <div id="fig-imprecise-pvalues" class="quarto-float quarto-figure quarto-figure-center" prefix="" data-fignum="1">
@@ -268,7 +264,7 @@ window.Quarto = {
 </div>
 </figcaption>
 <div aria-describedby="fig-imprecise-pvalues-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="manuscript_files/figure-html/fig-imprecise-pvalues-1.svg" class="img-fluid figure-img" width="624">
+<img src="manuscript_files/figure-html/fig-imprecise-pvalues-1.svg" class="img-fluid figure-img" width="576">
 </div>
 </figure>
 </div>
@@ -287,7 +283,7 @@ window.Quarto = {
 </div>
 </figcaption>
 <div aria-describedby="fig-atleastone-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="manuscript_files/figure-html/fig-atleastone-1.svg" class="img-fluid figure-img" width="624">
+<img src="manuscript_files/figure-html/fig-atleastone-1.svg" class="img-fluid figure-img" width="576">
 </div>
 </figure>
 </div>
@@ -309,16 +305,16 @@ window.Quarto = {
 </div>
 </figcaption>
 <div aria-describedby="fig-hist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="manuscript_files/figure-html/fig-hist-1.svg" class="img-fluid figure-img" width="624">
+<img src="manuscript_files/figure-html/fig-hist-1.svg" class="img-fluid figure-img" width="576">
 </div>
 </figure>
 </div>
 </div>
 </div>
 <div class="AfterWithoutNote" data-custom-style="AfterWithoutNote">
-<p>The performance of the <code>stat_p_exact</code> module was evaluated on 225 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. This set of articles contained 405 instances of non-exact <em>p</em>-values. It correctly detected 269 of 405 instances (66%) and incorrectly identified 78 instances 19. The module missed 136 instances 34of imprecisely reported <em>p</em>-values and correctly identified 4,557 instances of precisely reported <em>p</em>-values.</p>
+<p>The performance of the <code>stat_p_exact</code> module was evaluated on 225 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. This set of articles contained 405 instances of non-exact <em>p</em>-values and 4635 instances of exact <em>p</em>-values. It correctly detected 269 of 405 instances (66%) and incorrectly identified 78 instances (19%). The module missed 136 instances (34%) of imprecisely reported <em>p</em>-values, and correctly identified 4557 instances of precisely reported <em>p</em>-values.</p>
 </div>
-<p>We have also developed a related module, <code>stat_p_nonsig</code> that detects whether non-significant <em>p</em>-values are reported in an article. When such results are identified, the module warns researchers against interpreting non-significant <em>p</em>-values as evidence of the absence of an effect and returns all sentences containing non-significant <em>p</em>-values, allowing researchers to quickly check for potential misinterpretations. <a href="#tbl-non_sig" class="quarto-xref" aria-expanded="false">Table&nbsp;2</a> displays the non-significant <em>p</em>-value and the full sentence in which it was reported.</p>
+<p>We have also developed a related module, <code>stat_p_nonsig</code> that detects whether non-significant <em>p</em>-values are reported in an article. When such results are identified, the module warns researchers against the common practice of interpreting non-significant <em>p</em>-values as evidence of the absence of an effect and returns all sentences containing non-significant <em>p</em>-values, allowing researchers to quickly check for potential misinterpretations. <a href="#tbl-non_sig" class="quarto-xref" aria-expanded="false">Table&nbsp;2</a> displays the non-significant <em>p</em>-value and the full sentence in which it was reported.</p>
 <div class="cell FigureWithoutNote" prefix="" data-tblnum="2" data-custom-style="FigureWithoutNote">
 <div id="tbl-non_sig" class="cell quarto-float quarto-figure quarto-figure-center" prefix="" data-tblnum="2">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -332,24 +328,7 @@ window.Quarto = {
 </figcaption>
 <div aria-describedby="tbl-non_sig-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<table class="cell caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 5%">
-<col style="width: 94%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">text</th>
-<th style="text-align: left;">expanded</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">p = .231</td>
-<td style="text-align: left;">Exclusions did not differ by condition (responsive questions vs.&nbsp;unresponsive advice), b = -0.04, SE = 0.03, t(471) = -1.20, p = .231, p adj = .273.</td>
-</tr>
-</tbody>
-</table>
+<div class="tabwid"><style>.cl-f78705b6{}.cl-f7845b22{font-family:'Helvetica';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f785753e{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f7858286{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7858287{width:5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7858288{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7858290{width:5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-f78705b6"><thead><tr style="overflow-wrap:break-word;"><th class="cl-f7858286"><p class="cl-f785753e"><span class="cl-f7845b22">text</span></p></th><th class="cl-f7858287"><p class="cl-f785753e"><span class="cl-f7845b22">expanded</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-f7858288"><p class="cl-f785753e"><span class="cl-f7845b22">p = .231</span></p></td><td class="cl-f7858290"><p class="cl-f785753e"><span class="cl-f7845b22">Exclusions did not differ by condition (responsive questions vs. unresponsive advice), b = -0.04, SE = 0.03, t(471) = -1.20, p = .231, p adj = .273.</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 </figure>
@@ -361,7 +340,11 @@ window.Quarto = {
 <blockquote class="blockquote">
 <p>“Meta-scientific research has shown nonsignificant p values are commonly misinterpreted. It is incorrect to infer that there is ‘no effect’, ‘no difference’, or that groups are ‘the same’ after p &gt; 0.05. It is possible that there is a true non-zero effect, but that the study did not detect it. Make sure your inference acknowledges that it is possible that there is a non-zero effect. It is correct to include the effect is ‘not significantly’ different, although this just restates that p &gt; 0.05.”</p>
 </blockquote>
+<!--
+should we change .05 to "your critical alpha" in this module?
+-->
 <p>The performance of the <code>stat_p_nonsig</code> module was evaluated on 194 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. It correctly detected 1486 of 1602 instances of non-significant <em>p</em>-values (93).</p>
+<!-- no false positives? -->
 </section>
 <section id="checking-unreported-effect-sizes" class="level3">
 <h3 data-anchor-id="checking-unreported-effect-sizes">Checking (Un)reported Effect Sizes</h3>
@@ -381,7 +364,7 @@ window.Quarto = {
 </div>
 </figcaption>
 <div aria-describedby="fig-es-trend-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="manuscript_files/figure-html/fig-es-trend-1.svg" class="img-fluid figure-img" width="624">
+<img src="manuscript_files/figure-html/fig-es-trend-1.svg" class="img-fluid figure-img" width="576">
 </div>
 </figure>
 </div>
@@ -403,36 +386,7 @@ window.Quarto = {
 </figcaption>
 <div aria-describedby="tbl-es_d-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<table class="cell caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 5%">
-<col style="width: 7%">
-<col style="width: 10%">
-<col style="width: 76%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">test_text</th>
-<th style="text-align: left;">es</th>
-<th style="text-align: left;">d_coherence</th>
-<th style="text-align: left;">d_coherence_note</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">t(169) = 1.01</td>
-<td style="text-align: left;">Cohen’s d = 1.38</td>
-<td style="text-align: left;">no_match</td>
-<td style="text-align: left;">No match under tested assumptions (paired dz, independent equal-n, independent unequal-n range). Tolerance = 0.01. A no-match can occur when fewer than 2 decimal places are reported.</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">t(183) = 2.63</td>
-<td style="text-align: left;">d = 0.39</td>
-<td style="text-align: left;">match_under_assumptions</td>
-<td style="text-align: left;">Match under independent-samples equal-n assumption (n1 = n2 = 92.5, N = 185).</td>
-</tr>
-</tbody>
-</table>
+<div class="tabwid"><style>.cl-f87a3d26{}.cl-f8776ba0{font-family:'Helvetica';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f8789b1a{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f878a93e{width:1.5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f878a93f{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f878a940{width:5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f878a948{width:1.5in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f878a949{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f878a94a{width:5in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f878a952{width:1.5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f878a953{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f878a954{width:5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-f87a3d26"><thead><tr style="overflow-wrap:break-word;"><th class="cl-f878a93e"><p class="cl-f8789b1a"><span class="cl-f8776ba0">test_text</span></p></th><th class="cl-f878a93f"><p class="cl-f8789b1a"><span class="cl-f8776ba0">es</span></p></th><th class="cl-f878a93f"><p class="cl-f8789b1a"><span class="cl-f8776ba0">d_coherence</span></p></th><th class="cl-f878a940"><p class="cl-f8789b1a"><span class="cl-f8776ba0">d_coherence_note</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-f878a948"><p class="cl-f8789b1a"><span class="cl-f8776ba0">t(169) = 1.01</span></p></td><td class="cl-f878a949"><p class="cl-f8789b1a"><span class="cl-f8776ba0">Cohen's d = 1.38</span></p></td><td class="cl-f878a949"><p class="cl-f8789b1a"><span class="cl-f8776ba0">no_match</span></p></td><td class="cl-f878a94a"><p class="cl-f8789b1a"><span class="cl-f8776ba0">No match under tested assumptions (paired dz, independent equal-n, independent unequal-n range). Tolerance = 0.01. A no-match can occur when fewer than 2 decimal places are reported.</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f878a952"><p class="cl-f8789b1a"><span class="cl-f8776ba0">t(183) = 2.63</span></p></td><td class="cl-f878a953"><p class="cl-f8789b1a"><span class="cl-f8776ba0">d = 0.39</span></p></td><td class="cl-f878a953"><p class="cl-f8789b1a"><span class="cl-f8776ba0">match_under_assumptions</span></p></td><td class="cl-f878a954"><p class="cl-f8789b1a"><span class="cl-f8776ba0">Match under independent-samples equal-n assumption (n1 = n2 = 92.5, N = 185).</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 </figure>
@@ -442,9 +396,9 @@ window.Quarto = {
 <section id="checking-power-analyses" class="level3">
 <h3 data-anchor-id="checking-power-analyses">Checking Power Analyses</h3>
 <p>To design an informative study, researchers should collect a sufficient number of observations. The chosen sample size should be justified with respect to the study’s inferential goal <span class="citation" data-cites="lakens_justification_2022">(<a href="#ref-lakens_justification_2022" role="doc-biblioref">Lakens, 2022</a>)</span>. One approach to do this is by performing an a priori power analysis. When such analysis is performed, it should be reported transparently so that peers can evaluate it.</p>
-<p>A transparent power analysis report includes the type of analysis (e.g., a priori, compromise, sensitivity), the statistical test for which it was conducted (e.g., an independent <em>t</em>-test, a within-between interaction in a 2 x 2 ANOVA), the effect size metric (e.g., Cohen’s <em>d</em>, <em>r</em> or an odds ratio), the magnitude of the assumed effect size (e.g., 0.3), the desired level of power (e.g., 95%), and alpha (e.g., 0.05). In practice, however, many articles omit one or more of these elements, making it difficult to evaluate the power analysis. In addition, some researchers perform post hoc power analyses based on the observed effect size and collected sample size, even though this practice is widely recognized as uninformative and should be avoided <span class="citation" data-cites="hoenig_2001">(<a href="#ref-hoenig_2001" role="doc-biblioref">Hoenig &amp; Heisey, 2001</a>)</span>.</p>
+<p>A transparent power analysis report includes the type of analysis (e.g., a priori, compromise, sensitivity), the statistical test for which it was conducted (e.g., an independent <em>t</em>-test, a within-between interaction in a 2 x 2 ANOVA), the effect size metric (e.g., Cohen’s <em>d</em>, <em>r</em> or an odds ratio), the magnitude of the assumed effect size (e.g., 0.3), the desired level of power (e.g., 95%), and critical alpha (e.g., 0.05). In practice, however, many articles omit one or more of these elements, making it difficult to evaluate the power analysis. In addition, some researchers perform post hoc power analyses based on the observed effect size and collected sample size, even though this practice is widely recognized as uninformative and should be avoided <span class="citation" data-cites="hoenig_2001">(<a href="#ref-hoenig_2001" role="doc-biblioref">Hoenig &amp; Heisey, 2001</a>)</span>.</p>
 <p>The <code>power</code> module is designed to help researchers report power analyses more completely while discouraging the use of post hoc power analyses. The module consists of two approaches. The first uses regular expressions (i.e., rule based) to identify sentences describing a power analysis and classifies them as a priori, sensitivity or post hoc. This component is limited to the classification of power analyses and does not extract the reported components (e.g., effect size metric, statistical test).</p>
-<p>To identify potential power analyses, the module searches for paragraphs that satisfy three criteria: they contain the standalone word <em>power</em> (or <em>powers</em>/<em>powered</em>), at least one term associated with power analyses (e.g., <em>effect size</em>, <em>sample size</em>, <em>a priori</em>, <em>sensitivity</em>, or <em>post hoc</em>), and at least one numeric value, excluding four-digit numbers that are likely to represent publication years. Because this approach relies on regular expressions, only power analyses that explicitly contain terms such as a priroi, sensitivity or post hoc can be classified. For example, the detected power analysis shown in <a href="#tbl-no_llm_power" class="quarto-xref" aria-expanded="false">Table&nbsp;4</a> cannot be classified (i.e., “unknown”) because it does not contain any of these expressions.</p>
+<p>To identify potential power analyses, the module searches for paragraphs that satisfy three criteria: they contain the standalone word <em>power</em> (or <em>powers</em>/<em>powered</em>), at least one term associated with power analyses (e.g., <em>effect size</em>, <em>sample size</em>, <em>a priori</em>, <em>sensitivity</em>, or <em>post hoc</em>), and at least one numeric value, excluding four-digit numbers that are likely to represent publication years. Because this approach relies on regular expressions, only power analyses that explicitly contain terms such as “a priori”, “sensitivity” or “post hoc” can be classified. For example, the detected power analysis shown in <a href="#tbl-no_llm_power" class="quarto-xref" aria-expanded="false">Table&nbsp;4</a> cannot be classified (i.e., “unknown”) because it does not contain any of these expressions.</p>
 <div class="cell FigureWithoutNote" prefix="" data-tblnum="4" data-custom-style="FigureWithoutNote">
 <div id="tbl-no_llm_power" class="cell quarto-float quarto-figure quarto-figure-center" prefix="" data-tblnum="4">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -458,24 +412,7 @@ window.Quarto = {
 </figcaption>
 <div aria-describedby="tbl-no_llm_power-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<table class="cell caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 5%">
-<col style="width: 94%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">power_type</th>
-<th style="text-align: left;">text</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">unknown</td>
-<td style="text-align: left;">Power analyses of the results from Experiment 1 suggested that we would have 90% power to detect the effect with approximately 37 participants in each condition, or 148 participants total</td>
-</tr>
-</tbody>
-</table>
+<div class="tabwid"><style>.cl-f8898808{}.cl-f8869378{font-family:'Helvetica';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f887ccac{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f887dbb6{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f887dbc0{width:5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f887dbc1{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f887dbc2{width:5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-f8898808"><thead><tr style="overflow-wrap:break-word;"><th class="cl-f887dbb6"><p class="cl-f887ccac"><span class="cl-f8869378">power_type</span></p></th><th class="cl-f887dbc0"><p class="cl-f887ccac"><span class="cl-f8869378">text</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-f887dbc1"><p class="cl-f887ccac"><span class="cl-f8869378">unknown</span></p></td><td class="cl-f887dbc2"><p class="cl-f887ccac"><span class="cl-f8869378"> Power analyses of the results from Experiment 1 suggested that we would have 90% power to detect the effect with approximately 37 participants in each condition, or 148 participants total</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 </figure>
@@ -494,47 +431,22 @@ window.Quarto = {
 </figcaption>
 <div aria-describedby="tbl-power_type-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<table class="cell caption-top table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th style="text-align: left;">power_type</th>
-<th style="text-align: left;">n (%)</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">apriori</td>
-<td style="text-align: left;">198 (11%)</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">posthoc</td>
-<td style="text-align: left;">36 (2%)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">sensitivity</td>
-<td style="text-align: left;">107 (6%)</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">unknown</td>
-<td style="text-align: left;">1483 (81%)</td>
-</tr>
-</tbody>
-</table>
+<div class="tabwid"><style>.cl-f9300890{}.cl-f92d1928{font-family:'Helvetica';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f92e4686{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f92e4690{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f92e57a2{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f92e57ac{width:0.5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f92e57ad{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f92e57ae{width:0.5in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f92e57d4{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f92e57d5{width:0.5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-f9300890"><thead><tr style="overflow-wrap:break-word;"><th class="cl-f92e57a2"><p class="cl-f92e4686"><span class="cl-f92d1928">power_type</span></p></th><th class="cl-f92e57ac"><p class="cl-f92e4690"><span class="cl-f92d1928">n</span></p></th><th class="cl-f92e57ac"><p class="cl-f92e4690"><span class="cl-f92d1928">percent</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-f92e57ad"><p class="cl-f92e4686"><span class="cl-f92d1928">apriori</span></p></td><td class="cl-f92e57ae"><p class="cl-f92e4690"><span class="cl-f92d1928">198</span></p></td><td class="cl-f92e57ae"><p class="cl-f92e4690"><span class="cl-f92d1928">11%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f92e57ad"><p class="cl-f92e4686"><span class="cl-f92d1928">posthoc</span></p></td><td class="cl-f92e57ae"><p class="cl-f92e4690"><span class="cl-f92d1928">36</span></p></td><td class="cl-f92e57ae"><p class="cl-f92e4690"><span class="cl-f92d1928">2%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f92e57ad"><p class="cl-f92e4686"><span class="cl-f92d1928">sensitivity</span></p></td><td class="cl-f92e57ae"><p class="cl-f92e4690"><span class="cl-f92d1928">107</span></p></td><td class="cl-f92e57ae"><p class="cl-f92e4690"><span class="cl-f92d1928">6%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f92e57d4"><p class="cl-f92e4686"><span class="cl-f92d1928">unknown</span></p></td><td class="cl-f92e57d5"><p class="cl-f92e4690"><span class="cl-f92d1928">1,483</span></p></td><td class="cl-f92e57d5"><p class="cl-f92e4690"><span class="cl-f92d1928">81%</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 </figure>
 </div>
 </div>
 <div class="AfterWithoutNote" data-custom-style="AfterWithoutNote">
-<p><a href="#tbl-power_type" class="quarto-xref" aria-expanded="false">Table&nbsp;5</a> shows the number of power analyses detected using the rule-base approach by category. Out of all 1824 reported power analysis (although these include some double counted due to overlapping sentences), 1483 (81%) could not be classified, 198 (11%) were classified as “a priori”, 107 (6%) were classified as “sensitivity” and 36 (2%) were classified as post hoc. Although reporting a post hoc power analysis is relatively uncommon, it is uninformative and is therefore worth identifying through an automated reporting tool. When a post hoc power analysis is detected, the module returns the following warning:</p>
+<p><a href="#tbl-power_type" class="quarto-xref" aria-expanded="false">Table&nbsp;5</a> shows the number of power analyses detected using the rule-base approach by category. Out of all 1824 reported power analysis (although these include some double counted due to overlapping sentences), 1483 could not be classified, 198 were classified as “a priori”, 107 were classified as “sensitivity” and 36 were classified as post hoc. Although reporting a post hoc power analysis is relatively uncommon, it is uninformative and is therefore worth identifying through an automated reporting tool. When a post hoc power analysis is detected, the module returns the following warning:</p>
 </div>
 <blockquote class="blockquote">
-<p>You reported a power analysis that has been classified as ‘post-hoc’. Calculating observed power is <a href="https://lakens.github.io/statistical_inferences/08-samplesizejustification.html#sec-posthocpower">almost never useful</a>. If you actually performed a sensitivity power analysis, label it as such explicitly.`.</p>
+<p>You reported a power analysis that has been classified as ‘post-hoc’. Calculating observed power is <a href="https://lakens.github.io/statistical_inferences/08-samplesizejustification.html#sec-posthocpower">almost never useful</a>. If you actually performed a sensitivity power analysis, label it as such explicitly.</p>
 </blockquote>
 <p>So far, we have classified power analyses using only a rule-based approach. However, a limitation of currently reported power analyses is the lack of standardization in how their components are described and reported. This lack of standardization makes it difficult, if not impossible, to reliably extract relevant information using a rule-based approach alone. This limitation can be partially addressed by using an LLM to classify and extract information from reported power analyses.</p>
-<p>Importantly, the LLM-based approach is opt-in. By default, the module operates without using an LLM. Users can enable this functionality by setting <code>llm_use(TRUE)</code>. When enabled, the module first applies the rule-based approach to reduce the number of calls to the LLM. Paragraphs identified as potentially containing power analyses are then submitted to Groq, an artificial intelligence inference service that provides access to multiple language models, including the open-source Ollama models.</p>
-<p>Another important feature of the <code>power</code> module is that the LLM can be accessed either through an API or locally on the user’s computer. By default, Metacheck uses the Groq API to process the LLM component. However, users may prefer to ensure that data does not leave their computer, for example when working with sensitive or confidential materials. In such cases, the module can be configured to run models locally, such as Ollama.</p>
-<p>Based on a predefined prompt, the LLM returns a JSON-structured output containing the identified power-analysis components. The module then uses this standardized output to identify missing reporting components and provide feedback on the completeness of the reported power analysis. An additional advantage of the LLM-based approach is that multiple power analyses are often reported within a single paragraph. The prompt submitted to the LLM therefore instructs the model to return separate outputs when multiple power analyses are identified within the same paragraph. <a href="#tbl-power_llm" class="quarto-xref" aria-expanded="false">Table&nbsp;6</a> reports the cases and proportion of components identified in a sample of 1937. To generate these results, the <code>power</code> model was run using the locally hosted Ollama model qwen3.5:9b.</p>
+<p>Importantly, the LLM-based approach is opt-in. By default, the module operates without using an LLM. Users can enable this functionality by setting <code>llm_use(TRUE)</code>. When enabled, the module first applies the rule-based approach to reduce the number of calls to the LLM. Paragraphs identified as potentially containing power analyses are then submitted to an LLM of the user’s choice.</p>
+<p>Another important feature of the <code>power</code> module is that the LLM can be accessed either through an API or locally on the user’s computer. By default, Metacheck uses the Groq API, an artificial intelligence inference service that provides access to multiple language models, including the open-source Ollama models, to process the LLM component. However, users may prefer to ensure that data does not leave their computer, for example when working with sensitive or confidential materials. In such cases, the module can be configured to run models locally, such as Ollama.</p>
+<p>Based on a predefined prompt, the LLM returns a JSON-structured output containing the identified power analysis components. The module then uses this standardized output to identify missing reporting components and provide feedback on the completeness of the reported power analysis (this feedback is not generated nby the LLM; it is only used for classification). An additional advantage of the LLM-based approach is that multiple power analyses are often reported within a single paragraph. The prompt submitted to the LLM therefore instructs the model to return separate outputs when multiple power analyses are identified within the same paragraph. <a href="#tbl-power_llm" class="quarto-xref" aria-expanded="false">Table&nbsp;6</a> reports the cases and proportion of components identified in a sample of 1937. To generate these results, the <code>power</code> model was run using the locally hosted Ollama model qwen3.5:9b.</p>
 <div class="cell FigureWithoutNote" prefix="" data-tblnum="6" data-custom-style="FigureWithoutNote">
 <div id="tbl-power_llm" class="cell quarto-float quarto-figure quarto-figure-center" prefix="" data-tblnum="6">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -543,65 +455,24 @@ window.Quarto = {
 <p>Table&nbsp;6</p>
 </div>
 <div class="Caption" data-custom-style="Caption">
-<p>Proportion of missing power analyses components.</p>
+<p>Proportion of missing components from 1295 power analyses.</p>
 </div>
 </figcaption>
 <div aria-describedby="tbl-power_llm-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<table class="cell caption-top table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th style="text-align: left;">Component</th>
-<th style="text-align: left;">Missing (%)</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">effect_size</td>
-<td style="text-align: left;">420 (32%)</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">power</td>
-<td style="text-align: left;">199 (15%)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">alpha_level</td>
-<td style="text-align: left;">868 (67%)</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">sample_size</td>
-<td style="text-align: left;">240 (19%)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">software_combined</td>
-<td style="text-align: left;">920 (71%)</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">effect_size_metric_combined</td>
-<td style="text-align: left;">361 (28%)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">statistical_test_combined</td>
-<td style="text-align: left;">279 (22%)</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">type_power</td>
-<td style="text-align: left;">0 (0%)</td>
-</tr>
-</tbody>
-</table>
+<div class="tabwid"><style>.cl-fa0ba8e6{}.cl-fa088af8{font-family:'Helvetica';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-fa09c652{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-fa09c65c{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-fa09d8f4{width:2in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa09d8fe{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa09d8ff{width:2in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa09d900{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa09d908{width:2in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa09d909{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-fa0ba8e6"><thead><tr style="overflow-wrap:break-word;"><th class="cl-fa09d8f4"><p class="cl-fa09c652"><span class="cl-fa088af8">Component</span></p></th><th class="cl-fa09d8fe"><p class="cl-fa09c65c"><span class="cl-fa088af8">Missing</span></p></th><th class="cl-fa09d8fe"><p class="cl-fa09c65c"><span class="cl-fa088af8">Percent</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-fa09d8ff"><p class="cl-fa09c652"><span class="cl-fa088af8">effect_size</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">420</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">32%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fa09d8ff"><p class="cl-fa09c652"><span class="cl-fa088af8">power</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">199</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">15%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fa09d8ff"><p class="cl-fa09c652"><span class="cl-fa088af8">alpha_level</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">868</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">67%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fa09d8ff"><p class="cl-fa09c652"><span class="cl-fa088af8">sample_size</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">240</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">19%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fa09d8ff"><p class="cl-fa09c652"><span class="cl-fa088af8">power_type</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">0</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">0%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fa09d8ff"><p class="cl-fa09c652"><span class="cl-fa088af8">software_combined</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">920</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">71%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fa09d8ff"><p class="cl-fa09c652"><span class="cl-fa088af8">effect_size_metric_combined</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">361</span></p></td><td class="cl-fa09d900"><p class="cl-fa09c65c"><span class="cl-fa088af8">28%</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fa09d908"><p class="cl-fa09c652"><span class="cl-fa088af8">statistical_test_combined</span></p></td><td class="cl-fa09d909"><p class="cl-fa09c65c"><span class="cl-fa088af8">279</span></p></td><td class="cl-fa09d909"><p class="cl-fa09c65c"><span class="cl-fa088af8">22%</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 </figure>
 </div>
 </div>
 <div class="AfterWithoutNote" data-custom-style="AfterWithoutNote">
-<p><strong>Note</strong>. The number of missing cases for the type of power analysis is 0 because the LLM classified all instances into a power-analysis category.</p>
+<p><strong>Note</strong>. The number of missing cases for ‘power_type’ is 0 because the LLM classified all instances into a power-analysis category.</p>
 </div>
 <p>For the 1937 articles published in <em>Psychological Science</em>, the module using the LLM-based approach currently identifies and extracts information from 663 articles containing 1295 sentences identified as reporting power analyses. Not all missing information is equally problematic. For example, a missing alpha level is less concerning because the conventional value of 5% is used in most studies, although some researchers use more stringent thresholds (e.g., 0.01) or adjust alpha levels to account for multiple comparisons. By contrast, missing information about the statistical test is more concerning given the multiplicity of statistical tests used in psychology articles. Missing the expected effect size is also particularly problematic because this component is central to justifying the planned sample size.</p>
-<p>Given the lack of standardization in how power analyses are reported, and the complexity of human language, Type 1 and Type 2 errors should be expected. For an example, the sentence “Null of 33% power Note: The observed p-curve includes 29 statistically significant (<em>p</em> &lt; .05) results, of which 14 are <em>p</em> &lt; .025. There were 8 additional results entered but excluded from p-curve because they were <em>p</em> &gt; .05.” was incorrectly classified as a sentence describing a power analysis (i.e., a Type 1 error) due to the presence of a significance level threshold, and numbers of entities included and excluded in the analysis.</p>
-<p>The following sentence is an example of a Type 2 error: “We attempted to recruit 200 participants to have sufficient power to detect a small to moderate effect size, but in recruiting groups of friends on campus, we ended up with 199 fluent English speakers (105 female)”. This statement provides too minimal information about the details of the power analysis to be classified as one. Type 1 errors are annoying, but this annoyance is hopefully in the long run compensated by the benefits of a tool such as Metacheck. Type 2 errors miss an opportunity to inform users of best research practices. However, it is possible to still report the result of the power module by stating that no reported power analyses were identified, and informing users that if this is incorrect, they might want to reconsider whether the way they reported the power analysis is clear enough for human readers. A statement such as “We performed an a-priori power analysis for a one-sided dependent <em>t</em>-test with an alpha level of 0.05, a desired power of 0.95, an effect size of interest of <span class="math inline">d_z</span> = 0.2, which lead to a required sample size of <em>N</em> = 272” should have a very high probability of being automatically detected and should allow all components to be automatically retrieved by the module using the LLM-based approach.</p>
-<p>The performance of the <code>power</code> module was evaluated on 250 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. Accuracy was highest for identifying the alpha level (0.89), software used for the analysis (0.84) and achieved power (0.83). Accuracy was also relatively high for extracting the expected effect size (0.76) and sample size (0.73), and moderate for identifying the statistical test (0.70). The lowest accuracy was observed for the type of power analysis (0.52) and the metric used to express the expected effect size (0.59). These results indicate that the module performs better for components that are typically reported using standardized numerical values or commonly recognized software names, whereas components that depend more heavily on contextual interpretation or inconsistent reporting terminology are more challenging to extract accurately.</p>
+<p>Given the lack of standardization in how power analyses are reported, and the complexity of human language, false positive and negative errors should be expected. For an example, the sentence “Null of 33% power Note: The observed p-curve includes 29 statistically significant (<em>p</em> &lt; .05) results, of which 14 are <em>p</em> &lt; .025. There were 8 additional results entered but excluded from p-curve because they were <em>p</em> &gt; .05.” was incorrectly classified as a sentence describing a power analysis (i.e., a false positive) due to the presence of a significance level threshold, and numbers of entities included and excluded in the analysis.</p>
+<p>The following sentence is an example of a false negative error: “We attempted to recruit 200 participants to have sufficient power to detect a small to moderate effect size, but in recruiting groups of friends on campus, we ended up with 199 fluent English speakers (105 female)”. This statement provides too little information about the details of the power analysis to be classified as one. False positive errors are annoying, but this annoyance is hopefully in the long run compensated by the benefits of a tool such as Metacheck. False negative errors miss an opportunity to inform users of best research practices. However, it is possible to still report the result of the power module by stating that no reported power analyses were identified, and informing users that if this is incorrect, they might want to reconsider whether the way they reported the power analysis is clear enough for human readers. A statement such as “We performed an a-priori power analysis for a one-sided dependent <em>t</em>-test with an alpha level of 0.05, a desired power of 0.95, an effect size of interest of <span class="math inline">d_z</span> = 0.2, which lead to a required sample size of <em>N</em> = 272” should have a very high probability of being automatically detected and should allow all components to be automatically retrieved by the module using the LLM-based approach.</p>
+<p>The performance of the <code>power</code> module was evaluated on 250 open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. Accuracy was highest for identifying the alpha level (0.89), software used for the analysis (0.84) and achieved power (0.83). Accuracy was also relatively high for extracting the expected effect size (0.76) and sample size (0.73), and moderate for identifying the statistical test (0.7). The lowest accuracy was observed for the type of power analysis (0.52) and the metric used to express the expected effect size (0.59). These results indicate that the module performs better for components that are typically reported using standardized numerical values or commonly recognized software names, whereas components that depend more heavily on contextual interpretation or inconsistent reporting terminology are more challenging to extract accurately.</p>
 </section>
 <section id="checking-statements" class="level3">
 <h3 data-anchor-id="checking-statements">Checking Statements</h3>
@@ -616,70 +487,34 @@ window.Quarto = {
 <p>Table&nbsp;7</p>
 </div>
 <div class="Caption" data-custom-style="Caption">
-<p>Example output of the open_practices` module applied to one single article</p>
+<p>Example output of the <code>open_practices</code> module applied to one single article</p>
 </div>
 </figcaption>
 <div aria-describedby="tbl-open_practices-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<table class="cell caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 84%">
-<col style="width: 3%">
-<col style="width: 2%">
-<col style="width: 5%">
-<col style="width: 3%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">text</th>
-<th style="text-align: left;">data</th>
-<th style="text-align: left;">code</th>
-<th style="text-align: left;">materials</th>
-<th style="text-align: left;">prereg</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">Scripts to run the experiment, analysis scripts, and data are available at this project’s Open Science Framework page (https://osf.io/tav35/).</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">All codes relevant to analysis of the main and supplemental findings are available at this project’s Open Science Framework page (https://osf.io/tav35/).</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">All data, analysis code, and scripts to run the experiment have been made publicly available via OSF and can be accessed at https://osf.io/tav35/.</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-</tbody>
-</table>
+<div class="tabwid"><style>.cl-fa2c5776{}.cl-fa299748{font-family:'Helvetica';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-fa2ac320{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-fa2ac321{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-fa2ad2a2{width:4in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa2ad2a3{width:0.5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa2ad2ac{width:4in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa2ad2ad{width:0.5in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa2ad2ae{width:4in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fa2ad2b6{width:0.5in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-fa2c5776"><thead><tr style="overflow-wrap:break-word;"><th class="cl-fa2ad2a2"><p class="cl-fa2ac320"><span class="cl-fa299748">text</span></p></th><th class="cl-fa2ad2a3"><p class="cl-fa2ac321"><span class="cl-fa299748">data</span></p></th><th class="cl-fa2ad2a3"><p class="cl-fa2ac321"><span class="cl-fa299748">code</span></p></th><th class="cl-fa2ad2a3"><p class="cl-fa2ac321"><span class="cl-fa299748">materials</span></p></th><th class="cl-fa2ad2a3"><p class="cl-fa2ac321"><span class="cl-fa299748">prereg</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-fa2ad2ac"><p class="cl-fa2ac320"><span class="cl-fa299748">Scripts to run the experiment, analysis scripts, and data are available at this project's Open Science Framework page (https://osf.io/tav35/).</span></p></td><td class="cl-fa2ad2ad"><p class="cl-fa2ac321"><span class="cl-fa299748">true</span></p></td><td class="cl-fa2ad2ad"><p class="cl-fa2ac321"><span class="cl-fa299748">true</span></p></td><td class="cl-fa2ad2ad"><p class="cl-fa2ac321"><span class="cl-fa299748">false</span></p></td><td class="cl-fa2ad2ad"><p class="cl-fa2ac321"><span class="cl-fa299748">false</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fa2ad2ac"><p class="cl-fa2ac320"><span class="cl-fa299748">All codes relevant to analysis of the main and supplemental findings are available at this project's Open Science Framework page (https://osf.io/tav35/).</span></p></td><td class="cl-fa2ad2ad"><p class="cl-fa2ac321"><span class="cl-fa299748">false</span></p></td><td class="cl-fa2ad2ad"><p class="cl-fa2ac321"><span class="cl-fa299748">true</span></p></td><td class="cl-fa2ad2ad"><p class="cl-fa2ac321"><span class="cl-fa299748">false</span></p></td><td class="cl-fa2ad2ad"><p class="cl-fa2ac321"><span class="cl-fa299748">false</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fa2ad2ae"><p class="cl-fa2ac320"><span class="cl-fa299748">All data, analysis code, and scripts to run the experiment have been made publicly available via OSF and can be accessed at https://osf.io/tav35/.</span></p></td><td class="cl-fa2ad2b6"><p class="cl-fa2ac321"><span class="cl-fa299748">true</span></p></td><td class="cl-fa2ad2b6"><p class="cl-fa2ac321"><span class="cl-fa299748">true</span></p></td><td class="cl-fa2ad2b6"><p class="cl-fa2ac321"><span class="cl-fa299748">false</span></p></td><td class="cl-fa2ad2b6"><p class="cl-fa2ac321"><span class="cl-fa299748">false</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 </figure>
 </div>
 </div>
-<div class="AfterWithoutNote" data-custom-style="AfterWithoutNote">
+<!--
+LDB: should we remove prereg from this module, or reference it in this text?
+-->
 <p>The module also flags statements indicating that data or materials are available only upon request. For example, in the sample of 1937 articles, the module identified 64 such statements. When an upon-request statement is detected, the module returns the following warning:</p>
-</div>
 <blockquote class="blockquote">
-<p>Some materials are shared on request, which is not an acceptable method of sharing. This is based on the following text:&gt; Data for the present experiments are available on request from the corresponding author.”</p>
+<p>Some materials are shared on request, which is not an acceptable method of sharing. This is based on the following text:</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>Data for the present experiments are available on request from the corresponding author.</p>
 </blockquote>
 </section>
 <section id="checking-references" class="level3">
 <h3 data-anchor-id="checking-references">Checking References</h3>
-<p>Metacheck includes several modules that use the references list of an article to perform several automated checks, such as checking whether cited articles have corrections, expressions of concern, or retractions, based on data from Retraction Watch; identifying cases in which an original article is cited even though a direct replication study of the same article exists but has not been cited <span class="citation" data-cites="roseler_replication_2024">(<a href="#ref-roseler_replication_2024" role="doc-biblioref"><span class="nocase">Röseler et al.</span>, 2024</a>)</span>; identifying incoherent references; and identifying whether cited articles have comments on PubPeer. Such comments may be worth knowing about, as they can range from minor clarifications to serious concerns about the work.</p>
+<p>Metacheck includes several modules that use the references list of an article to perform automated checks, such as checking Retraction Watch to determine whether cited articles have corrections, expressions of concern, or retractions; identifying cases in which an original article is cited even though a direct replication study of the same article exists but has not been cited <span class="citation" data-cites="roseler_replication_2024">(<a href="#ref-roseler_replication_2024" role="doc-biblioref"><span class="nocase">Röseler et al.</span>, 2024</a>)</span>; identifying incoherent references; and identifying whether cited articles have comments on PubPeer. Such comments may be worth knowing about, as they can range from minor clarifications to serious concerns about the work.</p>
 <p>For illustrative purposes, we demonstrate the <code>ref_pubpeer</code> module. If the module detects that a cited article has a comment on PubPeer, it returns the following warning:</p>
 <blockquote class="blockquote">
-<p>“We checked 9 references with DOIs. You cited 2 references with comments in PubPeer.Pubpeer is a platform for post-publication peer review. We have filtered out Pubpeer comments by ‘Statcheck’.</p>
+<p>“We checked 9 references with DOIs. You cited 2 references with comments in PubPeer. Pubpeer is a platform for post-publication peer review. We have filtered out Pubpeer comments by ‘Statcheck’.</p>
 </blockquote>
 <p>The module reports which cited references have comments on PubPeer, the number of comments, and a link to the corresponding discussion, allowing users to assess the relevance of the discussion themselves. As an illustration, <a href="#tbl-ref_pubpeer" class="quarto-xref" aria-expanded="false">Table&nbsp;8</a> shows the DOIs of two cited articles with 13 and 2 PubPeer comments, respectively, together with links to the corresponding discussions.</p>
 <div class="cell FigureWithoutNote" prefix="" data-tblnum="8" data-custom-style="FigureWithoutNote">
@@ -695,32 +530,7 @@ window.Quarto = {
 </figcaption>
 <div aria-describedby="tbl-ref_pubpeer-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<table class="cell caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 24%">
-<col style="width: 14%">
-<col style="width: 61%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">doi</th>
-<th style="text-align: right;">total_comments</th>
-<th style="text-align: left;">url</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">10.1177/0956797610383437</td>
-<td style="text-align: right;">13</td>
-<td style="text-align: left;">https://pubpeer.com/publications/69477CA2ACFC09B9239A8A256F143C</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">10.1177/0956797613492425</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: left;">https://pubpeer.com/publications/9B511C4BEA5563F50E0BC6DDF1A00B</td>
-</tr>
-</tbody>
-</table>
+<div class="tabwid"><style>.cl-fb15e846{}.cl-fb12a03c{font-family:'Helvetica';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-fb14099a{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-fb14099b{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-fb141d18{width:2in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fb141d22{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fb141d23{width:4in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fb141d24{width:2in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fb141d25{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fb141d2c{width:4in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fb141d2d{width:2in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fb141d36{width:1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fb141d37{width:4in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-fb15e846"><thead><tr style="overflow-wrap:break-word;"><th class="cl-fb141d18"><p class="cl-fb14099a"><span class="cl-fb12a03c">doi</span></p></th><th class="cl-fb141d22"><p class="cl-fb14099b"><span class="cl-fb12a03c">total_comments</span></p></th><th class="cl-fb141d23"><p class="cl-fb14099a"><span class="cl-fb12a03c">url</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-fb141d24"><p class="cl-fb14099a"><span class="cl-fb12a03c">10.1177/0956797610383437</span></p></td><td class="cl-fb141d25"><p class="cl-fb14099b"><span class="cl-fb12a03c">13</span></p></td><td class="cl-fb141d2c"><p class="cl-fb14099a"><span class="cl-fb12a03c">https://pubpeer.com/publications/69477CA2ACFC09B9239A8A256F143C</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fb141d2d"><p class="cl-fb14099a"><span class="cl-fb12a03c">10.1177/0956797613492425</span></p></td><td class="cl-fb141d36"><p class="cl-fb14099b"><span class="cl-fb12a03c">2</span></p></td><td class="cl-fb141d37"><p class="cl-fb14099a"><span class="cl-fb12a03c">https://pubpeer.com/publications/9B511C4BEA5563F50E0BC6DDF1A00B</span></p></td></tr></tbody></table></div>
 </div>
 </div>
 </figure>
@@ -728,21 +538,21 @@ window.Quarto = {
 </div>
 </section>
 </section>
-</section>
-<section id="creating-metacheck-modules" class="level1">
-<h1>Creating Metacheck Modules</h1>
+<section id="creating-metacheck-modules" class="level2">
+<h2 data-anchor-id="creating-metacheck-modules">Creating Metacheck Modules</h2>
 <p>Metacheck is modular by design. Its modules are conceptually similar to functions in R packages: each module performs a specific automated check. This architecture reflects a core value of Metacheck: community engagement and epistemic diversity. Decisions about what constitutes best research practice should emerge through scientific discussions rather than be imposed by a single group. We have therefore designed Metacheck to make it as straightforward as possible for researchers to translate their own views on best practices into modules.</p>
 <p>Anyone can develop a module and validate its performance. Modules can be developed and installed locally or contributed to the Metacheck R package through a GitHub pull request. This flexibility enables journals to develop modules that verify compliance with their submission guidelines, methodological experts to automate checks for issues they frequently identify during peer review, and organizations to create modules that assess adherence to reporting guidelines that they publish.</p>
 <p>Metacheck can also serve as a hub for existing automated tools. Researchers often need to use multiple software packages, websites, or online services to evaluate different aspects of a manuscript. Integrating these checks into a single tool simplifies this workflow and may also increase awareness of tools that researchers would otherwise not discover.</p>
 <p>As proof of concept, we developed a Metacheck module for Statcheck <span class="citation" data-cites="nuijten_2016">(<a href="#ref-nuijten_2016" role="doc-biblioref">Nuijten et al., 2016</a>)</span>. However, consistent with Metacheck’s emphasis on validated automated checks, the module only implements analyses for which Statcheck’s performance has been empirically evaluated. An initial study indicated that for <em>t</em>-tests, <em>F</em>-tests, and <span class="math inline">\chi^2</span> tests, Statcheck achieved a true positive rate of 85.3%, increasing to 100% when one-tailed tests were explicitly identified using terms such as “one-tailed”, “one-sided”, or “directional”. In contrast, Statcheck has not been validated for correlations (<em>r</em>) tests or <em>Z</em>-tests, and anecdotal evidence suggests substantially lower accuracy for these tests. Accordingly, the Statcheck module excludes correlation tests and <em>Z</em>-tests by default until their performance has been validated.</p>
-<p>Similarly, we have developed a Metacheck module for <a href="https://regcheck.app/">RegCheck</a>, a fully automated comparison tool that uses LLMs to compare a manuscript with its preregistration <span class="citation" data-cites="cummins_2026">(<a href="#ref-cummins_2026" role="doc-biblioref">Cummins et al., 2026</a>)</span>. Metacheck also has a module that checks preregistrations, but it takes a slightly different approach. Rather than relying on LLM-based comparison, it automatically retrieves the preregistration from AsPredicted automatically and extracts the preregistered sample size, taking advantage of the AsPredicted structured template. Metacheck then presents this information alongside the manuscript, allowing users to quickly compare the preregistered and the reported sample sizes.</p>
+<p>Similarly, we have developed a Metacheck module for <a href="https://regcheck.app/">RegCheck</a>, a fully automated comparison tool that uses LLMs to compare a manuscript with its preregistration <span class="citation" data-cites="cummins_2026">(<a href="#ref-cummins_2026" role="doc-biblioref">Cummins et al., 2026</a>)</span>. Metacheck also has a module that checks preregistrations, but it takes a slightly different approach. Rather than relying on LLM-based comparison, it retrieves the preregistration from the Open Science Framework or AsPredicted and extracts the preregistered sample size, taking advantage of their structured templates. Metacheck then presents this information alongside the manuscript, allowing users to quickly compare the preregistered and the reported sample sizes.</p>
+<!-- any reason OSF was originally omitted above? -->
 </section>
-<section id="discussion" class="level1">
-<h1>Discussion</h1>
+<section id="discussion" class="level2">
+<h2 data-anchor-id="discussion">Discussion</h2>
 <p>To prevent the widespread misuse of an automated tool such as Metacheck, it is important to recognize its limitations. Although it may seem desirable for every module to achieve very high accuracy, a cost-benefit analysis suggests that, at this stage, it is more valuable to develop a broad range of modules that provide useful assistance despite moderate error rates than to devote the same effort to a small number of modules that achieve near-perfect accuracy and are primarily suitable for meta-scientific research. This trade-off reflects the inherent complexity of scientific writing. The flexibility of human language, combined with the lack of standardization in how information is reported in manuscripts, means that reducing a module error rate from 50% to 20% is often substantially easier than reducing it from 20% to 5%. Consequently, our current development strategy follows the Pareto principle: the priority is building modules that identify the relatively small number of common reporting errors that account for most avoidable errors. In other words, we focus on the 20% of issues that, when detected, help prevent 80% of reporting errors.</p>
 </section>
-<section id="references" class="level1">
-<h1>References</h1>
+<section id="references" class="level2">
+<h2 data-anchor-id="references">References</h2>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" data-line-spacing="2" role="list">
 <div id="ref-aczel2018quantifying" class="csl-entry" role="listitem">
 Aczel, B., Palfi, B., Szollosi, A., Kovacs, M., Szaszi, B., Szecsi, P., Zrubka, M., Gronau, Q. F., Bergh, D. van den, &amp; Wagenmakers, E.-J. (2018). Quantifying support for the null hypothesis in psychology: An empirical investigation. <em>Advances in Methods and Practices in Psychological Science</em>, <em>1</em>(3), 357–366. https://doi.org/<a href="https://doi.org/10.1177/2515245918773742">https://doi.org/10.1177/2515245918773742</a>
@@ -763,10 +573,13 @@ Bendel, R. B., &amp; Afifi, A. A. (1977). Comparison of stopping rules in forwar
 Cummins, J., Clarke, B., Hussey, I., &amp; Elson, M. (2026). <em>RegCheck: A tool for automating comparisons between study registrations and papers</em>. <a href="https://arxiv.org/abs/2601.13330">https://arxiv.org/abs/2601.13330</a>
 </div>
 <div id="ref-R-metacheck" class="csl-entry" role="listitem">
-DeBruine, L., Mesquida, C., Werner, J., &amp; Lakens, D. (2026). <em>Metacheck: Check research outputs for best practices</em>. <a href="https://github.com/scienceverse/metacheck">https://github.com/scienceverse/metacheck</a>
+DeBruine, L., Lakens, D., &amp; Werner, J. (2026). <em>Metacheck: Check research outputs for best practices</em>. <a href="https://github.com/scienceverse/metacheck">https://github.com/scienceverse/metacheck</a>
 </div>
 <div id="ref-dexter2017narrative" class="csl-entry" role="listitem">
 Dexter, F., &amp; Shafer, S. L. (2017). Narrative review of statistical reporting checklists, mandatory statistical editing, and rectifying common problems in the reporting of scientific articles. <em>Anesthesia &amp; Analgesia</em>, <em>124</em>(3), 943–947. https://doi.org/<a href="https://doi.org/10.1213/ane.0000000000001593">https://doi.org/10.1213/ane.0000000000001593</a>
+</div>
+<div id="ref-R-flextable" class="csl-entry" role="listitem">
+Gohel, D., &amp; Skintzos, P. (2026). <em>Flextable: Functions for tabular reporting</em>. <a href="https://ardata-fr.github.io/flextable-book/">https://ardata-fr.github.io/flextable-book/</a>
 </div>
 <div id="ref-goos2024assessing" class="csl-entry" role="listitem">
 Goos, C., Bakker, M., Wicherts, J. M., &amp; Nuijten, M. B. (2024). <em>Assessing reliable and valid measurement as a prerequisite for informative replications in psychology</em>. https://doi.org/<a href="https://doi.org/10.31234/osf.io/2gau8">https://doi.org/10.31234/osf.io/2gau8</a>
@@ -816,13 +629,8 @@ Wickham, H., Chang, W., Henry, L., Pedersen, T. L., Takahashi, K., Wilke, C., Wo
 <div id="ref-R-dplyr" class="csl-entry" role="listitem">
 Wickham, H., François, R., Henry, L., Müller, K., &amp; Vaughan, D. (2026). <em>Dplyr: A grammar of data manipulation</em>. <a href="https://dplyr.tidyverse.org">https://dplyr.tidyverse.org</a>
 </div>
-<div id="ref-R-knitr" class="csl-entry" role="listitem">
-Xie, Y. (2025). <em>Knitr: A general-purpose package for dynamic report generation in r</em>. <a href="https://yihui.org/knitr/">https://yihui.org/knitr/</a>
 </div>
-<div id="ref-R-kableExtra" class="csl-entry" role="listitem">
-Zhu, H. (2024). <em>kableExtra: Construct complex table with kable and pipe syntax</em>. <a href="http://haozhu233.github.io/kableExtra/">http://haozhu233.github.io/kableExtra/</a>
-</div>
-</div>
+</section>
 </section>
 
 </main>
