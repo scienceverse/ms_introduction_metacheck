@@ -370,7 +370,8 @@ ggplot(
 ```{r}
 #| label: stat_p_exact_validation
 
-# set up numbers here in case they change with more data
+# Results obtained from https://github.com/scienceverse/validation/tree/stat_p_exact/stat_p_exact
+
 n_papers <- 225
 exact <- 4635
 inexact <- 405
@@ -456,18 +457,21 @@ A second JARS guideline that can be checked automatically is whether effect size
 ```{r}
 #| label: stat_effect_size_validation
 
-# set up numbers here in case they change with more data
+# TODO: Lisa asked for the metrics by test but we only have them for the combined tests.
+
+# Results obtained from https://github.com/scienceverse/validation/tree/stat_effect_size-new/stat_effect_size
 n_papers <- 250
+total <- 1469
+tp <- 1106
+tn <- 295
+fn <- 23
+fp <- 45
 
-# TODO: add numbers that calculate this
-
-tppcnt_t_es <- 100
-tppcnt_t_noes <- 99
-tppcnt_F_es <- 99
-tppcnt_F_noes <- 100
+tppcnt <- round(tp / total * 100)
+tnpcnt <- round(tn / total * 100)
 ```
 
-The performance of the module was evaluated on `r n_papers` open-access articles published in Psychological Science, from which *t*-tests and *F*-tests were manually extracted to create a ground-truth dataset. The module correctly identified `r tppcnt_t_es`% of *t*-tests reported with effect sizes, `r tppcnt_t_noes`% of *t*-tests reported without effect sizes, `r tppcnt_F_es`% of *F*-tests reported with effect sizes, and `r tppcnt_F_noes`% of *F*-tests reported without effect sizes. This level of accuracy is sufficient for meta-scientific research, such as examining trends in adherence to reporting guidelines over time.
+The performance of the module was evaluated on `r n_papers` open-access articles published in Psychological Science, from which *t*-tests and *F*-tests were manually extracted to create a ground-truth dataset. The module correctly identified `r tppcnt`% of tests reported with effect sizes and `r tnpcnt`% of tests reported without effect sizes. This level of accuracy is sufficient for meta-scientific research, such as examining trends in adherence to reporting guidelines over time.
 
 ```{r}
 #| label: res_stat_effect_size
@@ -534,10 +538,12 @@ ggplot(
     y = "Percentage of Articles (%)",
     fill = "Test Type"
   ) +
-  scale_fill_manual(values = c(
+  scale_fill_manual(
+    values = c(
     "t-test" = fill_pos, 
     "F-test" = fill_pos2
-  ))
+    )
+  )
 ```
 
 Another feature of the `stat_effect_size` is that it checks whether reported effect sizes are consistent with the corresponding test statistic and degrees of freedom. For *t*-tests, it checks Cohen’s *d* and Hedges' *g*, while for *F*-tests, it checks $\eta_p^2$ and $\omega_p^2$. Importantly, reporting an effect size such as *d* = 0.3 does not provide an information about the study design (i.e., whether the comparison is between or within subjects). The module therefore computes *d* under several plausible assumptions, including a Cohen's paired $d_z$, independent with equal sample sizes, and a range of possible sample sizes for independent samples. If any of the recomputed effect sizes matches the reported effect size, the result is deemed as consistent. @tbl-es_d displays some of the information returned by the module when checking the consistency of effect sizes in a single article. The first example shows a reported effect size that does not match the value implied by the *t*-test under any of the tested assumptions, whereas the second is consistent with an independent-samples *t*-test assuming equal sample sizes.
@@ -835,6 +841,7 @@ The following sentence is an example of a false negative error: "We attempted to
 #| label: power_validation
 
 # TODO: replace with calculations and link to validation
+# Results obtained from https://github.com/scienceverse/validation/tree/power/power
 
 n_papers <- 250
 alpha_acc <- 0.89
