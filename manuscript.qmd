@@ -29,7 +29,7 @@ author-note:
   disclosures:
     conflict-of-interest: "The authors have no conflict of interest to declare."
     data-sharing: "A reproducible version of this manuscript is available at XXX."
-bibliography: [references_doi.bib , package-citations.bib]
+bibliography: [references.bib, package-citations.bib]
 floatsintext: true # Place figures and tables within the text
 format:
   apaquarto-html:
@@ -39,6 +39,11 @@ format:
     css: style.css
   apaquarto-docx: default
   apaquarto-pdf: default
+knitr:
+  opts_chunk:
+    dev: "png"
+    dpi: 300
+    fig.path: output/figures/ 
 execute:
   echo: false
 abstract: "Meta-scientific research has revealed that researchers often fall short in implementing best research practices when designing studies, reporting findings, citing the literature, or sharing data and code. Researchers face time constraints that limit the extent to which they can master all aspects of the research process, and cognitive constraints that limit which practices they remember to implement in their work. By capturing expert knowledge within an automated tool, we aim to elevate the quality of scientific research and disseminate best research practices more widely. We illustrate how best practices can be automatically detected by analyzing articles published in Psychological Science in the last decade. Researchers can use the tool before submitting or when reviewing scientific articles. Our modular tool can be easily extended by the research community to automatically check for best research practices, educate researchers, and improve the quality of scientific reporting."
@@ -58,7 +63,7 @@ pak::pkg_install("scienceverse/metacheck@main")
 ```{r}
 #| label: libraries
 #| message: FALSE
-#| output: false
+#| output: FALSE
 
 # Libraries to be loaded
 library(metacheck)
@@ -77,13 +82,12 @@ knitr::write_bib(
 
 ```{r}
 #| label: data
-#| eval: TRUE 
 
 # Load RDS object containing articles from 2014 to 2026
-psych_science <- readRDS("input/psychsci.rds")
+psych_science <- readRDS("data/psychsci.rds")
 
 # Load the RDS object "results" containing additional information from the same articles
-load("input/psych_science_crossref.RData")
+load("data/psych_science_crossref.RData")
 
 # Extract DOI and issuance year for each paper
 results <- results |> 
@@ -106,6 +110,12 @@ set_flextable_defaults(digits = 2,
                        na_str = "(none)")
 ```
 
+```{=html}
+<!--
+CM: For now we are not storing any tables in output/
+-->
+```
+
 ## Introduction
 
 Meta-scientific research demonstrates significant room for improvement in how researchers design studies, report findings, and implement open science practices when sharing their work. The uptake of best research practices is slow [@sharpe2013resistance] and often suboptimal. For example, researchers often use invalid and unreliable measures [@goos2024assessing], misinterpret non-significant results [@aczel2018quantifying], write insufficiently specific preregistrations [@van_potential_2024], invalid power analyses [@thibault2024evaluation], and misuse Bayes factors [@tendeiro2024diagnosing]. Although it is the responsibility of researchers to keep up to date with best research practices, time constraints and the rapid pace of new developments make this challenging. Peer reviewers, similarly pressed for time, may not identify instances where best research practices are not followed. Checklists have the potential to increase the adoption of best practices, but in practice, they have limited impact, as researchers might not be aware of the existence of checklists and they still need sufficient expertise to evaluate whether they have adhered to items on the checklist [@dexter2017narrative].
@@ -114,13 +124,15 @@ Human factors research suggests that automation (where researchers remain in the
 
 In this article, we introduce a new tool, Metacheck, which uses text search, code, and optional LLMs to extract information from scientific articles (e.g., the draft of a manuscript, submitted or published articles, or preregistration documents) and provide automated suggestions for improvement. Metacheck is inspired by quality control processes in software development. For example, R package developers run a set of automated checks before they submit their package to the Comprehensive R Archive Network (CRAN). The automated checks aim to identify any remaining issues and inform developers about how to fix them. The goal of Metacheck is to screen scientific manuscripts, identify areas for improvement based on algorithms that emulate what experts would do while checking a research article, and help researchers incorporate best research practices. The tool is modular, with a dedicated module for any practice that the research community wants to improve, and where automation offers a solution. This means the tool can be extended by the research community to fit their needs, and specialised modules can be created for different scientific fields based on what is considered best practice in that research area. The tool can reduce the burden on peer reviewers by resolving common problems before submission, allowing peer reviewers to focus on those issues that cannot be automatically detected.
 
+```{=html}
 <!--
 LDB: I moved the next paragraph down because it didn't make sense before introducing metacheck. But it still references things that the reader won't yet understand, like module names.
 -->
+```
 
 Importantly, in Metacheck the use of LLMs is entirely optional and opt-in. Metacheck restricts LLMs to the classification of existing text, and the vast majority of modules work without an LLM; the only current exceptions are `power` and `prereg_check`. Finally, when users opt to use an LLM, models can be run locally, ensuring that no data leaves the user's computer.
 
-Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., the magnitude of the effect size for an a priori power analysis), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is this effect size appropriately justified). Metacheck focuses on the first task, and leaves the evaluation to the user. 
+Automated checks can quite accurately identify the presence or absence of information that should be reported (e.g., the magnitude of the effect size for an a priori power analysis), but a bigger challenge is to evaluate whether the provided information is valid (e.g., is this effect size appropriately justified). Metacheck focuses on the first task, and leaves the evaluation to the user.
 
 We will illustrate the potential of automated checks to improve best research practices in four areas: 1) experimental design, 2) open science practices, 3) statistical inferences, and 4) reporting guidelines. Finally, we will demonstrate the usefulness of our tool for efficiently processing text in scientific articles to perform menial tasks (e.g., check whether hyperlinks work), extract information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., statcheck and check for citations to retracted articles) in a single modular workflow that can be expanded by the scientific community. We perform these checks on `r length(psych_science)` articles published in Psychological Science from 2014 to 2026. This set of articles contains studies from all subfields in psychology.
 
@@ -136,19 +148,20 @@ The second use case for Metacheck is as a meta-scientific tool to examine a larg
 
 In the following section, we demonstrate how to use selected Metacheck modules from both a researcher's perspective and a meta-scientific perspective. All examples were produced using R [@RStudio] and the following R packages: `dplyr` [@R-dplyr], `ggplot2` [@R-ggplot2], `flextable` [@R-flextable], `metacheck` [@R-metacheck], and `stringr` [@R-stringr]. This article was written using Quarto [@Quarto].
 
+### Checking Reported *P* values
 
-### Checking Reported *P*-values
-
-The Journal Article Reporting Standards (JARS) developed by the American Psychological Association (APA) offer guidance on the information that should be reported in scientific articles to enhance their scientific rigour [@appelbaum_2018]. Almost every published scientific article could be improved if researchers diligently followed JARS. However, the guidelines are not widely known, rarely implemented by authors, and almost never checked by editors or reviewers. Manually checking whether all reporting standards are implemented would be effortful. Automation can help by automatically assessing whether recommendations are followed. The first reporting guideline that has been implemented in Metacheck concerns the the reporting of exact *p*-values. The APA Manual states:
+The Journal Article Reporting Standards (JARS) developed by the American Psychological Association (APA) offer guidance on the information that should be reported in scientific articles to enhance their scientific rigour [@appelbaum_2018]. Almost every published scientific article could be improved if researchers diligently followed JARS. However, the guidelines are not widely known, rarely implemented by authors, and almost never checked by editors or reviewers. Manually checking whether all reporting standards are implemented would be effortful. Automation can help by automatically assessing whether recommendations are followed. The first reporting guideline that has been implemented in Metacheck concerns the the reporting of exact *p* values. The APA Manual states:
 
 > "Report exact *p* values (e.g., *p* = .031) to two or three decimal places. However, report *p* values less than .001 as *p* \< .001."
 
+```{=html}
 <!-- 
 cite? seems to be from 
 https://apastyle.apa.org/instructional-aids/numbers-statistics-guide.pdf
 -->
+```
 
-Access to precisely reported *p*-values allows readers to include *p*-values in meta-analytic tools, such as p-curve [@simonsohn2014] or z-curve [@schimmack_2017], and makes it possible to check the internal coherence of the reported results with tools such as Statcheck [@nuijten_2016]. Metacheck has a dedicated rule-based module, `stat_p_exact`, which returns all instances of imprecisely reported *p*-values in scientific articles. For illustrative purposes, we run the module on a single paper and display, in @tbl-res_imprecise, the *p*-value that was reported with insufficient precision and the full sentence in which it was reported.
+Access to precisely reported *p* values allows readers to include *p* values in meta-analytic tools, such as p-curve [@simonsohn2014] or z-curve [@schimmack_2017], and makes it possible to check the internal coherence of the reported results with tools such as Statcheck [@nuijten_2016]. Metacheck has a dedicated rule-based module, `stat_p_exact`, which returns all instances of imprecisely reported *p* values in scientific articles. For illustrative purposes, we run the module on a single paper and display, in @tbl-res_imprecise, the *p* value that was reported with insufficient precision and the full sentence in which it was reported.
 
 ```{r}
 #| label: tbl-res_imprecise
@@ -160,52 +173,54 @@ article <- psych_science$`0956797614567718`
 ## Run "stat_p_exact" module
 res_imprecise <- module_run(article, "stat_p_exact")
 
-## Return table with imprecisely reported p-values in Results section 
+## Return table with imprecisely reported p values in Results section 
 res_imprecise$table |> 
 filter(
   imprecise == TRUE &  
   section_type == "results"
     ) |> 
-  select(text, expanded) |> 
+  select(
+    text, 
+    expanded
+    ) |> 
   flextable() |>
-  width(1:2, c(1, 5))
+  set_header_labels(
+    text = "Text",
+    expanded = "Expanded"
+    ) |> 
+  width(
+    1:2, 
+    c(1, 5)
+    )
 ```
 
 The modules also provide a recommendation for improving the research practice associated with the warnings they detect. For example, the `stat_p_exact` module it returns the following recommendation:
 
-> "Reporting *p* values imprecisely (e.g., *p* \< .05) reduces transparency, reproducibility, and re-use (e.g., in *p* value meta-analyses). Best practice is to report exact p-values with three decimal places (e.g., *p* = .032) unless *p* values are smaller than 0.001, in which case you can use *p* \< .001."
+> "Reporting *p* values imprecisely (e.g., *p* \< .05) reduces transparency, reproducibility, and re-use (e.g., in *p* value meta-analyses). Best practice is to report exact *p* values with three decimal places (e.g., *p* = .032) unless *p* values are smaller than 0.001, in which case you can use *p* \< .001."
 
-<!--
-LDB: consistent "p values" versus "p-values" between paper and module output
--->
-
-All modules can be run in batch mode on a large number of articles, and the output can be used for meta-scientific research. One example is shown in @fig-imprecise-pvalues, which displays the proportion of imprecisely reported *p*-values by statistical significance over time. The figure shows that the proportion of imprecisely reported *p*-values is similar across significant and non-significant results. Another example is shown in @fig-atleastone, which displays the proportion of articles containing at least one imprecisely reported *p*-values over time. The figure shows that there has been a decline in comparison to a decade ago.
+All modules can be run in batch mode on a large number of articles, and the output can be used for meta-scientific research. One example is shown in @fig-imprecise-pvalues, which displays the proportion of imprecisely reported *p* values by statistical significance over time. The figure shows that the proportion of imprecisely reported *p* values is higher among significant than among non-significant results. Another example is shown in @fig-atleastone, which displays the proportion of articles containing at least one imprecisely reported *p* values over time. The figure shows that there has been a decline in comparison to a decade ago.
 
 ```{r}
 #| label: res_stat_p_exact
 #| eval: FALSE ## Set to TRUE to rerun module
 
-## Run "stat_p_exact" module
+# Run "stat_p_exact" module
 res_stat_p_exact <- module_run(psych_science, "stat_p_exact")
 
-## Save results
-save(res_stat_p_exact, file = "input/res_stat_p_exact.RData")
+# Save results
+save(res_stat_p_exact, file = "data/res_stat_p_exact.RData")
 ```
-
-<!--
-The original logic for this plot was wrong
--->
 
 ```{r}
 #| label: fig-imprecise-pvalues
-#| fig-cap: "Proportion of articles reporting imprecise *p*-values, by statistical significance."
+#| fig-cap: "Proportion of articles reporting imprecise *p* values by statistical significance."
 #| fig-width: 6
 #| fig-height: 4
 
 # Load results
-load("input/res_stat_p_exact.RData")
+load("data/res_stat_p_exact.RData")
 
-# Summarize imprecisely reported p-values by article and significance category
+# Summarize imprecisely reported p values by article and significance category
 merged_data <- res_stat_p_exact$table |>
   filter(imprecise) |>
   mutate(significance = ifelse(
@@ -255,13 +270,11 @@ ggplot(
     legend.position = "inside",
     legend.position.inside = c(.8, .8)
   )
-
-ggsave("output/imprecise_pvalues.png", width = 6, height = 4, dpi = 300)
 ```
 
 ```{r}
 #| label: fig-atleastone
-#| fig-cap: "Proportion of articles with at least one imprecisely reported *p*-value."
+#| fig-cap: "Proportion of articles with at least one imprecisely reported *p* value."
 #| fig-width: 6
 #| fig-height: 4
 
@@ -293,57 +306,66 @@ summary_df <- all_years |>
 # Create the bar plot
 ggplot(
   summary_df,
-  aes(x = factor(year, levels = all_years$year), y = percentage)
+  aes(
+    x = factor(year, levels = all_years$year), 
+    y= percentage
+    )
 ) +
   geom_col(
     fill = fill_pos,
     color = "black"
   ) +
-  scale_x_discrete(limits = all_years$year, drop = FALSE) +
+  scale_x_discrete(
+    limits = all_years$year, 
+    drop = FALSE
+    ) +
   labs(
     x = "Year",
     y = "Percentage of Articles (%)"
   )
-
-# Save plot
-ggsave("output/atleastone_imprecise.png", width = 6, height = 4, dpi = 300)
 ```
 
-Another example is illustrated in @fig-hist, which shows the distribution of imprecisely reported *p*-values over time. This type of overview can reveal interesting exploratory patterns, such as a large peak around *p* \> 0.25. This may indicate that researchers commonly use 0.25 as a threshold for interpreting a result as non-significant, although the origin of this practice is unclear. One possible source is the recommendation to use an alpha level between 0.25 and 0.35 as a stopping criterion in forward step-wise selection procedures [@bendel1977comparison], which later popularized as alpha $\le$ 0.25 in a widely used textbook on logistic regression [@hosmer2013applied]. However, we have no evidence this is the source of the convention. The correct approach for concluding that an effect is not meaningful (i.e., equivalent to zero) is to perform an equivalence test against a smallest effect size of interest [@lakens_equivalence_2018].
+Another example is illustrated in @fig-hist, which shows the distribution of imprecisely reported *p* values over time. This type of overview can reveal interesting exploratory patterns, such as a large peak around *p* \> 0.25. This may indicate that researchers commonly use 0.25 as a threshold for interpreting a result as non-significant, although the origin of this practice is unclear. One possible source is the recommendation to use an alpha level between 0.25 and 0.35 as a stopping criterion in forward step-wise selection procedures [@bendel1977comparison], which later popularized as alpha $\le$ 0.25 in a widely used textbook on logistic regression [@hosmer2013applied]. However, we have no evidence this is the source of the convention. The correct approach for concluding that an effect is not meaningful (i.e., equivalent to zero) is to perform an equivalence test against a smallest effect size of interest [@lakens_equivalence_2018].
 
 ```{r}
 #| label: fig-hist
 #| warning: FALSE
-#| fig-cap: "Distribution of imprecisely reported *p*-values."
+#| fig-cap: "Distribution of imprecisely reported *p* values by comparator"
 #| fig-width: 6
 #| fig-height: 4
 
 # Histogram for exact values
 imprecise_df <- res_stat_p_exact$table |>
-  filter(imprecise, p_value >=0, p_value <=1)
+  filter(
+    imprecise, 
+    p_value >=0, 
+    p_value <=1
+    )
 
 # Plot histogram 
-ggplot(imprecise_df, aes(x = p_value, fill = p_comp)) +
+ggplot(
+  imprecise_df, 
+  aes(x = p_value, fill = p_comp)
+  ) +
   geom_histogram(
     binwidth = 0.01, 
     boundary = 0,
     color = "black"
   ) +
   scale_x_continuous(
-    name = "Extracted p-value", 
+    name = expression("Extracted " * italic(p) * " value"), 
     limits = c(0, 1), 
     breaks = seq(0, 1, 0.1)
   ) +
-  labs(y = "Frequency (log10)",
-       fill = "Comparator") + 
+  labs(
+    y = "Frequency (log10)",
+    fill = "Comparator"
+    ) + 
   theme(
     legend.position = "inside",
     legend.position.inside = c(.85, .75)
   )
-
-ggsave("output/hist_imprecise.png", width = 6, height = 4, dpi = 300)
 ```
-
 
 ```{r}
 #| label: stat_p_exact_validation
@@ -362,9 +384,9 @@ fppcnt <- round(fp/inexact*100)
 fnpcnt <- round(fn/inexact*100)
 ```
 
-The performance of the `stat_p_exact` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. This set of articles contained `r inexact` instances of non-exact *p*-values and `r exact` instances of exact *p*-values. It correctly detected `r tp` of `r inexact` instances (`r tppcnt`%) and incorrectly identified `r fp` instances (`r fppcnt`%). The module missed `r fn` instances (`r fnpcnt`%) of imprecisely reported *p*-values, and correctly identified `r tn` instances of precisely reported *p*-values.
+The performance of the `stat_p_exact` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. This set of articles contained `r inexact` instances of non-exact *p* values and `r exact` instances of exact *p* values. It correctly detected `r tp` of `r inexact` instances (`r tppcnt`%) and incorrectly identified `r fp` instances (`r fppcnt`%). The module missed `r fn` instances (`r fnpcnt`%) of imprecisely reported *p* values, and correctly identified `r tn` instances of precisely reported *p* values.
 
-We have also developed a related module, `stat_p_nonsig` that detects whether non-significant *p*-values are reported in an article. When such results are identified, the module warns researchers against the common practice of interpreting non-significant *p*-values as evidence of the absence of an effect and returns all sentences containing non-significant *p*-values, allowing researchers to quickly check for potential misinterpretations. @tbl-non_sig displays the non-significant *p*-value and the full sentence in which it was reported.
+We have also developed a related module, `stat_p_nonsig` that detects whether non-significant *p* values are reported in an article. When such results are identified, the module warns researchers against the common practice of interpreting non-significant *p* values as evidence of the absence of an effect and returns all sentences containing non-significant *p* values, allowing researchers to quickly check for potential misinterpretations. @tbl-non_sig displays the non-significant *p* value and the full sentence in which it was reported.
 
 ```{r}
 #| label: tbl-non_sig
@@ -382,16 +404,25 @@ tibble(
   expanded = res_nonsig$table[2, ]$expanded
 ) |>
   flextable() |>
-  width(1:2, c(1, 5))
+  set_header_labels(
+    text = "Text",
+    expanded = "Expanded"
+    ) |> 
+  width(
+    1:2, 
+    c(1, 5)
+    )
 ```
 
-When a non-significant *p*-value is detected, the module provides the following recommendation on how to interpret the a non-significant result:
+When a non-significant *p* value is detected, the module provides the following recommendation on how to interpret the a non-significant result:
 
 > "Meta-scientific research has shown nonsignificant p values are commonly misinterpreted. It is incorrect to infer that there is 'no effect', 'no difference', or that groups are 'the same' after p \> 0.05. It is possible that there is a true non-zero effect, but that the study did not detect it. Make sure your inference acknowledges that it is possible that there is a non-zero effect. It is correct to include the effect is 'not significantly' different, although this just restates that p \> 0.05."
 
+```{=html}
 <!--
 should we change .05 to "your critical alpha" in this module?
 -->
+```
 
 ```{r}
 #| label: stat_p_nonsig_validation
@@ -401,15 +432,20 @@ n_papers <- 194
 total <- 1602
 tp <- 1486
 fn <- total - tp
-## fp <- ?
-## tn <- ?
+fp <- 153
+# tn <- NA
 
-tppcnt <- round(tp/total*100)
+tppcnt <- round(tp / total * 100)
 ```
 
-The performance of the `stat_p_nonsig` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. It correctly detected `r tp` of `r total` instances of non-significant *p*-values (`r tppcnt`).
+The performance of the `stat_p_nonsig` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. The module correctly identified `r tp` of `r total` instances of non-significant *p* values (`r tppcnt`%) incorrectly classified `r fp` significant *p* values as non-significant.
 
-<!-- no false positives? -->
+```{=html}
+<!--
+LDB: We have false positives?
+CM: We do. But not sure whether we can provide the percentage because all 1602 instances are non-significant p-values.
+-->
+```
 
 ### Checking (Un)reported Effect Sizes
 
@@ -441,7 +477,7 @@ The performance of the module was evaluated on `r n_papers` open-access articles
 res_effect_size <- module_run(psych_science, "stat_effect_size")
 
 # Save results
-save(res_effect_size, file = "input/res_effect_size.RData")
+save(res_effect_size, file = "data/res_effect_size.RData")
 ```
 
 ```{r}
@@ -451,7 +487,7 @@ save(res_effect_size, file = "input/res_effect_size.RData")
 #| fig-height: 4
 
 # Load results
-load("input/res_effect_size.RData")
+load("data/res_effect_size.RData")
 
 # Combine both datasets
 results_with_effect_size <- results |> 
@@ -502,9 +538,6 @@ ggplot(
     "t-test" = fill_pos, 
     "F-test" = fill_pos2
   ))
-
-# Save plot
-ggsave("output/stat_effect_size.png", width = 6, height = 4, dpi = 300)
 ```
 
 Another feature of the `stat_effect_size` is that it checks whether reported effect sizes are consistent with the corresponding test statistic and degrees of freedom. For *t*-tests, it checks Cohen’s *d* and Hedges' *g*, while for *F*-tests, it checks $\eta_p^2$ and $\omega_p^2$. Importantly, reporting an effect size such as *d* = 0.3 does not provide an information about the study design (i.e., whether the comparison is between or within subjects). The module therefore computes *d* under several plausible assumptions, including a Cohen's paired $d_z$, independent with equal sample sizes, and a range of possible sample sizes for independent samples. If any of the recomputed effect sizes matches the reported effect size, the result is deemed as consistent. @tbl-es_d displays some of the information returned by the module when checking the consistency of effect sizes in a single article. The first example shows a reported effect size that does not match the value implied by the *t*-test under any of the tested assumptions, whereas the second is consistent with an independent-samples *t*-test assuming equal sample sizes.
@@ -548,11 +581,16 @@ bind_rows(
   b[1, ]
 ) |> 
   flextable() |>
-  # set_header_labels(test_text = "Text",
-  #                   es = "Effect Size",
-  #                   d_coherence = "Coherence",
-  #                   d_coherence_note = "Note") |>
-  width(1:4, c(1.5, 1, 1, 5))
+  set_header_labels(
+    test_text = "Text",
+    es = "Effect Size",
+    d_coherence = "Coherence",
+    d_coherence_note = "Note"
+    ) |>
+  width(
+    1:4, 
+    c(1.5, 1, 1, 5)
+        )
 ```
 
 ### Checking Power Analyses
@@ -582,7 +620,14 @@ res_power_unknown <- module_run(paper, "power")
 res_power_unknown$table[, c("power_type", "text")] |> 
   mutate(text = str_split_i(text, "\\.", 2)) |> ## Return only one sentence
   flextable() |>
-  width(1:2, c(1, 5))
+  set_header_labels(
+    power_type = "Power",
+    text = "Text"
+    ) |> 
+  width(
+    1:2, 
+    c(1, 5)
+    )
 ```
 
 ```{r}
@@ -596,35 +641,52 @@ llm_use(FALSE)
 res_power <- module_run(psych_science, "power")
 
 # Save results
-save(res_power, file = "input/res_power.RData")
+save(res_power, file = "data/res_power.RData")
 ```
 
 ```{r}
-#| label: tbl-power_type
-#| tbl-cap: "Classification of power analyses by category using the rule-based approach."
+#| label: load-res_power
 
 # Load results
-load("input/res_power.RData")
+load("data/res_power.RData")
 
 # Calculate number and proportion of power analyses by type
 power_type <- res_power$table |> 
   count(power_type) |> 
   mutate(
-    percent = paste0(
+    Percent = paste0(
       round((n / sum(n)) * 100, 0),
       "%"
     )
   ) |> 
-  select(power_type, n, percent)
+  select(
+    Power = power_type, 
+    Cases = n, 
+    Percent
+    )
+```
+
+@tbl-power_type shows the number of power analyses detected using the rule-base approach by category. Out of all `r length(res_power$table$power_id)` reported power analysis (although these include some double counted due to overlapping sentences), `r power_type[[4, 2]]` could not be classified, `r power_type[[1, 2]]` were classified as "a priori", `r power_type[[3, 2]]` were classified as "sensitivity" and `r power_type[[2, 2]]` were classified as "post hoc".
+
+```{r}
+#| label: tbl-power_type
+#| tbl-cap: "Classification of power analyses by category using the rule-based approach."
 
 # Display the table 
 power_type |> 
   flextable() |>
-  width(1:3, c(1, .5, .5)) |>
-  align(align = "right", j = "percent", part = "all")
+  width(
+    1:3, 
+    c(1, .5, .5)
+    ) |> 
+  align(
+    align = "right", 
+    j = "Percent", 
+    part = "all"
+    ) 
 ```
 
-@tbl-power_type shows the number of power analyses detected using the rule-base approach by category. Out of all `r length(res_power$table$power_id)` reported power analysis (although these include some double counted due to overlapping sentences), `r power_type[[4, 2]]` could not be classified, `r power_type[[1, 2]]` were classified as "a priori", `r power_type[[3, 2]]` were classified as "sensitivity" and `r power_type[[2, 2]]` were classified as post hoc. Although reporting a post hoc power analysis is relatively uncommon, it is uninformative and is therefore worth identifying through an automated reporting tool. When a post hoc power analysis is detected, the module returns the following warning:
+Although reporting a post hoc power analysis is relatively uncommon, it is uninformative and is therefore worth identifying through an automated reporting tool. When a post hoc power analysis is detected, the module returns the following warning:
 
 ```{r}
 #| label: posthoc_warning
@@ -640,7 +702,7 @@ res_posthoc_single <- module_run(paper, "power")
 cat(res_posthoc_single$report[[3]])
 ```
 
-> You reported a power analysis that has been classified as 'post-hoc'. Calculating observed power is [almost never useful](https://lakens.github.io/statistical_inferences/08-samplesizejustification.html#sec-posthocpower). If you actually performed a sensitivity power analysis, label it as such explicitly.
+> You reported a power analysis that has been classified as 'post hoc'. Calculating observed power is [almost never useful](https://lakens.github.io/statistical_inferences/08-samplesizejustification.html#sec-posthocpower). If you actually performed a sensitivity power analysis, label it as such explicitly.
 
 So far, we have classified power analyses using only a rule-based approach. However, a limitation of currently reported power analyses is the lack of standardization in how their components are described and reported. This lack of standardization makes it difficult, if not impossible, to reliably extract relevant information using a rule-based approach alone. This limitation can be partially addressed by using an LLM to classify and extract information from reported power analyses.
 
@@ -667,44 +729,51 @@ llm_max_calls(2500)
 res_power_llm <- module_run(psych_science, "power")
 
 # Save the results
-save(res_power_llm, file = "input/res_power_llm.RData")
+save(res_power_llm, file = "data/res_power_llm.RData")
 ```
 
 ```{r}
 # Load data
-load("input/res_power_llm.RData")
+load("data/res_power_llm.RData")
+
+# Number of power analyses
 n_power_analyses <- nrow(res_power_llm$table)
 ```
-
 
 ```{r}
 #| label: tbl-power_llm
 #| tbl-cap: !expr "sprintf('Proportion of missing components from %d power analyses.', n_power_analyses)"
 
-# Estimate the number of and proportion of components from power analyses that are missing
+# Estimate the number and proportion of components from power analyses that are missing
 tbl_power_llm <- res_power_llm$table |> 
   select(software_other:power_type) |> 
   mutate(
+     # Combine software fields 
     software_combined = coalesce(
-      software, software_other
+      software, 
+      software_other
       ),
+    # Combine effect size metric fields
     effect_size_metric_combined = coalesce(
       effect_size_metric,
       effect_size_metric_other
     ),
+    # Combine statistical test fields
     statistical_test_combined = coalesce(
       statistical_test_other,
       statistical_test 
     )
   ) |> 
-  select(-c(
+  select(
+    -c(
     software, 
     software_other, 
     effect_size_metric, 
     effect_size_metric_other,
     statistical_test_other,
     statistical_test
-  )) |>
+    )
+  ) |>
   mutate(
     across(
       -power_type,
@@ -722,18 +791,30 @@ tbl_power_llm <- res_power_llm$table |>
   ) |> pivot_longer(
     cols = everything()
   ) |>
-  separate(name, c("Component", "name"), sep = "_(?!.*_)") |>
+  separate(
+    name, 
+    c("Component", "name"), 
+    sep = "_(?!.*_)"
+    ) |>
   pivot_wider() |>
   mutate(pcnt = sprintf("%d%%", round(pcnt*100)))
 
 # Display the table
 tbl_power_llm |> 
   flextable() |>
-  align(align = "right", j = "pcnt", part = "all") |>
-  set_header_labels(n = "Missing",
-                    pcnt = "Percent") |>
-  width(1:3, c(2, 1, 1))
-  
+  align(
+    align = "right", 
+    j = "pcnt", 
+    part = "all"
+    ) |>
+  set_header_labels(
+    n = "Missing",
+    pcnt = "Percent"
+    ) |>
+  width(
+    1:3, 
+    c(2, 1, 1)
+    )
 ```
 
 **Note**. The number of missing cases for 'power_type' is 0 because the LLM classified all instances into a power-analysis category.
@@ -743,7 +824,6 @@ n_papers <- length(psych_science)
 n_papers_with_power <- length(unique(res_power_llm$table$paper_id))
 n_power_sentences <- length(res_power_llm$table$power_id)
 ```
-
 
 For the `r n_papers` articles published in *Psychological Science*, the module using the LLM-based approach currently identifies and extracts information from `r n_papers_with_power` articles containing `r n_power_sentences` sentences identified as reporting power analyses. Not all missing information is equally problematic. For example, a missing alpha level is less concerning because the conventional value of 5% is used in most studies, although some researchers use more stringent thresholds (e.g., 0.01) or adjust alpha levels to account for multiple comparisons. By contrast, missing information about the statistical test is more concerning given the multiplicity of statistical tests used in psychology articles. Missing the expected effect size is also particularly problematic because this component is central to justifying the planned sample size.
 
@@ -766,7 +846,6 @@ test_acc <- 0.70
 type_acc <- 0.52
 esmetric_acc <- 0.59
 ```
-
 
 The performance of the `power` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. Accuracy was highest for identifying the alpha level (`r alpha_acc`), software used for the analysis (`r software_acc`) and achieved power (`r power_acc`). Accuracy was also relatively high for extracting the expected effect size (`r es_acc`) and sample size (`r sample_acc`), and moderate for identifying the statistical test (`r test_acc`). The lowest accuracy was observed for the type of power analysis (`r type_acc`) and the metric used to express the expected effect size (`r esmetric_acc`). These results indicate that the module performs better for components that are typically reported using standardized numerical values or commonly recognized software names, whereas components that depend more heavily on contextual interpretation or inconsistent reporting terminology are more challenging to extract accurately.
 
@@ -795,12 +874,24 @@ res_open_practices$table |>
     prereg
   ) |> 
   flextable() |>
-  width(1:5, c(4, .5, .5, .5, .5))
+  set_header_labels(
+    text = "Text",
+    data = "Data",
+    code = "Code",
+    materials = "Materials",
+    prereg = "Preregistration"
+    ) |> 
+  width(
+    1:5, 
+    c(4, .5, .5, .5, .5)
+    )
 ```
 
+```{=html}
 <!--
 LDB: should we remove prereg from this module, or reference it in this text?
 -->
+```
 
 ```{r}
 #| label: res_open_practices
@@ -810,14 +901,14 @@ LDB: should we remove prereg from this module, or reference it in this text?
 res_open_practices <- module_run(psych_science, "open_practices")
 
 # Save results
-save(res_open_practices, file = "input/res_open_practices.RData")
+save(res_open_practices, file = "data/res_open_practices.RData")
 ```
 
 ```{r}
 #| label: upon_request
 
 # Load data
-load("input/res_open_practices.RData")
+load("data/res_open_practices.RData")
 
 # Estimate number of studies from which an "upon request" statement could be identified
 res_upon_request <- res_open_practices$table |> 
@@ -878,7 +969,15 @@ res_pubpeer$table |>
     url
     ) |> 
   flextable() |>
-  width(1:3, c(2, 1, 4))
+    set_header_labels(
+      doi = "DOI",
+      total_comments = "Comments",
+      url = "URL"
+    ) |> 
+  width(
+    1:3, 
+    c(2, 1, 4)
+    )
 ```
 
 ## Creating Metacheck Modules
@@ -894,6 +993,8 @@ As proof of concept, we developed a Metacheck module for Statcheck [@nuijten_201
 Similarly, we have developed a Metacheck module for [RegCheck](https://regcheck.app/), a fully automated comparison tool that uses LLMs to compare a manuscript with its preregistration [@cummins_2026]. Metacheck also has a module that checks preregistrations, but it takes a slightly different approach. Rather than relying on LLM-based comparison, it retrieves the preregistration from the Open Science Framework or AsPredicted and extracts the preregistered sample size, taking advantage of their structured templates. Metacheck then presents this information alongside the manuscript, allowing users to quickly compare the preregistered and the reported sample sizes.
 
 <!-- any reason OSF was originally omitted above? -->
+
+<!-- CM: What else should we discuss in the Discussion?-->
 
 ## Discussion
 
