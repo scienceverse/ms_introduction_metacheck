@@ -54,7 +54,7 @@ knitr:
     fig.path: output/figures/ 
 execute:
   echo: false
-abstract: "Meta-scientific research has revealed that researchers often fall short in implementing best research practices when designing studies, reporting findings, citing the literature, or sharing data and code. Researchers face time constraints that limit the extent to which they can master and implement all aspects of the research process, and cognitive constraints that limit which practices they remember to implement in their work. By capturing expert knowledge within an automated tool, we aim to elevate the quality of scientific research and disseminate best research practices more widely. We present Metacheck, an automated tool that can detect (the absence of) best practices. We illustrate the capabilities of Metacheck by performing automated checks on XXXX articles published in Psychological Science in the last decade. Researchers can use the tool when reviewing scientific articles, or before they submit an article. Metacheck is module-based and open source, so can easily be extended by the research community. Automated tools such as Metacheck have the potential increase the uptake of best practices, educate researchers, and improve the quality of scientific reporting."
+abstract: "Meta-scientific research has revealed that researchers often fall short of implementing best research practices when designing studies, reporting findings, citing the literature, and sharing data and code. Two key barriers may exolain this: time constraints, which limit researchers' ability to master and implement all aspects of the research process, and cognitive constraints, which make it difficult to consistently remember and apply all relevant practices in their work. By capturing expert knowledge in an automated tool, we aim to improve the quality of scientific research and promote a wider adoption of best research practices. We introduce Metacheck, an automated tool designed to detect (the absence of) best practices. We illustrate its capabilities by performing automated checks on 1937 open-access articles published in Psychological Science between 2014 and 2026. Researchers can use the tool to assess scientific articles during peer review or to check their own manuscript before submission. Metacheck is module-based and open source, allowing the research communit to extend its functionalities. Automated tools such as Metacheck have the potential to increase the adoption of best practices, support researcher education, and ultimately improve the quality of scientific reporting."
 ---
 
 ```{r}
@@ -81,6 +81,7 @@ library(tidyr)
 library(stringr)
 library(flextable)
 library(tibble)
+library(readr)
 
 # Create BIB file for R packages
 knitr::write_bib(
@@ -159,7 +160,7 @@ Metacheck has been developed based on a set of values agreed upon by the develop
 
 ### Using LLMs
 
-These values are particularly important in guiding when and how modules use LLMs. By default, modules operate without relying on LLMs. Users can manually enable LLM functionality, but rule-based approaches are always attempted before falling back on LLM-based solutions. LLM models can be run locally using either Ollama (see Metacheck's manual, <https://www.scienceverse.org/metacheck_book/chapters/ollama.html>) or through a locally hosted model on a high performance computer (HPC) or graphics processing unit (GPU) cluster via vLLM <!-- cite?-->.
+These values are particularly important in guiding when and how modules use LLMs. By default, modules operate without relying on LLMs. Users can manually enable LLM functionality, but rule-based approaches are always attempted before falling back on LLM-based solutions. LLM models can be run locally using either Ollama (see Metacheck's manual, <https://www.scienceverse.org/metacheck_book/chapters/ollama.html>) or through a locally hosted model on a high performance computer (HPC) or graphics processing unit (GPU) cluster via vLLM <!-- LDB: cite?-->.
 
 Users can also disable modules that communicate with external servers, such as those that check references against external databases. Additionally, modules can check linked data and code files stored locally rather than retrieving them from online data repositories. Consequently, most checks can be performed locally, without sending manuscript content to external services. This allows users to run Metacheck while keeping their manuscript and associated research files on their own computer.
 
@@ -185,7 +186,7 @@ In the following section, we demonstrate how to use selected Metacheck modules f
 
 <!--CM: I think the text below is not needed and it does not really match the information flow of the next sections."We also demonstrate how Metacheck can be used to automate routine tasks processing text in scientific articles to perform menial tasks (e.g., check whether hyperlinks work), extract information from scientific articles for meta-scientific research, and incorporate existing automated checks (e.g., Statcheck and check for citations to retracted articles) in a single modular workflow that can be expanded by the scientific community."-->
 
-We perform these checks on `r length(psych_science)` articles published in Psychological Science from 2014 to 2026, as this journal contains studies from all subfields in psychology, and is considered a high-quality outlet. If Metacheck can improve research practical in Psychological Science, the same will likely be true in for other outlets. All examples were produced using R [@RStudio] and the following R packages: `dplyr` [@R-dplyr], `ggplot2` [@R-ggplot2], `flextable` [@R-flextable], `metacheck` [@R-metacheck], and `stringr` [@R-stringr]. This article was written using Quarto [@Quarto].
+We perform these checks on `r length(psych_science)` articles published in Psychological Science from 2014 to 2026, as this journal contains studies from all subfields in psychology, and is considered a high-quality outlet. If Metacheck can improve research practical in Psychological Science, the same will likely be true in for other outlets. All examples were produced using R [@RStudio] and the following R packages: `dplyr` [@R-dplyr], `ggplot2` [@R-ggplot2], `flextable` [@R-flextable], `metacheck` [@R-metacheck], `readr` and `stringr` [@R-stringr]. This article was written using Quarto [@Quarto].
 
 ### Checking Reported *P* values
 
@@ -270,12 +271,11 @@ merged_data <- res_stat_p_exact$table |>
   )
 
 combined_summary <- results[, c("paper_id", "year")] |>
-  left_join(merged_data, by = "paper_id") |>
-  summarise(n = n(), .by = c("significance", "year")) |>
-  mutate(total = sum(n), .by = c("year")) |>
-  ungroup() |>
-  mutate(pcnt = n/total*100) |>
-  filter(!is.na(significance))
+  inner_join(merged_data, by = "paper_id") |>
+  count(year, significance) |>
+  # Denominator: all articles published that year (an article can appear in both categories)
+  left_join(count(results, year, name = "total"), by = "year") |>
+  mutate(pcnt = n / total * 100)
 
 ## Create grouped bar plot
 ggplot(
@@ -407,22 +407,37 @@ ggplot(
 ```{r}
 #| label: stat_p_exact_validation
 
-# Results obtained from https://github.com/scienceverse/validation/tree/stat_p_exact/stat_p_exact
+# Ground truth and module output for the Psychological Science set (metacheck 0.0.0.9103).
+# Source: https://github.com/scienceverse/validation/tree/stat_p_exact/stat_p_exact
+# Each row is a p value; `outcome` compares the module with the ground truth.
+val_p_exact <- read_csv(
+  "validation/stat_p_exact/validation_psychsci.csv",
+  show_col_types = FALSE
+)
 
-n_papers <- 225
-exact <- 4635
-inexact <- 405
-tp <- 269
-fp <- 78
-fn <- 136
-tn <- 4557
+n_papers <- n_distinct(val_p_exact$paper_id)
+
+counts_p_exact <- val_p_exact |> 
+  count(outcome) |> 
+  deframe()
+
+tp <- counts_p_exact[["true_pos"]]
+fp <- counts_p_exact[["false_pos"]]
+fn <- counts_p_exact[["false_neg"]]
+tn <- counts_p_exact[["true_neg"]]
+
+# Imprecise (ground truth) and precise p values
+inexact <- tp + fn
+exact <- tn + fp
 
 tppcnt <- round(tp/inexact*100)
-fppcnt <- round(fp/inexact*100)
 fnpcnt <- round(fn/inexact*100)
+
+# False positives as a share of the precisely reported p values
+fppcnt <- round(fp/exact*100, 1)
 ```
 
-The performance of the `stat_p_exact` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. This set of articles contained `r inexact` instances of non-exact *p* values and `r exact` instances of exact *p* values. It correctly detected `r tp` of `r inexact` instances (`r tppcnt`%) and incorrectly identified `r fp` instances (`r fppcnt`%). The module missed `r fn` instances (`r fnpcnt`%) of imprecisely reported *p* values, and correctly identified `r tn` instances of precisely reported *p* values.
+The performance of the `stat_p_exact` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. This set of articles contained `r inexact` instances of non-exact *p* values and `r exact` instances of exact *p* values. It correctly detected `r tp` of `r inexact` instances (`r tppcnt`%) and incorrectly flagged `r fp` of the `r exact` precisely reported *p* values (`r fppcnt`%). The module missed `r fn` instances (`r fnpcnt`%) of imprecisely reported *p* values, and correctly identified `r tn` instances of precisely reported *p* values.
 
 We have also developed a related module, `stat_p_nonsig` that detects whether non-significant *p* values are reported in an article. When such results are identified, the module warns researchers against the common practice of interpreting non-significant *p* values as evidence of the absence of an effect and returns all sentences containing non-significant *p* values, allowing researchers to quickly check for potential misinterpretations. @tbl-non_sig displays the non-significant *p* value and the full sentence in which it was reported.
 
@@ -461,28 +476,53 @@ The module does not attempt to classify whether these statements containing non-
 ```{r}
 #| label: stat_p_nonsig_validation
 
-## set up numbers here in case they change with more data
-n_papers <- 194
-total <- 1602
-tp <- 1486
-fn <- total - tp
-fp <- 153
-# tn <- NA
+# Each row is a non-significant p value; `outcome` compares the module with the ground truth.
+val_p_nonsig <- read_delim(
+  "validation/stat_p_nonsig/validation_psychsci.csv",
+  delim = ";",
+  show_col_types = FALSE
+)
 
-res <- extract_p_values(psych_science)
-res |> 
-  filter(p_value > 0.05)
+# Articles assessed: the same set as stat_p_exact (the nonsig file #only has rows for articles containing at least one non-significant p #value)
+n_papers <- n_distinct(val_p_exact$paper_id)
 
-tppcnt <- round(tp / total * 100)
+counts_p_nonsig <- val_p_nonsig |> 
+  count(outcome) |> 
+  deframe()
+
+tp <- counts_p_nonsig[["true-pos"]]
+fp <- counts_p_nonsig[["false-pos"]]
+fn <- counts_p_nonsig[["false-neg"]]
+
+# Non-significant p values in the ground truth
+total_nonsig <- tp + fn
+
+# All detectable p values: the same set assessed for stat_p_exact
+total <- nrow(read_csv(
+  "validation/stat_p_exact/validation_psychsci.csv",
+  show_col_types = FALSE
+))
+
+# Significant p values and those correctly left unflagged
+total_sig <- total - total_nonsig
+tn <- total - tp - fp - fn
+
+tppcnt <- round(tp / total_nonsig * 100)
+tnpcnt <- round(tn / total_sig * 100)
+fppcnt_nonsig <- round(fp / total_sig * 100)
 ```
 
-The performance of the `stat_p_nonsig` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. The module correctly identified `r tp` of `r total` instances of non-significant *p* values (`r tppcnt`%) incorrectly classified `r fp` significant *p* values as non-significant.
+The performance of the `stat_p_nonsig` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. The set contained `r total` *p* values, of which `r total_nonsig` were non-significant. The module correctly identified `r tp` of the `r total_nonsig` non-significant *p* values (`r tppcnt`%) and missed `r fn`. It correctly left `r tn` of the `r total_sig` significant *p* values unflagged (`r tnpcnt`%) and incorrectly classified `r fp` significant *p* values as non-significant. This corresonds top a false positive rate of `r fppcnt_nonsig`%.
 
 ```{=html}
 <!--
 LDB: We have false positives?
-CM: We do. But not sure whether we can provide the percentage because all 1602 instances are non-significant p-values.
+
+CM: We do. But not sure whether we can provide the percentage because all instances are non-significant p-values.
+
 LDB: Then the 'total' should be all detectable p values (calcuate this using the extract_p_values() function -- the previous miodule assessed 5040 p-values, so this one should be the same?), and the false negs should be 1602 (targets) - 1486 (tp), then we can also calculate true negatives and tn_pcnt
+
+CM: We did not use the extract_p_values() function to create the ground truth and the total is not the same for the stat_p_exact and the stat_p_nonsig so there is a mismatch. 
 -->
 ```
 
@@ -490,25 +530,73 @@ LDB: Then the 'total' should be all detectable p values (calcuate this using the
 
 A second JARS guideline that can be checked automatically is whether effect sizes are reported alongside their statistical test result. Each statistical test (e.g., *t*-test or *F*-test) should be accompanied by the corresponding effect size (e.g., Cohen's *d* or $\eta_p^2$). Metacheck includes a dedicated rule-based module, `stat_effect_size`, that identifies *t*-tests and *F*-tests for which no effect size is reported and flags these instances for further inspection.
 
-@fig-es-trend shows the results of applying the module to `r length(psych_science)` published articles in Psychological Science between 2014 and 2026. Approximately a decade ago, around 35% of *t*-tests and 50% of *F*-tests were reported. without an accompanying effect size. By 2024, these proportions had declined to between 10% and 15%, suggesting a substantial improvement in reporting practices. Tools such as Metacheck may help reduce this percentage even further by identifying missing effect sizes before articles are submitted or published.
+```{r}
+#| label: es_trend_values
+
+load("data/res_effect_size.RData")
+
+# Percentage of tests without an effect size, by test type and year
+es_by_year <- results |> 
+  left_join(res_effect_size$summary_table, by = "paper_id") |> 
+  group_by(year) |> 
+  summarise(
+    ttests = sum(ttests_without_es, na.rm = TRUE) / 
+      sum(ttests_with_es + ttests_without_es, na.rm = TRUE) * 100,
+    Ftests = sum(Ftests_without_es, na.rm = TRUE) / 
+      sum(Ftests_with_es + Ftests_without_es, na.rm = TRUE) * 100
+  )
+
+pct_es <- function(test, yr) {
+  round(es_by_year[[test]][es_by_year$year == yr])
+}
+```
+
+@fig-es-trend shows the results of applying the module to `r length(psych_science)` published articles in Psychological Science between 2014 and 2026. In 2014, `r pct_es("ttests", "2014")`% of *t*-tests and `r pct_es("Ftests", "2014")`% of *F*-tests were reported without an accompanying effect size. By 2024, these proportions had declined to `r pct_es("ttests", "2024")`% and `r pct_es("Ftests", "2024")`%, respectively, suggesting an improvement in reporting practices, although the proportion for *t*-tests was higher again in 2025 (`r pct_es("ttests", "2025")`%). Tools such as Metacheck may help reduce this percentage even further by identifying missing effect sizes before articles are submitted or published.
 
 ```{r}
 #| label: stat_effect_size_validation
 
-# Results obtained from https://github.com/scienceverse/validation/tree/stat_effect_size-new/stat_effect_size
-n_papers <- 250
-total <- 1469
-total_t_test <- 602
-tp_t_test <- 487
-tn_t_test <- 67
-fn_t_test <- 4
-fp_t_test <- 44
+# Each row is a t-test or F-test; `es_outcome` compares effect size detection with the ground truth
+val_es <- read_csv(
+  "validation/stat_effect_size/validation_psychsci.csv",
+  show_col_types = FALSE
+)
 
-total_f_test <- 867
-tp_f_test <- 619
-tn_f_test <- 228
-fn_f_test <- 19
-fp_f_test <- 1
+# Articles in the validation set (validation/psychsci_paper_ids.csv) and the
+# subset that reported at least one t-test or F-test
+n_papers <- nrow(read_csv("validation/psychsci_paper_ids.csv", show_col_types = FALSE))
+n_papers_with_tests <- n_distinct(val_es$id)
+total <- nrow(val_es)
+
+# Confusion matrix counts for one test type
+count_es <- function(test_type) {
+  counts <- val_es |> 
+    filter(test == test_type) |> 
+    count(es_outcome) |> 
+    deframe()
+  
+  list(
+    tp = counts[["true_pos"]],
+    tn = counts[["true_neg"]],
+    fp = counts[["false_pos"]],
+    fn = counts[["false_neg"]],
+    total = sum(counts)
+  )
+}
+
+es_t_test <- count_es("t-test")
+total_t_test <- es_t_test$total
+tp_t_test <- es_t_test$tp
+tn_t_test <- es_t_test$tn
+fn_t_test <- es_t_test$fn
+fp_t_test <- es_t_test$fp
+
+es_f_test <- count_es("F-test")
+total_f_test <- es_f_test$total
+tp_f_test <- es_f_test$tp
+tn_f_test <- es_f_test$tn
+fn_f_test <- es_f_test$fn
+fp_f_test <- es_f_test$fp
 
 tppcnt_t_test <- round(tp_t_test / total_t_test * 100)
 tnpcnt_t_test <- round(tn_t_test / total_t_test * 100)
@@ -517,11 +605,11 @@ tppcnt_f_test <- round(tp_f_test / total_f_test  * 100)
 tnpcnt_f_test <- round(tn_f_test / total_f_test * 100)
 ```
 
-The performance of the module was evaluated on `r n_papers` open-access articles published in Psychological Science. *t*-tests and *F*-tests were manually extracted to create a ground-truth dataset. The module correctly identified `r tppcnt_t_test`% of *t*-tests reported with effect sizes and `r tnpcnt_t_test`% of *t*-tests reported without effect sizes. For *F*-tests, the corresponding percentages were `r tppcnt_f_test`% and `r tnpcnt_f_test`%. This level of accuracy is sufficient for meta-scientific research, such as examining changes in adherence to reporting guidelines over time.
+The performance of the module was evaluated on `r n_papers` open-access articles published in Psychological Science, of which `r n_papers_with_tests` reported at least one *t*-test or *F*-test. The module's extraction of these `r total` tests was manually checked to create a ground-truth dataset. The module correctly identified `r tppcnt_t_test`% of *t*-tests reported with effect sizes and `r tnpcnt_t_test`% of *t*-tests reported without effect sizes. For *F*-tests, the corresponding percentages were `r tppcnt_f_test`% and `r tnpcnt_f_test`%. This level of accuracy is sufficient for meta-scientific research, such as examining changes in adherence to reporting guidelines over time.
 
 ```{r}
 #| label: res_stat_effect_size
-#| eval: FALSE ## Set to TRUE to rerun module
+#| eval: FALSE # Set to TRUE to rerun module
 
 # Run module
 res_effect_size <- module_run(psych_science, "stat_effect_size")
@@ -581,7 +669,10 @@ ggplot(
     labels = scales::percent
    # limits = c(0, .6)
   ) +
-  theme(legend.position = c(.6, .8))
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(.6, .8)
+  )
 ```
 
 Another feature of the `stat_effect_size` is that it checks whether reported effect sizes are consistent with the corresponding test statistic and degrees of freedom. For *t*-tests, it checks Cohen’s *d* and Hedges' *g*, while for *F*-tests, it checks $\eta_p^2$ and $\omega_p^2$. Importantly, reporting an effect size such as *d* = 0.3 does not provide an information about the study design (i.e., whether the comparison is between or within subjects). The module therefore computes *d* under several plausible assumptions, including a Cohen's paired $d_z$, independent with equal sample sizes, and a range of possible sample sizes for independent samples. If any of the recomputed effect sizes matches the reported effect size, the result is deemed as consistent. @tbl-es_d displays some of the information returned by the module when checking the consistency of effect sizes in a single article. The first example shows a reported effect size that does not match the value implied by the *t*-test under any of the tested assumptions, whereas the second is consistent with an independent-samples *t*-test assuming equal sample sizes.
@@ -606,15 +697,6 @@ b <- res_effect_size$table |>
     es, 
     d_coherence_note
     )  
-
-# This level is not used in the table
-c <- res_effect_size$table |> 
-  filter(test == "t-test" & d_coherence == "indeterminate") |> 
-  select(
-    test_text, 
-    es, 
-    d_coherence_note
-    )
 
 # Join both tables and display them
 bind_rows(
@@ -641,9 +723,9 @@ A transparent power analysis report includes relevant details about the statisti
 
 The `power` module is designed to help researchers report power analyses more completely while discouraging the use of post-hoc power analyses. It can be used with or without LLM's. Without LLM's the module relies on regular expressions to identify paragraphs that contain the standalone word *power* (or *powers*/*powered*), at least one term associated with power analyses (e.g., *effect size*, *sample size*, *a priori*, *sensitivity*, or *post hoc*), and at least one numeric value, excluding four-digit numbers that are likely to represent publication years. Because this approach relies on regular expressions, only power analyses that explicitly contain terms such as "a priori", "sensitivity" or "post hoc" can be classified. This use of the module is limited to the classification of power analyses and does not extract the reported components (e.g., effect size metric, statistical test).
 
-A limitation of currently reported power analyses is that they lack a common reporting standard (e.g., similar to how the APA manual standardized the reporting of statistical tests). This lack of standardization makes it difficult, if not impossible, to reliably extract relevant information from sentences describing a power analysis using a rule-based approach alone. We propose a standardized reporting schema for power analyses in \[REF\]. However, this limitation can be partially addressed by using an LLM to classify and extract information from reported power analyses. Based on a predefined prompt, the LLM returns a structured output containing the identified power analysis components.
+A limitation of currently reported power analyses is that they lack a common reporting standard (e.g., similar to how the APA manual standardized the reporting of statistical tests). This lack of standardization makes it difficult, if not impossible, to reliably extract relevant information from sentences describing a power analysis using a rule-based approach alone. However, this limitation can be partially addressed by using an LLM to classify and extract information from reported power analyses. Based on a predefined prompt, the LLM returns a structured output containing the identified power analysis components.
 
-@tbl-power_llm reports the cases and proportion of components identified in a sample of `r length(psych_science)`. To generate these results, the `power` model was run using the locally hosted Ollama model qwen3.5:9b.
+@tbl-power_llm reports the cases and proportion of components identified in a sample of `r length(psych_science)` articles. To generate these results, the `power` module was run using the locally hosted Ollama model qwen3.5:9b.
 
 ```{r}
 #| label: llm_power
@@ -666,7 +748,8 @@ save(res_power_llm, file = "data/res_power_llm.RData")
 ```
 
 ```{r}
-# Load data
+#| label: power_llm_load
+
 load("data/res_power_llm.RData")
 
 # Number of power analyses
@@ -679,7 +762,11 @@ n_power_analyses <- nrow(res_power_llm$table)
 
 # Estimate the number and proportion of components from power analyses that are missing
 tbl_power_llm <- res_power_llm$table |> 
-  select(software_other:power_type) |> 
+  select(
+    power_type, statistical_test, statistical_test_other, sample_size,
+    alpha_level, power, effect_size, effect_size_metric,
+    effect_size_metric_other, software, software_other
+  ) |> 
   mutate(
      # Combine software fields 
     software_combined = coalesce(
@@ -743,7 +830,21 @@ tbl_power_llm |>
     "effect_size" = "effect size",
     "software_combined" = "software",
     "effect_size_metric_combined" = "effect size metric"
-  )) |> 
+  ),
+  Component = factor(
+    Component,
+    levels = c(
+      "power type",
+      "power",
+      "sample size",
+      "effect size",
+      "effect size metric",
+      "alpha level",
+      "statistical test",
+      "software"
+    ))
+  ) |> 
+  arrange(Component) |>
   flextable() |>
   align(
     align = "right", 
@@ -762,13 +863,9 @@ tbl_power_llm |>
 
 **Note**. The number of missing cases for 'power_type' is 0 because the LLM classified all instances into a power-analysis category.
 
-```{=html}
-<!--
-LDB: Cris -- make sure the terminology, labels and order are consistent with the power paper.
--->
-```
-
 ```{r}
+#| label: power_llm_counts
+
 n_papers <- length(psych_science)
 n_papers_with_power <- length(unique(res_power_llm$table$paper_id))
 n_power_sentences <- length(res_power_llm$table$power_id)
@@ -781,13 +878,19 @@ Given the lack of standardization in how power analyses are reported and the com
 The following sentence is an example of a false negative error: "We attempted to recruit 200 participants to have sufficient power to detect a small to moderate effect size, but in recruiting groups of friends on campus, we ended up with 199 fluent English speakers (105 female)". This statement provides too little information about the details of the power analysis to be classified as one.
 
 ```{r}
-# Results obtained from https://github.com/scienceverse/validation/tree/power/power
+#| label: power_validation_data
 
-# # Number of matched power analyses, LLM-extracted power analyses,
-# and ground-truth power analyses.
-matched_pairs <- 207
-observed_extraction <- 224
-ground_truth <- 225
+# validation/power/validation.Rmd aligns each extracted # power analysis with the ground truth and saves, per 
+# component, the number of matched pairs in which
+# the observed and ground-truth values agree.
+percentage_match <- readRDS("validation/power/validation_percentage_match_v4.Rds")
+
+# Number of matched power analyses, LLM-extracted power # analyses,and ground-truth power analyses.
+matched_pairs <- unique(percentage_match$n_matched)
+observed_extraction <- nrow(readRDS("validation/power/observed_llm_v4.Rds"))
+ground_truth <- readxl::read_xlsx("validation/power/updated_gt.xlsx") |> 
+  filter(justification == 1) |> 
+  nrow()
 ```
 
 The validation metrics for each component of the power analysis extracted by the power module using the LLM-based approach are reported in @tbl-power_validation. Of the `r observed_extraction` observed extraction rows and `r ground_truth` ground-truth rows, `r matched_pairs` were successfully matched, meaning that an observed extraction could be aligned with a corresponding ground-truth row. This resulted in `r observed_extraction - matched_pairs` unmatched observed rows and `r ground_truth - matched_pairs` unmatched ground-truth rows.
@@ -796,31 +899,13 @@ The validation metrics for each component of the power analysis extracted by the
 #| label: tbl-power_validation
 #| tbl-cap: "Percentage of matched components for which the observed and ground-truth values agree."
 
-# Results obtained from https://github.com/scienceverse/validation/tree/power/power
-
-power_validation <- tribble(
-  ~component,       ~agree,  
-"power type",	       165, 
-"statistical test",	 159,
-"sample size",	     173,
-"alpha level",	     201,
-"power",	           194,	
-"effect size metric",193,
-"effect size",	     189,
-"software",	         192) |>
+power_validation <- percentage_match |>
   mutate(
-    accuracy = sprintf("%d%%", round((agree / matched_pairs) * 100))
-    )
-
-# Extract individual components
-alpha_acc <- power_validation |> filter(component == "alpha level") |> pull(accuracy)
-software_acc <- power_validation |> filter(component == "software") |> pull(accuracy)
-power_acc <- power_validation |> filter(component == "power") |> pull(accuracy)
-es_acc <- power_validation |> filter(component == "effect size") |> pull(accuracy)
-sample_acc <- power_validation |> filter(component == "sample size") |> pull(accuracy)
-test_acc <- power_validation |> filter(component == "statistical test") |> pull(accuracy)
-type_acc <- power_validation |> filter(component == "power type") |> pull(accuracy)
-esmetric_acc <- power_validation |> filter(component == "effect size metric") |> pull(accuracy)
+    component = str_replace_all(column, "_", " "),
+    agree = n_agree,
+    accuracy = sprintf("%d%%", round((n_agree / n_matched) * 100))
+  ) |> 
+  select(component, agree, accuracy)
 
 # Create table with validation metrics per component
 power_validation |>
@@ -851,10 +936,10 @@ The `open_practices` module searches for statements indicating that data, code, 
 
 ```{r}
 #| label: tbl-open_practices
-#| tbl-cap: "Example output of the `open_practices` module applied to one single article"
+#| tbl-cap: "Example output of the `open_practices` module applied to one single article."
 
 # Run module on a single article
-res_open_practices <- module_run(psych_science[1250], "open_practices")
+res_open_practices <- module_run(psych_science$`0956797620935584`, "open_practices")
 
 # Display table with results
 res_open_practices$table |> 
@@ -882,6 +967,7 @@ res_open_practices$table |>
 ```{=html}
 <!--
 LDB: DL, should we remove prereg from this module, or reference it in this text? 
+-->
 ```
 
 ```{r}
@@ -927,38 +1013,47 @@ example_on_request$report
 
 > Data for the present experiments are available on request from the corresponding author.
 
-Another category of checks that does not require specialised expertise concerns preregistration. Preregistrations often go unchecked, which is problematic because studies may deviate from their preregistered plans without reporting these deviations. Metacheck includes the `prereg_check` module, which identifies links to preregistrations on OSF and AsPredicted in a manuscript, retrieves their text, and organises the contents into a standardised template. This makes it much easier for reviewers to compare the preregistered plans with what is reported in the manuscript and identify potential discrepancies. When preregistrations links are identfied, the module returns a summary indicating how many were found. For example:
+Another category of checks that does not require specialised expertise concerns preregistration. Preregistrations often go unchecked, which is problematic because studies may deviate from their preregistered plans without reporting these deviations. Metacheck includes the `prereg_check` module, which identifies links to preregistrations on OSF and AsPredicted in a manuscript, retrieves their text, and organises the contents into a standardised template. This makes it easier for reviewers to compare the preregistered plans with what is reported in the manuscript and identify potential discrepancies.
+
+To illustrate its use, we show the output of `prereg_check` after running it on a single paper. When the module identifies links to preregistrations, it returns a summary indicating how many were found.
 
 ```{r}
 #| label: preregistration_message
 #| output: FALSE
 
-res <- module_run(psych_science$`09567976261440239`, "prereg_check")
+res <- module_run(
+  psych_science$`09567976261440239`, 
+  "prereg_check"
+  )
+
 res$summary_text
 ```
 
 > We found 3 preregistrations.
 
-Once a preregistration has been identified, the module returns a table containing one row per preregistration and separate columns for standardized fields, including the hypotheses, sample size and statistical tests, among others.
+The module returns a table with one row per preregistrations. The columns correspond to fields in the standardised preregistration template. For example, for an OSF preregistration, the table includes fields such as hypotheses, sample size and statistical tests, among others.
 
 We can then use the Metacheck's `text_search()` function to extract relevant sentences from the manuscript and compare them with the corresponding information in the preregistration. For example, we can search for sentences containing the word "hypothesis" and compare the reported hypotheses with those specified in the preregistration to identify potential discrepancies. Below we compare the hypothesis specified in the third preregistration identified above with the hypothesis reported in the study.
 
 ```{r}
-# There are 3 preregistrations, so we select preregistration 3 for illustration purposes
-res_prereg <- res$table[3, c("research_questions")]  
+#| label: prereg_comparison
+
+# There are 3 preregistrations, so we select preregistration 3 for # illustration purposes
+res_prereg <- res$table[2, c("research_questions")]  
 
 # Use text_search() to detect sentences with the word "hypothesis"
 res_study <- text_search(
   psych_science$`09567976261440239`, 
   "hypothesis",
   return = "sentence"
-  # Select row 2 in column 1. It corresponds to the hypothesis reported in preregistration 3
+# Select row 2 in column 1. It corresponds to the hypothesis
+# reported in preregistration 3
 )[2, 1]
 
 # Combine both data frames
 combined_df <- cbind(res_prereg, res_study)
 
-# Adjust aesthetics
+# Adjust features
 combined_df |> 
   flextable() |>
   set_header_labels(
@@ -984,7 +1079,10 @@ For illustrative purposes, we demonstrate the `ref_pubpeer` module, which checks
 #| output: FALSE
 
 # Run the module
-res_pubpeer <- module_run(psych_science$`0956797614553946`, "ref_pubpeer")
+res_pubpeer <- module_run(
+  psych_science$`0956797614553946`, 
+  "ref_pubpeer"
+  )
 
 # Display report
 res_pubpeer$report
@@ -1021,15 +1119,33 @@ For reference-related modules to work reliably, references must be accurately ex
 
 ## Validation
 
-```{=html}
-<!--
-Brief discussion about the importance of validation here?
+Evaluating the accuracy of automated tools is essential for establishing their performance. The increasing availability of large language models (LLMs) has facilitated the development of automated tools, sometimes with limited direct human involvement in their design and testing. This makes systematic validation particularly important: How accurately do these tools perform, and under which circumstances can their outputs be trusted?
 
-Should we move the validation infor above to here?
--->
+Quality control is one of Metacheck's core values and reflects our commitment to evaluating the accuracy of its modules through validation. Ideally, validation should be conducted using datasets that are representative of the target population of articles to which an automated tool will be applied. This involves establishing ground truth and comparing it with the output generated by the automated tool. This comparison allows instances to be classified as true positives, true negatives, false positives, and false negatives, from which performance metrics such as sensitivity, specificity, and positive predictive value (precision) can be calculated. Because these metrics capture different aspects of performance, it is important to explicitly report which metrics are used and how they are calculated.
+
+Equally important is the transparency and reproducibility of the validation procedure. Documentation should describe how the ground truth was established, how human judgments were obtained, what constituted a correct or incorrect extraction, and which data were included in the evaluation. The limitations of the validation approach should also be clearly communicated, as these determine the conclusions that can be drawn about a tool's performance.
+
+For example, the validation of Metacheck's `stat_effect_size` module involved using the module to identify instances of *t*-tests and *F*-tests and extract their corresponding effect sizes. The resulting validation dataset contained the sentences flagged by the module as reporting these statistical tests, together with the extracted effect sizes. Human coders subsequently reviewed the detected instances and classified the module's outputs according to whether an effect size had been correctly extracted.
+
+An important limitation of this validation approach is that the validation dataset was constructed using the module itself to identify statistical tests. Consequently, statistical tests that the module failed to detect were not included in the dataset and could not be identified as false negatives. The validation results therefore reflect the module's accuracy in extracting effect sizes from detected statistical tests, rather than its overall performance in identifying all statistical tests and their corresponding effect sizes in an article. This distinction is important when interpreting the reported performance metrics.
+
+```{r misses_stat_effect_size}
+
+# Types of misses
+misses <- read_csv("validation/stat_effect_size/validation_psychsci.csv") |> 
+  filter(es_outcome == "false_neg") |> 
+  mutate(notes = trimws(notes)) |> 
+  count(test, notes, sort = TRUE, name = "n") |> 
+  arrange(test, desc(n))
+
+# Total number of cases where effect size was not detected because it was reported as slope or coefficient
+beta_misses <- misses[[3, 3]] 
+slope_misses <- misses[[4, 3]] 
 ```
 
-Evaluating the acuracy of automated tools is crucial to establish its performance. The increasing availability of LLMs and other AI models has facilitated the development of automated tools, often with limited direct human involvement in their design and testing. This raises an important question: how accurately do these tools perform? One of our core values is quality control, which reflects our commitment to systematically evaluating the accuracy of Metacheck's modules through validation. Validation of automated tools should be carried out in datasets that are representative of the intended target population of articles where the tool will be used. Validation refers to the practice of creating ground truth data ideally using human-coded data which is then compared against the output of the automated tool. The validation can correspond to different metrics: true positive, true negative, false positive and false negative. From these four metrics, other metrics can be derived such as the False Positive Rate, Positive Predictive Value and Recall or Sensitivity. All these metrics convey different information and therefore is important to explicitly describe what metric or metrics are being used to evaluate the performance of a tool.
+Furthermore, examining the situations in which false positives and false negatives occur can help users understand the module's limitations. For example, our validation suggests that the module failed to recognize `r beta_misses` regression coefficients reported using the beta symbol (β). It also missed `r misses[[4, 3]]` effect sizes reported using expressions such as "slope =". These examples illustrate how differences in reporting conventions can affect extraction accuracy and highlight opportunities for improving the module.
+
+Improving validation practices across Metacheck is an ongoing priority. We are committed to continuously strengthening our validation procedures, improving the documentation and transparency of our evaluations, and ensuring that our modules are assessed using reproducible workflows. As Metacheck evolves, we will continue to review and improve our validation practices to increase confidence in the accuracy of its modules.
 
 ## Creating Metacheck Modules
 
