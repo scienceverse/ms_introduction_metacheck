@@ -415,9 +415,21 @@ val_p_exact <- read_csv(
   show_col_types = FALSE
 )
 
-n_papers <- n_distinct(val_p_exact$paper_id)
+# Total p values come from the manually coded ground truth
+# (keep = 2: extracted text that is not a p value, so excluded)
+gt_exact <- read_delim(
+  "validation/stat_p_exact/ground_truth_coded.csv",
+  delim = ";",
+  col_types = cols(.default = "c")
+) |> 
+  filter(keep != "2")
+
+total_exact <- nrow(gt_exact)
+n_papers <- n_distinct(gt_exact$id)
 
 counts_p_exact <- val_p_exact |> 
+  # Drop instances detected by the module that are not in the ground truth
+  filter(in_gt) |> 
   count(outcome) |> 
   deframe()
 
@@ -428,7 +440,8 @@ tn <- counts_p_exact[["true_neg"]]
 
 # Imprecise (ground truth) and precise p values
 inexact <- tp + fn
-exact <- tn + fp
+exact <- total_exact - inexact
+tn <- exact - fp
 
 tppcnt <- round(tp/inexact*100)
 fnpcnt <- round(fn/inexact*100)
@@ -437,7 +450,7 @@ fnpcnt <- round(fn/inexact*100)
 fppcnt <- round(fp/exact*100, 1)
 ```
 
-The performance of the `stat_p_exact` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. This set of articles contained `r inexact` instances of non-exact *p* values and `r exact` instances of exact *p* values. It correctly detected `r tp` of `r inexact` instances (`r tppcnt`%) and incorrectly flagged `r fp` of the `r exact` precisely reported *p* values (`r fppcnt`%). The module missed `r fn` instances (`r fnpcnt`%) of imprecisely reported *p* values, and correctly identified `r tn` instances of precisely reported *p* values.
+The performance of the `stat_p_exact` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. This set of articles contained `r total_exact` *p* values, of which `r inexact` were instances of non-exact *p* values and `r exact` instances of exact *p* values. It correctly detected `r tp` of `r inexact` instances (`r tppcnt`%) and incorrectly flagged `r fp` of the `r exact` precisely reported *p* values (`r fppcnt`%). The module missed `r fn` instances (`r fnpcnt`%) of imprecisely reported *p* values, and correctly identified `r tn` instances of precisely reported *p* values.
 
 We have also developed a related module, `stat_p_nonsig` that detects whether non-significant *p* values are reported in an article. When such results are identified, the module warns researchers against the common practice of interpreting non-significant *p* values as evidence of the absence of an effect and returns all sentences containing non-significant *p* values, allowing researchers to quickly check for potential misinterpretations. @tbl-non_sig displays the non-significant *p* value and the full sentence in which it was reported.
 
@@ -477,16 +490,14 @@ The module does not attempt to classify whether these statements containing non-
 #| label: stat_p_nonsig_validation
 
 # Each row is a non-significant p value; `outcome` compares the module with the ground truth.
-val_p_nonsig <- read_delim(
+val_p_nonsig <- read_csv(
   "validation/stat_p_nonsig/validation_psychsci.csv",
-  delim = ";",
   show_col_types = FALSE
 )
 
-# Articles assessed: the same set as stat_p_exact (the nonsig file #only has rows for articles containing at least one non-significant p #value)
-n_papers <- n_distinct(val_p_exact$paper_id)
-
 counts_p_nonsig <- val_p_nonsig |> 
+  # Drop rows that were excluded from the ground truth
+  filter(outcome != "excluded") |> 
   count(outcome) |> 
   deframe()
 
@@ -497,22 +508,28 @@ fn <- counts_p_nonsig[["false-neg"]]
 # Non-significant p values in the ground truth
 total_nonsig <- tp + fn
 
-# All detectable p values: the same set assessed for stat_p_exact
-total <- nrow(read_csv(
-  "validation/stat_p_exact/validation_psychsci.csv",
-  show_col_types = FALSE
-))
+# All coded p values (keep = 1: non-significant; keep = 0: significant;
+# keep = 2: not a p value, so excluded)
+gt_coded <- read_delim(
+  "validation/stat_p_nonsig/ground_truth_coded.csv",
+  delim = ";",
+  col_types = cols(.default = "c")
+) |> 
+  filter(keep != "2")
+
+total <- nrow(gt_coded)
+n_papers <- n_distinct(gt_coded$id)
 
 # Significant p values and those correctly left unflagged
 total_sig <- total - total_nonsig
-tn <- total - tp - fp - fn
+tn <- total_sig - fp
 
 tppcnt <- round(tp / total_nonsig * 100)
 tnpcnt <- round(tn / total_sig * 100)
 fppcnt_nonsig <- round(fp / total_sig * 100)
 ```
 
-The performance of the `stat_p_nonsig` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. The set contained `r total` *p* values, of which `r total_nonsig` were non-significant. The module correctly identified `r tp` of the `r total_nonsig` non-significant *p* values (`r tppcnt`%) and missed `r fn`. It correctly left `r tn` of the `r total_sig` significant *p* values unflagged (`r tnpcnt`%) and incorrectly classified `r fp` significant *p* values as non-significant. This corresonds top a false positive rate of `r fppcnt_nonsig`%.
+The performance of the `stat_p_nonsig` module was evaluated on `r n_papers` open-access articles published in Psychological Science, for which a ground-truth dataset was manually created. The set contained `r total` *p* values, of which `r total_nonsig` were non-significant. The module correctly identified `r tp` of the `r total_nonsig` non-significant *p* values (`r tppcnt`%) and missed `r fn`. It correctly left `r tn` of the `r total_sig` significant *p* values unflagged (`r tnpcnt`%) and incorrectly classified `r fp` significant *p* values as non-significant. This corresonds to a false positive rate of `r fppcnt_nonsig`%.
 
 ```{=html}
 <!--
@@ -522,7 +539,7 @@ CM: We do. But not sure whether we can provide the percentage because all instan
 
 LDB: Then the 'total' should be all detectable p values (calcuate this using the extract_p_values() function -- the previous miodule assessed 5040 p-values, so this one should be the same?), and the false negs should be 1602 (targets) - 1486 (tp), then we can also calculate true negatives and tn_pcnt
 
-CM: We did not use the extract_p_values() function to create the ground truth and the total is not the same for the stat_p_exact and the stat_p_nonsig so there is a mismatch. 
+CM: I have added the VALIDATION folder which contains a folder for each module. For the stat_p_exact and stat_p_nonsig there are two files: validation_psychsci.csv which contains the outcome of the validation (false-postive, false-negative, etc.) and the ground_truth_coded.csv which contains all instances of p-values evaluated. I am using the number of rows from ground_truth_coded.csv as the total number of detectable p-values.
 -->
 ```
 
