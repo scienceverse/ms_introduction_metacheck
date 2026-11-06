@@ -1,0 +1,732 @@
+---
+title: "validation power-module-02"
+output: html_document
+date: "2025-11-09"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## Load package
+
+```{r}
+# devtools::install_github("scienceverse/metacheck")
+library(metacheck)
+library(here)
+library(dplyr)
+library(tidyr)
+library(readxl)
+```
+
+# Get current version of metacheck and save info ----
+
+```{r}
+module <- "power"
+version <- packageVersion("metacheck")
+mc_dir <- file.path("metacheck_versions", version)
+dir.create(mc_dir, FALSE, TRUE)
+session_info_file <- file.path(mc_dir, "sessionInfo.txt")
+capture.output(sessionInfo()) |>
+  writeLines(session_info_file)
+```
+
+# Get module from github ----
+
+```{r}
+mod_version <- 4
+
+if (FALSE) {
+  branch <- "main"
+  url <- sprintf("https://github.com/scienceverse/metacheck/raw/refs/heads/%s/inst/modules/%s.R", branch, module)
+  mod_name <- sprintf("%s_v%d.R", module, mod_version)
+  dest <- file.path("modules", mod_name)
+  download.file(url, dest)
+}
+```
+
+Load the file `updated_gt.xlsx` containing ground-truth data and prepare
+it for validation:
+
+```{r}
+#| eval: false
+ground_truth <- read_xlsx(
+    here("power", "papers", "psychsci", "updated_gt.xlsx")
+  ) |> 
+  filter(justification == 1) |>
+  
+  mutate(
+    # Combine "power sensitivity" with "sensitivity"
+    power_type = replace_values(
+      power_type, 
+      "power sensitivity" ~ "sensitivity", 
+      "a priori" ~ "apriori",
+      "post hoc" ~ "posthoc"
+      ),
+    
+    # Remove any mention of within-subject, between-subject or mixed design 
+    # when test is ANOVA
+    statistical_test = replace_values(
+      statistical_test, 
+      c("one-way between-subject ANOVA", 
+        "one-way within-subject ANOVA", 
+        "one-way mixed ANOVA",
+        "one-way ANOVA") ~ "1-way ANOVA",
+      c("two-way between-subject ANOVA", 
+        "two-way within-subject ANOVA", 
+        "two-way mixed ANOVA",
+        "two-way ANOVA") ~ "2-way ANOVA",
+      c("three-way between-subject ANOVA", 
+        "three-way within-subject ANOVA", 
+        "three-way mixed ANOVA",
+        "three-way ANOVA") ~ "3-way ANOVA"
+      ),
+    
+#. Convert any mention of regression to "regression"
+    statistical_test = case_when(
+      stringr:::str_detect(statistical_test, "regression") ~ "regression", 
+      TRUE ~ statistical_test),
+    
+    # Convert any other test to "other"
+    statistical_test = replace_values(
+      statistical_test, 
+      c("mediation analysis", 
+        "Fisher's r-to-z",
+        "structural equation model",
+        "Wald test",
+        "Mann-Whitney U test",
+        "linear mixed effect model",
+        "mixed effect model",
+        "multilevel model") ~ "other",
+        "generalized linear model" ~ "regression"
+      ),
+  
+   # Convert some tests to "other"
+  effect_size_metric = replace_values(
+      effect_size_metric, 
+      c("correlation",
+        "Cohen's f2", 
+        "incidence-rate ratio",
+        "percentage ",
+        "q",
+        "phi coefficient",
+        "coefficient",
+        "odds ratio",
+        "R2") ~ "other"
+      ),
+
+software = replace_values(
+      software, 
+      c("Power Analysis for General ANOVA Designs program for the R Shiny app",
+        "Bayes factor design analysis",
+        "Declare-Design",
+        "jpower",
+        "mc_power_med",
+        "Mixedpower",
+        "semPower") ~ "other"
+      )
+)|> 
+  
+  select(
+    text,
+    paper_id, 
+    paragraph_id,
+    power_type:software
+    ) |>
+  
+  mutate(
+    power = gsub("[^0-9\\.]", "", power),
+    power = as.numeric(power),
+    power = ifelse(power > 1, power/100, power)
+  ) 
+```
+
+## Run power module
+
+We first run the module without using the LLM. This means we classify
+power analysis according to word match (i.e., llm_use(FALSE)):
+
+```{r}
+# Load papers
+papers <- readRDS("papers/psychsci/psychsci.RDS")
+
+# Remove "0956797616647519" paper. This article is about researchers' 
+# perception of the power of their studies
+papers[["0956797616647519"]] <- NULL
+
+llm_use(FALSE)
+mod_version <- 4
+module <- sprintf("modules/power_v%d.R", mod_version)
+mod_output <- module_run(papers, module)
+observed_result <- mod_output$table
+```
+
+Save the result for efficiency:
+
+```{r}
+if (!is.null(observed_result)) {
+  no_llm_path <- sprintf("papers/psychsci/no_llm_result_v%d.Rds", mod_version)
+  saveRDS(observed_result, no_llm_path)
+}
+```
+
+2- Classify power analyses and extract information from them using the
+LLM option (i.e., llm_use(TRUE) with local Ollama):
+
+```{r eval=FALSE}
+# Set to TRUE to use LLM
+llm_use(TRUE)
+llm_model("groq/openai/gpt-oss-120b")
+llm_max_calls(500)
+
+observed <- module_run(papers, module)
+```
+
+# Store the results after running the power module:
+
+```{r}
+rds_path <- sprintf("metacheck_versions/%s/llm_result_%s_v%d.Rds", 
+                    version,
+                    llm_model() |> gsub("/", "-", x = _), 
+                    mod_version)
+observed$paper <- NULL # remove paper
+saveRDS(observed, rds_path)
+```
+
+# Load LLM resuls
+
+```{r}
+
+observed <- readRDS("metacheck_versions/0.0.0.9106/llm_result_groq-openai-gpt-oss-120b_v4.Rds")
+
+```
+
+# Check the LLM output out
+
+```{r}
+json_expand(observed$table, "answer") |>
+  dplyr::select(text, power_type:software)
+```
+
+## Observed issues
+
+- LLM uses types of statistical tests and effect sizes that are not part
+  of the prompt
+- LLM adds the G\*Power version to the software column
+
+## Validation
+
+```{r}
+# install.packages("clue")
+library(clue)
+
+cols <- c(
+  "power_type",
+  "statistical_test",
+  "sample_size",
+  "alpha_level",
+  "power",
+  "effect_size_metric",
+  "effect_size",
+  "software"
+)
+
+matched_list <- list()
+
+# Store indices of matches
+matched_obs_indices <- list()
+matched_gt_indices  <- list()
+
+paper_ids <- intersect(observed$table$paper_id, ground_truth$paper_id)
+
+for (pid in paper_ids) {
+
+  obs_idx <- which(observed$table$paper_id == pid)
+  gt_idx  <- which(ground_truth$paper_id == pid)
+
+  obs_sub <- observed$table[obs_idx, ]
+  exp_sub <- ground_truth[gt_idx, ]
+
+  n_obs <- nrow(obs_sub)
+  n_exp <- nrow(exp_sub)
+
+  sim_matrix <- matrix(0, nrow = n_obs, ncol = n_exp)
+
+  for (i in seq_len(n_obs)) {
+    for (j in seq_len(n_exp)) {
+      matches <- obs_sub[i, cols] == exp_sub[j, cols]
+      sim_matrix[i, j] <- sum(matches, na.rm = TRUE)
+    }
+  }
+
+  k <- max(n_obs, n_exp)
+
+  sim_padded <- matrix(0, nrow = k, ncol = k)
+  sim_padded[1:n_obs, 1:n_exp] <- sim_matrix
+
+  max_val <- max(sim_padded)
+  cost_matrix <- max_val - sim_padded
+
+  assignment <- solve_LSAP(cost_matrix)
+
+  assignment <- assignment[1:n_obs]
+  valid <- assignment <= n_exp
+
+  # Store global indices of matches
+  matched_obs_indices[[as.character(pid)]] <- obs_idx[valid]
+  matched_gt_indices[[as.character(pid)]]  <- gt_idx[assignment[valid]]
+
+  # Build matched data (renamed)
+  obs_matched <- obs_sub[valid, ]
+  exp_matched <- exp_sub[assignment[valid], ]
+
+  names(obs_matched) <- paste0(names(obs_matched), "_observed")
+  names(exp_matched) <- paste0(names(exp_matched), "_ground_truth")
+
+  matched <- cbind(obs_matched, exp_matched)
+
+  matched_list[[as.character(pid)]] <- matched
+}
+
+# ---- Combine matched ----
+final_matched <- do.call(rbind, matched_list)
+rownames(final_matched) <- NULL
+
+# ---- Compute unmatched AFTER loop ----
+
+matched_obs_indices <- unlist(matched_obs_indices, use.names = FALSE)
+matched_gt_indices  <- unlist(matched_gt_indices,  use.names = FALSE)
+
+all_obs_indices <- seq_len(nrow(observed$table))
+all_gt_indices  <- seq_len(nrow(ground_truth))
+
+unmatched_observed <- observed$table[
+  setdiff(all_obs_indices, matched_obs_indices),
+]
+
+unmatched_ground_truth <- ground_truth[
+  setdiff(all_gt_indices, matched_gt_indices),
+]
+
+rownames(unmatched_observed) <- NULL
+rownames(unmatched_ground_truth) <- NULL
+
+# ---- Inspect ----
+head(final_matched)
+head(unmatched_observed)
+head(unmatched_ground_truth)
+
+cols <- c(
+  "power_type",
+  "statistical_test",
+  "sample_size",
+  "alpha_level",
+  "power",
+  "effect_size_metric",
+  "effect_size",
+  "software"
+)
+
+# Counts that apply to all columns
+n_unmatched_gt  <- nrow(unmatched_ground_truth)
+n_unmatched_obs <- nrow(unmatched_observed)
+
+results <- data.frame(
+  column = cols,
+  TP = NA_real_,
+  FP = NA_real_,
+  FN = NA_real_,
+  PPV = NA_real_,
+  FNR = NA_real_,
+  stringsAsFactors = FALSE
+)
+
+numeric_cols <- c("sample_size", "alpha_level", "power", "effect_size")
+
+for (i in seq_along(cols)) {
+
+  col <- cols[i]
+
+  obs_col <- final_matched[[paste0(col, "_observed")]]
+  gt_col  <- final_matched[[paste0(col, "_ground_truth")]]
+
+  # Treat mutual NAs as matches
+  both_na <- is.na(obs_col) & is.na(gt_col)
+
+  # Use numeric comparison with near() for numeric columns
+  if (col %in% numeric_cols) {
+    obs_num <- as.numeric(obs_col)
+    gt_num  <- as.numeric(gt_col)
+    equal <- dplyr::near(obs_num, gt_num)
+    equal[is.na(equal)] <- FALSE
+  } else {
+    equal <- obs_col == gt_col
+    equal[is.na(equal)] <- FALSE
+  }
+
+  equal <- equal | both_na
+
+  TP <- sum(equal)
+
+  mismatches <- sum(!equal)
+
+  # Apply definitions
+  FN <- n_unmatched_gt + mismatches
+  FP <- n_unmatched_obs + mismatches
+
+  # Metrics
+  PPV <- if ((TP + FP) > 0) TP / (TP + FP) else NA
+  FNR <- if ((TP + FN) > 0) FN / (TP + FN) else NA
+
+  # Store
+  results$TP[i]  <- TP
+  results$FP[i]  <- FP
+  results$FN[i]  <- FN
+  results$PPV[i] <- PPV
+  results$FNR[i] <- FNR
+}
+```
+
+# Validation metrics
+
+The validation metrics in Table 2 are computed per column (e.g.,
+`power_type`, `sample_size`, etc.) using three disjoint sets produced by
+the matching procedure above:
+
+1.  **Matched pairs** (`final_matched`): each observed extraction
+    aligned to its best-matching ground-truth row via the Hungarian
+    algorithm.
+2.  **Unmatched ground truth** (`unmatched_ground_truth`): real
+    power-analysis instances that were never detected.
+3.  **Unmatched observed** (`unmatched_observed`): extracted rows that
+    do not correspond to any real instance.
+
+For each column, a matched pair is classified as *correct* if the
+observed and ground-truth values are equal (using `dplyr::near()` for
+numeric columns; mutual `NA`s count as matches). A matched pair where
+values differ is a *mismatch*.
+
+The metrics are then defined as:
+
+- **TP** (True Positive): the number of correct values among matched
+  pairs.
+- **FN** (False Negative): the number of unmatched ground-truth rows +
+  the number of mismatches. Unmatched rows contribute one FN per column
+  because the entire instance was missed; mismatches contribute one FN
+  because the true value was not recovered.
+- **FP** (False Positive): the number of unmatched observed rows + the
+  number of mismatches. Unmatched rows contribute one FP per column
+  because the system asserted values for a non-existent instance;
+  mismatches contribute one FP because the system asserted an incorrect
+  value.
+- **PPV** (Positive Predictive Value / Precision): TP / (TP + FP). Among
+  all values the module predicted for this field, how many were correct?
+- **FNR** (False Negative Rate): FN / (TP + FN). Among all real values
+  that exist, how many did the module fail to recover correctly?
+
+Note that a single mismatch counts as both a FP and a FN: the system
+failed to recover the true value (FN) and asserted an incorrect one
+(FP). True negatives are not computed because there is no explicit set
+of non-power-analysis instances that were correctly ignored.
+
+```{r}
+results
+```
+
+# Save validation results
+
+```{r}
+if (!is.null(results)) {
+  saveRDS(results, here("power","metacheck_versions", "0.0.0.9106", "validation_result_v4.Rds"))
+}
+```
+
+# Calculate percentage of matches
+
+```{r percentage_match}
+percentage_match <- do.call(rbind, lapply(cols, function(col) {
+  obs_col <- final_matched[[paste0(col, "_observed")]]
+  gt_col  <- final_matched[[paste0(col, "_ground_truth")]]
+  both_na <- is.na(obs_col) & is.na(gt_col)
+  if (col %in% numeric_cols) {
+    eq <- dplyr::near(as.numeric(obs_col), as.numeric(gt_col))
+    eq[is.na(eq)] <- FALSE
+  } else {
+    eq <- obs_col == gt_col
+    eq[is.na(eq)] <- FALSE
+  }
+  eq <- eq | both_na
+  data.frame(
+    column = col,
+    n_agree = sum(eq),
+    n_matched = length(eq),
+    percentage_match = mean(eq) * 100,
+    stringsAsFactors = FALSE
+  )
+}))
+```
+
+```{r}
+if (!is.null(results)) {
+  saveRDS(percentage_match, here("power","metacheck_versions", "0.0.0.9106", "validation_percentage_match_v4.Rds"))
+}
+```
+
+# At least 1 thing actually missing
+
+```{r one_thing_misisng}
+
+cols <- c(
+  "power_type",
+  "statistical_test",
+  "sample_size",
+  "alpha_level",
+  "power",
+  "effect_size_metric",
+  "effect_size",
+  "software"
+)
+
+na_accuracy <- data.frame(
+  column = cols,
+  n_observed_NA = NA_real_,
+  n_correct_NA = NA_real_,
+  proportion_correct = NA_real_,
+  stringsAsFactors = FALSE
+)
+
+for (i in seq_along(cols)) {
+
+  col <- cols[i]
+
+  obs_col <- final_matched[[paste0(col, "_observed")]]
+  gt_col  <- final_matched[[paste0(col, "_ground_truth")]]
+
+  # Condition: observed is NA
+  obs_is_na <- is.na(obs_col)
+
+  n_obs_na <- sum(obs_is_na)
+
+  # Among those, check if ground truth is also NA
+  correct_na <- sum(obs_is_na & is.na(gt_col))
+
+  prop <- if (n_obs_na > 0) correct_na / n_obs_na else NA
+
+  na_accuracy$n_observed_NA[i] <- n_obs_na
+  na_accuracy$n_correct_NA[i] <- correct_na
+  na_accuracy$proportion_correct[i] <- prop
+}
+```
+
+```{r}
+if (!is.null(results)) {
+  saveRDS(na_accuracy, here("power","metacheck_versions", "0.0.0.9106", "validation_na_accuracy_v4.Rds"))
+}
+```
+
+# At least one of the same columns is missing as identifed missing:
+
+```{r}
+cols <- c(
+  "power_type",
+  "statistical_test",
+  "sample_size",
+  "alpha_level",
+  "power",
+  "effect_size_metric",
+  "effect_size",
+  "software"
+)
+
+obs_mat <- sapply(cols, function(col) {
+  final_matched[[paste0(col, "_observed")]]
+})
+
+gt_mat <- sapply(cols, function(col) {
+  final_matched[[paste0(col, "_ground_truth")]]
+})
+
+# Logical NA matrices
+obs_na <- is.na(obs_mat)
+gt_na  <- is.na(gt_mat)
+
+# Ground truth rows with any NA
+gt_has_na <- apply(gt_na, 1, any)
+
+# Rows where at least one SAME column is NA
+correct_detection <- apply(obs_na & gt_na, 1, any)
+
+n_gt_with_na <- sum(gt_has_na)
+n_correct <- sum(gt_has_na & correct_detection)
+
+proportion <- n_correct / n_gt_with_na
+
+n_gt_with_na
+n_correct
+proportion
+```
+
+# Improve sentence capture
+
+```{r}
+missed_text <- unmatched_ground_truth$text
+
+
+# Basic tokenization
+tokens <- tolower(unlist(strsplit(missed_text, "\\W+")))
+
+# Remove very short tokens
+tokens <- tokens[nchar(tokens) > 2]
+
+# Frequency table
+term_freq <- sort(table(tokens), decreasing = TRUE)
+
+head(term_freq, 50)
+
+stopwords <- c(
+  "the","and","for","with","that","this","from","were","was","are",
+  "but","have","has","had","not","all","any","can","may","our","their",
+  "using","use","used","also"
+)
+
+term_freq <- term_freq[!(names(term_freq) %in% stopwords)]
+
+head(term_freq, 50)
+
+bigrams <- unlist(lapply(missed_text, function(x) {
+  words <- tolower(unlist(strsplit(x, "\\W+")))
+  words <- words[nchar(words) > 2]
+  if (length(words) < 2) return(NULL)
+  paste(words[-length(words)], words[-1])
+}))
+
+bigram_freq <- sort(table(bigrams), decreasing = TRUE)
+head(bigram_freq, 30)
+
+trigrams <- unlist(lapply(missed_text, function(x) {
+  words <- tolower(unlist(strsplit(x, "\\W+")))
+  words <- words[nchar(words) > 2]
+  if (length(words) < 3) return(NULL)
+  paste(words[-c(length(words)-1, length(words))],
+        words[-c(1, length(words))],
+        words[-c(1,2)])
+}))
+```
+
+1.  What objects we are using After your matching procedure, you have
+    three disjoint sets:
+
+Matched pairs (final_matched) Each row is one observed extraction
+aligned to the most similar ground-truth row.
+
+Unmatched ground truth (unmatched_ground_truth) Real power-analysis
+instances that were never detected at all.
+
+Unmatched observed (unmatched_observed) Extracted rows that do not
+correspond to any real instance.
+
+Everything is defined in terms of these three sets.
+
+2.  Unit of evaluation You are evaluating each column separately (e.g.,
+    power, sample_size, etc.). So for a given column, you are asking:
+
+Did the system correctly recover the value of this field?
+
+3.  True Positives (TP) A true positive for a column is:
+
+A matched row where the observed value equals the ground-truth value.
+
+In other words:
+
+the system detected a real instance and it extracted this specific field
+correctly
+
+So TP counts correct field recoveries among matched pairs.
+
+4.  False Negatives (FN) False negatives capture missed or incorrect
+    recovery of real information. There are two distinct mechanisms:
+
+<!-- -->
+
+(A) Completely missed rows These are rows in unmatched_ground_truth.
+    Interpretation:
+
+A real power analysis exists, but the system did not detect it at all.
+
+Because the entire row is missing, every column in that row is
+considered missed. So each such row contributes one FN to every column.
+
+(B) Incorrect values in matched rows These are matched pairs where:
+
+the observed value does not equal the ground-truth value for that
+column.
+
+Interpretation:
+
+The system found the right instance, but extracted the wrong value for
+this field.
+
+Combined FN So for each column:
+
+FN = (missed rows) + (incorrect values in matched rows)
+
+5.  False Positives (FP) False positives capture incorrect claims made
+    by the module. Again, two mechanisms:
+
+<!-- -->
+
+(A) Spurious rows These are rows in unmatched_observed. Interpretation:
+
+The system predicted a power analysis that does not exist.
+
+Since that row asserts values for all fields, it contributes:
+
+one false positive for every column.
+
+(B) Incorrect values in matched rows The same mismatches used in FN.
+    Interpretation:
+
+The module predicted a value for this field, but it is wrong.
+
+So each mismatch is also a false positive.
+
+Combined FP For each column:
+
+FP = (spurious rows) + (incorrect values in matched rows)
+
+6.  Why mismatches count as both FP and FN This is important and often
+    non-intuitive. If the true value is, say, power = 0.80, and the
+    model predicts 0.70, then:
+
+it failed to recover the true value → false negative it asserted an
+incorrect value → false positive
+
+So the same event contributes to both error types.
+
+7.  True Negatives (TN) You do not compute true negatives. Reason:
+
+You do not have an explicit set of “non-power-analysis instances” that
+were correctly ignored.
+
+So the denominator of “all possible negatives” is undefined. This is
+standard in extraction tasks and means:
+
+precision and recall are meaningful specificity is not
+
+8.  Precision (PPV) For each column:
+
+Among all values the module predicted for this field, how many were
+correct?
+
+Formally:
+
+numerator: correct values (TP) denominator: all predicted values (TP +
+FP)
+
+9.  False Negative Rate (FNR) For each column:
+
+Among all real values that exist, how many did the module fail to
+recover correctly?
+
+Formally:
+
+numerator: FN (missed + wrong) denominator: total real values (TP + FN)
